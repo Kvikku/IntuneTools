@@ -35,12 +35,12 @@ namespace IntuneTools.Graph
             // If the token is still valid, return true
             if (tokenExpiryTime > DateTimeOffset.UtcNow)
             {
-                WriteToLog("Token is still valid. Using existing token");
+                //WriteToLog("Token is still valid. Using existing token");
                 return true;
             }
             else
             {
-                WriteToLog("Token is expired. Must acquire new token");
+                //WriteToLog("Token is expired. Must acquire new token");
                 return false;
             }
 
@@ -72,14 +72,14 @@ namespace IntuneTools.Graph
             // check if the token is still valid
             if (tokenExpirationTime > DateTimeOffset.UtcNow)
             {
-                WriteToLog("Token is still valid. Using existing token");
+                //WriteToLog("Token is still valid. Using existing token");
 
                 return accessToken;
             }
             else
             {
 
-                WriteToLog("Token is expired. Must acquire new token");
+                //WriteToLog("Token is expired. Must acquire new token");
 
 
                 var app = PublicClientApplicationBuilder

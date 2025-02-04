@@ -17,6 +17,7 @@ using Windows.Foundation;
 using Windows.Foundation.Collections;
 
 using static IntuneTools.Utilities.HelperClass;
+using static IntuneTools.Utilities.Variables;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -56,7 +57,7 @@ namespace IntuneTools
 
             CreateLogFile();
 
-
+            Log("Application started", LogLevels.Info);
         }
 
         private Window? m_window;
