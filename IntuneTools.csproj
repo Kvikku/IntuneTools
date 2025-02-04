@@ -40,6 +40,8 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.WinUI.UI.Controls.DataGrid" Version="7.1.2" />
+    <PackageReference Include="Microsoft.Graph.Beta" Version="5.94.0-preview" />
+    <PackageReference Include="Microsoft.Identity.Client" Version="4.67.2" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.1742" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250109001-experimental2" />
   </ItemGroup>
@@ -47,9 +49,6 @@
     <Page Update="UI\BlankPage1.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Graph\" />
   </ItemGroup>
 
   <!--

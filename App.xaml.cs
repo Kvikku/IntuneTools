@@ -16,6 +16,8 @@ using Windows.ApplicationModel.Activation;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 
+using static IntuneTools.Utilities.HelperClass;
+
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
 
@@ -49,6 +51,12 @@ namespace IntuneTools
             size.Width = 1750;
             size.Height = 800;
             m_window.AppWindow.Resize(size);
+
+
+
+            CreateLogFile();
+
+
         }
 
         private Window? m_window;
