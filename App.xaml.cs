@@ -43,6 +43,12 @@ namespace IntuneTools
         {
             m_window = new MainWindow();
             m_window.Activate();
+
+            // Set the window size
+            var size = m_window.AppWindow.Size;
+            size.Width = 1750;
+            size.Height = 800;
+            m_window.AppWindow.Resize(size);
         }
 
         private Window? m_window;
