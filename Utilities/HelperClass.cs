@@ -48,6 +48,35 @@ namespace IntuneTools.Utilities
             }
         }
 
+        public static void LogApplicationStart()
+        {
+            // Log the application start time
+            Log("Application started", LogLevels.Info);
+
+            // Log the machine name
+            Log($"Machine Name: {Environment.MachineName}", LogLevels.Info);
+
+            // Log the user name
+            Log($"User Name: {Environment.UserName}", LogLevels.Info);
+
+            // Log the OS version
+            Log($"OS Version: {Environment.OSVersion}", LogLevels.Info);
+
+            // Log the .NET version
+            Log($".NET Version: {Environment.Version}", LogLevels.Info);
+
+            // Log the CPU name
+            Log($"CPU Name: {Environment.GetEnvironmentVariable("PROCESSOR_IDENTIFIER")}", LogLevels.Info);
+
+            // Log the system's processor count
+            Log($"Processor Count: {Environment.ProcessorCount}", LogLevels.Info);
+
+            // Log the system's memory usage
+            Log($"Memory Usage: {GC.GetTotalMemory(false)} bytes", LogLevels.Info);
+
+            // Log this app version
+            Log($"App Version: {System.Reflection.Assembly.GetExecutingAssembly().GetName().Version}", LogLevels.Info);
+        }
 
     }
 }

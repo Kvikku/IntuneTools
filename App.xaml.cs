@@ -57,7 +57,9 @@ namespace IntuneTools
 
             CreateLogFile();
 
-            Log("Application started", LogLevels.Info);
+            LogApplicationStart();
+
+
         }
 
         private Window? m_window;
