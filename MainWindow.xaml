@@ -10,14 +10,17 @@
     mc:Ignorable="d"
     Title="IntuneTools">
 
+
     <Grid>
         <muxc:NavigationView x:Name="NavView" ItemInvoked="NavView_ItemInvoked">
             <muxc:NavigationView.MenuItems>
-                <muxc:NavigationViewItem Content="Home" Tag="home" Icon="Home"/>
+                <muxc:NavigationViewItem Content="Home" Tag="Home" Icon="Home"/>
+                <muxc:NavigationViewItem Content="Application" Tag="Application" Icon="AllApps"/>
                 <muxc:NavigationViewItem Content="Settings" Tag="settings" Icon="Setting"/>
             </muxc:NavigationView.MenuItems>
 
             <Frame x:Name="ContentFrame"/>
+            
         </muxc:NavigationView>
 
         <!--<StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">

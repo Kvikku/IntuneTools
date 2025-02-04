@@ -13,7 +13,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <None Remove="Pages\BlankPage1.xaml" />
+    <None Remove="Pages\ApplicationPage.xaml" />
   </ItemGroup>
 
   <ItemGroup>
@@ -47,6 +47,11 @@
   </ItemGroup>
   <ItemGroup>
     <Page Update="UI\BlankPage1.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Pages\ApplicationPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>

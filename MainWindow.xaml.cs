@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
-using IntuneTools.UI;
+using IntuneTools.Pages;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -14,6 +14,8 @@ using Microsoft.UI.Xaml.Navigation;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.UI.ApplicationSettings;
+
+
 
 
 // To learn more about WinUI, the WinUI project structure,
@@ -50,8 +52,8 @@ namespace IntuneTools
         {
             switch (navItemTag)
             {
-                case "home":
-                    ContentFrame.Navigate(typeof(BlankPage1));
+                case "Application":
+                    ContentFrame.Navigate(typeof(ApplicationPage));
                     break;
                 default:
                     break;
