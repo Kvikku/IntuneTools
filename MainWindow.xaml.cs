@@ -52,8 +52,14 @@ namespace IntuneTools
         {
             switch (navItemTag)
             {
+                case "Home":
+                    ContentFrame.Navigate(typeof(HomePage));
+                    break;
                 case "Application":
                     ContentFrame.Navigate(typeof(ApplicationPage));
+                    break;
+                case "settings":
+                    ContentFrame.Navigate(typeof(SettingsPage));
                     break;
                 default:
                     break;

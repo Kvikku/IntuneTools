@@ -14,8 +14,9 @@
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Pages\ApplicationPage.xaml" />
+    <None Remove="Pages\HomePage.xaml" />
+    <None Remove="Pages\SettingsPage.xaml" />
   </ItemGroup>
-
   <ItemGroup>
     <Content Include="Assets\SplashScreen.scale-200.png" />
     <Content Include="Assets\LockScreenLogo.scale-200.png" />
@@ -40,10 +41,10 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.WinUI.UI.Controls.DataGrid" Version="7.1.2" />
-    <PackageReference Include="Microsoft.Graph.Beta" Version="5.94.0-preview" />
-    <PackageReference Include="Microsoft.Identity.Client" Version="4.67.2" />
-    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.1742" />
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250109001-experimental2" />
+    <PackageReference Include="Microsoft.Graph.Beta" Version="5.110.0-preview" />
+    <PackageReference Include="Microsoft.Identity.Client" Version="4.73.0-preview" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.4188" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.250515001-experimental2" />
   </ItemGroup>
   <ItemGroup>
     <Page Update="UI\BlankPage1.xaml">
@@ -52,6 +53,12 @@
   </ItemGroup>
   <ItemGroup>
     <Page Update="Pages\ApplicationPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Pages\HomePage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Pages\SettingsPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
