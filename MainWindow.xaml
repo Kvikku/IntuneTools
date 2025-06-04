@@ -16,7 +16,6 @@
             <muxc:NavigationView.MenuItems>
                 <muxc:NavigationViewItem Content="Home" Tag="Home" Icon="Home"/>
                 <muxc:NavigationViewItem Content="Application" Tag="Application" Icon="AllApps"/>
-                <muxc:NavigationViewItem Content="Settings" Tag="settings" Icon="Setting"/>
             </muxc:NavigationView.MenuItems>
 
             <Frame x:Name="ContentFrame"/>
@@ -28,5 +27,3 @@
         </StackPanel>-->
     </Grid>
 </Window>
-
-    

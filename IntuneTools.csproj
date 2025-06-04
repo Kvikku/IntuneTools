@@ -14,9 +14,11 @@
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Pages\ApplicationPage.xaml" />
-    <None Remove="Pages\HomePage.xaml" />
-    <None Remove="Pages\SettingsPage.xaml" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- <Page Remove="Pages\HomePage.xaml" /> -->
+  </ItemGroup>
+
   <ItemGroup>
     <Content Include="Assets\SplashScreen.scale-200.png" />
     <Content Include="Assets\LockScreenLogo.scale-200.png" />
@@ -55,10 +57,10 @@
     <Page Update="Pages\ApplicationPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Update="Pages\HomePage.xaml">
+    <Page Update="Pages\SettingsPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Update="Pages\SettingsPage.xaml">
+    <Page Update="Pages\HomePage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
