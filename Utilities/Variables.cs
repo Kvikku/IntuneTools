@@ -14,13 +14,27 @@ namespace IntuneTools.Utilities
         // Log file
         public static string appDataPath = @"C:\ProgramData\";
         public static string appFolderName = "IntuneTools";
+        public static string logFileDirectoryName = "Logs";
+        public static string appSettingsDirectoryName = "Settings";
+
         public static string appDataFolder = Path.Combine(appDataPath, appFolderName);
+        public static string logFileFolder = Path.Combine(appDataPath, appFolderName, logFileDirectoryName);
+        public static string appSettingsFolder = Path.Combine(appDataPath, appFolderName, appSettingsDirectoryName);
+
         public static string timestamp = DateTime.Now.ToString("HH-mm-ss_dd-MM-yyyy");
         public static string logFileName = "IntuneTools.log";
-        public static string appSettingsFileName = "AppSettings.json";
-        public static string primaryLogFile = appDataPath + appFolderName + "\\" + timestamp + "_" + logFileName;
-        public static string appSettingsFile = Path.Combine(appDataPath, appFolderName, appSettingsFileName);
+        
+        // Specific settings files - now using full paths
+        public static string sourceTenantSettingsFileFullPath = Path.Combine(appSettingsFolder, "SourceTenantSettings.json");
+        public static string destinationTenantSettingsFileFullPath = Path.Combine(appSettingsFolder, "DestinationTenantSettings.json");
 
+        // Generic appSettingsFileName and appSettingsFile might need review for their purpose now.
+        // For now, they are kept as is, but their usage should be clarified or refactored
+        // if they are not intended for a different purpose than the specific tenant settings.
+        public static string appSettingsFileName = "AppSettings.json"; // General settings file name
+        public static string appSettingsFile = Path.Combine(appSettingsFolder, appSettingsFileName); // Full path for the general settings file
+
+        public static string primaryLogFile = Path.Combine(logFileFolder, timestamp + "_" + logFileName); // Corrected to use logFileFolder
 
         public enum LogLevels
         {
