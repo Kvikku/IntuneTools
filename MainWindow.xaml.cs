@@ -31,6 +31,9 @@ namespace IntuneTools
         public MainWindow()
         {
             this.InitializeComponent();
+            // Navigate to the Home page by default
+            NavView.SelectedItem = NavView.MenuItems.OfType<NavigationViewItem>().FirstOrDefault(x => x.Tag.ToString() == "Home");
+            ContentFrame.Navigate(typeof(HomePage));
         }
 
         private void myButton_Click(object sender, RoutedEventArgs e)
