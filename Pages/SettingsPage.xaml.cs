@@ -1,9 +1,11 @@
-using Microsoft.UI.Xaml.Controls;
-using System.IO;
-using System.Text.Json;
-using System.Collections.Generic;
 using IntuneTools.Utilities;
+using Microsoft.UI.Xaml; // Added for RoutedEventArgs
+using Microsoft.UI.Xaml.Controls;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -75,6 +77,36 @@ namespace IntuneTools.Pages
                 tenantIdTextBox.Text = string.Empty;
                 clientIdTextBox.Text = string.Empty;
             }
+        }
+
+        private async void SourceLoginButton_Click(object sender, RoutedEventArgs e)
+        {
+            await AuthenticateToSourceTenant();
+        }
+
+        private async Task AuthenticateToSourceTenant()
+        {
+            SourceTenantGraphClient.sourceClientID = SourceClientIdTextBox.Text;
+            SourceTenantGraphClient.sourceTenantID = SourceTenantIdTextBox.Text;
+            SourceTenantGraphClient.sourceAccessToken = null;
+            SourceTenantGraphClient.sourceAuthority = $"https://login.microsoftonline.com/{SourceTenantGraphClient.sourceTenantID}";
+            var client = await SourceTenantGraphClient.GetSourceGraphClient();
+        }
+
+        private void DestinationLoginButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Add your logic here for handling the DestinationLoginButton click event.
+            // Example:
+            AuthenticateToDestinationTenant();
+        }
+
+        private async Task AuthenticateToDestinationTenant()
+        {
+            // Example logic for authentication
+            await Task.Run(() =>
+            {
+
+            });
         }
     }
 }
