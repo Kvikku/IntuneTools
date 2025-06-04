@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using static IntuneTools.Utilities.HelperClass;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -81,6 +82,7 @@ namespace IntuneTools.Pages
 
         private async void SourceLoginButton_Click(object sender, RoutedEventArgs e)
         {
+            //await Utilities.HelperClass.ShowMessageBox("Source Tenant Login", "Authenticating to the source tenant. Please wait...","NO");
             await AuthenticateToSourceTenant();
         }
 
@@ -91,6 +93,8 @@ namespace IntuneTools.Pages
             SourceTenantGraphClient.sourceAccessToken = null;
             SourceTenantGraphClient.sourceAuthority = $"https://login.microsoftonline.com/{SourceTenantGraphClient.sourceTenantID}";
             var client = await SourceTenantGraphClient.GetSourceGraphClient();
+            await ShowMessageBox("Login info", client.Organization.ToString(), "OK");
+
         }
 
         private void DestinationLoginButton_Click(object sender, RoutedEventArgs e)

@@ -1,4 +1,5 @@
 ﻿using Microsoft.Identity.Client;
+using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -165,5 +166,27 @@ namespace IntuneTools.Utilities
             Log($"App Version: {System.Reflection.Assembly.GetExecutingAssembly().GetName().Version}", LogLevels.Info);
         }
 
+        public static async Task ShowMessageBox(string title, string message, string primaryButtonText = "OK")
+        {
+            ContentDialog dialog = new ContentDialog
+            {
+                Title = title,
+                Content = message,
+                PrimaryButtonText = primaryButtonText,
+                XamlRoot = App.MainWindowInstance?.Content.XamlRoot // Use the XamlRoot from the main window.
+            };
+
+            if (dialog.XamlRoot != null)
+            {
+                await dialog.ShowAsync();
+            }
+            else
+            {
+                // Fallback or error handling if XamlRoot is not available (e.g., log, throw)
+                Log("XamlRoot is null, cannot display ContentDialog.", LogLevels.Error);
+                // Consider a non-UI fallback if critical, e.g., writing to console or a log file.
+                Console.WriteLine($"Error: XamlRoot is null. Dialog Title: {title}, Message: {message}");
+            }
+        }
     }
 }

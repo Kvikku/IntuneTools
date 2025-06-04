@@ -45,6 +45,7 @@ namespace IntuneTools
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
             m_window = new MainWindow();
+            WindowHandle = WinRT.Interop.WindowNative.GetWindowHandle(m_window); // Store the window handle
             m_window.Activate();
 
             // Set the window size
@@ -53,15 +54,13 @@ namespace IntuneTools
             size.Height = 800;
             m_window.AppWindow.Resize(size);
 
-
-
             CreateLogFile();
 
             LogApplicationStart();
-
-
         }
 
         private Window? m_window;
+        public static Window? MainWindowInstance { get { return (Current as App)?.m_window; } } // Expose the main window instance
+        public static IntPtr WindowHandle { get; private set; } // Expose the window handle
     }
 }
