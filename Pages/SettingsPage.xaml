@@ -13,11 +13,17 @@
             <TextBlock Text="Settings Page" HorizontalAlignment="Center" FontSize="48" Margin="0,0,0,20"/>
             
             <TextBlock Text="Source Tenant" HorizontalAlignment="Left" FontSize="18"/>
+            <ComboBox x:Name="SourceEnvironmentComboBox" PlaceholderText="Select Environment" Width="300" Margin="0,0,0,5" SelectionChanged="SourceEnvironmentComboBox_SelectionChanged">
+                <!-- Items will be populated from code-behind -->
+            </ComboBox>
             <TextBox x:Name="SourceTenantIdTextBox" PlaceholderText="Tenant ID" Width="300"/>
             <TextBox x:Name="SourceClientIdTextBox" PlaceholderText="Client ID" Width="300"/>
             <Button x:Name="SourceLoginButton" Content="Login" Width="100" HorizontalAlignment="Center" Margin="0,0,0,20"/>
 
             <TextBlock Text="Destination Tenant" HorizontalAlignment="Left" FontSize="18"/>
+            <ComboBox x:Name="DestinationEnvironmentComboBox" PlaceholderText="Select Environment" Width="300" Margin="0,0,0,5" SelectionChanged="DestinationEnvironmentComboBox_SelectionChanged">
+                <!-- Items will be populated from code-behind -->
+            </ComboBox>
             <TextBox x:Name="DestinationTenantIdTextBox" PlaceholderText="Tenant ID" Width="300"/>
             <TextBox x:Name="DestinationClientIdTextBox" PlaceholderText="Client ID" Width="300"/>
             <Button x:Name="DestinationLoginButton" Content="Login" Width="100" HorizontalAlignment="Center"/>
