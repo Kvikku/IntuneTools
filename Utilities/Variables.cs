@@ -1,10 +1,11 @@
-﻿using System;
-using System.IO;
+﻿using Microsoft.Graph.Beta.Models;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.ComponentModel.DataAnnotations;
 
 namespace IntuneTools.Utilities
 {
@@ -35,12 +36,23 @@ namespace IntuneTools.Utilities
         public static string appSettingsFile = Path.Combine(appSettingsFolder, appSettingsFileName); // Full path for the general settings file
 
         public static string primaryLogFile = Path.Combine(logFileFolder, timestamp + "_" + logFileName); // Corrected to use logFileFolder
-
+        public static string ImportStatusFileName = $"{DateTime.Now:yyyy-MM-dd-HH-mm}-ImportStatus.log";
+        public static string ImportStatusFilePath = Path.Combine(logFileFolder, ImportStatusFileName); // Full path for the import status log file
         public enum LogLevels
         {
             Info,
             Warning,
             Error
         };
+
+
+
+
+        // Graph API variables
+
+        public static string SelectedFilterID = null;
+        public static DeviceAndAppManagementAssignmentFilterType deviceAndAppManagementAssignmentFilterType = DeviceAndAppManagementAssignmentFilterType.None;
+
+
     }
 }

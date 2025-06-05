@@ -65,8 +65,11 @@ namespace IntuneTools
                 case "Application":
                     ContentFrame.Navigate(typeof(ApplicationPage));
                     break;
-                case "settings":
+                case "Settings":
                     ContentFrame.Navigate(typeof(SettingsPage));
+                    break;
+                case "Import":
+                    ContentFrame.Navigate(typeof(ImportPage));
                     break;
                 default:
                     break;

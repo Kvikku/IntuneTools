@@ -15,6 +15,9 @@
   <ItemGroup>
     <None Remove="Pages\ApplicationPage.xaml" />
   </ItemGroup>
+  <!--<ItemGroup>
+    <Page Remove="Pages\ImportPage.xaml" />
+  </ItemGroup>-->
 
   <ItemGroup>
     <Content Include="Assets\SplashScreen.scale-200.png" />
@@ -60,6 +63,9 @@
     <Page Update="Pages\HomePage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
+	<Page Update="Pages\ImportPage.xaml">
+		<Generator>MSBuild:Compile</Generator>
+	</Page>
   </ItemGroup>
 
   <!--

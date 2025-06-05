@@ -16,6 +16,7 @@
             <muxc:NavigationView.MenuItems>
                 <muxc:NavigationViewItem Content="Home" Tag="Home" Icon="Home"/>
                 <muxc:NavigationViewItem Content="Application" Tag="Application" Icon="AllApps"/>
+                <muxc:NavigationViewItem Content="Import" Tag="Import" Icon="Import"/>
             </muxc:NavigationView.MenuItems>
 
             <Frame x:Name="ContentFrame"/>
