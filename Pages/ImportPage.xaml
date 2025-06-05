@@ -25,42 +25,41 @@
                 HorizontalAlignment="Center" 
                 Grid.Row="1"
                 Margin="0,0,0,20" 
-                Click="ImportButton_Click"/>
-        <!-- Action Buttons Row -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,0,10">
-            <Button x:Name="Search" 
-                    Content="Search" 
-                    Width="120" 
-                    Margin="0,0,10,0"
-                    Click="SearchButton_Click"/>
-            <Button x:Name="ListAll" 
-                    Content="List all" 
-                    Width="120" 
-                    Margin="0,0,10,0"
-                    Click="ListAllButton_Click"/>
-            <Button x:Name="ClearAll" 
-                    Content="Clear All" 
-                    Width="120" 
-                    Margin="0,0,10,0"
-                    Click="ClearAllButton_Click"/>
-            <Button x:Name="ClearSelected" 
-                    Content="Clear Selected" 
-                    Width="120" 
-                    Click="ClearSelectedButton_Click"/>
-        </StackPanel>
-        <!-- Search Query TextBox (single line, below buttons) -->
-        <TextBox x:Name="SearchQueryTextBox"
-                 Grid.Row="3"
-                 Width="300"
-                 Margin="0,0,0,20"
-                 PlaceholderText="Enter search query..."
-                 HorizontalAlignment="Left"
-                 TextWrapping="NoWrap"
-                 Height="30"
-                 AcceptsReturn="False"/>
-        <!-- Data Grid -->
+                Click="ImportButton_Click"/>        <!-- Action Buttons and Search Controls -->
+        <StackPanel Grid.Row="2" Orientation="Vertical" HorizontalAlignment="Left" Margin="0,0,0,20">
+            <!-- Action Buttons Row -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                <Button x:Name="Search" 
+                        Content="Search" 
+                        Width="120" 
+                        Margin="0,0,10,0"
+                        Click="SearchButton_Click"/>
+                <Button x:Name="ListAll" 
+                        Content="List all" 
+                        Width="120" 
+                        Margin="0,0,10,0"
+                        Click="ListAllButton_Click"/>
+                <Button x:Name="ClearAll" 
+                        Content="Clear All" 
+                        Width="120" 
+                        Margin="0,0,10,0"
+                        Click="ClearAllButton_Click"/>
+                <Button x:Name="ClearSelected" 
+                        Content="Clear Selected" 
+                        Width="120" 
+                        Click="ClearSelectedButton_Click"/>
+            </StackPanel>
+            <!-- Search Query TextBox (positioned below buttons) -->
+            <TextBox x:Name="SearchQueryTextBox"
+                     Width="300"
+                     PlaceholderText="Enter search query..."
+                     HorizontalAlignment="Left"
+                     TextWrapping="NoWrap"
+                     Height="30"
+                     AcceptsReturn="False"/>
+        </StackPanel>        <!-- Data Grid -->
         <controls:DataGrid x:Name="ContentDataGrid" 
-                   Grid.Row="4"
+                   Grid.Row="3"
                    AutoGenerateColumns="False" 
                    Margin="0,0,0,20"
                    Height="300"
@@ -74,9 +73,8 @@
                 <controls:DataGridTextColumn Header="Type" Binding="{Binding ContentType}" Width="200"/>
                 <controls:DataGridTextColumn Header="Platform" Binding="{Binding ContentPlatform}" Width="200"/>
             </controls:DataGrid.Columns>
-        </controls:DataGrid>
-        <!-- Info/Status Block -->
-        <RichTextBlock Grid.Row="5" Margin="0,10,0,0">
+        </controls:DataGrid>        <!-- Info/Status Block -->
+        <RichTextBlock Grid.Row="4" Margin="0,10,0,0">
             <Paragraph>Test</Paragraph>
         </RichTextBlock>
     </Grid>
