@@ -16,9 +16,9 @@ namespace IntuneTools.Pages
 
     public class ContentInfo
     {
-        public string ContentName { get; set; }
-        public string ContentID { get; set; }
-        public string ContentType { get; set; }
+        public string? ContentName { get; set; }
+        public string? ContentPlatform { get; set; }
+        public string? ContentType { get; set; }
     }
 
     public sealed partial class ImportPage : Page
@@ -34,5 +34,24 @@ namespace IntuneTools.Pages
         {
             CreateImportStatusFile(); // Ensure the import status file is created before importing
         }
+        private void ListAllButton_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void SearchButton_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void ClearAllButton_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+        private void ClearSelectedButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Clear the selected items in the DataGrid
+            ContentDataGrid.SelectedItems.Clear();
+        }
     }
-}
+} // End of namespace IntuneTools.Pages
