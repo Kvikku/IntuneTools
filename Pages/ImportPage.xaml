@@ -56,24 +56,53 @@
                      HorizontalAlignment="Left"
                      TextWrapping="NoWrap"
                      Height="30"
-                     AcceptsReturn="False"/>
-        </StackPanel>        <!-- Data Grid -->
-        <controls:DataGrid x:Name="ContentDataGrid" 
-                   Grid.Row="3"
-                   AutoGenerateColumns="False" 
-                   Margin="0,0,0,20"
-                   Height="300"
-                   CanUserReorderColumns="False"
-                   HeadersVisibility="Column"
-                   ColumnWidth="Auto"
-                   Width="600"
-                   HorizontalAlignment="Left">
-            <controls:DataGrid.Columns>
-                <controls:DataGridTextColumn Header="Name" Binding="{Binding ContentName}" Width="200"/>
-                <controls:DataGridTextColumn Header="Type" Binding="{Binding ContentType}" Width="200"/>
-                <controls:DataGridTextColumn Header="Platform" Binding="{Binding ContentPlatform}" Width="200"/>
-            </controls:DataGrid.Columns>
-        </controls:DataGrid>        <!-- Info/Status Block -->
+                     AcceptsReturn="False"/>        </StackPanel>
+        
+        <!-- Data Grid Area with Loading Overlay -->
+        <Grid Grid.Row="3">
+            <!-- Data Grid -->
+            <controls:DataGrid x:Name="ContentDataGrid" 
+                       AutoGenerateColumns="False" 
+                       Margin="0,0,0,20"
+                       Height="300"
+                       CanUserReorderColumns="False"
+                       HeadersVisibility="Column"
+                       ColumnWidth="Auto"
+                       Width="600"
+                       HorizontalAlignment="Left">
+                <controls:DataGrid.Columns>
+                    <controls:DataGridTextColumn Header="Name" Binding="{Binding ContentName}" Width="200"/>
+                    <controls:DataGridTextColumn Header="Type" Binding="{Binding ContentType}" Width="200"/>
+                    <controls:DataGridTextColumn Header="Platform" Binding="{Binding ContentPlatform}" Width="200"/>
+                </controls:DataGrid.Columns>
+            </controls:DataGrid>
+            
+            <!-- Loading Overlay -->
+            <Border x:Name="LoadingOverlay" 
+                    Background="{ThemeResource SystemControlAcrylicWindowBrush}"
+                    Visibility="Collapsed"
+                    Width="600"
+                    Height="300"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Top">
+                <StackPanel Orientation="Vertical" 
+                           HorizontalAlignment="Center" 
+                           VerticalAlignment="Center">
+                    <ProgressRing x:Name="LoadingProgressRing" 
+                                  IsActive="True" 
+                                  Width="50" 
+                                  Height="50"
+                                  Margin="0,0,0,15"/>
+                    <TextBlock x:Name="LoadingStatusText" 
+                               Text="Loading data from Microsoft Graph..." 
+                               HorizontalAlignment="Center"
+                               FontSize="14"
+                               Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+        
+        <!-- Info/Status Block -->
         <RichTextBlock Grid.Row="4" Margin="0,10,0,0">
             <Paragraph>Test</Paragraph>
         </RichTextBlock>

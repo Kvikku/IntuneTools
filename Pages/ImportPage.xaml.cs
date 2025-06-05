@@ -1,10 +1,10 @@
 using Microsoft.UI.Xaml; // Added for RoutedEventArgs
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using static IntuneTools.Utilities.HelperClass;
 using static IntuneTools.Utilities.Variables;
 
@@ -33,10 +33,51 @@ namespace IntuneTools.Pages
         public void ImportButton_Click(object sender, RoutedEventArgs e)
         {
             CreateImportStatusFile(); // Ensure the import status file is created before importing
-        }
-        private void ListAllButton_Click(object sender, RoutedEventArgs e)
+        }        // Show loading overlay - TODO: Uncomment when XAML controls are available
+        private void ShowLoading(string message = "Loading data from Microsoft Graph...")
         {
+            LoadingStatusText.Text = message;
+            LoadingOverlay.Visibility = Visibility.Visible;
+            LoadingProgressRing.IsActive = true;
 
+            // // Optionally disable buttons during loading
+            ListAll.IsEnabled = false;
+            Search.IsEnabled = false;
+        }        // Hide loading overlay - TODO: Uncomment when XAML controls are available
+        private void HideLoading()
+        {
+            LoadingOverlay.Visibility = Visibility.Collapsed;
+            LoadingProgressRing.IsActive = false;
+
+            // Re-enable buttons
+            ListAll.IsEnabled = true;
+            Search.IsEnabled = true;
+        }// Example usage in your List All button click
+        private async void ListAllButton_Click(object sender, RoutedEventArgs e)
+        {
+            ShowLoading("Retrieving all applications...");
+            try
+            {
+                // Your API call here
+                await LoadAllDataFromGraph();
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
+        // Placeholder method for loading data from Graph API
+        private async Task LoadAllDataFromGraph()
+        {
+            // TODO: Implement actual Graph API call
+            // For now, simulate some delay
+            await Task.Delay(2000);
+            
+            // Example: Add some sample data
+            ContentList.Clear();
+            ContentList.Add(new ContentInfo { ContentName = "Sample App 1", ContentType = "Application", ContentPlatform = "Windows" });
+            ContentList.Add(new ContentInfo { ContentName = "Sample App 2", ContentType = "Application", ContentPlatform = "iOS" });
         }
 
         private void SearchButton_Click(object sender, RoutedEventArgs e)
@@ -47,11 +88,10 @@ namespace IntuneTools.Pages
         private void ClearAllButton_Click(object sender, RoutedEventArgs e)
         {
 
-        }
-        private void ClearSelectedButton_Click(object sender, RoutedEventArgs e)
+        }        private void ClearSelectedButton_Click(object sender, RoutedEventArgs e)
         {
-            // Clear the selected items in the DataGrid
-            ContentDataGrid.SelectedItems.Clear();
+            // Clear the selected items in the DataGrid - TODO: Uncomment when XAML controls are available
+            // ContentDataGrid.SelectedItems.Clear();
         }
     }
 } // End of namespace IntuneTools.Pages
