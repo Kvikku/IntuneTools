@@ -12,10 +12,10 @@
 
     <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" Margin="20">
         <!-- Page Title -->
-        <TextBlock Text="Import Page" 
+        <TextBlock Text="Import 123" 
                    Grid.Row="0"
                    HorizontalAlignment="Center" 
-                   FontSize="28" 
+                   FontSize="38" 
                    FontWeight="Bold"
                    Margin="0,0,0,20"/>
         <!-- Import Button -->
