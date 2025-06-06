@@ -241,5 +241,20 @@ namespace IntuneTools.Utilities
                 Console.WriteLine($"Error: XamlRoot is null. Dialog Title: {title}, Message: {message}");
             }
         }
+
+        /// Graph helper methods
+        /// 
+
+        public static string TranslatePolicyPlatformName(string platformName)
+        {
+            // This method translates the platform name to a user-friendly format
+            return platformName switch
+            {
+                "Windows10" => "Windows",
+                _ => platformName // Return the original name if no translation is found
+            };
+        }
+
+
     }
 }

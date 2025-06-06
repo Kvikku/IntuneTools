@@ -11,6 +11,7 @@ using static IntuneTools.Utilities.HelperClass;
 using static IntuneTools.Utilities.Variables;
 using static IntuneTools.Graph.IntuneHelperClasses.SettingsCatalogHelper;
 using static IntuneTools.Utilities.SourceTenantGraphClient;
+using System.Net.Mime;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -80,7 +81,18 @@ namespace IntuneTools.Pages
 
                 
                 // TODO - method to clean up ContentList if needed
-                // Example - translate content types to more user-friendly names
+
+                // Clean up content type value
+                foreach (var content in ContentList)
+                {
+                    var cleanedValue = TranslatePolicyPlatformName(content?.ContentPlatform); // Use the method to clean up the platform name
+                    content.ContentPlatform = cleanedValue ?? string.Empty; // Ensure no null values
+
+                }
+
+
+                
+
 
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
