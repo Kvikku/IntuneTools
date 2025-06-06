@@ -49,15 +49,29 @@
                         Width="120" 
                         Click="ClearSelectedButton_Click"/>
             </StackPanel>
-            <!-- Search Query TextBox (positioned below buttons) -->
-            <TextBox x:Name="SearchQueryTextBox"
-                     Width="300"
-                     PlaceholderText="Enter search query..."
-                     HorizontalAlignment="Left"
-                     TextWrapping="NoWrap"
-                     Height="30"
-                     AcceptsReturn="False"/>        </StackPanel>
-        
+            <!-- Search Query TextBox and Options Checkboxes side by side -->
+            <StackPanel Orientation="Horizontal">
+                <TextBox x:Name="SearchQueryTextBox"
+                         Width="300"
+                         PlaceholderText="Enter search query..."
+                         HorizontalAlignment="Left"
+                         TextWrapping="NoWrap"
+                         Height="30"
+                         AcceptsReturn="False"/>
+                <StackPanel Orientation="Vertical" Margin="20,0,0,0" VerticalAlignment="Center">
+                    <CheckBox x:Name="OptionsAllCheckBox" 
+                              Content="Select all" 
+                              IsThreeState="False" 
+                              Checked="SelectAll_Checked" 
+                              Unchecked="SelectAll_Unchecked" 
+                              Indeterminate="SelectAll_Indeterminate" />
+                    <CheckBox x:Name="Option1CheckBox" Content="Option 1" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
+                    <CheckBox x:Name="Option2CheckBox" Content="Option 2" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
+                    <CheckBox x:Name="Option3CheckBox" Content="Option 3" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
+                </StackPanel>
+            </StackPanel>
+        </StackPanel>
+
         <!-- Data Grid Area with Loading Overlay -->
         <Grid Grid.Row="3">
             <!-- Data Grid -->

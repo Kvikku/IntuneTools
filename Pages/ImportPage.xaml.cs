@@ -23,11 +23,16 @@ namespace IntuneTools.Pages
         public string? ContentName { get; set; }
         public string? ContentPlatform { get; set; }
         public string? ContentType { get; set; }
+        public string? ContentId { get; set; }
     }
 
     public sealed partial class ImportPage : Page
     {
         public ObservableCollection<ContentInfo> ContentList { get; set; } = new ObservableCollection<ContentInfo>();
+
+        private bool _suppressUpdateSelectAll = false;
+        private bool _suppressOptionEvents = false;
+        private bool _suppressSelectAllEvents = false;
 
         public ImportPage()
         {
@@ -72,6 +77,11 @@ namespace IntuneTools.Pages
 
 
 
+
+                
+                // TODO - method to clean up ContentList if needed
+                // Example - translate content types to more user-friendly names
+
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
             }
@@ -97,7 +107,8 @@ namespace IntuneTools.Pages
                     {
                         ContentName = policy.Name,
                         ContentType = "Settings Catalog",
-                        ContentPlatform = policy.Platforms?.ToString() ?? string.Empty
+                        ContentPlatform = policy.Platforms?.ToString() ?? string.Empty,
+                        ContentId = policy.Id
                     });
                 }
                 // Bind to DataGrid
@@ -141,7 +152,66 @@ namespace IntuneTools.Pages
             // ContentDataGrid.SelectedItems.Clear();
         }
 
+        // Handler for the 'Select all' checkbox Checked event
+        private void SelectAll_Checked(object sender, RoutedEventArgs e)
+        {
+            if (_suppressSelectAllEvents) return;
+            _suppressOptionEvents = true;
+            Option1CheckBox.IsChecked = true;
+            Option2CheckBox.IsChecked = true;
+            Option3CheckBox.IsChecked = true;
+            _suppressOptionEvents = false;
+        }
 
+        // Handler for the 'Select all' checkbox Unchecked event
+        private void SelectAll_Unchecked(object sender, RoutedEventArgs e)      
+        {
+            if (_suppressSelectAllEvents) return;
+            _suppressOptionEvents = true;
+            Option1CheckBox.IsChecked = false;
+            Option2CheckBox.IsChecked = false;
+            Option3CheckBox.IsChecked = false;
+            _suppressOptionEvents = false;
+        }
 
+        // Handler for the 'Select all' checkbox Indeterminate event
+        private void SelectAll_Indeterminate(object sender, RoutedEventArgs e)
+        {
+            // Do nothing, or optionally set all to null if you want
+            // Option1CheckBox.IsChecked = null;
+            // Option2CheckBox.IsChecked = null;
+            // Option3CheckBox.IsChecked = null;
+        }
+
+        // Handler for individual option checkbox Checked event
+        private void Option_Checked(object sender, RoutedEventArgs e)
+        {
+            if (_suppressOptionEvents) return;
+            UpdateSelectAllCheckBox();
+        }
+
+        // Handler for individual option checkbox Unchecked event
+        private void Option_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (_suppressOptionEvents) return;
+            UpdateSelectAllCheckBox();
+        }
+
+        // Helper to update the 'Select all' checkbox state based on options
+        private void UpdateSelectAllCheckBox()
+        {
+            if (Option1CheckBox == null || Option2CheckBox == null || Option3CheckBox == null)
+                return;
+
+            bool?[] states = { Option1CheckBox.IsChecked, Option2CheckBox.IsChecked, Option3CheckBox.IsChecked };
+            _suppressSelectAllEvents = true;
+            if (states.All(x => x == true))
+                OptionsAllCheckBox.IsChecked = true;
+            else if (states.All(x => x == false))
+                OptionsAllCheckBox.IsChecked = false;
+            else
+                OptionsAllCheckBox.IsChecked = null;
+            _suppressSelectAllEvents = false;
+        }
     }
 } 
