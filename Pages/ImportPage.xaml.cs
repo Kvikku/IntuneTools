@@ -53,20 +53,34 @@ namespace IntuneTools.Pages
             Search.IsEnabled = true;
         }
 
-        private async Task LoadAllDataFromGraph()
-        {
-            // TODO: Implement actual Graph API call
-            // For now, simulate some delay
-            await Task.Delay(2000);
-            
-            // Example: Add some sample data
-            ContentList.Clear();
-            ContentList.Add(new ContentInfo { ContentName = "Sample App 1", ContentType = "Application", ContentPlatform = "Windows" });
-            ContentList.Add(new ContentInfo { ContentName = "Sample App 2", ContentType = "Application", ContentPlatform = "iOS" });
-        }
 
         /// Graph API Methods ///
         /// These methods should handle the actual API calls to Microsoft Graph.
+        /// 
+
+        private async Task ListAllOrchestrator(GraphServiceClient graphServiceClient)
+        {
+            ShowLoading("Loading data from Microsoft Graph...");
+            try
+            {
+                // Clear the ContentList before loading new data
+                ContentList.Clear();
+
+                // Load all data from Graph API
+
+                await LoadAllSettingsCatalogPoliciesAsync();
+
+
+
+                // Bind to DataGrid
+                ContentDataGrid.ItemsSource = ContentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
         private async Task LoadAllSettingsCatalogPoliciesAsync()
         {
             ShowLoading("Loading settings catalog policies from Microsoft Graph...");
@@ -109,7 +123,8 @@ namespace IntuneTools.Pages
      
         private async void ListAllButton_Click(object sender, RoutedEventArgs e)
         {
-            await LoadAllSettingsCatalogPoliciesAsync();
+            // This method is called when the "List All" button is clicked
+            await ListAllOrchestrator(sourceGraphServiceClient);
         }  
         private void SearchButton_Click(object sender, RoutedEventArgs e)
         {
