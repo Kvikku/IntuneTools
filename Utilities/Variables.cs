@@ -46,6 +46,8 @@ namespace IntuneTools.Utilities
         };
 
 
+        // Graph authentication variables
+
 
 
         // Graph API variables

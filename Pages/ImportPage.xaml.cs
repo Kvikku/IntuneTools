@@ -5,8 +5,12 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Graph.Beta;
+using IntuneTools.Graph;
 using static IntuneTools.Utilities.HelperClass;
 using static IntuneTools.Utilities.Variables;
+using static IntuneTools.Graph.IntuneHelperClasses.SettingsCatalogHelper;
+using static IntuneTools.Utilities.SourceTenantGraphClient;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -29,11 +33,6 @@ namespace IntuneTools.Pages
         {
             this.InitializeComponent();
         }
-
-        public void ImportButton_Click(object sender, RoutedEventArgs e)
-        {
-            CreateImportStatusFile(); // Ensure the import status file is created before importing
-        }        // Show loading overlay - TODO: Uncomment when XAML controls are available
         private void ShowLoading(string message = "Loading data from Microsoft Graph...")
         {
             LoadingStatusText.Text = message;
@@ -52,22 +51,8 @@ namespace IntuneTools.Pages
             // Re-enable buttons
             ListAll.IsEnabled = true;
             Search.IsEnabled = true;
-        }// Example usage in your List All button click
-        private async void ListAllButton_Click(object sender, RoutedEventArgs e)
-        {
-            ShowLoading("Retrieving all applications...");
-            try
-            {
-                // Your API call here
-                await LoadAllDataFromGraph();
-            }
-            finally
-            {
-                HideLoading();
-            }
         }
 
-        // Placeholder method for loading data from Graph API
         private async Task LoadAllDataFromGraph()
         {
             // TODO: Implement actual Graph API call
@@ -80,6 +65,52 @@ namespace IntuneTools.Pages
             ContentList.Add(new ContentInfo { ContentName = "Sample App 2", ContentType = "Application", ContentPlatform = "iOS" });
         }
 
+        /// Graph API Methods ///
+        /// These methods should handle the actual API calls to Microsoft Graph.
+        private async Task LoadAllSettingsCatalogPoliciesAsync()
+        {
+            ShowLoading("Loading settings catalog policies from Microsoft Graph...");
+            try
+            {
+
+                // Retrieve all settings catalog policies
+                var policies = await GetAllSettingsCatalogPolicies(sourceGraphServiceClient);
+                // Update ContentList for DataGrid
+                ContentList.Clear();
+                foreach (var policy in policies)
+                {
+                    ContentList.Add(new ContentInfo
+                    {
+                        ContentName = policy.Name,
+                        ContentType = "Settings Catalog",
+                        ContentPlatform = policy.Platforms?.ToString() ?? string.Empty
+                    });
+                }
+                // Bind to DataGrid
+                ContentDataGrid.ItemsSource = ContentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
+
+
+
+        /// BUTTON HANDLERS ///
+        /// Buttons should be defined in the XAML file and linked to these methods.
+        /// Buttons should call other methods to perform specific actions.
+        /// Buttons should not directly perform actions themselves.
+        public void ImportButton_Click(object sender, RoutedEventArgs e)
+        {
+            CreateImportStatusFile(); // Ensure the import status file is created before importing
+        }
+     
+        private async void ListAllButton_Click(object sender, RoutedEventArgs e)
+        {
+            await LoadAllSettingsCatalogPoliciesAsync();
+        }  
         private void SearchButton_Click(object sender, RoutedEventArgs e)
         {
 
@@ -88,10 +119,14 @@ namespace IntuneTools.Pages
         private void ClearAllButton_Click(object sender, RoutedEventArgs e)
         {
 
-        }        private void ClearSelectedButton_Click(object sender, RoutedEventArgs e)
+        }        
+        private void ClearSelectedButton_Click(object sender, RoutedEventArgs e)
         {
             // Clear the selected items in the DataGrid - TODO: Uncomment when XAML controls are available
             // ContentDataGrid.SelectedItems.Clear();
         }
+
+
+
     }
-} // End of namespace IntuneTools.Pages
+} 
