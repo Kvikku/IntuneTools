@@ -71,6 +71,23 @@
                         <CheckBox x:Name="Option3CheckBox" Content="Option 3" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
                     </StackPanel>
                 </Expander>
+            </StackPanel>  <!-- end of search row with TextBox and Expander -->
+
+            <!-- Groups and Filters checkboxes -->
+            <StackPanel Orientation="Horizontal" Margin="20,5,0,0">
+                <CheckBox x:Name="GroupsCheckBox" 
+                          Content="Groups" 
+                          IsThreeState="False" 
+                          Checked="Option_Checked" 
+                          Unchecked="Option_Unchecked" 
+                          IsChecked="False" />
+                <CheckBox x:Name="FiltersCheckBox" 
+                          Content="Filters" 
+                          Margin="20,0,0,0" 
+                          IsThreeState="False" 
+                          Checked="Option_Checked" 
+                          Unchecked="Option_Unchecked" 
+                          IsChecked="False" />
             </StackPanel>
         </StackPanel>
 
