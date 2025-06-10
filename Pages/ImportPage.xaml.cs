@@ -39,6 +39,7 @@ namespace IntuneTools.Pages
         public ImportPage()
         {
             this.InitializeComponent();
+            SelectAll_Checked(LoadingOverlay, null); // Initialize the 'Select all' checkbox to checked state
         }
         private void ShowLoading(string message = "Loading data from Microsoft Graph...")
         {

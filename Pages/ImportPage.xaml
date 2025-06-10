@@ -58,17 +58,19 @@
                          TextWrapping="NoWrap"
                          Height="30"
                          AcceptsReturn="False"/>
-                <StackPanel Orientation="Vertical" Margin="20,0,0,0" VerticalAlignment="Center">
-                    <CheckBox x:Name="OptionsAllCheckBox" 
-                              Content="Select all" 
-                              IsThreeState="False" 
-                              Checked="SelectAll_Checked" 
-                              Unchecked="SelectAll_Unchecked" 
-                              Indeterminate="SelectAll_Indeterminate" />
-                    <CheckBox x:Name="Option1CheckBox" Content="Settings Catalog" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
-                    <CheckBox x:Name="Option2CheckBox" Content="Device Compliance" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
-                    <CheckBox x:Name="Option3CheckBox" Content="Option 3" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
-                </StackPanel>
+                <Expander Header="Options" IsExpanded="False" Margin="20,0,0,0">
+                    <StackPanel Orientation="Vertical" VerticalAlignment="Center">
+                        <CheckBox x:Name="OptionsAllCheckBox" 
+                                  Content="Select all" 
+                                  IsThreeState="False" 
+                                  Checked="SelectAll_Checked" 
+                                  Unchecked="SelectAll_Unchecked" 
+                                  Indeterminate="SelectAll_Indeterminate" />
+                        <CheckBox x:Name="Option1CheckBox" Content="Settings Catalog" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
+                        <CheckBox x:Name="Option2CheckBox" Content="Device Compliance" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
+                        <CheckBox x:Name="Option3CheckBox" Content="Option 3" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
+                    </StackPanel>
+                </Expander>
             </StackPanel>
         </StackPanel>
 
