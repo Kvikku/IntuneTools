@@ -31,6 +31,8 @@ namespace IntuneTools
         public MainWindow()
         {
             this.InitializeComponent();
+            // Minimize/close the NavigationView pane by default
+            NavView.IsPaneOpen = false;
             // Navigate to the Home page by default
             NavView.SelectedItem = NavView.MenuItems.OfType<NavigationViewItem>().FirstOrDefault(x => x.Tag.ToString() == "Home");
             ContentFrame.Navigate(typeof(HomePage));

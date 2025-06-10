@@ -65,8 +65,8 @@
                               Checked="SelectAll_Checked" 
                               Unchecked="SelectAll_Unchecked" 
                               Indeterminate="SelectAll_Indeterminate" />
-                    <CheckBox x:Name="Option1CheckBox" Content="Option 1" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
-                    <CheckBox x:Name="Option2CheckBox" Content="Option 2" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
+                    <CheckBox x:Name="Option1CheckBox" Content="Settings Catalog" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
+                    <CheckBox x:Name="Option2CheckBox" Content="Device Compliance" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
                     <CheckBox x:Name="Option3CheckBox" Content="Option 3" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
                 </StackPanel>
             </StackPanel>
@@ -82,12 +82,13 @@
                        CanUserReorderColumns="False"
                        HeadersVisibility="Column"
                        ColumnWidth="Auto"
-                       Width="600"
+                       Width="800"
                        HorizontalAlignment="Left">
                 <controls:DataGrid.Columns>
                     <controls:DataGridTextColumn Header="Name" Binding="{Binding ContentName}" Width="200"/>
                     <controls:DataGridTextColumn Header="Type" Binding="{Binding ContentType}" Width="200"/>
                     <controls:DataGridTextColumn Header="Platform" Binding="{Binding ContentPlatform}" Width="200"/>
+                    <controls:DataGridTextColumn Header="ID" Binding="{Binding ContentId}" Width="200"/>
                 </controls:DataGrid.Columns>
             </controls:DataGrid>
             

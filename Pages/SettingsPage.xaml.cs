@@ -95,7 +95,7 @@ namespace IntuneTools.Pages
             SourceTenantGraphClient.sourceAuthority = $"https://login.microsoftonline.com/{SourceTenantGraphClient.sourceTenantID}";
             var client = await SourceTenantGraphClient.GetSourceGraphClient();
             sourceGraphServiceClient = client;
-            await ShowMessageBox("Login info", client.Organization.ToString(), "OK");
+            //await ShowMessageBox("Login info", client.Organization.ToString(), "OK");
 
         }
 

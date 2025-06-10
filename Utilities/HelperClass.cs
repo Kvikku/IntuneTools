@@ -242,19 +242,22 @@ namespace IntuneTools.Utilities
             }
         }
 
-        /// Graph helper methods
-        /// 
+        /// Graph helper methods ///
+
 
         public static string TranslatePolicyPlatformName(string platformName)
         {
             // This method translates the platform name to a user-friendly format
+            // Add more translations as needed
             return platformName switch
             {
                 "Windows10" => "Windows",
+                "MacOS" => "macOS",
+                "#microsoft.graph.iosCompliancePolicy" => "iOS",
+                "iOS" => "iOS",
+                "Android" => "Android",
                 _ => platformName // Return the original name if no translation is found
             };
         }
-
-
     }
 }

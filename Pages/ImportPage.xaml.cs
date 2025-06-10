@@ -10,6 +10,7 @@ using IntuneTools.Graph;
 using static IntuneTools.Utilities.HelperClass;
 using static IntuneTools.Utilities.Variables;
 using static IntuneTools.Graph.IntuneHelperClasses.SettingsCatalogHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.DeviceCompliancePolicyHelper;
 using static IntuneTools.Utilities.SourceTenantGraphClient;
 using System.Net.Mime;
 
@@ -74,15 +75,16 @@ namespace IntuneTools.Pages
 
                 // Load all data from Graph API
 
-                await LoadAllSettingsCatalogPoliciesAsync();
+                //await LoadAllSettingsCatalogPoliciesAsync();
+                await LoadAllDeviceCompliancePoliciesAsync();
 
 
 
 
-                
                 // TODO - method to clean up ContentList if needed
 
-                // Clean up content type value
+
+                // Clean up content platform value (operating system names) in ContentList
                 foreach (var content in ContentList)
                 {
                     var cleanedValue = TranslatePolicyPlatformName(content?.ContentPlatform); // Use the method to clean up the platform name
@@ -90,8 +92,9 @@ namespace IntuneTools.Pages
 
                 }
 
+                // More cleanup as needed
 
-                
+
 
 
                 // Bind to DataGrid
@@ -108,7 +111,6 @@ namespace IntuneTools.Pages
             ShowLoading("Loading settings catalog policies from Microsoft Graph...");
             try
             {
-
                 // Retrieve all settings catalog policies
                 var policies = await GetAllSettingsCatalogPolicies(sourceGraphServiceClient);
                 // Update ContentList for DataGrid
@@ -120,6 +122,34 @@ namespace IntuneTools.Pages
                         ContentName = policy.Name,
                         ContentType = "Settings Catalog",
                         ContentPlatform = policy.Platforms?.ToString() ?? string.Empty,
+                        ContentId = policy.Id
+                    });
+                }
+                // Bind to DataGrid
+                ContentDataGrid.ItemsSource = ContentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
+        private async Task LoadAllDeviceCompliancePoliciesAsync()
+        {
+            ShowLoading("Loading device compliance policies from Microsoft Graph...");
+            try
+            {
+                // Retrieve all device compliance policies
+                var policies = await GetAllDeviceCompliancePolicies(sourceGraphServiceClient);
+                // Update ContentList for DataGrid
+                ContentList.Clear();
+                foreach (var policy in policies)
+                {
+                    ContentList.Add(new ContentInfo
+                    {
+                        ContentName = policy.DisplayName,
+                        ContentType = "Device Compliance Policy",
+                        ContentPlatform = policy.OdataType?.ToString() ?? string.Empty,
                         ContentId = policy.Id
                     });
                 }
