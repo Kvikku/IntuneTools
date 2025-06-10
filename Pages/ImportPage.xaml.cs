@@ -75,7 +75,7 @@ namespace IntuneTools.Pages
 
                 // Load all data from Graph API
 
-                //await LoadAllSettingsCatalogPoliciesAsync();
+                await LoadAllSettingsCatalogPoliciesAsync();
                 await LoadAllDeviceCompliancePoliciesAsync();
 
 
@@ -114,7 +114,6 @@ namespace IntuneTools.Pages
                 // Retrieve all settings catalog policies
                 var policies = await GetAllSettingsCatalogPolicies(sourceGraphServiceClient);
                 // Update ContentList for DataGrid
-                ContentList.Clear();
                 foreach (var policy in policies)
                 {
                     ContentList.Add(new ContentInfo
@@ -142,7 +141,6 @@ namespace IntuneTools.Pages
                 // Retrieve all device compliance policies
                 var policies = await GetAllDeviceCompliancePolicies(sourceGraphServiceClient);
                 // Update ContentList for DataGrid
-                ContentList.Clear();
                 foreach (var policy in policies)
                 {
                     ContentList.Add(new ContentInfo

@@ -252,10 +252,14 @@ namespace IntuneTools.Utilities
             return platformName switch
             {
                 "Windows10" => "Windows",
+                "#microsoft.graph.windows10CompliancePolicy" => "Windows",
                 "MacOS" => "macOS",
+                "#microsoft.graph.macOSCompliancePolicy" => "macOS",
                 "#microsoft.graph.iosCompliancePolicy" => "iOS",
                 "iOS" => "iOS",
                 "Android" => "Android",
+                "#microsoft.graph.androidWorkProfileCompliancePolicy" => "Android",
+                "#microsoft.graph.androidDeviceOwnerCompliancePolicy" => "Android",
                 _ => platformName // Return the original name if no translation is found
             };
         }
