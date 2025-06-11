@@ -110,7 +110,7 @@
                     <controls:DataGridTextColumn Header="ID" Binding="{Binding ContentId}" Width="200"/>
                 </controls:DataGrid.Columns>
             </controls:DataGrid>
-            
+
             <!-- Loading Overlay -->
             <Border x:Name="LoadingOverlay" 
                     Background="{ThemeResource SystemControlAcrylicWindowBrush}"
@@ -135,10 +135,5 @@
                 </StackPanel>
             </Border>
         </Grid>
-        
-        <!-- Info/Status Block -->
-        <RichTextBlock Grid.Row="4" Margin="0,10,0,0">
-            <Paragraph>Test</Paragraph>
-        </RichTextBlock>
     </Grid>
 </Page>

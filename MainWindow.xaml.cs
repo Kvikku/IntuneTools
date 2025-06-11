@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using IntuneTools.Pages;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -14,6 +15,7 @@ using Microsoft.UI.Xaml.Navigation;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.UI.ApplicationSettings;
+using Windows.Graphics;
 
 
 
@@ -28,9 +30,37 @@ namespace IntuneTools
     /// </summary>
     public sealed partial class MainWindow : Window
     {
+        private AppWindow appWindow;
+
         public MainWindow()
         {
             this.InitializeComponent();
+
+            // Extend content into the title bar and set the custom title bar
+            ExtendsContentIntoTitleBar = true;
+            SetTitleBar(CustomTitleBar);
+
+            // Ensure the default system title bar is hidden
+            var coreTitleBar = Microsoft.UI.Xaml.Window.Current;
+
+            // Initialize AppWindow
+            var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+            var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hWnd);
+            appWindow = AppWindow.GetFromWindowId(windowId);
+
+            // Customize the AppWindow title bar
+            if (appWindow.TitleBar != null)
+            {
+                appWindow.TitleBar.ExtendsContentIntoTitleBar = true;
+                appWindow.TitleBar.ButtonBackgroundColor = Microsoft.UI.Colors.Transparent;
+                appWindow.TitleBar.ButtonInactiveBackgroundColor = Microsoft.UI.Colors.Transparent;
+                appWindow.TitleBar.ButtonForegroundColor = Microsoft.UI.Colors.Transparent;
+                appWindow.TitleBar.ButtonHoverBackgroundColor = Microsoft.UI.Colors.Transparent;
+                appWindow.TitleBar.ButtonHoverForegroundColor = Microsoft.UI.Colors.Transparent;
+                appWindow.TitleBar.ButtonPressedBackgroundColor = Microsoft.UI.Colors.Transparent;
+                appWindow.TitleBar.ButtonPressedForegroundColor = Microsoft.UI.Colors.Transparent;
+            }
+
             // Minimize/close the NavigationView pane by default
             NavView.IsPaneOpen = false;
             // Navigate to the Home page by default
@@ -43,7 +73,34 @@ namespace IntuneTools
             //myButton.Content = "Clicked";
         }
 
-        
+        private void MinimizeWindow_Click(object sender, RoutedEventArgs e)
+        {
+            if (appWindow.Presenter is OverlappedPresenter presenter)
+            {
+                presenter.Minimize();
+            }
+        }
+
+        private void MaximizeWindow_Click(object sender, RoutedEventArgs e)
+        {
+            if (appWindow.Presenter is OverlappedPresenter presenter)
+            {
+                if (presenter.State == OverlappedPresenterState.Maximized)
+                {
+                    presenter.Restore();
+                }
+                else
+                {
+                    presenter.Maximize();
+                }
+            }
+        }
+
+        private void CloseWindow_Click(object sender, RoutedEventArgs e)
+        {
+            appWindow.Destroy();
+        }
+
         private void NavView_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
         {
             if (args.IsSettingsInvoked)

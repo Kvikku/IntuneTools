@@ -10,9 +10,33 @@
     mc:Ignorable="d"
     Title="IntuneTools">
 
-
     <Grid>
-        <muxc:NavigationView x:Name="NavView" ItemInvoked="NavView_ItemInvoked">
+        <!-- Define two rows: one for the custom title bar, one for the NavigationView -->
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Custom Title Bar -->
+        <Grid x:Name="CustomTitleBar" Background="DarkOrange" Height="32" VerticalAlignment="Top" Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Title -->
+            <TextBlock Text="IntuneTools" VerticalAlignment="Center" Margin="10,0,0,0" FontWeight="Bold" Foreground="White" />
+
+            <!-- Window Control Buttons -->
+            <StackPanel Orientation="Horizontal" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0">
+                <Button Content="_" Width="32" Height="32" Click="MinimizeWindow_Click" Background="Transparent" BorderBrush="Transparent" Foreground="White" />
+                <Button Content="☐" Width="32" Height="32" Click="MaximizeWindow_Click" Background="Transparent" BorderBrush="Transparent" Foreground="White" />
+                <Button Content="X" Width="32" Height="32" Click="CloseWindow_Click" Background="Transparent" BorderBrush="Transparent" Foreground="White" />
+            </StackPanel>
+        </Grid>
+
+        <!-- NavigationView -->
+        <muxc:NavigationView x:Name="NavView" ItemInvoked="NavView_ItemInvoked" Grid.Row="1">
             <muxc:NavigationView.MenuItems>
                 <muxc:NavigationViewItem Content="Home" Tag="Home" Icon="Home"/>
                 <muxc:NavigationViewItem Content="Application" Tag="Application" Icon="AllApps"/>
@@ -20,11 +44,6 @@
             </muxc:NavigationView.MenuItems>
 
             <Frame x:Name="ContentFrame"/>
-            
         </muxc:NavigationView>
-
-        <!--<StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-            <Button x:Name="myButton" Click="myButton_Click">!Click Me!</Button>
-        </StackPanel>-->
     </Grid>
 </Window>
