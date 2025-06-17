@@ -91,7 +91,8 @@
                           IsThreeState="False" 
                           Checked="FiltersCheckBox_Checked" 
                           Unchecked="FiltersCheckBox_Unchecked" 
-                          IsChecked="False" />
+                          IsChecked="False"
+                          Click="FilterCheckBoxClick"/>
             </StackPanel>
         </StackPanel>
 

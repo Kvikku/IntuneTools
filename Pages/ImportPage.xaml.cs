@@ -9,6 +9,7 @@ using Microsoft.Graph.Beta;
 using IntuneTools.Graph;
 using static IntuneTools.Utilities.HelperClass;
 using static IntuneTools.Utilities.Variables;
+using static IntuneTools.Graph.IntuneHelperClasses.FilterHelperClass;
 using static IntuneTools.Graph.IntuneHelperClasses.SettingsCatalogHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceCompliancePolicyHelper;
 using static IntuneTools.Graph.EntraHelperClasses.GroupHelperClass;
@@ -34,10 +35,16 @@ namespace IntuneTools.Pages
         public string? GroupName { get; set; }
     }
 
+    public class  FilterInfo
+    {
+        public string? FilterName { get; set; }
+    }
+
     public sealed partial class ImportPage : Page
     {
         public ObservableCollection<ContentInfo> ContentList { get; set; } = new ObservableCollection<ContentInfo>();
         public ObservableCollection<GroupInfo> GroupList { get; set; } = new ObservableCollection<GroupInfo>();
+        public ObservableCollection<FilterInfo> FilterList { get; set; } = new ObservableCollection<FilterInfo>();
         public ObservableCollection<string> FilterOptions { get; set; } = new ObservableCollection<string>();
 
         private bool _suppressUpdateSelectAll = false;
@@ -50,7 +57,7 @@ namespace IntuneTools.Pages
             SelectAll_Checked(LoadingOverlay, null); // Initialize the 'Select all' checkbox to checked state
             // Ensure the new controls panel is not visible by default
             NewControlsPanel.Visibility = Visibility.Collapsed;
-            LoadFilterOptions();
+            //LoadFilterOptions();
         }
 
         private void LoadFilterOptions()
@@ -250,6 +257,39 @@ namespace IntuneTools.Pages
         }
 
 
+        /// <summary>
+        /// Assignment filters
+        /// </summary>
+
+        private async Task LoadAllAssignmentFiltersAsync()
+        {
+            ShowLoading("Loading assignment filters from Microsoft Graph...");
+            try
+            {
+                // Clear existing filter options
+                FilterOptions.Clear();
+
+                // Retrieve all assignment filters
+                var filters = await GetAllAssignmentFilters(sourceGraphServiceClient);
+                // Update FilterOptions for ComboBox
+                foreach (var filter in filters)
+                {
+                    FilterOptions.Add(filter.DisplayName); // Add filter display name to ComboBox options
+                }
+                // Ensure ComboBox is bound to FilterOptions (though it should be from XAML or initialization)
+                if (FilterSelectionComboBox.ItemsSource != FilterOptions)
+                {
+                    FilterSelectionComboBox.ItemsSource = FilterOptions;
+                }
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
+
+
 
         /// BUTTON HANDLERS ///
         /// Buttons should be defined in the XAML file and linked to these methods.
@@ -278,6 +318,12 @@ namespace IntuneTools.Pages
         {
             // This method is called when the "Search Groups" button is clicked
             await SearchForGroupsAsync(GroupSearchTextBox.Text);
+        }
+
+        private async void FilterCheckBoxClick(object sender, RoutedEventArgs e)
+        {
+            // This method is called when the "List All Assignment Filters" button is clicked
+            await LoadAllAssignmentFiltersAsync();
         }
 
         private void SearchButton_Click(object sender, RoutedEventArgs e)
