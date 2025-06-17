@@ -162,7 +162,7 @@
                     <Button x:Name="NewButton2" Content="List all" Width="120" Click="GroupListAllClick"/>
                 </StackPanel>
                 <!-- TextBox -->
-                <TextBox x:Name="NewTextBox" PlaceholderText="New TextBox" Width="250" Margin="0,0,0,10"/>
+                <TextBox x:Name="GroupSearchTextBox" PlaceholderText="" Width="250" Margin="0,0,0,10"/>
                 <!-- DataGrid with 1 column -->
                 <controls:DataGrid x:Name="GroupDataGrid" 
                                AutoGenerateColumns="False"

@@ -193,8 +193,40 @@ namespace IntuneTools.Pages
         /// Groups
         /// </summary>
 
+        private async Task SearchForGroupsAsync(string searchQuery)
+        {
+            // Clear the GroupList before loading new data
+            GroupList.Clear();
+
+            ShowLoading("Searching for groups in Microsoft Graph...");
+            try
+            {
+                // Clear the GroupList before loading new data
+                GroupList.Clear();
+                // Search for groups using the provided query
+                var groups = await SearchForGroups(sourceGraphServiceClient, searchQuery);
+                // Update GroupList for DataGrid
+                foreach (var group in groups)
+                {
+                    GroupList.Add(new GroupInfo
+                    {
+                        GroupName = group.DisplayName
+                    });
+                }
+                // Bind to DataGrid
+                GroupDataGrid.ItemsSource = GroupList;
+            }
+            finally
+            {
+                HideLoading();
+                
+            }
+        }
         private async Task LoadAllGroupsAsync()
         {
+            // Clear the GroupList before loading new data
+            GroupList.Clear();
+
             ShowLoading("Loading groups from Microsoft Graph...");
             try
             {
@@ -245,7 +277,7 @@ namespace IntuneTools.Pages
         private async void GroupSearchClick(object sender, RoutedEventArgs e)
         {
             // This method is called when the "Search Groups" button is clicked
-
+            await SearchForGroupsAsync(GroupSearchTextBox.Text);
         }
 
         private void SearchButton_Click(object sender, RoutedEventArgs e)
