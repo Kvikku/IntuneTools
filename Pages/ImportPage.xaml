@@ -11,166 +11,171 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
     <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <!-- Row 0 for Page Title -->
+            <RowDefinition Height="Auto"/> <!-- Row 1 for Action Buttons and Search Controls -->
+            <RowDefinition Height="*"/>    <!-- Row 2 for Data Grid Area -->
+            <RowDefinition Height="Auto"/> <!-- Row 3 for Import Button -->
+        </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/> <!-- Column 0 for main content -->
+            <ColumnDefinition Width="*"/>    <!-- Column 1 for import button and related controls -->
         </Grid.ColumnDefinitions>
-        <!-- Existing content will be in the first column (Grid.Column="0") -->
-        <Grid Grid.Column="0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-            <!-- Page Title -->
-            <TextBlock Text="Import page" 
-                       HorizontalAlignment="Center" 
-                       FontSize="38" 
-                       FontWeight="Bold"
-                       Margin="0,0,0,20"/>
-            <!-- Import Button -->
-            <Button x:Name="Import" 
-                    Content="Import" 
-                    Width="120" 
-                    HorizontalAlignment="Center" 
-                    Grid.Row="1"
-                    Margin="0,0,0,20" 
-                    Click="ImportButton_Click"/>
-            <!-- Action Buttons and Search Controls -->
-            <StackPanel Grid.Row="2" Orientation="Vertical" HorizontalAlignment="Left" Margin="0,0,0,20">
-                <!-- Action Buttons Row -->
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                    <Button x:Name="Search" 
-                            Content="Search" 
-                            Width="120" 
-                            Margin="0,0,10,0"
-                            Click="SearchButton_Click"/>
-                    <Button x:Name="ListAll" 
-                            Content="List all" 
-                            Width="120" 
-                            Margin="0,0,10,0"
-                            Click="ListAllButton_Click"/>
-                    <Button x:Name="ClearAll" 
-                            Content="Clear All" 
-                            Width="120" 
-                            Margin="0,0,10,0"
-                            Click="ClearAllButton_Click"/>
-                    <Button x:Name="ClearSelected" 
-                            Content="Clear Selected" 
-                            Width="120" 
-                            Click="ClearSelectedButton_Click"/>
-                </StackPanel>
-                <!-- Search Query TextBox and Options Checkboxes side by side -->
-                <StackPanel Orientation="Horizontal">
-                    <TextBox x:Name="SearchQueryTextBox"
-                             Width="300"
-                             PlaceholderText="Enter search query..."
-                             HorizontalAlignment="Left"
-                             TextWrapping="NoWrap"
-                             Height="30"
-                             AcceptsReturn="False"/>
-                    <Expander Header="Options" IsExpanded="False" Margin="20,0,0,0">
-                        <StackPanel Orientation="Vertical" VerticalAlignment="Center">
-                            <CheckBox x:Name="OptionsAllCheckBox" 
-                                      Content="Select all" 
-                                      IsThreeState="False" 
-                                      Checked="SelectAll_Checked" 
-                                      Unchecked="SelectAll_Unchecked" 
-                                      Indeterminate="SelectAll_Indeterminate" />
-                            <CheckBox x:Name="Option1CheckBox" Content="Settings Catalog" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
-                            <CheckBox x:Name="Option2CheckBox" Content="Device Compliance" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
-                            <CheckBox x:Name="Option3CheckBox" Content="Option 3" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
-                        </StackPanel>
-                    </Expander>
-                </StackPanel>
 
-                <!-- Groups and Filters checkboxes -->
-                <StackPanel Orientation="Horizontal" Margin="20,5,0,0">
-                    <CheckBox x:Name="GroupsCheckBox" 
-                              Content="Groups" 
-                              IsThreeState="False" 
-                              Checked="GroupsCheckBox_Checked" 
-                              Unchecked="GroupsCheckBox_Unchecked" 
-                              IsChecked="False" />
-                    <CheckBox x:Name="FiltersCheckBox" 
-                              Content="Filters" 
-                              Margin="20,0,0,0" 
-                              IsThreeState="False" 
-                              Checked="Option_Checked" 
-                              Unchecked="Option_Unchecked" 
-                              IsChecked="False" />
-                </StackPanel>
+        <!-- Page Title -->
+        <TextBlock Grid.Row="0" Grid.Column="0" Text="Import page" 
+                   HorizontalAlignment="Left" 
+                   FontSize="38" 
+                   FontWeight="Bold"
+                   Margin="0,0,0,20"/>
+
+        <!-- Action Buttons and Search Controls -->
+        <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Vertical" HorizontalAlignment="Left" Margin="0,0,0,20">
+            <!-- Action Buttons Row -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                <Button x:Name="Search" 
+                        Content="Search" 
+                        Width="120" 
+                        Margin="0,0,10,0"
+                        Click="SearchButton_Click"/>
+                <Button x:Name="ListAll" 
+                        Content="List all" 
+                        Width="120" 
+                        Margin="0,0,10,0"
+                        Click="ListAllButton_Click"/>
+                <Button x:Name="ClearAll" 
+                        Content="Clear All" 
+                        Width="120" 
+                        Margin="0,0,10,0"
+                        Click="ClearAllButton_Click"/>
+                <Button x:Name="ClearSelected" 
+                        Content="Clear Selected" 
+                        Width="120" 
+                        Click="ClearSelectedButton_Click"/>
             </StackPanel>
-
-            <!-- Data Grid Area with Loading Overlay -->
-            <Grid Grid.Row="3">
-                <!-- Data Grid -->
-                <controls:DataGrid x:Name="ContentDataGrid" 
-                           AutoGenerateColumns="False" 
-                           Margin="0,0,0,20"
-                           Height="300"
-                           CanUserReorderColumns="False"
-                           HeadersVisibility="Column"
-                           ColumnWidth="Auto"
-                           Width="800"
-                           HorizontalAlignment="Left">
-                    <controls:DataGrid.Columns>
-                        <controls:DataGridTextColumn Header="Name" Binding="{Binding ContentName}" Width="200"/>
-                        <controls:DataGridTextColumn Header="Type" Binding="{Binding ContentType}" Width="200"/>
-                        <controls:DataGridTextColumn Header="Platform" Binding="{Binding ContentPlatform}" Width="*"/>
-                        <!--<controls:DataGridTextColumn Header="ID" Binding="{Binding ContentId}" Width="200"/>-->
-                    </controls:DataGrid.Columns>
-                </controls:DataGrid>
-
-                <!-- Loading Overlay -->
-                <Border x:Name="LoadingOverlay" 
-                        Background="{ThemeResource SystemControlAcrylicWindowBrush}"
-                        Visibility="Collapsed"
-                        Width="800"
-                        Height="300"
-                        HorizontalAlignment="Left"
-                        VerticalAlignment="Top">
-                    <StackPanel Orientation="Vertical" 
-                               HorizontalAlignment="Center" 
-                               VerticalAlignment="Center">
-                        <ProgressRing x:Name="LoadingProgressRing" 
-                                      IsActive="True" 
-                                      Width="50" 
-                                      Height="50"
-                                      Margin="0,0,0,15"/>
-                        <TextBlock x:Name="LoadingStatusText" 
-                                   Text="Loading data from Microsoft Graph..." 
-                                   HorizontalAlignment="Center"
-                                   FontSize="14"
-                                   Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+            <!-- Search Query TextBox, Options Expander -->
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Top">
+                <TextBox x:Name="SearchQueryTextBox"
+                         Width="300"
+                         PlaceholderText="Enter search query..."
+                         HorizontalAlignment="Left"
+                         TextWrapping="NoWrap"
+                         Height="30"
+                         AcceptsReturn="False"/>
+                <Expander Header="Options" IsExpanded="False" Margin="20,0,0,0" VerticalAlignment="Top">
+                    <StackPanel Orientation="Vertical" VerticalAlignment="Center">
+                        <CheckBox x:Name="OptionsAllCheckBox" 
+                                  Content="Select all" 
+                                  IsThreeState="False" 
+                                  Checked="SelectAll_Checked" 
+                                  Unchecked="SelectAll_Unchecked" 
+                                  Indeterminate="SelectAll_Indeterminate" />
+                        <CheckBox x:Name="Option1CheckBox" Content="Settings Catalog" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
+                        <CheckBox x:Name="Option2CheckBox" Content="Device Compliance" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
+                        <CheckBox x:Name="Option3CheckBox" Content="Option 3" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
                     </StackPanel>
-                </Border>
-            </Grid>
+                </Expander>
+            </StackPanel>
+            <!-- Groups and Filters checkboxes below Search/Options -->
+            <StackPanel Orientation="Horizontal" Margin="0,5,0,0"> 
+                <CheckBox x:Name="GroupsCheckBox" 
+                          Content="Groups" 
+                          IsThreeState="False" 
+                          Checked="GroupsCheckBox_Checked" 
+                          Unchecked="GroupsCheckBox_Unchecked" 
+                          IsChecked="False" 
+                          Margin="0,0,0,0" />
+                <CheckBox x:Name="FiltersCheckBox" 
+                          Content="Filters" 
+                          Margin="20,0,0,0" 
+                          IsThreeState="False" 
+                          Checked="FiltersCheckBox_Checked" 
+                          Unchecked="FiltersCheckBox_Unchecked" 
+                          IsChecked="False" />
+            </StackPanel>
+        </StackPanel>
+
+        <!-- Data Grid Area with Loading Overlay -->
+        <Grid Grid.Row="2" Grid.Column="0">
+            <!-- Data Grid -->
+            <controls:DataGrid x:Name="ContentDataGrid" 
+                       AutoGenerateColumns="False" 
+                       Margin="0,0,0,20"
+                       CanUserReorderColumns="False"
+                       HeadersVisibility="Column"
+                       ColumnWidth="Auto"
+                       Width="800"
+                       HorizontalAlignment="Left">
+                <controls:DataGrid.Columns>
+                    <controls:DataGridTextColumn Header="Name" Binding="{Binding ContentName}" Width="200"/>
+                    <controls:DataGridTextColumn Header="Type" Binding="{Binding ContentType}" Width="200"/>
+                    <controls:DataGridTextColumn Header="Platform" Binding="{Binding ContentPlatform}" Width="*"/>
+                    <!--<controls:DataGridTextColumn Header="ID" Binding="{Binding ContentId}" Width="200"/>-->
+                </controls:DataGrid.Columns>
+            </controls:DataGrid>
+
+            <!-- Loading Overlay -->
+            <Border x:Name="LoadingOverlay" 
+                    Background="{ThemeResource SystemControlAcrylicWindowBrush}"
+                    Visibility="Collapsed"
+                    Width="800"
+                    Height="300"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Top">
+                <StackPanel Orientation="Vertical" 
+                           HorizontalAlignment="Center" 
+                           VerticalAlignment="Center">
+                    <ProgressRing x:Name="LoadingProgressRing" 
+                                  IsActive="True" 
+                                  Width="50" 
+                                  Height="50"
+                                  Margin="0,0,0,15"/>
+                    <TextBlock x:Name="LoadingStatusText" 
+                               Text="Loading data from Microsoft Graph..." 
+                               HorizontalAlignment="Center"
+                               FontSize="14"
+                               Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                </StackPanel>
+            </Border>
         </Grid>
 
-        <!-- New controls in the second column (Grid.Column="1") -->
-        <StackPanel x:Name="NewControlsPanel" Grid.Column="1" Orientation="Vertical" Margin="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Visibility="Collapsed">
-            <!-- Two Buttons -->
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                <Button x:Name="NewButton1" Content="New Button 1" Width="120" Margin="0,0,10,0"/>
-                <Button x:Name="NewButton2" Content="New Button 2" Width="120"/>
-            </StackPanel>
-            <!-- TextBox -->
-            <TextBox x:Name="NewTextBox" PlaceholderText="New TextBox" Width="250" Margin="0,0,0,10"/>
-            <!-- DataGrid with 1 column -->
-            <controls:DataGrid x:Name="NewDataGrid" 
+        <!-- Controls in the second column (Grid.Column="1"), aligned with DataGrid -->
+        <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Vertical" Margin="20,0,0,0" VerticalAlignment="Top">
+            <Button x:Name="Import" 
+                    Content="Import" 
+                    Width="150" 
+                    Height="50"
+                    HorizontalAlignment="Left" 
+                    Margin="0,0,0,10" 
+                    Click="ImportButton_Click"/>
+            <ComboBox x:Name="FilterSelectionComboBox"
+                      Margin="0,0,0,10" 
+                      Width="200"
+                      PlaceholderText="Select a filter..."
+                      Visibility="Collapsed"
+                      SelectionChanged="FilterSelectionComboBox_SelectionChanged"
+                      HorizontalAlignment="Left"/>
+            <StackPanel x:Name="NewControlsPanel" Orientation="Vertical" VerticalAlignment="Top" HorizontalAlignment="Left" Visibility="Collapsed">
+                <!-- Two Buttons -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                    <Button x:Name="NewButton1" Content="Search" Width="120" Margin="0,0,10,0" Click="GroupSearchClick"/>
+                    <Button x:Name="NewButton2" Content="List all" Width="120" Click="GroupListAllClick"/>
+                </StackPanel>
+                <!-- TextBox -->
+                <TextBox x:Name="NewTextBox" PlaceholderText="New TextBox" Width="250" Margin="0,0,0,10"/>
+                <!-- DataGrid with 1 column -->
+                <controls:DataGrid x:Name="GroupDataGrid" 
                                AutoGenerateColumns="False"
                                HeadersVisibility="Column"
                                ColumnWidth="*"
                                Width="250"
                                Height="250"
                                HorizontalAlignment="Left">
-                <controls:DataGrid.Columns>
-                    <controls:DataGridTextColumn Header="New Column" Binding="{Binding NewData}" Width="*"/>
-                </controls:DataGrid.Columns>
-            </controls:DataGrid>
+                    <controls:DataGrid.Columns>
+                        <controls:DataGridTextColumn Header="Group Name" Binding="{Binding GroupName}" Width="*"/>
+                    </controls:DataGrid.Columns>
+                </controls:DataGrid>
+            </StackPanel>
         </StackPanel>
     </Grid>
 </Page>

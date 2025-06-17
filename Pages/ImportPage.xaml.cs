@@ -11,6 +11,7 @@ using static IntuneTools.Utilities.HelperClass;
 using static IntuneTools.Utilities.Variables;
 using static IntuneTools.Graph.IntuneHelperClasses.SettingsCatalogHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceCompliancePolicyHelper;
+using static IntuneTools.Graph.EntraHelperClasses.GroupHelperClass;
 using static IntuneTools.Utilities.SourceTenantGraphClient;
 using System.Net.Mime;
 
@@ -28,9 +29,16 @@ namespace IntuneTools.Pages
         //public string? ContentId { get; set; }
     }
 
+    public class GroupInfo
+    {
+        public string? GroupName { get; set; }
+    }
+
     public sealed partial class ImportPage : Page
     {
         public ObservableCollection<ContentInfo> ContentList { get; set; } = new ObservableCollection<ContentInfo>();
+        public ObservableCollection<GroupInfo> GroupList { get; set; } = new ObservableCollection<GroupInfo>();
+        public ObservableCollection<string> FilterOptions { get; set; } = new ObservableCollection<string>();
 
         private bool _suppressUpdateSelectAll = false;
         private bool _suppressOptionEvents = false;
@@ -42,7 +50,18 @@ namespace IntuneTools.Pages
             SelectAll_Checked(LoadingOverlay, null); // Initialize the 'Select all' checkbox to checked state
             // Ensure the new controls panel is not visible by default
             NewControlsPanel.Visibility = Visibility.Collapsed;
+            LoadFilterOptions();
         }
+
+        private void LoadFilterOptions()
+        {
+            // Add dummy data for now
+            FilterOptions.Add("Filter 1");
+            FilterOptions.Add("Filter 2");
+            FilterOptions.Add("Filter 3");
+            FilterSelectionComboBox.ItemsSource = FilterOptions;
+        }
+
         private void ShowLoading(string message = "Loading data from Microsoft Graph...")
         {
             LoadingStatusText.Text = message;
@@ -109,6 +128,9 @@ namespace IntuneTools.Pages
             }
         }
 
+        /// <summary>
+        ///  Settings catalog
+        /// </summary>
         private async Task LoadAllSettingsCatalogPoliciesAsync()
         {
             ShowLoading("Loading settings catalog policies from Microsoft Graph...");
@@ -136,6 +158,9 @@ namespace IntuneTools.Pages
             }
         }
 
+        /// <summary>
+        ///  Device compliance policies
+        /// </summary>
         private async Task LoadAllDeviceCompliancePoliciesAsync()
         {
             ShowLoading("Loading device compliance policies from Microsoft Graph...");
@@ -164,6 +189,34 @@ namespace IntuneTools.Pages
         }
 
 
+        /// <summary
+        /// Groups
+        /// </summary>
+
+        private async Task LoadAllGroupsAsync()
+        {
+            ShowLoading("Loading groups from Microsoft Graph...");
+            try
+            {
+                // Retrieve all groups
+                var groups = await GetAllGroups(sourceGraphServiceClient);
+                // Update ContentList for DataGrid
+                foreach (var group in groups)
+                {
+                    GroupList.Add(new GroupInfo
+                    {
+                        GroupName = group.DisplayName
+                    });
+                }
+                // Bind to DataGrid
+                GroupDataGrid.ItemsSource = GroupList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
 
 
         /// BUTTON HANDLERS ///
@@ -180,6 +233,21 @@ namespace IntuneTools.Pages
             // This method is called when the "List All" button is clicked
             await ListAllOrchestrator(sourceGraphServiceClient);
         }  
+
+        private async void GroupListAllClick(object sender, RoutedEventArgs e)
+        {
+            // This method is called when the "List All Groups" button is clicked
+            await LoadAllGroupsAsync();
+
+
+        }
+
+        private async void GroupSearchClick(object sender, RoutedEventArgs e)
+        {
+            // This method is called when the "Search Groups" button is clicked
+
+        }
+
         private void SearchButton_Click(object sender, RoutedEventArgs e)
         {
 
@@ -269,6 +337,27 @@ namespace IntuneTools.Pages
             NewControlsPanel.Visibility = Visibility.Collapsed;
             // Call the general Option_Unchecked handler if needed for other logic
             Option_Unchecked(sender, e);
+        }
+
+        private void FiltersCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            FilterSelectionComboBox.Visibility = Visibility.Visible;
+        }
+
+        private void FiltersCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            FilterSelectionComboBox.Visibility = Visibility.Collapsed;
+        }
+
+        private void FilterSelectionComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // Handle filter selection change
+            // For now, just a placeholder
+            if (FilterSelectionComboBox.SelectedItem != null)
+            {
+                string selectedFilter = FilterSelectionComboBox.SelectedItem.ToString();
+                // You can add logic here to use the selectedFilter
+            }
         }
     }
 } 
