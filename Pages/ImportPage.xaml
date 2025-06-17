@@ -147,8 +147,9 @@
                     Width="150" 
                     Height="50"
                     HorizontalAlignment="Left" 
-                    Margin="0,0,0,10" 
-                    Click="ImportButton_Click"/>
+                    Margin="0,0,0,10"
+                    Click="ImportButton_Click"
+                    Background="DarkOrange"/>
             <ComboBox x:Name="FilterSelectionComboBox"
                       Margin="0,0,0,10" 
                       Width="200"
@@ -176,6 +177,18 @@
                         <controls:DataGridTextColumn Header="Group Name" Binding="{Binding GroupName}" Width="*"/>
                     </controls:DataGrid.Columns>
                 </controls:DataGrid>
+            </StackPanel>
+            <!-- New StackPanel with RichTextBlock wrapped in ScrollViewer for full scrollability -->
+            <StackPanel x:Name="LogPanel" Orientation="Vertical" Margin="100,-600,200,100" VerticalAlignment="Top" HorizontalAlignment="Right">
+                <ScrollViewer Width="350" Height="550"
+                              HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollMode="Enabled"
+                              VerticalScrollMode="Enabled">
+                    <RichTextBlock x:Name="LogConsole"
+                                   HorizontalAlignment="Left"
+                                   IsTextSelectionEnabled="True"/>
+                </ScrollViewer>
             </StackPanel>
         </StackPanel>
     </Grid>

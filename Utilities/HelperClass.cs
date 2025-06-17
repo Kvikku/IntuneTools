@@ -283,5 +283,26 @@ namespace IntuneTools.Utilities
             }
 
         }
+
+        /// <summary>
+        /// Writes text to a RichTextBlock, either replacing or appending to its content.
+        /// </summary>
+        /// <param name="richTextBlock">The RichTextBlock to write to.</param>
+        /// <param name="text">The text to write.</param>
+        /// <param name="append">If true, appends the text; otherwise, replaces all content. Default is true.</param>
+        public static void WriteToRichTextBlock(RichTextBlock richTextBlock, string text, bool append = true)
+        {
+            if (richTextBlock == null)
+                return;
+
+            var paragraph = new Microsoft.UI.Xaml.Documents.Paragraph();
+            paragraph.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = text });
+
+            if (!append)
+            {
+                richTextBlock.Blocks.Clear();
+            }
+            richTextBlock.Blocks.Add(paragraph);
+        }
     }
 }

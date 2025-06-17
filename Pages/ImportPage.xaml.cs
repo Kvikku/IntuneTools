@@ -15,6 +15,7 @@ using static IntuneTools.Graph.IntuneHelperClasses.DeviceCompliancePolicyHelper;
 using static IntuneTools.Graph.EntraHelperClasses.GroupHelperClass;
 using static IntuneTools.Utilities.SourceTenantGraphClient;
 using System.Net.Mime;
+using Microsoft.UI.Xaml.Documents; // Added for Paragraph and Run
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -58,6 +59,16 @@ namespace IntuneTools.Pages
             // Ensure the new controls panel is not visible by default
             NewControlsPanel.Visibility = Visibility.Collapsed;
             //LoadFilterOptions();
+            
+        }
+
+        private void AppendToDetailsRichTextBlock(string text)
+        {
+            Paragraph paragraph = new Paragraph();
+            Run run = new Run();
+            run.Text = text;
+            paragraph.Inlines.Add(run);
+            LogConsole.Blocks.Add(paragraph);
         }
 
         private void LoadFilterOptions()
@@ -106,8 +117,6 @@ namespace IntuneTools.Pages
 
                 await LoadAllSettingsCatalogPoliciesAsync();
                 await LoadAllDeviceCompliancePoliciesAsync();
-
-
 
 
                 // TODO - method to clean up ContentList if needed
@@ -301,22 +310,10 @@ namespace IntuneTools.Pages
         /// Main import process
         /// </summary>
 
-        private async Task MainImportProcess()
+        private void LogContentToImport()
         {
-            // Retrieve source and tenant names
-            CreateImportStatusFile(); // Ensure the import status file is created before importing
-
-            // Log the start of the import process
-            LogToImportStatusFile("Starting import process...", LogLevels.Info);
-            LogToImportStatusFile($"Source Tenant: {sourceTenantName}", LogLevels.Info);
-            LogToImportStatusFile($"Destination Tenant: {destinationTenantName}", LogLevels.Info);
-
-
-            // TODO
-            // Check for filters and assignments
-
-            // Log what content is being imported
             LogToImportStatusFile("Importing the following content:", LogLevels.Info);
+            AppendToDetailsRichTextBlock("Importing the following content:\n");
 
             List<string> contentTypes = new List<string>();
 
@@ -327,39 +324,93 @@ namespace IntuneTools.Pages
                 {
                     contentTypes.Add(content.ContentType);
                     LogToImportStatusFile($"- {content.ContentType}", LogLevels.Info);
+                    AppendToDetailsRichTextBlock($"- {content.ContentType}\n");
                 }
             }
+            LogToImportStatusFile("--------------------------------------------------", LogLevels.Info);
+            AppendToDetailsRichTextBlock("--------------------------------------------------\n");
+        }
 
-            // Log which group(s) are being assigned
+        private void LogGroupsToBeAssigned()
+        {
+            LogToImportStatusFile("Assigning to the following groups:", LogLevels.Info);
+            AppendToDetailsRichTextBlock("Assigning to the following groups:\n");
             if (GroupDataGrid.SelectedItems != null && GroupDataGrid.SelectedItems.Count > 0)
             {
-                LogToImportStatusFile("Assigning to the following groups:", LogLevels.Info);
                 foreach (GroupInfo selectedGroup in GroupDataGrid.SelectedItems)
                 {
                     if (selectedGroup != null && !string.IsNullOrEmpty(selectedGroup.GroupName))
                     {
                         LogToImportStatusFile($"- {selectedGroup.GroupName}", LogLevels.Info);
-                        // You can access other properties of GroupInfo here if needed
+                        AppendToDetailsRichTextBlock($"- {selectedGroup.GroupName}\n");
                     }
                 }
             }
             else
             {
                 LogToImportStatusFile("No groups selected for assignment.", LogLevels.Info);
+                AppendToDetailsRichTextBlock("No groups selected for assignment.\n");
             }
+            LogToImportStatusFile("--------------------------------------------------", LogLevels.Info);
+            AppendToDetailsRichTextBlock("--------------------------------------------------\n");
+        }
 
-            // Log which filter(s) are being applied
+        private void LogFiltersToBeApplied()
+        {
+            LogToImportStatusFile("Applying the following filters:", LogLevels.Info);
+            AppendToDetailsRichTextBlock("Applying the following filters:\n");
             if (FilterSelectionComboBox.SelectedItem != null)
             {
                 string selectedFilter = FilterSelectionComboBox.SelectedItem.ToString();
-                LogToImportStatusFile($"Applying filter: {selectedFilter}", LogLevels.Info);
-                SelectedFilterName = selectedFilter;
-                SelectedFilterID = filterNameAndID.ContainsKey(selectedFilter) ? filterNameAndID[selectedFilter] : null;
+                LogToImportStatusFile($"- {selectedFilter}", LogLevels.Info);
+                AppendToDetailsRichTextBlock($"- {selectedFilter}\n");
             }
             else
             {
                 LogToImportStatusFile("No filter selected for assignment.", LogLevels.Info);
+                AppendToDetailsRichTextBlock("No filter selected for assignment.\n");
             }
+            LogToImportStatusFile("--------------------------------------------------", LogLevels.Info);
+            AppendToDetailsRichTextBlock("--------------------------------------------------\n");
+        }
+
+        private async Task MainImportProcess()
+        {
+            
+            AppendToDetailsRichTextBlock("Starting import process...\n");
+
+            if (ContentList.Count == 0)
+            {
+                LogToImportStatusFile("No content to import.", LogLevels.Warning);
+                AppendToDetailsRichTextBlock("No content to import.\n");
+                return;
+            }
+
+            // Retrieve source and tenant names
+            CreateImportStatusFile(); // Ensure the import status file is created before importing
+
+            // Log the start of the import process
+            LogToImportStatusFile("Starting import process...", LogLevels.Info);
+            LogToImportStatusFile($"Source Tenant: {sourceTenantName}", LogLevels.Info);
+            LogToImportStatusFile($"Destination Tenant: {destinationTenantName}", LogLevels.Info);
+            AppendToDetailsRichTextBlock($"Source Tenant: {sourceTenantName}\n");
+            AppendToDetailsRichTextBlock($"Destination Tenant: {destinationTenantName}\n");
+
+
+            // Log what content is being imported
+            LogContentToImport();
+
+            // Log which group(s) are being assigned
+            LogGroupsToBeAssigned();
+
+            // Log which filter(s) are being applied
+            LogFiltersToBeApplied();
+            AppendToDetailsRichTextBlock("Import process finished.\n");
+
+            // Perform the import process
+
+           
+
         }
 
 
@@ -512,4 +563,4 @@ namespace IntuneTools.Pages
             }
         }
     }
-} 
+}
