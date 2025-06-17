@@ -263,6 +263,10 @@ namespace IntuneTools.Pages
 
         private async Task LoadAllAssignmentFiltersAsync()
         {
+            // Clear the dictionary for filter names and IDs
+            filterNameAndID.Clear();
+
+
             ShowLoading("Loading assignment filters from Microsoft Graph...");
             try
             {
@@ -275,6 +279,9 @@ namespace IntuneTools.Pages
                 foreach (var filter in filters)
                 {
                     FilterOptions.Add(filter.DisplayName); // Add filter display name to ComboBox options
+                    
+                    // Also add to the dictionary for later use
+                    filterNameAndID[filter.DisplayName] = filter.Id; // Store name and ID in the dictionary
                 }
                 // Ensure ComboBox is bound to FilterOptions (though it should be from XAML or initialization)
                 if (FilterSelectionComboBox.ItemsSource != FilterOptions)
