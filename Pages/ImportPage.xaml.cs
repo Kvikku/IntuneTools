@@ -35,7 +35,7 @@ namespace IntuneTools.Pages
         public string? GroupName { get; set; }
     }
 
-    public class  FilterInfo
+    public class FilterInfo
     {
         public string? FilterName { get; set; }
     }
@@ -313,7 +313,6 @@ namespace IntuneTools.Pages
 
 
             // TODO
-            // Check what content is being imported
             // Check for filters and assignments
 
             // Log what content is being imported
@@ -331,7 +330,36 @@ namespace IntuneTools.Pages
                 }
             }
 
+            // Log which group(s) are being assigned
+            if (GroupDataGrid.SelectedItems != null && GroupDataGrid.SelectedItems.Count > 0)
+            {
+                LogToImportStatusFile("Assigning to the following groups:", LogLevels.Info);
+                foreach (GroupInfo selectedGroup in GroupDataGrid.SelectedItems)
+                {
+                    if (selectedGroup != null && !string.IsNullOrEmpty(selectedGroup.GroupName))
+                    {
+                        LogToImportStatusFile($"- {selectedGroup.GroupName}", LogLevels.Info);
+                        // You can access other properties of GroupInfo here if needed
+                    }
+                }
+            }
+            else
+            {
+                LogToImportStatusFile("No groups selected for assignment.", LogLevels.Info);
+            }
 
+            // Log which filter(s) are being applied
+            if (FilterSelectionComboBox.SelectedItem != null)
+            {
+                string selectedFilter = FilterSelectionComboBox.SelectedItem.ToString();
+                LogToImportStatusFile($"Applying filter: {selectedFilter}", LogLevels.Info);
+                SelectedFilterName = selectedFilter;
+                SelectedFilterID = filterNameAndID.ContainsKey(selectedFilter) ? filterNameAndID[selectedFilter] : null;
+            }
+            else
+            {
+                LogToImportStatusFile("No filter selected for assignment.", LogLevels.Info);
+            }
         }
 
 

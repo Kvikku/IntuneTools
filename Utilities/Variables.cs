@@ -56,6 +56,8 @@ namespace IntuneTools.Utilities
 
         public static string SelectedFilterID = null;
         public static DeviceAndAppManagementAssignmentFilterType deviceAndAppManagementAssignmentFilterType = DeviceAndAppManagementAssignmentFilterType.None;
+        public static Dictionary<string, string> filterNameAndID = new Dictionary<string, string>();
+        public static string SelectedFilterName = "";
 
 
     }

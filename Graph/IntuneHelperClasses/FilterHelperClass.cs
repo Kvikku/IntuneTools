@@ -13,10 +13,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 {
     public class FilterHelperClass
     {
-        public static Dictionary<string, string> filterNameAndID = new Dictionary<string, string>();
-        public static string SelectedFilterName = "";
-        public static string SelectedFilterID = null;
-        public static DeviceAndAppManagementAssignmentFilterType deviceAndAppManagementAssignmentFilterType = DeviceAndAppManagementAssignmentFilterType.None;
+        
 
 
         public static async Task<List<DeviceAndAppManagementAssignmentFilter>> GetAllAssignmentFilters(GraphServiceClient graphServiceClient)
