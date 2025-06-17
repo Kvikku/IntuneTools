@@ -1,3 +1,4 @@
+using IntuneTools.Graph;
 using IntuneTools.Utilities;
 using Microsoft.UI.Xaml; // Added for RoutedEventArgs
 using Microsoft.UI.Xaml.Controls;
@@ -6,8 +7,10 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using static IntuneTools.Graph.DestinationTenantGraphClient;
 using static IntuneTools.Utilities.HelperClass;
 using static IntuneTools.Utilities.SourceTenantGraphClient;
+using static IntuneTools.Utilities.Variables;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -95,7 +98,9 @@ namespace IntuneTools.Pages
             SourceTenantGraphClient.sourceAuthority = $"https://login.microsoftonline.com/{SourceTenantGraphClient.sourceTenantID}";
             var client = await SourceTenantGraphClient.GetSourceGraphClient();
             sourceGraphServiceClient = client;
-            //await ShowMessageBox("Login info", client.Organization.ToString(), "OK");
+            sourceTenantName = await GetAzureTenantName(client);
+            Log($"Source Tenant Name: {sourceTenantName}");
+
 
         }
 
@@ -108,11 +113,14 @@ namespace IntuneTools.Pages
 
         private async Task AuthenticateToDestinationTenant()
         {
-            // Example logic for authentication
-            await Task.Run(() =>
-            {
-
-            });
+            DestinationTenantGraphClient.destinationClientID = DestinationClientIdTextBox.Text;
+            DestinationTenantGraphClient.destinationTenantID = DestinationTenantIdTextBox.Text;
+            DestinationTenantGraphClient.destinationAccessToken = null;
+            DestinationTenantGraphClient.destinationAuthority = $"https://login.microsoftonline.com/{DestinationTenantGraphClient.destinationTenantID}";
+            var client = await DestinationTenantGraphClient.GetDestinationGraphClient();
+            destinationGraphServiceClient = client;
+            destinationTenantName = await GetAzureTenantName(client);
+            Log($"Destination Tenant Name: {destinationTenantName}");
         }
     }
 }

@@ -297,14 +297,37 @@ namespace IntuneTools.Pages
 
 
 
+        /// <summary>
+        /// Main import process
+        /// </summary>
+
+        private async Task MainImportProcess()
+        {
+            // Retrieve source and tenant names
+            CreateImportStatusFile(); // Ensure the import status file is created before importing
+
+            LogToImportStatusFile("Starting import process...", LogLevels.Info);
+            LogToImportStatusFile($"Source Tenant: {sourceTenantName}", LogLevels.Info);
+            LogToImportStatusFile($"Destination Tenant: {destinationTenantName}", LogLevels.Info);
+
+
+            // TODO
+            // Check for filters and assignments
+            // Check what content is being imported
+
+
+        }
+
+
+
 
         /// BUTTON HANDLERS ///
         /// Buttons should be defined in the XAML file and linked to these methods.
         /// Buttons should call other methods to perform specific actions.
         /// Buttons should not directly perform actions themselves.
-        public void ImportButton_Click(object sender, RoutedEventArgs e)
+        private async void ImportButton_Click(object sender, RoutedEventArgs e)
         {
-            CreateImportStatusFile(); // Ensure the import status file is created before importing
+            await MainImportProcess();
         }
      
         private async void ListAllButton_Click(object sender, RoutedEventArgs e)

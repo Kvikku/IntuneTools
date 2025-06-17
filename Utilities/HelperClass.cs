@@ -1,4 +1,5 @@
-﻿using Microsoft.Graph.Beta.Models;
+﻿using Microsoft.Graph.Beta;
+using Microsoft.Graph.Beta.Models;
 using Microsoft.Identity.Client;
 using Microsoft.UI.Xaml.Controls;
 using System;
@@ -8,9 +9,8 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-
-using static IntuneTools.Utilities.Variables;
 using static IntuneTools.Utilities.HelperClass;
+using static IntuneTools.Utilities.Variables;
 
 namespace IntuneTools.Utilities
 {
@@ -262,6 +262,26 @@ namespace IntuneTools.Utilities
                 "#microsoft.graph.androidDeviceOwnerCompliancePolicy" => "Android",
                 _ => platformName // Return the original name if no translation is found
             };
+        }
+
+        public static async Task<string?> GetAzureTenantName(GraphServiceClient graphServiceClient)
+        {
+            // Method to get the Azure tenant name
+            try
+            {
+                var tenantInfo = await graphServiceClient.Organization.GetAsync((requestConfiguration) =>
+                {
+                    requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
+                });
+
+
+                return tenantInfo.Value[0].DisplayName;
+            }
+            catch (Exception ex)
+            {
+                return "UNKNOWN"; // Return "UNKNOWN" if the tenant name cannot be retrieved
+            }
+
         }
     }
 }

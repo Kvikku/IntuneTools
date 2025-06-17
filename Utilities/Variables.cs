@@ -47,6 +47,8 @@ namespace IntuneTools.Utilities
 
 
         // Graph authentication variables
+        public static string sourceTenantName = string.Empty;
+        public static string destinationTenantName = string.Empty;
 
 
 
