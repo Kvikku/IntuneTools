@@ -25,7 +25,7 @@ namespace IntuneTools.Pages
         public string? ContentName { get; set; }
         public string? ContentPlatform { get; set; }
         public string? ContentType { get; set; }
-        public string? ContentId { get; set; }
+        //public string? ContentId { get; set; }
     }
 
     public sealed partial class ImportPage : Page
@@ -122,7 +122,7 @@ namespace IntuneTools.Pages
                         ContentName = policy.Name,
                         ContentType = "Settings Catalog",
                         ContentPlatform = policy.Platforms?.ToString() ?? string.Empty,
-                        ContentId = policy.Id
+                        //ContentId = policy.Id
                     });
                 }
                 // Bind to DataGrid
@@ -149,7 +149,7 @@ namespace IntuneTools.Pages
                         ContentName = policy.DisplayName,
                         ContentType = "Device Compliance Policy",
                         ContentPlatform = policy.OdataType?.ToString() ?? string.Empty,
-                        ContentId = policy.Id
+                        //ContentId = policy.Id
                     });
                 }
                 // Bind to DataGrid
