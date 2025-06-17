@@ -62,7 +62,7 @@
                          TextWrapping="NoWrap"
                          Height="30"
                          AcceptsReturn="False"/>
-                <Expander Header="Options" IsExpanded="False" Margin="20,0,0,0" VerticalAlignment="Top">
+                <Expander x:Name="OptionsExpander" Header="Options" IsExpanded="False" Margin="20,0,0,0" VerticalAlignment="Top">
                     <StackPanel Orientation="Vertical" VerticalAlignment="Center">
                         <CheckBox x:Name="OptionsAllCheckBox" 
                                   Content="Select all" 

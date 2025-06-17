@@ -306,14 +306,30 @@ namespace IntuneTools.Pages
             // Retrieve source and tenant names
             CreateImportStatusFile(); // Ensure the import status file is created before importing
 
+            // Log the start of the import process
             LogToImportStatusFile("Starting import process...", LogLevels.Info);
             LogToImportStatusFile($"Source Tenant: {sourceTenantName}", LogLevels.Info);
             LogToImportStatusFile($"Destination Tenant: {destinationTenantName}", LogLevels.Info);
 
 
             // TODO
-            // Check for filters and assignments
             // Check what content is being imported
+            // Check for filters and assignments
+
+            // Log what content is being imported
+            LogToImportStatusFile("Importing the following content:", LogLevels.Info);
+
+            List<string> contentTypes = new List<string>();
+
+            foreach (var content in ContentList)
+            {
+                // add content type to the list if not already present
+                if (!contentTypes.Contains(content.ContentType))
+                {
+                    contentTypes.Add(content.ContentType);
+                    LogToImportStatusFile($"- {content.ContentType}", LogLevels.Info);
+                }
+            }
 
 
         }
