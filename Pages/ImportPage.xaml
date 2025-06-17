@@ -29,70 +29,91 @@
                    FontWeight="Bold"
                    Margin="0,0,0,20"/>
 
-        <!-- Action Buttons and Search Controls -->
-        <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Vertical" HorizontalAlignment="Left" Margin="0,0,0,20">
-            <!-- Action Buttons Row -->
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                <Button x:Name="Search" 
-                        Content="Search" 
-                        Width="120" 
-                        Margin="0,0,10,0"
-                        Click="SearchButton_Click"/>
-                <Button x:Name="ListAll" 
-                        Content="List all" 
-                        Width="120" 
-                        Margin="0,0,10,0"
-                        Click="ListAllButton_Click"/>
-                <Button x:Name="ClearAll" 
-                        Content="Clear All" 
-                        Width="120" 
-                        Margin="0,0,10,0"
-                        Click="ClearAllButton_Click"/>
-                <Button x:Name="ClearSelected" 
-                        Content="Clear Selected" 
-                        Width="120" 
-                        Click="ClearSelectedButton_Click"/>
+        <!-- Action Buttons and Search Controls + LogPanel side by side -->
+        <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,0,20">
+            <!-- Left: Action/Search/Options/Checkboxes -->
+            <StackPanel Orientation="Vertical">
+                <!-- Action Buttons Row -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                    <Button x:Name="Search" 
+                            Content="Search" 
+                            Width="120" 
+                            Margin="0,0,10,0"
+                            Click="SearchButton_Click"/>
+                    <Button x:Name="ListAll" 
+                            Content="List all" 
+                            Width="120" 
+                            Margin="0,0,10,0"
+                            Click="ListAllButton_Click"/>
+                    <Button x:Name="ClearAll" 
+                            Content="Clear All" 
+                            Width="120" 
+                            Margin="0,0,10,0"
+                            Click="ClearAllButton_Click"/>
+                    <Button x:Name="ClearSelected" 
+                            Content="Clear Selected" 
+                            Width="120" 
+                            Click="ClearSelectedButton_Click"/>
+                </StackPanel>
+                <!-- Search Query TextBox, Options Expander -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Top">
+                    <TextBox x:Name="SearchQueryTextBox"
+                             Width="300"
+                             PlaceholderText="Enter search query..."
+                             HorizontalAlignment="Left"
+                             TextWrapping="NoWrap"
+                             Height="30"
+                             AcceptsReturn="False"/>
+                    <Expander x:Name="OptionsExpander" Header="Options" IsExpanded="False" Margin="20,0,0,0" VerticalAlignment="Top">
+                        <StackPanel Orientation="Vertical" VerticalAlignment="Center">
+                            <CheckBox x:Name="OptionsAllCheckBox" 
+                                      Content="Select all" 
+                                      IsThreeState="False" 
+                                      Checked="SelectAll_Checked" 
+                                      Unchecked="SelectAll_Unchecked" 
+                                      Indeterminate="SelectAll_Indeterminate" />
+                            <CheckBox x:Name="Option1CheckBox" Content="Settings Catalog" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
+                            <CheckBox x:Name="Option2CheckBox" Content="Device Compliance" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
+                            <CheckBox x:Name="Option3CheckBox" Content="Option 3" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
+                        </StackPanel>
+                    </Expander>
+                </StackPanel>
+                <!-- Groups and Filters checkboxes below Search/Options -->
+                <StackPanel Orientation="Horizontal" Margin="0,5,0,0"> 
+                    <CheckBox x:Name="GroupsCheckBox" 
+                              Content="Groups" 
+                              IsThreeState="False" 
+                              Checked="GroupsCheckBox_Checked" 
+                              Unchecked="GroupsCheckBox_Unchecked" 
+                              IsChecked="False" 
+                              Margin="0,0,0,0" />
+                    <CheckBox x:Name="FiltersCheckBox" 
+                              Content="Filters" 
+                              Margin="20,0,0,0" 
+                              IsThreeState="False" 
+                              Checked="FiltersCheckBox_Checked" 
+                              Unchecked="FiltersCheckBox_Unchecked" 
+                              IsChecked="False"
+                              Click="FilterCheckBoxClick"/>
+                </StackPanel>
             </StackPanel>
-            <!-- Search Query TextBox, Options Expander -->
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Top">
-                <TextBox x:Name="SearchQueryTextBox"
-                         Width="300"
-                         PlaceholderText="Enter search query..."
-                         HorizontalAlignment="Left"
-                         TextWrapping="NoWrap"
-                         Height="30"
-                         AcceptsReturn="False"/>
-                <Expander x:Name="OptionsExpander" Header="Options" IsExpanded="False" Margin="20,0,0,0" VerticalAlignment="Top">
-                    <StackPanel Orientation="Vertical" VerticalAlignment="Center">
-                        <CheckBox x:Name="OptionsAllCheckBox" 
-                                  Content="Select all" 
-                                  IsThreeState="False" 
-                                  Checked="SelectAll_Checked" 
-                                  Unchecked="SelectAll_Unchecked" 
-                                  Indeterminate="SelectAll_Indeterminate" />
-                        <CheckBox x:Name="Option1CheckBox" Content="Settings Catalog" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
-                        <CheckBox x:Name="Option2CheckBox" Content="Device Compliance" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
-                        <CheckBox x:Name="Option3CheckBox" Content="Option 3" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
-                    </StackPanel>
-                </Expander>
-            </StackPanel>
-            <!-- Groups and Filters checkboxes below Search/Options -->
-            <StackPanel Orientation="Horizontal" Margin="0,5,0,0"> 
-                <CheckBox x:Name="GroupsCheckBox" 
-                          Content="Groups" 
-                          IsThreeState="False" 
-                          Checked="GroupsCheckBox_Checked" 
-                          Unchecked="GroupsCheckBox_Unchecked" 
-                          IsChecked="False" 
-                          Margin="0,0,0,0" />
-                <CheckBox x:Name="FiltersCheckBox" 
-                          Content="Filters" 
-                          Margin="20,0,0,0" 
-                          IsThreeState="False" 
-                          Checked="FiltersCheckBox_Checked" 
-                          Unchecked="FiltersCheckBox_Unchecked" 
-                          IsChecked="False"
-                          Click="FilterCheckBoxClick"/>
+            <!-- Right: LogPanel -->
+            <StackPanel x:Name="LogPanel" Orientation="Horizontal" Margin="40,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Left">
+                <ScrollViewer Width="400" MaxHeight="400"
+                              HorizontalScrollBarVisibility="Disabled"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollMode="Disabled"
+                              VerticalScrollMode="Enabled">
+                    <RichTextBlock x:Name="LogConsole"
+                                   Width="300"
+                                   HorizontalAlignment="Stretch"
+                                   IsTextSelectionEnabled="True"
+                                   TextWrapping="Wrap"/>
+                </ScrollViewer>
+                <Button x:Name="ClearLogButton" Width="50" Height="50" ToolTipService.ToolTip="Clear Log" Click="ClearLogButton_Click" 
+                        VerticalAlignment="Top" Margin="16,0,0,0">
+                    <FontIcon Glyph="&#xE74D;" FontFamily="Segoe MDL2 Assets"/>
+                </Button>
             </StackPanel>
         </StackPanel>
 
@@ -179,23 +200,6 @@
                 </controls:DataGrid>
             </StackPanel>
             <!-- LogPanel: RichTextBlock with trash button to the right -->
-            <StackPanel x:Name="LogPanel" Orientation="Horizontal" Margin="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Left">
-                <ScrollViewer Width="400" Height="550"
-                              HorizontalScrollBarVisibility="Disabled"
-                              VerticalScrollBarVisibility="Auto"
-                              HorizontalScrollMode="Disabled"
-                              VerticalScrollMode="Enabled">
-                    <RichTextBlock x:Name="LogConsole"
-                                   Width="300"
-                                   HorizontalAlignment="Stretch"
-                                   IsTextSelectionEnabled="True"
-                                   TextWrapping="Wrap"/>
-                </ScrollViewer>
-                <Button x:Name="ClearLogButton" Width="50" Height="50" ToolTipService.ToolTip="Clear Log" Click="ClearLogButton_Click" 
-                        VerticalAlignment="Top" Margin="16,0,0,0">
-                    <FontIcon Glyph="&#xE74D;" FontFamily="Segoe MDL2 Assets"/>
-                </Button>
-            </StackPanel>
         </StackPanel>
     </Grid>
 </Page>

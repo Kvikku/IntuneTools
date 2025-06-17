@@ -592,11 +592,7 @@ namespace IntuneTools.Pages
                 XamlRoot = this.XamlRoot
             };
 
-            var result = await ((System.Threading.Tasks.Task<ContentDialogResult>)dialog.ShowAsync());
-            if (result == ContentDialogResult.Primary)
-            {
-                LogConsole.Blocks.Clear();
-            }
+           
         }
     }
 }
