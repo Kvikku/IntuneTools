@@ -40,6 +40,8 @@ namespace IntuneTools.Pages
         {
             this.InitializeComponent();
             SelectAll_Checked(LoadingOverlay, null); // Initialize the 'Select all' checkbox to checked state
+            // Ensure the new controls panel is not visible by default
+            NewControlsPanel.Visibility = Visibility.Collapsed;
         }
         private void ShowLoading(string message = "Loading data from Microsoft Graph...")
         {
@@ -253,6 +255,20 @@ namespace IntuneTools.Pages
             else
                 OptionsAllCheckBox.IsChecked = null;
             _suppressSelectAllEvents = false;
+        }
+
+        private void GroupsCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            NewControlsPanel.Visibility = Visibility.Visible;
+            // Call the general Option_Checked handler if needed for other logic (like updating SelectAllCheckBox)
+            Option_Checked(sender, e);
+        }
+
+        private void GroupsCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            NewControlsPanel.Visibility = Visibility.Collapsed;
+            // Call the general Option_Unchecked handler if needed for other logic
+            Option_Unchecked(sender, e);
         }
     }
 } 

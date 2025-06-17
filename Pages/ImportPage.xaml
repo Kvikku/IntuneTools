@@ -91,8 +91,8 @@
                     <CheckBox x:Name="GroupsCheckBox" 
                               Content="Groups" 
                               IsThreeState="False" 
-                              Checked="Option_Checked" 
-                              Unchecked="Option_Unchecked" 
+                              Checked="GroupsCheckBox_Checked" 
+                              Unchecked="GroupsCheckBox_Unchecked" 
                               IsChecked="False" />
                     <CheckBox x:Name="FiltersCheckBox" 
                               Content="Filters" 
@@ -151,7 +151,7 @@
         </Grid>
 
         <!-- New controls in the second column (Grid.Column="1") -->
-        <StackPanel Grid.Column="1" Orientation="Vertical" Margin="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Left">
+        <StackPanel x:Name="NewControlsPanel" Grid.Column="1" Orientation="Vertical" Margin="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Visibility="Collapsed">
             <!-- Two Buttons -->
             <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                 <Button x:Name="NewButton1" Content="New Button 1" Width="120" Margin="0,0,10,0"/>
