@@ -16,6 +16,7 @@ using static IntuneTools.Graph.EntraHelperClasses.GroupHelperClass;
 using static IntuneTools.Utilities.SourceTenantGraphClient;
 using System.Net.Mime;
 using Microsoft.UI.Xaml.Documents; // Added for Paragraph and Run
+using Windows.Foundation; // Added for IAsyncOperation
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -59,16 +60,32 @@ namespace IntuneTools.Pages
             // Ensure the new controls panel is not visible by default
             NewControlsPanel.Visibility = Visibility.Collapsed;
             //LoadFilterOptions();
+            AppendToDetailsRichTextBlock("Console output");
             
         }
 
         private void AppendToDetailsRichTextBlock(string text)
         {
-            Paragraph paragraph = new Paragraph();
-            Run run = new Run();
-            run.Text = text;
-            paragraph.Inlines.Add(run);
-            LogConsole.Blocks.Add(paragraph);
+            Paragraph paragraph;
+            if (LogConsole.Blocks.Count == 0)
+            {
+                paragraph = new Paragraph();
+                LogConsole.Blocks.Add(paragraph);
+            }
+            else
+            {
+                paragraph = LogConsole.Blocks.First() as Paragraph;
+                if (paragraph == null)
+                {
+                    paragraph = new Paragraph();
+                    LogConsole.Blocks.Add(paragraph);
+                }
+            }
+            if (paragraph.Inlines.Count > 0)
+            {
+                paragraph.Inlines.Add(new LineBreak());
+            }
+            paragraph.Inlines.Add(new Run { Text = text });
         }
 
         private void LoadFilterOptions()
@@ -560,6 +577,25 @@ namespace IntuneTools.Pages
             {
                 string selectedFilter = FilterSelectionComboBox.SelectedItem.ToString();
                 // You can add logic here to use the selectedFilter
+            }
+        }
+
+        private async void ClearLogButton_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new ContentDialog
+            {
+                Title = "Clear Log Console?",
+                Content = "Are you sure you want to clear all log console text? This action cannot be undone.",
+                PrimaryButtonText = "Clear",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await ((System.Threading.Tasks.Task<ContentDialogResult>)dialog.ShowAsync());
+            if (result == ContentDialogResult.Primary)
+            {
+                LogConsole.Blocks.Clear();
             }
         }
     }

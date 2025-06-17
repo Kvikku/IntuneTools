@@ -178,17 +178,23 @@
                     </controls:DataGrid.Columns>
                 </controls:DataGrid>
             </StackPanel>
-            <!-- New StackPanel with RichTextBlock wrapped in ScrollViewer for full scrollability -->
-            <StackPanel x:Name="LogPanel" Orientation="Vertical" Margin="100,-600,200,100" VerticalAlignment="Top" HorizontalAlignment="Right">
-                <ScrollViewer Width="350" Height="550"
-                              HorizontalScrollBarVisibility="Auto"
+            <!-- LogPanel: RichTextBlock with trash button to the right -->
+            <StackPanel x:Name="LogPanel" Orientation="Horizontal" Margin="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Left">
+                <ScrollViewer Width="400" Height="550"
+                              HorizontalScrollBarVisibility="Disabled"
                               VerticalScrollBarVisibility="Auto"
-                              HorizontalScrollMode="Enabled"
+                              HorizontalScrollMode="Disabled"
                               VerticalScrollMode="Enabled">
                     <RichTextBlock x:Name="LogConsole"
-                                   HorizontalAlignment="Left"
-                                   IsTextSelectionEnabled="True"/>
+                                   Width="300"
+                                   HorizontalAlignment="Stretch"
+                                   IsTextSelectionEnabled="True"
+                                   TextWrapping="Wrap"/>
                 </ScrollViewer>
+                <Button x:Name="ClearLogButton" Width="50" Height="50" ToolTipService.ToolTip="Clear Log" Click="ClearLogButton_Click" 
+                        VerticalAlignment="Top" Margin="16,0,0,0">
+                    <FontIcon Glyph="&#xE74D;" FontFamily="Segoe MDL2 Assets"/>
+                </Button>
             </StackPanel>
         </StackPanel>
     </Grid>

@@ -295,14 +295,29 @@ namespace IntuneTools.Utilities
             if (richTextBlock == null)
                 return;
 
-            var paragraph = new Microsoft.UI.Xaml.Documents.Paragraph();
-            paragraph.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = text });
-
-            if (!append)
+            if (!append || richTextBlock.Blocks.Count == 0)
             {
                 richTextBlock.Blocks.Clear();
+                var paragraph = new Microsoft.UI.Xaml.Documents.Paragraph();
+                paragraph.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = text });
+                richTextBlock.Blocks.Add(paragraph);
             }
-            richTextBlock.Blocks.Add(paragraph);
+            else
+            {
+                // Append to the first paragraph
+                var paragraph = richTextBlock.Blocks.FirstOrDefault() as Microsoft.UI.Xaml.Documents.Paragraph;
+                if (paragraph != null)
+                {
+                    paragraph.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = text });
+                }
+                else
+                {
+                    // Fallback: create a new paragraph if none exists
+                    paragraph = new Microsoft.UI.Xaml.Documents.Paragraph();
+                    paragraph.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = text });
+                    richTextBlock.Blocks.Add(paragraph);
+                }
+            }
         }
     }
 }
