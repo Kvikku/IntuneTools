@@ -477,6 +477,8 @@ namespace IntuneTools.Pages
 
             // Perform the import process
 
+            // TODO  - Check that all info is available before proceeding with the import
+
             if (ContentList.Any(c => c.ContentType == "Settings Catalog"))
             {
                 // Import Settings Catalog policies
