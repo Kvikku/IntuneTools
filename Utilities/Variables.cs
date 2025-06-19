@@ -47,6 +47,10 @@ namespace IntuneTools.Utilities
 
         // Group variables
         public static bool IsGroupSelected = false;
+        public static string SelectedGroupID = null;
+        public static string SelectedGroupName = null;
+        public static Dictionary<string, string> groupNameAndID = new Dictionary<string, string>();
+        public static Dictionary<string, string> selectedGroupNameAndID = new Dictionary<string, string>();
 
         // Graph authentication variables
         public static string sourceTenantName = string.Empty;

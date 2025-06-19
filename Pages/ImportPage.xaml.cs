@@ -14,6 +14,7 @@ using static IntuneTools.Graph.IntuneHelperClasses.SettingsCatalogHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceCompliancePolicyHelper;
 using static IntuneTools.Graph.EntraHelperClasses.GroupHelperClass;
 using static IntuneTools.Utilities.SourceTenantGraphClient;
+using static IntuneTools.Graph.DestinationTenantGraphClient;
 using System.Net.Mime;
 using Microsoft.UI.Xaml.Documents; // Added for Paragraph and Run
 using Windows.Foundation; // Added for IAsyncOperation
@@ -204,6 +205,16 @@ namespace IntuneTools.Pages
             }
         }
 
+        private List<string> GetSettingsCatalogIDs()
+        {
+            // This method retrieves the IDs of all settings catalog policies in ContentList
+            return ContentList
+                .Where(c => c.ContentType == "Settings Catalog")
+                .Select(c => c.ContentName ?? string.Empty) // Ensure no nulls are returned
+                .ToList();
+        }
+
+
         /// <summary>
         ///  Device compliance policies
         /// </summary>
@@ -305,6 +316,7 @@ namespace IntuneTools.Pages
             // Clear the dictionary for filter names and IDs
             filterNameAndID.Clear();
 
+            // TODO - update filter variables 
 
             ShowLoading("Loading assignment filters from Microsoft Graph...");
             try
@@ -313,7 +325,7 @@ namespace IntuneTools.Pages
                 FilterOptions.Clear();
 
                 // Retrieve all assignment filters
-                var filters = await GetAllAssignmentFilters(sourceGraphServiceClient);
+                var filters = await GetAllAssignmentFilters(destinationGraphServiceClient);
                 // Update FilterOptions for ComboBox
                 foreach (var filter in filters)
                 {
@@ -340,7 +352,7 @@ namespace IntuneTools.Pages
         /// Main import process
         /// </summary>
 
-        private void LogContentToImport()
+        private List<string> LogContentToImport()
         {
             LogToImportStatusFile("Importing the following content:", LogLevels.Info);
             AppendToDetailsRichTextBlock("Importing the following content:\n");
@@ -357,14 +369,15 @@ namespace IntuneTools.Pages
                     AppendToDetailsRichTextBlock($"- {content.ContentType}\n");
                 }
             }
+            
             LogToImportStatusFile("--------------------------------------------------", LogLevels.Info);
             AppendToDetailsRichTextBlock("--------------------------------------------------\n");
+            return contentTypes;
         }
 
         private void LogGroupsToBeAssigned()
         {
             IsGroupSelected = false; // Reset group selection status
-
 
             LogToImportStatusFile("Assigning to the following groups:", LogLevels.Info);
             AppendToDetailsRichTextBlock("Assigning to the following groups:\n");
@@ -376,6 +389,11 @@ namespace IntuneTools.Pages
                     {
                         LogToImportStatusFile($"- {selectedGroup.GroupName}", LogLevels.Info);
                         AppendToDetailsRichTextBlock($"- {selectedGroup.GroupName}\n");
+                        // Add the group name and ID to the selectedGroupNameAndID dictionary
+                        if (!selectedGroupNameAndID.ContainsKey(selectedGroup.GroupName))
+                        {
+                            selectedGroupNameAndID[selectedGroup.GroupName] = groupNameAndID[selectedGroup.GroupName];
+                        }
                     }
                 }
                 IsGroupSelected = true; // Set group selection status to true if any groups are selected
@@ -398,6 +416,9 @@ namespace IntuneTools.Pages
             if (FilterSelectionComboBox.SelectedItem != null)
             {
                 string selectedFilter = FilterSelectionComboBox.SelectedItem.ToString();
+                
+                SelectedFilterID = filterNameAndID.ContainsKey(selectedFilter) ? filterNameAndID[selectedFilter] : null;
+
                 LogToImportStatusFile($"- {selectedFilter}", LogLevels.Info);
                 AppendToDetailsRichTextBlock($"- {selectedFilter}\n");
                 IsFilterSelected = true; // Set filter selection status to true if a filter is selected
@@ -414,7 +435,6 @@ namespace IntuneTools.Pages
 
         private async Task MainImportProcess()
         {
-            
             AppendToDetailsRichTextBlock("Starting import process...\n");
 
             // Check if there is content to import
@@ -426,7 +446,7 @@ namespace IntuneTools.Pages
             }
 
             // Ensure the import status file is created before importing
-            CreateImportStatusFile(); 
+            CreateImportStatusFile();
 
             // Log the start of the import process
             LogToImportStatusFile("Starting import process...", LogLevels.Info);
@@ -437,7 +457,7 @@ namespace IntuneTools.Pages
 
 
             // Log what content is being imported
-            LogContentToImport();
+            var contentList = LogContentToImport();
 
             // Log which group(s) are being assigned
             LogGroupsToBeAssigned();
@@ -445,16 +465,25 @@ namespace IntuneTools.Pages
             // Log which filter(s) are being applied
             LogFiltersToBeApplied();
 
-            
-            // Perform the import process
-
-            if (SettingsCatalog.IsChecked == true)
+            // Extract group IDs into a list for later use
+            List<string> groupIDs = new List<string>();
+            foreach (var group in selectedGroupNameAndID)
             {
-                // Import Settings Catalog policies
-                
+                if (!string.IsNullOrEmpty(group.Value))
+                {
+                    groupIDs.Add(group.Value); // Add the group ID to the list
+                }
             }
 
+            // Perform the import process
 
+            if (ContentList.Any(c => c.ContentType == "Settings Catalog"))
+            {
+                // Import Settings Catalog policies
+                AppendToDetailsRichTextBlock("Importing Settings Catalog policies...\n");
+                LogToImportStatusFile("Importing Settings Catalog policies...", LogLevels.Info);
+                //await ImportMultipleSettingsCatalog(sourceGraphServiceClient, destinationGraphServiceClient, ContentList, IsGroupSelected, IsFilterSelected,groupIDs);
+            }
 
 
             AppendToDetailsRichTextBlock("Import process finished.\n");
@@ -505,12 +534,22 @@ namespace IntuneTools.Pages
 
         private void ClearAllButton_Click(object sender, RoutedEventArgs e)
         {
-
-        }        
+            // Clear all items from ContentList, which will update the DataGrid
+            ContentList.Clear();
+        }
+        
         private void ClearSelectedButton_Click(object sender, RoutedEventArgs e)
         {
-            // Clear the selected items in the DataGrid - TODO: Uncomment when XAML controls are available
-            // ContentDataGrid.SelectedItems.Clear();
+            // Remove only the selected items from ContentList
+            if (ContentDataGrid.SelectedItems != null && ContentDataGrid.SelectedItems.Count > 0)
+            {
+                // To avoid modifying the collection while iterating, copy selected items to a list
+                var itemsToRemove = ContentDataGrid.SelectedItems.Cast<ContentInfo>().ToList();
+                foreach (var item in itemsToRemove)
+                {
+                    ContentList.Remove(item);
+                }
+            }
         }
 
         // Handler for the 'Select all' checkbox Checked event

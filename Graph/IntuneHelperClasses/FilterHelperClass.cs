@@ -14,8 +14,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
     public class FilterHelperClass
     {
         
-
-
         public static async Task<List<DeviceAndAppManagementAssignmentFilter>> GetAllAssignmentFilters(GraphServiceClient graphServiceClient)
         {
             // Method to get the assignment filters for a policy

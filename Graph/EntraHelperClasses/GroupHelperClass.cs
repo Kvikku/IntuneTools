@@ -16,6 +16,10 @@ namespace IntuneTools.Graph.EntraHelperClasses
         public static async Task<List<Group>> GetAllGroups(GraphServiceClient graphServiceClient)
         {
             // This method gets all the groups in the tenant and returns them as a list of Group objects
+
+            // clear the dictionary
+            groupNameAndID.Clear();
+
             try
             {
                 LogToImportStatusFile("Getting all groups in the tenant");
@@ -37,6 +41,16 @@ namespace IntuneTools.Graph.EntraHelperClasses
                 // start the iteration
                 await pageIterator.IterateAsync();
                 LogToImportStatusFile($"Found {groups.Count} groups in the tenant");
+
+                // Populate the groupNameAndID dictionary with group names and IDs
+                foreach (var group in groups)
+                {
+                    if (!string.IsNullOrEmpty(group.DisplayName) && !string.IsNullOrEmpty(group.Id))
+                    {
+                        groupNameAndID[group.DisplayName] = group.Id;
+                    }
+                }
+
                 // return the list of groups
                 return groups;
             }
@@ -51,6 +65,10 @@ namespace IntuneTools.Graph.EntraHelperClasses
         public static async Task<List<Group>> SearchForGroups(GraphServiceClient graphServiceClient, string searchQuery)
         {
             // This method searches for groups in the tenant based on a search query and returns the results as a list of Group objects
+
+            // clear the dictionary
+            groupNameAndID.Clear();
+
             try
             {
                 LogToImportStatusFile("Searching for groups. Search query: " + searchQuery);
@@ -72,6 +90,16 @@ namespace IntuneTools.Graph.EntraHelperClasses
                 // start the iteration
                 await pageIterator.IterateAsync();
                 LogToImportStatusFile($"Found {groups.Count} groups in the tenant");
+
+                // Populate the groupNameAndID dictionary with group names and IDs
+                foreach (var group in groups)
+                {
+                    if (!string.IsNullOrEmpty(group.DisplayName) && !string.IsNullOrEmpty(group.Id))
+                    {
+                        groupNameAndID[group.DisplayName] = group.Id;
+                    }
+                }
+
                 // return the list of groups
                 return groups;
             }
