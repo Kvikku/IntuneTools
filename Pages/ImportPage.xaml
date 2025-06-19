@@ -20,6 +20,7 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/> <!-- Column 0 for main content -->
             <ColumnDefinition Width="*"/>    <!-- Column 1 for import button and related controls -->
+            <ColumnDefinition Width="Auto"/> <!-- Column 2 for LogPanel -->
         </Grid.ColumnDefinitions>
 
         <!-- Page Title -->
@@ -98,23 +99,7 @@
                 </StackPanel>
             </StackPanel>
             <!-- Right: LogPanel -->
-            <StackPanel x:Name="LogPanel" Orientation="Horizontal" Margin="40,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Left">
-                <ScrollViewer Width="400" MaxHeight="400"
-                              HorizontalScrollBarVisibility="Disabled"
-                              VerticalScrollBarVisibility="Auto"
-                              HorizontalScrollMode="Disabled"
-                              VerticalScrollMode="Enabled">
-                    <RichTextBlock x:Name="LogConsole"
-                                   Width="300"
-                                   HorizontalAlignment="Stretch"
-                                   IsTextSelectionEnabled="True"
-                                   TextWrapping="Wrap"/>
-                </ScrollViewer>
-                <Button x:Name="ClearLogButton" Width="50" Height="50" ToolTipService.ToolTip="Clear Log" Click="ClearLogButton_Click" 
-                        VerticalAlignment="Top" Margin="16,0,0,0">
-                    <FontIcon Glyph="&#xE74D;" FontFamily="Segoe MDL2 Assets"/>
-                </Button>
-            </StackPanel>
+            
         </StackPanel>
 
         <!-- Data Grid Area with Loading Overlay -->
@@ -199,7 +184,25 @@
                     </controls:DataGrid.Columns>
                 </controls:DataGrid>
             </StackPanel>
-            <!-- LogPanel: RichTextBlock with trash button to the right -->
+        </StackPanel>
+
+        <!-- LogPanel moved to the third column (Grid.Column="2") -->
+        <StackPanel x:Name="LogPanel" Grid.Row="2" Grid.Column="2" Orientation="Horizontal" Margin="20,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Right">
+            <ScrollViewer Width="400" MaxHeight="400"
+                  HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Auto"
+                  HorizontalScrollMode="Disabled"
+                  VerticalScrollMode="Enabled">
+                <RichTextBlock x:Name="LogConsole"
+                       Width="300"
+                       HorizontalAlignment="Stretch"
+                       IsTextSelectionEnabled="True"
+                       TextWrapping="Wrap"/>
+            </ScrollViewer>
+            <Button x:Name="ClearLogButton" Width="50" Height="50" ToolTipService.ToolTip="Clear Log" Click="ClearLogButton_Click" 
+            VerticalAlignment="Top" Margin="16,0,0,0">
+                <FontIcon Glyph="&#xE74D;" FontFamily="Segoe MDL2 Assets"/>
+            </Button>
         </StackPanel>
     </Grid>
 </Page>
