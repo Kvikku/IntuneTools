@@ -45,15 +45,17 @@ namespace IntuneTools.Utilities
             Error
         };
 
+        // Group variables
+        public static bool IsGroupSelected = false;
 
         // Graph authentication variables
         public static string sourceTenantName = string.Empty;
         public static string destinationTenantName = string.Empty;
 
 
+        // Filter variables for Graph API
 
-        // Graph API variables
-
+        public static bool IsFilterSelected = false;
         public static string SelectedFilterID = null;
         public static DeviceAndAppManagementAssignmentFilterType deviceAndAppManagementAssignmentFilterType = DeviceAndAppManagementAssignmentFilterType.None;
         public static Dictionary<string, string> filterNameAndID = new Dictionary<string, string>();

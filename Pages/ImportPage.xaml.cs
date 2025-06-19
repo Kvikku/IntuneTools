@@ -363,6 +363,9 @@ namespace IntuneTools.Pages
 
         private void LogGroupsToBeAssigned()
         {
+            IsGroupSelected = false; // Reset group selection status
+
+
             LogToImportStatusFile("Assigning to the following groups:", LogLevels.Info);
             AppendToDetailsRichTextBlock("Assigning to the following groups:\n");
             if (GroupDataGrid.SelectedItems != null && GroupDataGrid.SelectedItems.Count > 0)
@@ -375,6 +378,7 @@ namespace IntuneTools.Pages
                         AppendToDetailsRichTextBlock($"- {selectedGroup.GroupName}\n");
                     }
                 }
+                IsGroupSelected = true; // Set group selection status to true if any groups are selected
             }
             else
             {
@@ -387,6 +391,8 @@ namespace IntuneTools.Pages
 
         private void LogFiltersToBeApplied()
         {
+            IsFilterSelected = false; // Reset filter selection status
+
             LogToImportStatusFile("Applying the following filters:", LogLevels.Info);
             AppendToDetailsRichTextBlock("Applying the following filters:\n");
             if (FilterSelectionComboBox.SelectedItem != null)
@@ -394,6 +400,7 @@ namespace IntuneTools.Pages
                 string selectedFilter = FilterSelectionComboBox.SelectedItem.ToString();
                 LogToImportStatusFile($"- {selectedFilter}", LogLevels.Info);
                 AppendToDetailsRichTextBlock($"- {selectedFilter}\n");
+                IsFilterSelected = true; // Set filter selection status to true if a filter is selected
             }
             else
             {
@@ -404,11 +411,13 @@ namespace IntuneTools.Pages
             AppendToDetailsRichTextBlock("--------------------------------------------------\n");
         }
 
+
         private async Task MainImportProcess()
         {
             
             AppendToDetailsRichTextBlock("Starting import process...\n");
 
+            // Check if there is content to import
             if (ContentList.Count == 0)
             {
                 LogToImportStatusFile("No content to import.", LogLevels.Warning);
@@ -416,8 +425,8 @@ namespace IntuneTools.Pages
                 return;
             }
 
-            // Retrieve source and tenant names
-            CreateImportStatusFile(); // Ensure the import status file is created before importing
+            // Ensure the import status file is created before importing
+            CreateImportStatusFile(); 
 
             // Log the start of the import process
             LogToImportStatusFile("Starting import process...", LogLevels.Info);
@@ -436,10 +445,14 @@ namespace IntuneTools.Pages
             // Log which filter(s) are being applied
             LogFiltersToBeApplied();
 
-
+            
             // Perform the import process
 
-
+            if (SettingsCatalog.IsChecked == true)
+            {
+                // Import Settings Catalog policies
+                
+            }
 
 
 
@@ -456,8 +469,6 @@ namespace IntuneTools.Pages
         /// Buttons should not directly perform actions themselves.
         private async void ImportButton_Click(object sender, RoutedEventArgs e)
         {
-            var checkedOptions = GetCheckedOptionNames(); // Get the names of the checked options
-
             await MainImportProcess();
         }
      
