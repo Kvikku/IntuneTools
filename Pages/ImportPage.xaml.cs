@@ -117,6 +117,19 @@ namespace IntuneTools.Pages
             Search.IsEnabled = true;
         }
 
+        public List<string> GetCheckedOptionNames()
+        {
+            var checkedNames = new List<string>();
+            foreach (var child in OptionsPanel.Children)
+            {
+                if (child is CheckBox cb && cb.IsChecked == true)
+                {
+                    checkedNames.Add(cb.Name); // or cb.Content.ToString() for display text
+                }
+            }
+            return checkedNames;
+        }
+
 
         /// Graph API Methods ///
         /// These methods should handle the actual API calls to Microsoft Graph.
@@ -422,12 +435,16 @@ namespace IntuneTools.Pages
 
             // Log which filter(s) are being applied
             LogFiltersToBeApplied();
-            AppendToDetailsRichTextBlock("Import process finished.\n");
+
 
             // Perform the import process
 
-           
 
+
+
+
+
+            AppendToDetailsRichTextBlock("Import process finished.\n");
         }
 
 
@@ -439,6 +456,8 @@ namespace IntuneTools.Pages
         /// Buttons should not directly perform actions themselves.
         private async void ImportButton_Click(object sender, RoutedEventArgs e)
         {
+            var checkedOptions = GetCheckedOptionNames(); // Get the names of the checked options
+
             await MainImportProcess();
         }
      
@@ -488,8 +507,8 @@ namespace IntuneTools.Pages
         {
             if (_suppressSelectAllEvents) return;
             _suppressOptionEvents = true;
-            Option1CheckBox.IsChecked = true;
-            Option2CheckBox.IsChecked = true;
+            SettingsCatalog.IsChecked = true;
+            DeviceCompliance.IsChecked = true;
             Option3CheckBox.IsChecked = true;
             _suppressOptionEvents = false;
         }
@@ -499,8 +518,8 @@ namespace IntuneTools.Pages
         {
             if (_suppressSelectAllEvents) return;
             _suppressOptionEvents = true;
-            Option1CheckBox.IsChecked = false;
-            Option2CheckBox.IsChecked = false;
+            SettingsCatalog.IsChecked = false;
+            DeviceCompliance.IsChecked = false;
             Option3CheckBox.IsChecked = false;
             _suppressOptionEvents = false;
         }
@@ -531,10 +550,10 @@ namespace IntuneTools.Pages
         // Helper to update the 'Select all' checkbox state based on options
         private void UpdateSelectAllCheckBox()
         {
-            if (Option1CheckBox == null || Option2CheckBox == null || Option3CheckBox == null)
+            if (SettingsCatalog == null || DeviceCompliance == null || Option3CheckBox == null)
                 return;
 
-            bool?[] states = { Option1CheckBox.IsChecked, Option2CheckBox.IsChecked, Option3CheckBox.IsChecked };
+            bool?[] states = { SettingsCatalog.IsChecked, DeviceCompliance.IsChecked, Option3CheckBox.IsChecked };
             _suppressSelectAllEvents = true;
             if (states.All(x => x == true))
                 OptionsAllCheckBox.IsChecked = true;
