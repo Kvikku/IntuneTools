@@ -108,5 +108,176 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             // Return an empty list if an exception occurs
             return new List<DeviceCompliancePolicy>();
         }
+
+        public static async Task ImportMultipleDeviceCompliancePolicies(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, System.Windows.Forms.DataGridView dtg, List<string> policies, System.Windows.Forms.RichTextBox rtb, bool assignments, bool filter, List<string> groups)
+        {
+            try
+            {
+                rtb.AppendText(Environment.NewLine);
+                rtb.AppendText($"{DateTime.Now.ToString()} - Importing {policies.Count} Device Compliance policies.\n");
+                WriteToImportStatusFile(" ");
+                WriteToImportStatusFile($"{DateTime.Now.ToString()} - Importing {policies.Count} Device Compliance policies.");
+
+                foreach (var policy in policies)
+                {
+                    var policyName = string.Empty;
+                    try
+                    {
+                        var result = await sourceGraphServiceClient.DeviceManagement.DeviceCompliancePolicies[policy].GetAsync((requestConfiguration) =>
+                        {
+                            requestConfiguration.QueryParameters.Expand = new string[] { "scheduledActionsForRule" };
+                        });
+
+                        //var rules = await sourceGraphServiceClient.DeviceManagement.DeviceCompliancePolicies[policy].ScheduledActionsForRule.GetAsync();
+
+                        policyName = result.DisplayName;
+
+                        // Get the type of the policy with reflection
+                        var type = result.GetType();
+
+                        // Create a new instance of the same type
+                        var newPolicy = Activator.CreateInstance(type);
+
+                        // Copy all settings from the source policy to the new policy
+                        foreach (var property in result.GetType().GetProperties())
+                        {
+                            if (property.CanWrite && property.Name != "Id" && property.Name != "CreatedDateTime" && property.Name != "LastModifiedDateTime")
+                            {
+                                var value = property.GetValue(result);
+                                if (value != null)
+                                {
+                                    property.SetValue(newPolicy, value);
+                                }
+                            }
+                        }
+
+
+
+
+                        // Cast the new policy to DeviceCompliancePolicy
+                        var deviceCompliancePolicy = newPolicy as DeviceCompliancePolicy;
+
+
+                        // new device compliance scheduled action rule
+
+                        // Note - this manual test works. Need to copy the scheduled actions for rule
+
+                        var testRule = new DeviceComplianceScheduledActionForRule
+                        {
+                            RuleName = "Test Rule",
+                            ScheduledActionConfigurations = new List<DeviceComplianceActionItem>()
+                            {
+                                new DeviceComplianceActionItem
+                                {
+                                    ActionType = DeviceComplianceActionType.Block,
+                                    GracePeriodHours = 8,
+                                    NotificationMessageCCList = new List<string>(),
+                                    NotificationTemplateId = ""
+                                }
+                            }
+                        };
+
+                        deviceCompliancePolicy.ScheduledActionsForRule = new List<DeviceComplianceScheduledActionForRule>
+                        {
+                            testRule
+                        };
+
+
+                        //// Ensure the ScheduledActionsForRule is copied
+                        //if (result.ScheduledActionsForRule != null)
+                        //{
+                        //    deviceCompliancePolicy.ScheduledActionsForRule = new List<DeviceComplianceScheduledActionForRule>();
+                        //    foreach (var action in result.ScheduledActionsForRule)
+                        //    {
+                        //        var newAction = new DeviceComplianceScheduledActionForRule
+                        //        {
+                        //            RuleName = action.RuleName,
+                        //            ScheduledActionConfigurations = action.ScheduledActionConfigurations
+
+                        //        };
+                        //        deviceCompliancePolicy.ScheduledActionsForRule.Add(newAction);
+                        //    }
+                        //}
+
+
+                        var import = await destinationGraphServiceClient.DeviceManagement.DeviceCompliancePolicies.PostAsync(deviceCompliancePolicy);
+                        rtb.AppendText($"Successfully imported {import.DisplayName}\n");
+                        WriteToLog($"Successfully imported {import.DisplayName}");
+
+                        if (assignments)
+                        {
+                            await AssignGroupsToSingleDeviceCompliance(import.Id, groups, destinationGraphServiceClient);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        WriteErrorToRTB($"Failed to import {policyName}\n", rtb);
+                        WriteToImportStatusFile($"Failed to import {policyName}: {ex.Message}", LogType.Error);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                WriteToImportStatusFile($"An unexpected error occurred during the import process: {ex.Message}", LogType.Error);
+                WriteErrorToRTB($"An unexpected error occurred during the import process. Please check the log file for more information.", rtb);
+            }
+            finally
+            {
+                rtb.AppendText($"{DateTime.Now.ToString()} - Finished importing Device Compliance policies.\n");
+                WriteToImportStatusFile($"{DateTime.Now.ToString()} - Finished importing Device Compliance policies.");
+            }
+        }
+
+        public static async Task AssignGroupsToSingleDeviceCompliance(string policyID, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
+        {
+            if (policyID == null)
+            {
+                throw new ArgumentNullException(nameof(policyID));
+            }
+
+            if (groupIDs == null)
+            {
+                throw new ArgumentNullException(nameof(groupIDs));
+            }
+
+            if (destinationGraphServiceClient == null)
+            {
+                throw new ArgumentNullException(nameof(destinationGraphServiceClient));
+            }
+
+            List<DeviceCompliancePolicyAssignment> assignments = new List<DeviceCompliancePolicyAssignment>();
+
+            foreach (var group in groupIDs)
+            {
+                var assignment = new DeviceCompliancePolicyAssignment
+                {
+                    Target = new GroupAssignmentTarget
+                    {
+                        GroupId = group,
+                        DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
+                        DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
+                    }
+                };
+
+                assignments.Add(assignment);
+            }
+
+            var requestBody = new Microsoft.Graph.Beta.DeviceManagement.DeviceCompliancePolicies.Item.Assign.AssignPostRequestBody
+            {
+                Assignments = assignments
+            };
+
+            try
+            {
+                await destinationGraphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyID].Assign.PostAsync(requestBody);
+                WriteToLog($"Assigned groups to policy {policyID}");
+            }
+            catch (Exception ex)
+            {
+                HandleException(ex, "An unexpected error occurred");
+            }
+        }
+
     }
+
 }

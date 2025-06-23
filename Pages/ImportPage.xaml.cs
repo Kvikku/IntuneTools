@@ -486,6 +486,13 @@ namespace IntuneTools.Pages
                 var policies = GetSettingsCatalogIDs();
                 await ImportMultipleSettingsCatalog(sourceGraphServiceClient, destinationGraphServiceClient, policies, IsGroupSelected, IsFilterSelected,groupIDs);
             }
+            if (ContentList.Any(c => c.ContentType == "Device Compliance"))
+            {
+                // Import Device Compliance policies
+                AppendToDetailsRichTextBlock("Importing Device Compliance policies...\n");
+                LogToImportStatusFile("Importing Device Compliance policies...", LogLevels.Info);
+                await ImportMultipleDeviceCompliancePolicies(sourceGraphServiceClient, destinationGraphServiceClient, IsGroupSelected, IsFilterSelected, groupIDs);
+            }
 
 
             AppendToDetailsRichTextBlock("Import process finished.\n");
