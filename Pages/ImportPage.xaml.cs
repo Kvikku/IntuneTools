@@ -30,7 +30,7 @@ namespace IntuneTools.Pages
         public string? ContentName { get; set; }
         public string? ContentPlatform { get; set; }
         public string? ContentType { get; set; }
-        //public string? ContentId { get; set; }
+        public string? ContentId { get; set; }
     }
 
     public class GroupInfo
@@ -193,7 +193,7 @@ namespace IntuneTools.Pages
                         ContentName = policy.Name,
                         ContentType = "Settings Catalog",
                         ContentPlatform = policy.Platforms?.ToString() ?? string.Empty,
-                        //ContentId = policy.Id
+                        ContentId = policy.Id
                     });
                 }
                 // Bind to DataGrid
@@ -210,7 +210,7 @@ namespace IntuneTools.Pages
             // This method retrieves the IDs of all settings catalog policies in ContentList
             return ContentList
                 .Where(c => c.ContentType == "Settings Catalog")
-                .Select(c => c.ContentName ?? string.Empty) // Ensure no nulls are returned
+                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
         }
 
@@ -233,7 +233,7 @@ namespace IntuneTools.Pages
                         ContentName = policy.DisplayName,
                         ContentType = "Device Compliance Policy",
                         ContentPlatform = policy.OdataType?.ToString() ?? string.Empty,
-                        //ContentId = policy.Id
+                        ContentId = policy.Id
                     });
                 }
                 // Bind to DataGrid
@@ -261,7 +261,7 @@ namespace IntuneTools.Pages
                 // Clear the GroupList before loading new data
                 GroupList.Clear();
                 // Search for groups using the provided query
-                var groups = await SearchForGroups(sourceGraphServiceClient, searchQuery);
+                var groups = await SearchForGroups(destinationGraphServiceClient, searchQuery);
                 // Update GroupList for DataGrid
                 foreach (var group in groups)
                 {
@@ -288,7 +288,7 @@ namespace IntuneTools.Pages
             try
             {
                 // Retrieve all groups
-                var groups = await GetAllGroups(sourceGraphServiceClient);
+                var groups = await GetAllGroups(destinationGraphServiceClient);
                 // Update ContentList for DataGrid
                 foreach (var group in groups)
                 {
@@ -331,8 +331,6 @@ namespace IntuneTools.Pages
                 {
                     FilterOptions.Add(filter.DisplayName); // Add filter display name to ComboBox options
                     
-                    // Also add to the dictionary for later use
-                    filterNameAndID[filter.DisplayName] = filter.Id; // Store name and ID in the dictionary
                 }
                 // Ensure ComboBox is bound to FilterOptions (though it should be from XAML or initialization)
                 if (FilterSelectionComboBox.ItemsSource != FilterOptions)
@@ -448,6 +446,7 @@ namespace IntuneTools.Pages
             // Ensure the import status file is created before importing
             CreateImportStatusFile();
 
+
             // Log the start of the import process
             LogToImportStatusFile("Starting import process...", LogLevels.Info);
             LogToImportStatusFile($"Source Tenant: {sourceTenantName}", LogLevels.Info);
@@ -484,7 +483,8 @@ namespace IntuneTools.Pages
                 // Import Settings Catalog policies
                 AppendToDetailsRichTextBlock("Importing Settings Catalog policies...\n");
                 LogToImportStatusFile("Importing Settings Catalog policies...", LogLevels.Info);
-                //await ImportMultipleSettingsCatalog(sourceGraphServiceClient, destinationGraphServiceClient, ContentList, IsGroupSelected, IsFilterSelected,groupIDs);
+                var policies = GetSettingsCatalogIDs();
+                await ImportMultipleSettingsCatalog(sourceGraphServiceClient, destinationGraphServiceClient, policies, IsGroupSelected, IsFilterSelected,groupIDs);
             }
 
 

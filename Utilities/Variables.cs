@@ -58,7 +58,6 @@ namespace IntuneTools.Utilities
 
 
         // Filter variables for Graph API
-
         public static bool IsFilterSelected = false;
         public static string SelectedFilterID = null;
         public static DeviceAndAppManagementAssignmentFilterType deviceAndAppManagementAssignmentFilterType = DeviceAndAppManagementAssignmentFilterType.None;

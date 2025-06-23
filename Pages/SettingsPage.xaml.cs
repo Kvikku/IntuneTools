@@ -100,8 +100,6 @@ namespace IntuneTools.Pages
             sourceGraphServiceClient = client;
             sourceTenantName = await GetAzureTenantName(client);
             Log($"Source Tenant Name: {sourceTenantName}");
-
-
         }
 
         private void DestinationLoginButton_Click(object sender, RoutedEventArgs e)
