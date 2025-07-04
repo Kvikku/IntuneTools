@@ -75,7 +75,7 @@
                                       Indeterminate="SelectAll_Indeterminate" />
                             <CheckBox x:Name="SettingsCatalog" Content="Settings Catalog" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
                             <CheckBox x:Name="DeviceCompliance" Content="Device Compliance" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
-                            <CheckBox x:Name="Option3CheckBox" Content="Option 3" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
+                            <CheckBox x:Name="EntraGroups" Content="Entra Groups" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
                         </StackPanel>
                     </Expander>
                 </StackPanel>

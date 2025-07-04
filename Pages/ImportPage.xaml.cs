@@ -148,6 +148,7 @@ namespace IntuneTools.Pages
 
                 await LoadAllSettingsCatalogPoliciesAsync();
                 await LoadAllDeviceCompliancePoliciesAsync();
+                await LoadGroupsOrchestrator();
 
 
                 // TODO - method to clean up ContentList if needed
@@ -257,6 +258,43 @@ namespace IntuneTools.Pages
         /// <summary
         /// Groups
         /// </summary>
+
+        private async Task LoadGroupsOrchestrator()
+        {
+            ShowLoading("Loading groups from Microsoft Graph...");
+            try
+            {
+                // Clear the GroupList before loading new data
+                GroupList.Clear();
+                // Load all groups from Graph API
+                var groups = await GetAllGroups(sourceGraphServiceClient);
+                // Update GroupList for DataGrid
+                foreach (var group in groups)
+                {
+                    ContentList.Add(new ContentInfo
+                    {
+                        ContentId = group.Id,
+                        ContentName = group.DisplayName,
+                        ContentType = "Entra Group",
+                        ContentPlatform = group.GroupTypes != null && group.GroupTypes.Contains("Unified") ? "Microsoft 365 Group" : "Security Group"
+                    });
+                }
+                // Bind to DataGrid
+                GroupDataGrid.ItemsSource = GroupList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
+        private List<string> GetGroupIDs()
+        {
+            // This method retrieves the IDs of all groups in GroupList
+            return ContentList
+                .Select(g => g.ContentId ?? string.Empty) // Ensure no nulls are returned
+                .ToList();
+        }
 
         private async Task SearchForGroupsAsync(string searchQuery)
         {
@@ -493,6 +531,7 @@ namespace IntuneTools.Pages
                 LogToImportStatusFile("Importing Settings Catalog policies...", LogLevels.Info);
                 var policies = GetSettingsCatalogIDs();
                 await ImportMultipleSettingsCatalog(sourceGraphServiceClient, destinationGraphServiceClient, policies, IsGroupSelected, IsFilterSelected,groupIDs);
+                AppendToDetailsRichTextBlock("Settings Catalog policies imported successfully.\n");
             }
             if (ContentList.Any(c => c.ContentType == "Device Compliance Policy"))
             {
@@ -501,6 +540,7 @@ namespace IntuneTools.Pages
                 LogToImportStatusFile("Importing Device Compliance policies...", LogLevels.Info);
                 var policies = GetDeviceComplianceIDs();
                 await ImportMultipleDeviceCompliancePolicies(sourceGraphServiceClient, destinationGraphServiceClient, policies, IsGroupSelected, IsFilterSelected, groupIDs);
+                AppendToDetailsRichTextBlock("Device Compliance policies imported successfully.\n");
             }
 
 
@@ -577,7 +617,7 @@ namespace IntuneTools.Pages
             _suppressOptionEvents = true;
             SettingsCatalog.IsChecked = true;
             DeviceCompliance.IsChecked = true;
-            Option3CheckBox.IsChecked = true;
+            EntraGroups.IsChecked = true;
             _suppressOptionEvents = false;
         }
 
@@ -588,7 +628,7 @@ namespace IntuneTools.Pages
             _suppressOptionEvents = true;
             SettingsCatalog.IsChecked = false;
             DeviceCompliance.IsChecked = false;
-            Option3CheckBox.IsChecked = false;
+            EntraGroups.IsChecked = false;
             _suppressOptionEvents = false;
         }
 
@@ -618,10 +658,10 @@ namespace IntuneTools.Pages
         // Helper to update the 'Select all' checkbox state based on options
         private void UpdateSelectAllCheckBox()
         {
-            if (SettingsCatalog == null || DeviceCompliance == null || Option3CheckBox == null)
+            if (SettingsCatalog == null || DeviceCompliance == null || EntraGroups == null)
                 return;
 
-            bool?[] states = { SettingsCatalog.IsChecked, DeviceCompliance.IsChecked, Option3CheckBox.IsChecked };
+            bool?[] states = { SettingsCatalog.IsChecked, DeviceCompliance.IsChecked, EntraGroups.IsChecked };
             _suppressSelectAllEvents = true;
             if (states.All(x => x == true))
                 OptionsAllCheckBox.IsChecked = true;
