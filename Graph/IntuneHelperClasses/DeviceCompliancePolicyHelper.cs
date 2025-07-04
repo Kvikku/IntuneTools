@@ -109,12 +109,10 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             return new List<DeviceCompliancePolicy>();
         }
 
-        public static async Task ImportMultipleDeviceCompliancePolicies(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, System.Windows.Forms.DataGridView dtg, List<string> policies, System.Windows.Forms.RichTextBox rtb, bool assignments, bool filter, List<string> groups)
+        public static async Task ImportMultipleDeviceCompliancePolicies(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> policies, bool assignments, bool filter, List<string> groups)
         {
             try
             {
-                rtb.AppendText(Environment.NewLine);
-                rtb.AppendText($"{DateTime.Now.ToString()} - Importing {policies.Count} Device Compliance policies.\n");
                 WriteToImportStatusFile(" ");
                 WriteToImportStatusFile($"{DateTime.Now.ToString()} - Importing {policies.Count} Device Compliance policies.");
 
@@ -201,8 +199,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
 
                         var import = await destinationGraphServiceClient.DeviceManagement.DeviceCompliancePolicies.PostAsync(deviceCompliancePolicy);
-                        rtb.AppendText($"Successfully imported {import.DisplayName}\n");
-                        WriteToLog($"Successfully imported {import.DisplayName}");
+                        LogToImportStatusFile($"Successfully imported {import.DisplayName}");
 
                         if (assignments)
                         {
@@ -211,7 +208,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     }
                     catch (Exception ex)
                     {
-                        WriteErrorToRTB($"Failed to import {policyName}\n", rtb);
+                        LogToImportStatusFile($"Failed to import {policyName}\n",LogLevels.Error);
                         WriteToImportStatusFile($"Failed to import {policyName}: {ex.Message}", LogType.Error);
                     }
                 }
@@ -219,11 +216,10 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             catch (Exception ex)
             {
                 WriteToImportStatusFile($"An unexpected error occurred during the import process: {ex.Message}", LogType.Error);
-                WriteErrorToRTB($"An unexpected error occurred during the import process. Please check the log file for more information.", rtb);
+                WriteToImportStatusFile($"An unexpected error occurred during the import process. Please check the log file for more information.", LogType.Error);
             }
             finally
             {
-                rtb.AppendText($"{DateTime.Now.ToString()} - Finished importing Device Compliance policies.\n");
                 WriteToImportStatusFile($"{DateTime.Now.ToString()} - Finished importing Device Compliance policies.");
             }
         }
@@ -270,11 +266,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             try
             {
                 await destinationGraphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyID].Assign.PostAsync(requestBody);
-                WriteToLog($"Assigned groups to policy {policyID}");
+                WriteToImportStatusFile($"Assigned groups to policy {policyID}",LogType.Error);
             }
             catch (Exception ex)
             {
-                HandleException(ex, "An unexpected error occurred");
+                LogToImportStatusFile(ex.Message.ToString(), LogLevels.Error);
             }
         }
 

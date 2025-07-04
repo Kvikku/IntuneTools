@@ -245,6 +245,14 @@ namespace IntuneTools.Pages
             }
         }
 
+        private List<string> GetDeviceComplianceIDs()
+        {
+            // This method retrieves the IDs of all settings catalog policies in ContentList
+            return ContentList
+                .Where(c => c.ContentType == "Device Compliance Policy")
+                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
+                .ToList();
+        }
 
         /// <summary
         /// Groups
@@ -486,12 +494,13 @@ namespace IntuneTools.Pages
                 var policies = GetSettingsCatalogIDs();
                 await ImportMultipleSettingsCatalog(sourceGraphServiceClient, destinationGraphServiceClient, policies, IsGroupSelected, IsFilterSelected,groupIDs);
             }
-            if (ContentList.Any(c => c.ContentType == "Device Compliance"))
+            if (ContentList.Any(c => c.ContentType == "Device Compliance Policy"))
             {
                 // Import Device Compliance policies
                 AppendToDetailsRichTextBlock("Importing Device Compliance policies...\n");
                 LogToImportStatusFile("Importing Device Compliance policies...", LogLevels.Info);
-                await ImportMultipleDeviceCompliancePolicies(sourceGraphServiceClient, destinationGraphServiceClient, IsGroupSelected, IsFilterSelected, groupIDs);
+                var policies = GetDeviceComplianceIDs();
+                await ImportMultipleDeviceCompliancePolicies(sourceGraphServiceClient, destinationGraphServiceClient, policies, IsGroupSelected, IsFilterSelected, groupIDs);
             }
 
 
