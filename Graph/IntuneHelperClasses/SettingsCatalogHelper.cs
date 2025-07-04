@@ -82,8 +82,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 
                 WriteToImportStatusFile($"Importing {policies.Count} settings catalog policies.");
 
-
-
                 foreach (var policy in policies)
                 {
                     var policyName = "";

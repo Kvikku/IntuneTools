@@ -35,7 +35,7 @@ namespace IntuneTools.Utilities
         public static string appSettingsFileName = "AppSettings.json"; // General settings file name
         public static string appSettingsFile = Path.Combine(appSettingsFolder, appSettingsFileName); // Full path for the general settings file
 
-        public static string primaryLogFile = Path.Combine(logFileFolder, timestamp + "_" + logFileName); // Corrected to use logFileFolder
+        public static string primaryLogFile = Path.Combine(logFileFolder, $"{DateTime.Now:yyyy-MM-dd}-" + logFileName); // Corrected to use logFileFolder
         public static string ImportStatusFileName = $"{DateTime.Now:yyyy-MM-dd-HH-mm}-ImportStatus.log";
         public static string ImportStatusFilePath = Path.Combine(logFileFolder, ImportStatusFileName); // Full path for the import status log file
         public enum LogLevels
