@@ -151,20 +151,23 @@ namespace IntuneTools.Graph.EntraHelperClasses
                             continue;
                         }
 
-                        // Optional: Check if a group with the same name already exists in the destination tenant
-                        var existingGroups = await destinationGraphServiceClient.Groups.GetAsync(q =>
-                        {
-                            q.QueryParameters.Filter = $"displayName eq '{sourceGroup.DisplayName?.Replace("'", "''")}'"; // Handle potential apostrophes in name
-                            q.QueryParameters.Select = new string[] { "id", "displayName" }; // Only need ID and name for check
-                            q.Headers.Add("ConsistencyLevel", "eventual"); // Required for advanced filters like displayName
-                            q.QueryParameters.Count = true; // Request count
-                        });
 
-                        if (existingGroups?.Value?.Count > 0)
-                        {
-                            LogToImportStatusFile($"Skipping {ItemType} '{sourceGroup.DisplayName}' (ID: {groupId}): Name conflict in destination.");
-                            continue;
-                        }
+
+                        // Optional: Check if a group with the same name already exists in the destination tenant
+                        // Uncomment the following code if you want to check for existing groups by name
+                        //var existingGroups = await destinationGraphServiceClient.Groups.GetAsync(q =>
+                        //{
+                        //    q.QueryParameters.Filter = $"displayName eq '{sourceGroup.DisplayName?.Replace("'", "''")}'"; // Handle potential apostrophes in name
+                        //    q.QueryParameters.Select = new string[] { "id", "displayName" }; // Only need ID and name for check
+                        //    q.Headers.Add("ConsistencyLevel", "eventual"); // Required for advanced filters like displayName
+                        //    q.QueryParameters.Count = true; // Request count
+                        //});
+
+                        //if (existingGroups?.Value?.Count > 0)
+                        //{
+                        //    LogToImportStatusFile($"Skipping {ItemType} '{sourceGroup.DisplayName}' (ID: {groupId}): Name conflict in destination.");
+                        //    continue;
+                        //}
 
 
                         // Create the new group object based on the source

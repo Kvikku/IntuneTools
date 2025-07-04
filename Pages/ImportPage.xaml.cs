@@ -292,6 +292,7 @@ namespace IntuneTools.Pages
         {
             // This method retrieves the IDs of all groups in GroupList
             return ContentList
+                .Where(c => c.ContentType == "Entra Group")
                 .Select(g => g.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
         }
@@ -523,6 +524,16 @@ namespace IntuneTools.Pages
             // Perform the import process
 
             // TODO  - Check that all info is available before proceeding with the import
+
+            if (ContentList.Any(c => c.ContentType == "Entra Group"))
+            {
+                // Import Entra Groups
+                AppendToDetailsRichTextBlock("Importing Entra Groups...\n");
+                LogToImportStatusFile("Importing Entra Groups...", LogLevels.Info);
+                var groups = GetGroupIDs();
+                await ImportMultipleGroups(sourceGraphServiceClient, destinationGraphServiceClient, groups);
+                AppendToDetailsRichTextBlock("Entra Groups imported successfully.\n");
+            }
 
             if (ContentList.Any(c => c.ContentType == "Settings Catalog"))
             {
