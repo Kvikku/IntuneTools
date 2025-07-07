@@ -110,7 +110,10 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             // Add filter name and ID to the dictionary
             foreach (var filter in assignmentFilters)
             {
-                filterNameAndID.Add(filter.DisplayName, filter.Id);
+                if (filter.DisplayName != null && !filterNameAndID.ContainsKey(filter.DisplayName))
+                {
+                    filterNameAndID.Add(filter.DisplayName, filter.Id);
+                }
             }
 
             return assignmentFilters;

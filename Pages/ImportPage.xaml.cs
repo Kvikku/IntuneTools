@@ -17,6 +17,7 @@ using static IntuneTools.Graph.IntuneHelperClasses.DeviceCompliancePolicyHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceConfigurationHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.FilterHelperClass;
 using static IntuneTools.Graph.IntuneHelperClasses.SettingsCatalogHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.PowerShellScriptsHelper;
 using static IntuneTools.Utilities.HelperClass;
 using static IntuneTools.Utilities.SourceTenantGraphClient;
 using static IntuneTools.Utilities.Variables;
@@ -176,6 +177,11 @@ namespace IntuneTools.Pages
                 {
                     // Load Apple BYOD Enrollment Profiles
                     await LoadAllAppleBYODEnrollmentProfilesAsync();
+                }
+                if (selectedContent.Contains("PowerShellScript"))
+                {
+                    // Load PowerShell Scripts
+                    await LoadAllPowerShellScriptsAsync();
                 }
                 if (selectedContent.Contains("Filters"))
                 {
@@ -371,6 +377,48 @@ namespace IntuneTools.Pages
                 .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
         }
+
+
+        /// <summary>
+        /// PowerShell Scripts
+        /// </summary>
+
+        private async Task LoadAllPowerShellScriptsAsync()
+        {
+            ShowLoading("Loading PowerShell scripts from Microsoft Graph...");
+            try
+            {
+                // Retrieve all PowerShell scripts
+                var scripts = await GetAllPowerShellScripts(sourceGraphServiceClient);
+                // Update ContentList for DataGrid
+                foreach (var script in scripts)
+                {
+                    ContentList.Add(new ContentInfo
+                    {
+                        ContentName = script.DisplayName,
+                        ContentType = "PowerShell Script",
+                        ContentPlatform = "Windows",
+                        ContentId = script.Id
+                    });
+                }
+                // Bind to DataGrid
+                ContentDataGrid.ItemsSource = ContentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
+        private List<string> GetPowerShellScriptIDs()
+        {
+            // This method retrieves the IDs of all PowerShell scripts in ContentList
+            return ContentList
+                .Where(c => c.ContentType == "PowerShell Script")
+                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
+                .ToList();
+        }
+
 
         /// <summary
         /// Groups
@@ -736,6 +784,15 @@ namespace IntuneTools.Pages
                 await ImportMultipleAssignmentFilters(sourceGraphServiceClient, destinationGraphServiceClient, filters);
                 AppendToDetailsRichTextBlock("Assignment Filters imported successfully.\n");
             }
+            if (ContentList.Any(c => c.ContentType == "PowerShell Script"))
+            {
+                // Import PowerShell Scripts
+                AppendToDetailsRichTextBlock("Importing PowerShell Scripts...\n");
+                LogToImportStatusFile("Importing PowerShell Scripts...", LogLevels.Info);
+                var scripts = GetPowerShellScriptIDs();
+                await ImportMultiplePowerShellScripts(sourceGraphServiceClient, destinationGraphServiceClient, scripts, IsGroupSelected, IsFilterSelected, groupIDs);
+                AppendToDetailsRichTextBlock("PowerShell Scripts imported successfully.\n");
+            }
 
             AppendToDetailsRichTextBlock("Import process finished.\n");
         }
@@ -808,10 +865,13 @@ namespace IntuneTools.Pages
         {
             if (_suppressSelectAllEvents) return;
             _suppressOptionEvents = true;
-            SettingsCatalog.IsChecked = true;
-            DeviceCompliance.IsChecked = true;
-            EntraGroups.IsChecked = true;
-            DeviceConfiguration.IsChecked = true;
+            foreach (var child in OptionsPanel.Children)
+            {
+                if (child is CheckBox cb && cb.Name != "OptionsAllCheckBox")
+                {
+                    cb.IsChecked = true;
+                }
+            }
             _suppressOptionEvents = false;
         }
 
@@ -820,10 +880,13 @@ namespace IntuneTools.Pages
         {
             if (_suppressSelectAllEvents) return;
             _suppressOptionEvents = true;
-            SettingsCatalog.IsChecked = false;
-            DeviceCompliance.IsChecked = false;
-            EntraGroups.IsChecked = false;
-            DeviceConfiguration.IsChecked = false;
+            foreach (var child in OptionsPanel.Children)
+            {
+                if (child is CheckBox cb && cb.Name != "OptionsAllCheckBox")
+                {
+                    cb.IsChecked = false;
+                }
+            }
             _suppressOptionEvents = false;
         }
 
@@ -853,10 +916,13 @@ namespace IntuneTools.Pages
         // Helper to update the 'Select all' checkbox state based on options
         private void UpdateSelectAllCheckBox()
         {
-            if (SettingsCatalog == null || DeviceCompliance == null || EntraGroups == null)
+            var optionCheckBoxes = OptionsPanel.Children.OfType<CheckBox>().Where(cb => cb.Name != "OptionsAllCheckBox").ToList();
+
+            if (!optionCheckBoxes.Any())
                 return;
 
-            bool?[] states = { SettingsCatalog.IsChecked, DeviceCompliance.IsChecked, EntraGroups.IsChecked,DeviceConfiguration.IsChecked };
+            bool?[] states = optionCheckBoxes.Select(cb => cb.IsChecked).ToArray();
+            
             _suppressSelectAllEvents = true;
             if (states.All(x => x == true))
                 OptionsAllCheckBox.IsChecked = true;
