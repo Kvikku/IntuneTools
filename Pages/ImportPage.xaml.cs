@@ -18,6 +18,7 @@ using static IntuneTools.Graph.IntuneHelperClasses.DeviceConfigurationHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.FilterHelperClass;
 using static IntuneTools.Graph.IntuneHelperClasses.SettingsCatalogHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.PowerShellScriptsHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.ProactiveRemediationsHelper;
 using static IntuneTools.Utilities.HelperClass;
 using static IntuneTools.Utilities.SourceTenantGraphClient;
 using static IntuneTools.Utilities.Variables;
@@ -182,6 +183,11 @@ namespace IntuneTools.Pages
                 {
                     // Load PowerShell Scripts
                     await LoadAllPowerShellScriptsAsync();
+                }
+                if (selectedContent.Contains("ProactiveRemediation"))
+                {
+                    // Load Proactive Remediations
+                    await LoadAllProactiveRemediationsAsync();
                 }
                 if (selectedContent.Contains("Filters"))
                 {
@@ -419,6 +425,45 @@ namespace IntuneTools.Pages
                 .ToList();
         }
 
+        /// <summary>
+        /// Proactive Remediations
+        /// </summary>
+
+        private async Task LoadAllProactiveRemediationsAsync()
+        {
+            ShowLoading("Loading proactive remediations from Microsoft Graph...");
+            try
+            {
+                // Retrieve all proactive remediations
+                var scripts = await GetAllProactiveRemediations(sourceGraphServiceClient);
+                // Update ContentList for DataGrid
+                foreach (var script in scripts)
+                {
+                    ContentList.Add(new ContentInfo
+                    {
+                        ContentName = script.DisplayName,
+                        ContentType = "Proactive Remediation",
+                        ContentPlatform = "Windows",
+                        ContentId = script.Id
+                    });
+                }
+                // Bind to DataGrid
+                ContentDataGrid.ItemsSource = ContentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
+        private List<string> GetProactiveRemediationIDs()
+        {
+            // This method retrieves the IDs of all proactive remediations in ContentList
+            return ContentList
+                .Where(c => c.ContentType == "Proactive Remediation")
+                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
+                .ToList();
+        }
 
         /// <summary
         /// Groups
@@ -792,6 +837,15 @@ namespace IntuneTools.Pages
                 var scripts = GetPowerShellScriptIDs();
                 await ImportMultiplePowerShellScripts(sourceGraphServiceClient, destinationGraphServiceClient, scripts, IsGroupSelected, IsFilterSelected, groupIDs);
                 AppendToDetailsRichTextBlock("PowerShell Scripts imported successfully.\n");
+            }
+            if (ContentList.Any(c => c.ContentType == "Proactive Remediation"))
+            {
+                // Import Proactive Remediations
+                AppendToDetailsRichTextBlock("Importing Proactive Remediations...\n");
+                LogToImportStatusFile("Importing Proactive Remediations...", LogLevels.Info);
+                var scripts = GetProactiveRemediationIDs();
+                await ImportMultipleProactiveRemediations(sourceGraphServiceClient, destinationGraphServiceClient, scripts, IsGroupSelected, IsFilterSelected, groupIDs);
+                AppendToDetailsRichTextBlock("Proactive Remediations imported successfully.\n");
             }
 
             AppendToDetailsRichTextBlock("Import process finished.\n");
