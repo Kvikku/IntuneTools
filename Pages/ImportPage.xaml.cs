@@ -13,6 +13,7 @@ using static IntuneTools.Graph.IntuneHelperClasses.FilterHelperClass;
 using static IntuneTools.Graph.IntuneHelperClasses.SettingsCatalogHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceCompliancePolicyHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceConfigurationHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.AppleBYODEnrollmentProfileHelper;
 using static IntuneTools.Graph.EntraHelperClasses.GroupHelperClass;
 using static IntuneTools.Utilities.SourceTenantGraphClient;
 using static IntuneTools.Graph.DestinationTenantGraphClient;
@@ -171,6 +172,11 @@ namespace IntuneTools.Pages
                     // Load Device Configuration policies
                     await LoadAllDeviceConfigurationPoliciesAsync();
                 }
+                if (selectedContent.Contains("AppleBYODEnrollmentProfile"))
+                {
+                    // Load Apple BYOD Enrollment Profiles
+                    await LoadAllAppleBYODEnrollmentProfilesAsync();
+                }
                 if (selectedContent.Contains("EntraGroups"))
                 {
                     // Load Entra Groups
@@ -318,6 +324,45 @@ namespace IntuneTools.Pages
             // This method retrieves the IDs of all settings catalog policies in ContentList
             return ContentList
                 .Where(c => c.ContentType == "Device Compliance Policy")
+                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
+                .ToList();
+        }
+
+        /// <summary>
+        /// Apple BYOD Enrollment Profiles
+        /// </summary>
+        
+        private async Task LoadAllAppleBYODEnrollmentProfilesAsync()
+        {
+            ShowLoading("Loading Apple BYOD Enrollment Profiles from Microsoft Graph...");
+            try
+            {
+                // Retrieve all Apple BYOD Enrollment Profiles
+                var profiles = await GetAllAppleBYODEnrollmentProfiles(sourceGraphServiceClient);
+                // Update ContentList for DataGrid
+                foreach (var profile in profiles)
+                {
+                    ContentList.Add(new ContentInfo
+                    {
+                        ContentName = profile.DisplayName,
+                        ContentType = "Apple BYOD Enrollment Profile",
+                        ContentPlatform = "iOS",
+                        ContentId = profile.Id
+                    });
+                }
+                // Bind to DataGrid
+                ContentDataGrid.ItemsSource = ContentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+        private List<string> GetAppleBYODEnrollmentProfileIDs()
+        {
+            // This method retrieves the IDs of all Apple BYOD Enrollment Profiles in ContentList
+            return ContentList
+                .Where(c => c.ContentType == "Apple BYOD Enrollment Profile")
                 .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
         }
@@ -626,6 +671,15 @@ namespace IntuneTools.Pages
                 var policies = GetDeviceConfigurationIDs();
                 await ImportMultipleDeviceConfigurations(sourceGraphServiceClient, destinationGraphServiceClient, policies, IsGroupSelected, IsFilterSelected, groupIDs);
                 AppendToDetailsRichTextBlock("Device Configuration policies imported successfully.\n");
+            }
+            if (ContentList.Any(c => c.ContentType == "Apple BYOD Enrollment Profile"))
+            {
+                // Import Apple BYOD Enrollment Profiles
+                AppendToDetailsRichTextBlock("Importing Apple BYOD Enrollment Profiles...\n");
+                LogToImportStatusFile("Importing Apple BYOD Enrollment Profiles...", LogLevels.Info);
+                var profiles = GetAppleBYODEnrollmentProfileIDs();
+                await ImportMultipleAppleBYODEnrollmentProfiles(sourceGraphServiceClient, destinationGraphServiceClient, profiles, IsGroupSelected, IsFilterSelected, groupIDs);
+                AppendToDetailsRichTextBlock("Apple BYOD Enrollment Profiles imported successfully.\n");
             }
 
 

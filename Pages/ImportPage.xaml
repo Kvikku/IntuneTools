@@ -77,6 +77,7 @@
                             <CheckBox x:Name="DeviceCompliance" Content="Device Compliance" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
                             <CheckBox x:Name="EntraGroups" Content="Entra Groups" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
                             <CheckBox x:Name="DeviceConfiguration" Content="Device Configuration" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
+                            <CheckBox x:Name="AppleBYODEnrollmentProfile" Content="Apple BYOD enrollment profile" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
                         </StackPanel>
                     </Expander>
                 </StackPanel>
