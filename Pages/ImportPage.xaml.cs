@@ -20,6 +20,7 @@ using static IntuneTools.Graph.IntuneHelperClasses.SettingsCatalogHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.PowerShellScriptsHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.ProactiveRemediationsHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.macOSShellScript;
+using static IntuneTools.Graph.IntuneHelperClasses.WindowsAutoPilotHelper;
 using static IntuneTools.Utilities.HelperClass;
 using static IntuneTools.Utilities.SourceTenantGraphClient;
 using static IntuneTools.Utilities.Variables;
@@ -194,6 +195,11 @@ namespace IntuneTools.Pages
                 {
                     // Load macOS Shell Scripts
                     await LoadAllmacOSShellScriptsAsync();
+                }
+                if (selectedContent.Contains("WindowsAutopilot"))
+                {
+                    // Load Windows AutoPilot Profiles
+                    await LoadAllWindowsAutoPilotProfilesAsync();
                 }
                 if (selectedContent.Contains("Filters"))
                 {
@@ -510,6 +516,47 @@ namespace IntuneTools.Pages
                 .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
         }
+
+        /// <summary>
+        /// Windows AutoPilot
+        /// </summary>
+
+        private async Task LoadAllWindowsAutoPilotProfilesAsync()
+        {
+            ShowLoading("Loading Windows AutoPilot profiles from Microsoft Graph...");
+            try
+            {
+                // Retrieve all Windows AutoPilot profiles
+                var profiles = await GetAllWindowsAutoPilotProfiles(sourceGraphServiceClient);
+                // Update ContentList for DataGrid
+                foreach (var profile in profiles)
+                {
+                    ContentList.Add(new ContentInfo
+                    {
+                        ContentName = profile.DisplayName,
+                        ContentType = "Windows AutoPilot Profile",
+                        ContentPlatform = "Windows",
+                        ContentId = profile.Id
+                    });
+                }
+                // Bind to DataGrid
+                ContentDataGrid.ItemsSource = ContentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
+        private List<string> GetWindowsAutoPilotProfileIDs()
+        {
+            // This method retrieves the IDs of all Windows AutoPilot profiles in ContentList
+            return ContentList
+                .Where(c => c.ContentType == "Windows AutoPilot Profile")
+                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
+                .ToList();
+        }
+
 
         /// <summary
         /// Groups
@@ -901,6 +948,15 @@ namespace IntuneTools.Pages
                 var scripts = GetmacOSShellScriptIDs();
                 await ImportMultiplemacOSShellScripts(sourceGraphServiceClient, destinationGraphServiceClient, scripts, IsGroupSelected, IsFilterSelected, groupIDs);
                 AppendToDetailsRichTextBlock("macOS Shell Scripts imported successfully.\n");
+            }
+            if (ContentList.Any(c => c.ContentType == "Windows AutoPilot Profile"))
+            {
+                // Import Windows AutoPilot Profiles
+                AppendToDetailsRichTextBlock("Importing Windows AutoPilot Profiles...\n");
+                LogToImportStatusFile("Importing Windows AutoPilot Profiles...", LogLevels.Info);
+                var profiles = GetWindowsAutoPilotProfileIDs();
+                await ImportMultipleWindowsAutoPilotProfiles(sourceGraphServiceClient, destinationGraphServiceClient, profiles, IsGroupSelected, IsFilterSelected, groupIDs);
+                AppendToDetailsRichTextBlock("Windows AutoPilot Profiles imported successfully.\n");
             }
 
             AppendToDetailsRichTextBlock("Import process finished.\n");
