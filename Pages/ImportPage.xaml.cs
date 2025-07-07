@@ -1,25 +1,25 @@
+using IntuneTools.Graph;
+using Microsoft.Graph.Beta;
 using Microsoft.UI.Xaml; // Added for RoutedEventArgs
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Documents; // Added for Paragraph and Run
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Net.Mime;
 using System.Threading.Tasks;
-using Microsoft.Graph.Beta;
-using IntuneTools.Graph;
-using static IntuneTools.Utilities.HelperClass;
-using static IntuneTools.Utilities.Variables;
-using static IntuneTools.Graph.IntuneHelperClasses.FilterHelperClass;
-using static IntuneTools.Graph.IntuneHelperClasses.SettingsCatalogHelper;
+using Windows.Foundation; // Added for IAsyncOperation
+using static IntuneTools.Graph.DestinationTenantGraphClient;
+using static IntuneTools.Graph.EntraHelperClasses.GroupHelperClass;
+using static IntuneTools.Graph.IntuneHelperClasses.AppleBYODEnrollmentProfileHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceCompliancePolicyHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceConfigurationHelper;
-using static IntuneTools.Graph.IntuneHelperClasses.AppleBYODEnrollmentProfileHelper;
-using static IntuneTools.Graph.EntraHelperClasses.GroupHelperClass;
+using static IntuneTools.Graph.IntuneHelperClasses.FilterHelperClass;
+using static IntuneTools.Graph.IntuneHelperClasses.SettingsCatalogHelper;
+using static IntuneTools.Utilities.HelperClass;
 using static IntuneTools.Utilities.SourceTenantGraphClient;
-using static IntuneTools.Graph.DestinationTenantGraphClient;
-using System.Net.Mime;
-using Microsoft.UI.Xaml.Documents; // Added for Paragraph and Run
-using Windows.Foundation; // Added for IAsyncOperation
+using static IntuneTools.Utilities.Variables;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -176,6 +176,11 @@ namespace IntuneTools.Pages
                 {
                     // Load Apple BYOD Enrollment Profiles
                     await LoadAllAppleBYODEnrollmentProfilesAsync();
+                }
+                if (selectedContent.Contains("Filters"))
+                {
+                    // Load Assignment Filters
+                    await LoadAllAssignmentFiltersToBeImportedAsync();
                 }
                 if (selectedContent.Contains("EntraGroups"))
                 {
@@ -468,6 +473,47 @@ namespace IntuneTools.Pages
         /// Assignment filters
         /// </summary>
 
+        private async Task LoadAllAssignmentFiltersToBeImportedAsync()
+        {
+            // Clear the dictionary for filter names and IDs
+            filterNameAndID.Clear();
+            ShowLoading("Loading assignment filters from Microsoft Graph...");
+            try
+            {
+                // Clear existing filter options
+                FilterOptions.Clear();
+                // Retrieve all assignment filters
+                var filters = await GetAllAssignmentFilters(sourceGraphServiceClient);
+                // Update FilterOptions for ComboBox
+                foreach (var filter in filters)
+                {
+                    ContentList.Add(new ContentInfo
+                    {
+                        ContentName = filter.DisplayName,
+                        ContentType = "Assignment filter",
+                        ContentPlatform = filter.Platform.ToString() ?? string.Empty,
+                        ContentId = filter.Id
+                    });
+                }
+
+                // Bind to DataGrid
+                ContentDataGrid.ItemsSource = ContentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
+        private List<string> GetFilterIDs()
+        {
+            // This method retrieves the IDs of all device configuration policies in ContentList
+            return ContentList
+                .Where(c => c.ContentType == "Assignment filter")
+                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
+                .ToList();
+        }
+
         private async Task LoadAllAssignmentFiltersAsync()
         {
             // Clear the dictionary for filter names and IDs
@@ -681,7 +727,15 @@ namespace IntuneTools.Pages
                 await ImportMultipleAppleBYODEnrollmentProfiles(sourceGraphServiceClient, destinationGraphServiceClient, profiles, IsGroupSelected, IsFilterSelected, groupIDs);
                 AppendToDetailsRichTextBlock("Apple BYOD Enrollment Profiles imported successfully.\n");
             }
-
+            if (ContentList.Any(c => c.ContentType == "Assignment filter"))
+            {
+                // Import Assignment Filters
+                AppendToDetailsRichTextBlock("Importing Assignment Filters...\n");
+                LogToImportStatusFile("Importing Assignment Filters...", LogLevels.Info);
+                var filters = GetFilterIDs();
+                await ImportMultipleAssignmentFilters(sourceGraphServiceClient, destinationGraphServiceClient, filters);
+                AppendToDetailsRichTextBlock("Assignment Filters imported successfully.\n");
+            }
 
             AppendToDetailsRichTextBlock("Import process finished.\n");
         }
