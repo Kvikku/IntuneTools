@@ -12,6 +12,7 @@ using static IntuneTools.Utilities.Variables;
 using static IntuneTools.Graph.IntuneHelperClasses.FilterHelperClass;
 using static IntuneTools.Graph.IntuneHelperClasses.SettingsCatalogHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceCompliancePolicyHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.DeviceConfigurationHelper;
 using static IntuneTools.Graph.EntraHelperClasses.GroupHelperClass;
 using static IntuneTools.Utilities.SourceTenantGraphClient;
 using static IntuneTools.Graph.DestinationTenantGraphClient;
@@ -165,6 +166,11 @@ namespace IntuneTools.Pages
                     // Load Device Compliance policies
                     await LoadAllDeviceCompliancePoliciesAsync();
                 }
+                if (selectedContent.Contains("DeviceConfiguration"))
+                {
+                    // Load Device Configuration policies
+                    await LoadAllDeviceConfigurationPoliciesAsync();
+                }
                 if (selectedContent.Contains("EntraGroups"))
                 {
                     // Load Entra Groups
@@ -232,6 +238,46 @@ namespace IntuneTools.Pages
             // This method retrieves the IDs of all settings catalog policies in ContentList
             return ContentList
                 .Where(c => c.ContentType == "Settings Catalog")
+                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
+                .ToList();
+        }
+
+        /// <summary>
+        /// Device Configuration policies
+        /// </summary>
+
+        private async Task LoadAllDeviceConfigurationPoliciesAsync()
+        {
+            ShowLoading("Loading device configuration policies from Microsoft Graph...");
+            try
+            {
+                // Retrieve all device configuration policies
+                var policies = await GetAllDeviceConfigurations(sourceGraphServiceClient);
+                // Update ContentList for DataGrid
+                foreach (var policy in policies)
+                {
+                    ContentList.Add(new ContentInfo
+                    {
+                        ContentName = policy.DisplayName,
+                        ContentType = "Device Configuration Policy",
+                        ContentPlatform = policy.OdataType?.ToString() ?? string.Empty,
+                        ContentId = policy.Id
+                    });
+                }
+                // Bind to DataGrid
+                ContentDataGrid.ItemsSource = ContentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
+        private List<string> GetDeviceConfigurationIDs()
+        {
+            // This method retrieves the IDs of all device configuration policies in ContentList
+            return ContentList
+                .Where(c => c.ContentType == "Device Configuration Policy")
                 .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
         }
@@ -308,7 +354,6 @@ namespace IntuneTools.Pages
                 HideLoading();
             }
         }
-
         private List<string> GetGroupIDs()
         {
             // This method retrieves the IDs of all groups in GroupList
@@ -317,7 +362,6 @@ namespace IntuneTools.Pages
                 .Select(g => g.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
         }
-
         private async Task SearchForGroupsAsync(string searchQuery)
         {
             // Clear the GroupList before loading new data
@@ -574,6 +618,15 @@ namespace IntuneTools.Pages
                 await ImportMultipleDeviceCompliancePolicies(sourceGraphServiceClient, destinationGraphServiceClient, policies, IsGroupSelected, IsFilterSelected, groupIDs);
                 AppendToDetailsRichTextBlock("Device Compliance policies imported successfully.\n");
             }
+            if (ContentList.Any(c => c.ContentType == "Device Configuration Policy"))
+            {
+                // Import Device Configuration policies
+                AppendToDetailsRichTextBlock("Importing Device Configuration policies...\n");
+                LogToImportStatusFile("Importing Device Configuration policies...", LogLevels.Info);
+                var policies = GetDeviceConfigurationIDs();
+                await ImportMultipleDeviceConfigurations(sourceGraphServiceClient, destinationGraphServiceClient, policies, IsGroupSelected, IsFilterSelected, groupIDs);
+                AppendToDetailsRichTextBlock("Device Configuration policies imported successfully.\n");
+            }
 
 
             AppendToDetailsRichTextBlock("Import process finished.\n");
@@ -619,7 +672,7 @@ namespace IntuneTools.Pages
 
         private void SearchButton_Click(object sender, RoutedEventArgs e)
         {
-
+            // TODO: Implement search functionality
         }
 
         private void ClearAllButton_Click(object sender, RoutedEventArgs e)
@@ -650,6 +703,7 @@ namespace IntuneTools.Pages
             SettingsCatalog.IsChecked = true;
             DeviceCompliance.IsChecked = true;
             EntraGroups.IsChecked = true;
+            DeviceConfiguration.IsChecked = true;
             _suppressOptionEvents = false;
         }
 
@@ -661,6 +715,7 @@ namespace IntuneTools.Pages
             SettingsCatalog.IsChecked = false;
             DeviceCompliance.IsChecked = false;
             EntraGroups.IsChecked = false;
+            DeviceConfiguration.IsChecked = false;
             _suppressOptionEvents = false;
         }
 
@@ -693,7 +748,7 @@ namespace IntuneTools.Pages
             if (SettingsCatalog == null || DeviceCompliance == null || EntraGroups == null)
                 return;
 
-            bool?[] states = { SettingsCatalog.IsChecked, DeviceCompliance.IsChecked, EntraGroups.IsChecked };
+            bool?[] states = { SettingsCatalog.IsChecked, DeviceCompliance.IsChecked, EntraGroups.IsChecked,DeviceConfiguration.IsChecked };
             _suppressSelectAllEvents = true;
             if (states.All(x => x == true))
                 OptionsAllCheckBox.IsChecked = true;
