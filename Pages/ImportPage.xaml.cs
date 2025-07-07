@@ -19,6 +19,7 @@ using static IntuneTools.Graph.IntuneHelperClasses.FilterHelperClass;
 using static IntuneTools.Graph.IntuneHelperClasses.SettingsCatalogHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.PowerShellScriptsHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.ProactiveRemediationsHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.macOSShellScript;
 using static IntuneTools.Utilities.HelperClass;
 using static IntuneTools.Utilities.SourceTenantGraphClient;
 using static IntuneTools.Utilities.Variables;
@@ -188,6 +189,11 @@ namespace IntuneTools.Pages
                 {
                     // Load Proactive Remediations
                     await LoadAllProactiveRemediationsAsync();
+                }
+                if (selectedContent.Contains("macOSShellScript"))
+                {
+                    // Load macOS Shell Scripts
+                    await LoadAllmacOSShellScriptsAsync();
                 }
                 if (selectedContent.Contains("Filters"))
                 {
@@ -461,6 +467,46 @@ namespace IntuneTools.Pages
             // This method retrieves the IDs of all proactive remediations in ContentList
             return ContentList
                 .Where(c => c.ContentType == "Proactive Remediation")
+                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
+                .ToList();
+        }
+
+        /// <summary>
+        /// macOS Shell Scripts
+        /// </summary>
+
+        private async Task LoadAllmacOSShellScriptsAsync()
+        {
+            ShowLoading("Loading macOS shell scripts from Microsoft Graph...");
+            try
+            {
+                // Retrieve all macOS shell scripts
+                var scripts = await GetAllmacOSShellScripts(sourceGraphServiceClient);
+                // Update ContentList for DataGrid
+                foreach (var script in scripts)
+                {
+                    ContentList.Add(new ContentInfo
+                    {
+                        ContentName = script.DisplayName,
+                        ContentType = "macOS Shell Script",
+                        ContentPlatform = "macOS",
+                        ContentId = script.Id
+                    });
+                }
+                // Bind to DataGrid
+                ContentDataGrid.ItemsSource = ContentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
+        private List<string> GetmacOSShellScriptIDs()
+        {
+            // This method retrieves the IDs of all macOS shell scripts in ContentList
+            return ContentList
+                .Where(c => c.ContentType == "macOS Shell Script")
                 .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
         }
@@ -846,6 +892,15 @@ namespace IntuneTools.Pages
                 var scripts = GetProactiveRemediationIDs();
                 await ImportMultipleProactiveRemediations(sourceGraphServiceClient, destinationGraphServiceClient, scripts, IsGroupSelected, IsFilterSelected, groupIDs);
                 AppendToDetailsRichTextBlock("Proactive Remediations imported successfully.\n");
+            }
+            if (ContentList.Any(c => c.ContentType == "macOS Shell Script"))
+            {
+                // Import macOS Shell Scripts
+                AppendToDetailsRichTextBlock("Importing macOS Shell Scripts...\n");
+                LogToImportStatusFile("Importing macOS Shell Scripts...", LogLevels.Info);
+                var scripts = GetmacOSShellScriptIDs();
+                await ImportMultiplemacOSShellScripts(sourceGraphServiceClient, destinationGraphServiceClient, scripts, IsGroupSelected, IsFilterSelected, groupIDs);
+                AppendToDetailsRichTextBlock("macOS Shell Scripts imported successfully.\n");
             }
 
             AppendToDetailsRichTextBlock("Import process finished.\n");
