@@ -144,11 +144,32 @@ namespace IntuneTools.Pages
                 // Clear the ContentList before loading new data
                 ContentList.Clear();
 
-                // Load all data from Graph API
 
-                await LoadAllSettingsCatalogPoliciesAsync();
-                await LoadAllDeviceCompliancePoliciesAsync();
-                await LoadGroupsOrchestrator();
+                // Get the names of checked options
+                var selectedContent = GetCheckedOptionNames(); 
+
+                if (selectedContent.Count == 0)
+                {
+                    // If no options are selected, show a message and return
+                    AppendToDetailsRichTextBlock("No content types selected for import.");
+                    return;
+                }
+
+                if (selectedContent.Contains("SettingsCatalog"))
+                {
+                    // Load Settings Catalog policies
+                    await LoadAllSettingsCatalogPoliciesAsync();
+                }
+                if (selectedContent.Contains("DeviceCompliance"))
+                {
+                    // Load Device Compliance policies
+                    await LoadAllDeviceCompliancePoliciesAsync();
+                }
+                if (selectedContent.Contains("EntraGroups"))
+                {
+                    // Load Entra Groups
+                    await LoadGroupsOrchestrator();
+                }
 
 
                 // TODO - method to clean up ContentList if needed
