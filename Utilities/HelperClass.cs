@@ -178,7 +178,7 @@ namespace IntuneTools.Utilities
                 using (StreamWriter sw = new StreamWriter(ImportStatusFilePath, true))
                 {
                     // Write the data to the import status file with log type
-                    sw.WriteLine($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [{logType}] - {data}");
+                    sw.WriteLine($"{DateTime.Now:HH:mm:ss - dd-MM-yyyy} [{logType}] - {data}");
                 }
                 // StreamWriter is automatically closed and disposed of when leaving the using block
             }
