@@ -26,13 +26,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 // Add null checks for profile and DisplayName
                 var filteredProfiles = allProfiles.Where(p => p?.DisplayName != null && p.DisplayName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)).ToList();
 
-                WriteToLog($"Found {filteredProfiles.Count} Windows Feature Update profiles matching the search query.");
+                WriteToImportStatusFile($"Found {filteredProfiles.Count} Windows Feature Update profiles matching the search query.");
 
                 return filteredProfiles;
             }
             catch (Exception ex)
             {
-                HandleException(ex, "An error occurred while searching for Windows Feature Update profiles");
+                WriteToImportStatusFile("An error occurred while searching for Windows Feature Update profiles",LogType.Error);
                 return new List<WindowsFeatureUpdateProfile>();
             }
         }
@@ -41,7 +41,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                WriteToLog("Retrieving all Windows Feature Update profiles.");
+                WriteToImportStatusFile("Retrieving all Windows Feature Update profiles.");
 
                 var result = await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles.GetAsync((requestConfiguration) =>
                 {
@@ -62,25 +62,23 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }
                 else
                 {
-                    WriteToLog("No Windows Feature Update profiles found or result was null.");
+                    WriteToImportStatusFile("No Windows Feature Update profiles found or result was null.",LogType.Warning);
                 }
 
-                WriteToLog($"Found {profiles.Count} Windows Feature Update profiles.");
+                WriteToImportStatusFile($"Found {profiles.Count} Windows Feature Update profiles.");
 
                 return profiles;
             }
             catch (Exception ex)
             {
-                HandleException(ex, "An error occurred while retrieving all Windows Feature Update profiles");
+                WriteToImportStatusFile("An error occurred while retrieving all Windows Feature Update profiles",LogType.Error);
                 return new List<WindowsFeatureUpdateProfile>();
             }
         }
-        public static async Task ImportMultipleWindowsFeatureUpdateProfiles(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, DataGridView dtg, List<string> profileIDs, RichTextBox rtb, bool assignments, bool filter, List<string> groups)
+        public static async Task ImportMultipleWindowsFeatureUpdateProfiles(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> profileIDs, bool assignments, bool filter, List<string> groups)
         {
             try
             {
-                rtb.AppendText(Environment.NewLine);
-                rtb.AppendText($"Importing {profileIDs.Count} Windows Feature Update profiles.\n");
                 WriteToImportStatusFile($"Importing {profileIDs.Count} Windows Feature Update profiles.");
 
 
@@ -102,7 +100,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         if (sourceProfile == null)
                         {
-                            rtb.AppendText($"Skipping profile ID {profileId}: Not found in source tenant.\n");
                             WriteToImportStatusFile($"Skipping profile ID {profileId}: Not found in source tenant.");
                             continue;
                         }
@@ -139,7 +136,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         var importedProfile = await destinationGraphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles.PostAsync(newProfile);
 
                         // Add null check for importedProfile and DisplayName
-                        rtb.AppendText($"Imported profile: {importedProfile?.DisplayName ?? "Unnamed Profile"} (ID: {importedProfile?.Id ?? "Unknown ID"})\n");
                         WriteToImportStatusFile($"Imported profile: {importedProfile?.DisplayName ?? "Unnamed Profile"} (ID: {importedProfile?.Id ?? "Unknown ID"})");
 
                         // Handle assignments if requested
@@ -150,24 +146,15 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     }
                     catch (Exception ex)
                     {
-                        // Log the specific profile ID that failed
-                        HandleException(ex, $"Error importing Windows Feature Update profile  {profileName}", false);
-                        HandleException(ex, "This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", false);
-                        WriteErrorToRTB($"Failed to import Windows Feature Update profile {profileName}\n", rtb);
-                        //rtb.AppendText($"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active\n");
-                        WriteToImportStatusFile($"Failed to import Windows Feature Update profile {profileName}: {ex.Message}");
-                        WriteToImportStatusFile("This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active");
+                        WriteToImportStatusFile($"Failed to import Windows Feature Update profile {profileName}: {ex.Message}", LogType.Error);
+                        WriteToImportStatusFile("This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active",LogType.Warning);
                     }
                 }
-                rtb.AppendText("Windows Feature Update profile import process finished.\n");
-                rtb.AppendText(Environment.NewLine);
                 WriteToImportStatusFile("Windows Feature Update profile import process finished.");
             }
             catch (Exception ex)
             {
-                HandleException(ex, "An error occurred during the Windows Feature Update profile import process");
-                rtb.AppendText($"An error occurred during the import process: {ex.Message}\n");
-                WriteToImportStatusFile($"An error occurred during the import process: {ex.Message}");
+                WriteToImportStatusFile($"An error occurred during the import process: {ex.Message}",LogType.Error);
             }
         }
 
@@ -182,7 +169,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 if (groupIDs == null || !groupIDs.Any())
                 {
-                    WriteToLog($"No groups provided for assignment to profile {profileID}. Skipping assignment.");
+                    WriteToImportStatusFile($"No groups provided for assignment to profile {profileID}. Skipping assignment.");
                     return; // Nothing to assign
                 }
 
@@ -191,7 +178,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     throw new ArgumentNullException(nameof(destinationGraphServiceClient));
                 }
 
-                WriteToLog($"Assigning {groupIDs.Count} groups to Windows Feature Update profile {profileID}. Apply filter: {applyFilter}");
+                WriteToImportStatusFile($"Assigning {groupIDs.Count} groups to Windows Feature Update profile {profileID}. Apply filter: {applyFilter}");
 
                 List<WindowsFeatureUpdateProfileAssignment> assignments = new List<WindowsFeatureUpdateProfileAssignment>();
 
@@ -234,16 +221,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 catch (Exception ex)
                 {
                     // Log specific error for this assignment attempt
-                    HandleException(ex, $"Error assigning groups to Windows Feature Update profile {profileID}");
-                    WriteToImportStatusFile($"Error assigning groups to profile {profileID}: {ex.Message}");
-                    // Decide if you want to re-throw or just log
+                    WriteToImportStatusFile($"Error assigning groups to profile {profileID}: {ex.Message}",LogType.Warning);
                 }
             }
             catch (Exception ex)
             {
                 // Catch argument null exceptions or other setup errors
-                HandleException(ex, "An error occurred while preparing to assign groups to a Windows Feature Update profile");
-                WriteToImportStatusFile($"An error occurred while preparing assignment for profile {profileID}: {ex.Message}");
+                WriteToImportStatusFile($"An error occurred while preparing assignment for profile {profileID}: {ex.Message}",LogType.Warning);
             }
         }
     }

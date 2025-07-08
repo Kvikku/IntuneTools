@@ -22,6 +22,7 @@ using static IntuneTools.Graph.IntuneHelperClasses.ProactiveRemediationsHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.macOSShellScript;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsAutoPilotHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsDriverUpdateHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.WindowsFeatureUpdateHelper;
 using static IntuneTools.Utilities.HelperClass;
 using static IntuneTools.Utilities.SourceTenantGraphClient;
 using static IntuneTools.Utilities.Variables;
@@ -206,6 +207,11 @@ namespace IntuneTools.Pages
                 {
                     // Load Windows Driver Updates
                     await LoadAllWindowsDriverUpdatesAsync();
+                }
+                if (selectedContent.Contains("WindowsFeatureUpdate"))
+                {
+                    // Load Windows Feature Updates
+                    await LoadAllWindowsFeatureUpdatesAsync();
                 }
                 if (selectedContent.Contains("Filters"))
                 {
@@ -602,6 +608,47 @@ namespace IntuneTools.Pages
                 .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
         }
+
+        /// <summary>
+        /// Windows Feature Updates
+        /// </summary>
+
+        private async Task LoadAllWindowsFeatureUpdatesAsync()
+        {
+            ShowLoading("Loading Windows Feature Updates from Microsoft Graph...");
+            try
+            {
+                // Retrieve all Windows Feature Updates
+                var updates = await GetAllWindowsFeatureUpdateProfiles(sourceGraphServiceClient);
+                // Update ContentList for DataGrid
+                foreach (var update in updates)
+                {
+                    ContentList.Add(new ContentInfo
+                    {
+                        ContentName = update.DisplayName,
+                        ContentType = "Windows Feature Update",
+                        ContentPlatform = "Windows",
+                        ContentId = update.Id
+                    });
+                }
+                // Bind to DataGrid
+                ContentDataGrid.ItemsSource = ContentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
+        private List<string> GetWindowsFeatureUpdateIDs()
+        {
+            // This method retrieves the IDs of all Windows Feature Updates in ContentList
+            return ContentList
+                .Where(c => c.ContentType == "Windows Feature Update")
+                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
+                .ToList();
+        }
+
 
         /// <summary
         /// Groups
@@ -1011,6 +1058,15 @@ namespace IntuneTools.Pages
                 var updates = GetWindowsDriverUpdateIDs();
                 await ImportMultipleDriverProfiles(sourceGraphServiceClient, destinationGraphServiceClient, updates, IsGroupSelected, IsFilterSelected, groupIDs);
                 AppendToDetailsRichTextBlock("Windows Driver Updates imported successfully.\n");
+            }
+            if (ContentList.Any(c => c.ContentType == "Windows Feature Update"))
+            {
+                // Import Windows Feature Updates
+                AppendToDetailsRichTextBlock("Importing Windows Feature Updates...\n");
+                LogToImportStatusFile("Importing Windows Feature Updates...", LogLevels.Info);
+                var updates = GetWindowsFeatureUpdateIDs();
+                await ImportMultipleWindowsFeatureUpdateProfiles(sourceGraphServiceClient, destinationGraphServiceClient, updates, IsGroupSelected, IsFilterSelected, groupIDs);
+                AppendToDetailsRichTextBlock("Windows Feature Updates imported successfully.\n");
             }
 
             AppendToDetailsRichTextBlock("Import process finished.\n");
