@@ -1205,8 +1205,6 @@ namespace IntuneTools.Pages
         {
             // This method is called when the "List All Groups" button is clicked
             await LoadAllGroupsAsync();
-
-
         }
 
         private async void GroupSearchClick(object sender, RoutedEventArgs e)
