@@ -21,6 +21,7 @@ using static IntuneTools.Graph.IntuneHelperClasses.PowerShellScriptsHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.ProactiveRemediationsHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.macOSShellScript;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsAutoPilotHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.WindowsDriverUpdateHelper;
 using static IntuneTools.Utilities.HelperClass;
 using static IntuneTools.Utilities.SourceTenantGraphClient;
 using static IntuneTools.Utilities.Variables;
@@ -200,6 +201,11 @@ namespace IntuneTools.Pages
                 {
                     // Load Windows AutoPilot Profiles
                     await LoadAllWindowsAutoPilotProfilesAsync();
+                }
+                if (selectedContent.Contains("WindowsDriverUpdate"))
+                {
+                    // Load Windows Driver Updates
+                    await LoadAllWindowsDriverUpdatesAsync();
                 }
                 if (selectedContent.Contains("Filters"))
                 {
@@ -557,6 +563,45 @@ namespace IntuneTools.Pages
                 .ToList();
         }
 
+        /// <summary>
+        /// Windows Driver Updates
+        /// </summary>
+
+        private async Task LoadAllWindowsDriverUpdatesAsync()
+        {
+            ShowLoading("Loading Windows Driver Updates from Microsoft Graph...");
+            try
+            {
+                // Retrieve all Windows Driver Updates
+                var updates = await GetAllDriverProfiles(sourceGraphServiceClient);
+                // Update ContentList for DataGrid
+                foreach (var update in updates)
+                {
+                    ContentList.Add(new ContentInfo
+                    {
+                        ContentName = update.DisplayName,
+                        ContentType = "Windows Driver Update",
+                        ContentPlatform = "Windows",
+                        ContentId = update.Id
+                    });
+                }
+                // Bind to DataGrid
+                ContentDataGrid.ItemsSource = ContentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
+        private List<string> GetWindowsDriverUpdateIDs()
+        {
+            // This method retrieves the IDs of all Windows Driver Updates in ContentList
+            return ContentList
+                .Where(c => c.ContentType == "Windows Driver Update")
+                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
+                .ToList();
+        }
 
         /// <summary
         /// Groups
@@ -957,6 +1002,15 @@ namespace IntuneTools.Pages
                 var profiles = GetWindowsAutoPilotProfileIDs();
                 await ImportMultipleWindowsAutoPilotProfiles(sourceGraphServiceClient, destinationGraphServiceClient, profiles, IsGroupSelected, IsFilterSelected, groupIDs);
                 AppendToDetailsRichTextBlock("Windows AutoPilot Profiles imported successfully.\n");
+            }
+            if (ContentList.Any(c => c.ContentType == "Windows Driver Update"))
+            {
+                // Import Windows Driver Updates
+                AppendToDetailsRichTextBlock("Importing Windows Driver Updates...\n");
+                LogToImportStatusFile("Importing Windows Driver Updates...", LogLevels.Info);
+                var updates = GetWindowsDriverUpdateIDs();
+                await ImportMultipleDriverProfiles(sourceGraphServiceClient, destinationGraphServiceClient, updates, IsGroupSelected, IsFilterSelected, groupIDs);
+                AppendToDetailsRichTextBlock("Windows Driver Updates imported successfully.\n");
             }
 
             AppendToDetailsRichTextBlock("Import process finished.\n");
