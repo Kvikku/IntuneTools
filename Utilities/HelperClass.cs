@@ -48,7 +48,7 @@ namespace IntuneTools.Utilities
         {
             // Create a timestamp
             string timestamp = DateTime.Now.ToString("HH:mm:ss - dd-MM-yyyy");
-            string logEntry = $"{timestamp} - [{level}] - {message}";
+            string logEntry = $"{timestamp} - [{level.ToString().ToUpper()}] - {message}";
 
             // Append the log entry to the file
             try
@@ -178,7 +178,7 @@ namespace IntuneTools.Utilities
                 using (StreamWriter sw = new StreamWriter(ImportStatusFilePath, true))
                 {
                     // Write the data to the import status file with log type
-                    sw.WriteLine($"{DateTime.Now:HH:mm:ss - dd-MM-yyyy} [{logType}] - {data}");
+                    sw.WriteLine($"{DateTime.Now:HH:mm:ss - dd-MM-yyyy} - [{logType.ToString().ToUpper()}] - {data}");
                 }
                 // StreamWriter is automatically closed and disposed of when leaving the using block
             }
