@@ -2,6 +2,7 @@ using IntuneTools.Graph;
 using IntuneTools.Utilities;
 using Microsoft.UI.Xaml; // Added for RoutedEventArgs
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Navigation; // Added for NavigationEventArgs
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -24,9 +25,15 @@ namespace IntuneTools.Pages
     {
         private Dictionary<string, Dictionary<string, string>>? _sourceTenantSettings;
         private Dictionary<string, Dictionary<string, string>>? _destinationTenantSettings;
+
         public SettingsPage()
         {
             this.InitializeComponent();
+        }
+
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
             LoadTenantSettings();
         }
 
@@ -37,6 +44,37 @@ namespace IntuneTools.Pages
 
             PopulateComboBox(SourceEnvironmentComboBox, _sourceTenantSettings);
             PopulateComboBox(DestinationEnvironmentComboBox, _destinationTenantSettings);
+
+            // Populate the login information for source and destination tenants
+
+            if (_sourceTenantSettings != null && _sourceTenantSettings.Count > 0)
+            {
+                SourceEnvironmentComboBox.SelectedIndex = 0; // Select the first item by default
+            }
+
+            if (sourceGraphServiceClient != null)
+            {
+                UpdateImage(SourceLoginStatusImage, "GreenCheck.png");
+            }
+            else
+            {
+                UpdateImage(SourceLoginStatusImage, "RedCross.png");
+            }
+
+            if (_destinationTenantSettings != null && _destinationTenantSettings.Count > 0)
+            {
+                DestinationEnvironmentComboBox.SelectedIndex = 0; // Select the first item by default
+            }
+
+            if (destinationGraphServiceClient != null)
+            {
+                UpdateImage(DestinationLoginStatusImage, "GreenCheck.png");
+            }
+            else
+            {
+                UpdateImage(DestinationLoginStatusImage, "RedCross.png");
+            }
+
         }
 
         private Dictionary<string, Dictionary<string, string>>? LoadSettingsFromFile(string filePath)
@@ -97,9 +135,21 @@ namespace IntuneTools.Pages
             SourceTenantGraphClient.sourceAccessToken = null;
             SourceTenantGraphClient.sourceAuthority = $"https://login.microsoftonline.com/{SourceTenantGraphClient.sourceTenantID}";
             var client = await SourceTenantGraphClient.GetSourceGraphClient();
-            sourceGraphServiceClient = client;
-            sourceTenantName = await GetAzureTenantName(client);
-            Log($"Source Tenant Name: {sourceTenantName}");
+
+            if (client != null)
+            {
+                sourceGraphServiceClient = client;
+                sourceTenantName = await GetAzureTenantName(client);
+                Log($"Source Tenant Name: {sourceTenantName}");
+                UpdateImage(SourceLoginStatusImage, "GreenCheck.png");
+                Variables.sourceClientID = SourceClientIdTextBox.Text;
+                Variables.sourceTenantID = SourceTenantIdTextBox.Text;
+            }
+            else
+            {
+                Log("Failed to authenticate to source tenant.");
+                UpdateImage(SourceLoginStatusImage, "RedCross.png");
+            }
         }
 
         private void DestinationLoginButton_Click(object sender, RoutedEventArgs e)
@@ -116,9 +166,22 @@ namespace IntuneTools.Pages
             DestinationTenantGraphClient.destinationAccessToken = null;
             DestinationTenantGraphClient.destinationAuthority = $"https://login.microsoftonline.com/{DestinationTenantGraphClient.destinationTenantID}";
             var client = await DestinationTenantGraphClient.GetDestinationGraphClient();
-            destinationGraphServiceClient = client;
-            destinationTenantName = await GetAzureTenantName(client);
-            Log($"Destination Tenant Name: {destinationTenantName}");
+
+            if (client != null)
+            {
+                destinationGraphServiceClient = client;
+                destinationTenantName = await GetAzureTenantName(client);
+                Log($"Destination Tenant Name: {destinationTenantName}");
+                UpdateImage(DestinationLoginStatusImage, "GreenCheck.png");
+                Variables.destinationClientID = DestinationClientIdTextBox.Text;
+                Variables.destinationTenantID = DestinationTenantIdTextBox.Text;
+
+            }
+            else
+            {
+                Log("Failed to authenticate to destination tenant.");
+                UpdateImage(DestinationLoginStatusImage, "RedCross.png");
+            }
         }
     }
 }

@@ -18,7 +18,10 @@
             </ComboBox>
             <TextBox x:Name="SourceTenantIdTextBox" PlaceholderText="Tenant ID" Width="300"/>
             <TextBox x:Name="SourceClientIdTextBox" PlaceholderText="Client ID" Width="300"/>
-            <Button x:Name="SourceLoginButton" Content="Login" Width="100" HorizontalAlignment="Center" Margin="0,0,0,20" Click="SourceLoginButton_Click"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,20" Spacing="10">
+                <Button x:Name="SourceLoginButton" Content="Login" Width="100" HorizontalAlignment="Center" Click="SourceLoginButton_Click"/>
+                <Image x:Name="SourceLoginStatusImage" Width="24" Height="24" Source="/Assets/RedCross.png"/>
+            </StackPanel>
 
             <TextBlock Text="Destination Tenant" HorizontalAlignment="Left" FontSize="18"/>
             <ComboBox x:Name="DestinationEnvironmentComboBox" PlaceholderText="Select Environment" Width="300" Margin="0,0,0,5" SelectionChanged="DestinationEnvironmentComboBox_SelectionChanged">
@@ -26,7 +29,10 @@
             </ComboBox>
             <TextBox x:Name="DestinationTenantIdTextBox" PlaceholderText="Tenant ID" Width="300"/>
             <TextBox x:Name="DestinationClientIdTextBox" PlaceholderText="Client ID" Width="300"/>
-            <Button x:Name="DestinationLoginButton" Content="Login" Width="100" HorizontalAlignment="Center" Click="DestinationLoginButton_Click"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10">
+                <Button x:Name="DestinationLoginButton" Content="Login" Width="100" HorizontalAlignment="Center" Click="DestinationLoginButton_Click"/>
+                <Image x:Name="DestinationLoginStatusImage" Width="24" Height="24" Source="/Assets/RedCross.png"/>
+            </StackPanel>
         </StackPanel>
     </Grid>
 </Page>

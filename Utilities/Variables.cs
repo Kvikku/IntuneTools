@@ -55,6 +55,10 @@ namespace IntuneTools.Utilities
         // Graph authentication variables
         public static string sourceTenantName = string.Empty;
         public static string destinationTenantName = string.Empty;
+        public static string sourceTenantID = string.Empty;
+        public static string destinationTenantID = string.Empty;
+        public static string sourceClientID = string.Empty;
+        public static string destinationClientID = string.Empty;
 
 
         // Filter variables for Graph API

@@ -2,6 +2,7 @@
 using Microsoft.Graph.Beta.Models;
 using Microsoft.Identity.Client;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -242,8 +243,19 @@ namespace IntuneTools.Utilities
             }
         }
 
-        /// Graph helper methods ///
+        public static void UpdateImage(Microsoft.UI.Xaml.Controls.Image image, string imageFileName)
+        {
+            try
+            {
+                image.Source = new BitmapImage(new Uri("ms-appx:///Assets/" + imageFileName));
+            }
+            catch (Exception ex)
+            {
+                Log($"Failed to update image source. Image: {image.Name}, FileName: {imageFileName}, Error: {ex.Message}", LogLevels.Error);
+            }
+        }
 
+        /// Graph helper methods ///
 
         public static string TranslatePolicyPlatformName(string platformName)
         {
