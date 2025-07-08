@@ -24,6 +24,7 @@ using static IntuneTools.Graph.IntuneHelperClasses.WindowsAutoPilotHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsDriverUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsFeatureUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdatePolicyHandler;
+using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHelper;
 using static IntuneTools.Utilities.HelperClass;
 using static IntuneTools.Utilities.SourceTenantGraphClient;
 using static IntuneTools.Utilities.Variables;
@@ -218,6 +219,11 @@ namespace IntuneTools.Pages
                 {
                     // Load Windows Quality Update policies
                     await LoadAllWindowsQualityUpdatePoliciesAsync();
+                }
+                if (selectedContent.Contains("WindowsQualityUpdateProfile"))
+                {
+                    // Load Windows Quality Update profiles
+                    await LoadAllWindowsQualityUpdateProfilesAsync();
                 }
                 if (selectedContent.Contains("Filters"))
                 {
@@ -658,7 +664,6 @@ namespace IntuneTools.Pages
         /// <summary
         /// Windows Quality Update policies
         /// Must not be confused with Windows quality update profiles AKA expedite
-        /// 
         /// </summary>
 
         private async Task LoadAllWindowsQualityUpdatePoliciesAsync()
@@ -697,6 +702,46 @@ namespace IntuneTools.Pages
                 .ToList();
         }
 
+        /// <summary
+        /// Windows Quality Update profiles
+        /// Must not be confused with Windows quality update policies AKA hotpatch
+        /// </summary>
+
+        private async Task LoadAllWindowsQualityUpdateProfilesAsync()
+        {
+            ShowLoading("Loading Windows Quality Update profiles from Microsoft Graph...");
+            try
+            {
+                // Retrieve all Windows Quality Update profiles
+                var profiles = await GetAllWindowsQualityUpdateProfiles(sourceGraphServiceClient);
+                // Update ContentList for DataGrid
+                foreach (var profile in profiles)
+                {
+                    ContentList.Add(new ContentInfo
+                    {
+                        ContentName = profile.DisplayName,
+                        ContentType = "Windows Quality Update Profile",
+                        ContentPlatform = "Windows",
+                        ContentId = profile.Id
+                    });
+                }
+                // Bind to DataGrid
+                ContentDataGrid.ItemsSource = ContentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
+        private List<string> GetWindowsQualityUpdateProfileIDs()
+        {
+            // This method retrieves the IDs of all Windows Quality Update profiles in ContentList
+            return ContentList
+                .Where(c => c.ContentType == "Windows Quality Update Profile")
+                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
+                .ToList();
+        }
 
         /// <summary
         /// Groups
@@ -1124,6 +1169,15 @@ namespace IntuneTools.Pages
                 var policies = GetWindowsQualityUpdatePolicyIDs();
                 await ImportMultipleWindowsQualityUpdatePolicies(sourceGraphServiceClient, destinationGraphServiceClient, policies, IsGroupSelected, IsFilterSelected, groupIDs);
                 AppendToDetailsRichTextBlock("Windows Quality Update Policies imported successfully.\n");
+            }
+            if (ContentList.Any(c => c.ContentType == "Windows Quality Update Profile"))
+            {
+                // Import Windows Quality Update Profiles
+                AppendToDetailsRichTextBlock("Importing Windows Quality Update Profiles...\n");
+                LogToImportStatusFile("Importing Windows Quality Update Profiles...", LogLevels.Info);
+                var profiles = GetWindowsQualityUpdateProfileIDs();
+                await ImportMultipleWindowsQualityUpdateProfiles(sourceGraphServiceClient, destinationGraphServiceClient, profiles, IsGroupSelected, IsFilterSelected, groupIDs);
+                AppendToDetailsRichTextBlock("Windows Quality Update Profiles imported successfully.\n");
             }
 
             AppendToDetailsRichTextBlock("Import process finished.\n");
