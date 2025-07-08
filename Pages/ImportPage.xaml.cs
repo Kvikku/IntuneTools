@@ -23,6 +23,7 @@ using static IntuneTools.Graph.IntuneHelperClasses.macOSShellScript;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsAutoPilotHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsDriverUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsFeatureUpdateHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdatePolicyHandler;
 using static IntuneTools.Utilities.HelperClass;
 using static IntuneTools.Utilities.SourceTenantGraphClient;
 using static IntuneTools.Utilities.Variables;
@@ -212,6 +213,11 @@ namespace IntuneTools.Pages
                 {
                     // Load Windows Feature Updates
                     await LoadAllWindowsFeatureUpdatesAsync();
+                }
+                if (selectedContent.Contains("WindowsQualityUpdatePolicy"))
+                {
+                    // Load Windows Quality Update policies
+                    await LoadAllWindowsQualityUpdatePoliciesAsync();
                 }
                 if (selectedContent.Contains("Filters"))
                 {
@@ -649,6 +655,48 @@ namespace IntuneTools.Pages
                 .ToList();
         }
 
+        /// <summary
+        /// Windows Quality Update policies
+        /// Must not be confused with Windows quality update profiles AKA expedite
+        /// 
+        /// </summary>
+
+        private async Task LoadAllWindowsQualityUpdatePoliciesAsync()
+        {
+            ShowLoading("Loading Windows Quality Update policies from Microsoft Graph...");
+            try
+            {
+                // Retrieve all Windows Quality Update policies
+                var policies = await GetAllWindowsQualityUpdatePolicies(sourceGraphServiceClient);
+                // Update ContentList for DataGrid
+                foreach (var policy in policies)
+                {
+                    ContentList.Add(new ContentInfo
+                    {
+                        ContentName = policy.DisplayName,
+                        ContentType = "Windows Quality Update Policy",
+                        ContentPlatform = "Windows",
+                        ContentId = policy.Id
+                    });
+                }
+                // Bind to DataGrid
+                ContentDataGrid.ItemsSource = ContentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
+        private List<string> GetWindowsQualityUpdatePolicyIDs()
+        {
+            // This method retrieves the IDs of all Windows Quality Update policies in ContentList
+            return ContentList
+                .Where(c => c.ContentType == "Windows Quality Update Policy")
+                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
+                .ToList();
+        }
+
 
         /// <summary
         /// Groups
@@ -1067,6 +1115,15 @@ namespace IntuneTools.Pages
                 var updates = GetWindowsFeatureUpdateIDs();
                 await ImportMultipleWindowsFeatureUpdateProfiles(sourceGraphServiceClient, destinationGraphServiceClient, updates, IsGroupSelected, IsFilterSelected, groupIDs);
                 AppendToDetailsRichTextBlock("Windows Feature Updates imported successfully.\n");
+            }
+            if (ContentList.Any(c => c.ContentType == "Windows Quality Update Policy"))
+            {
+                // Import Windows Quality Update Policies
+                AppendToDetailsRichTextBlock("Importing Windows Quality Update Policies...\n");
+                LogToImportStatusFile("Importing Windows Quality Update Policies...", LogLevels.Info);
+                var policies = GetWindowsQualityUpdatePolicyIDs();
+                await ImportMultipleWindowsQualityUpdatePolicies(sourceGraphServiceClient, destinationGraphServiceClient, policies, IsGroupSelected, IsFilterSelected, groupIDs);
+                AppendToDetailsRichTextBlock("Windows Quality Update Policies imported successfully.\n");
             }
 
             AppendToDetailsRichTextBlock("Import process finished.\n");
