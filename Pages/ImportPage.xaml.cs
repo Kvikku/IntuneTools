@@ -239,6 +239,116 @@ namespace IntuneTools.Pages
 
                 // TODO - method to clean up ContentList if needed
 
+                // Clean up content platform value (operating system names) in ContentList
+                foreach (var content in ContentList)
+                {
+                    var cleanedValue = TranslatePolicyPlatformName(content?.ContentPlatform); // Use the method to clean up the platform name
+                    content.ContentPlatform = cleanedValue ?? string.Empty; // Ensure no null values
+
+                }
+                // More cleanup as needed
+
+                // Bind to DataGrid
+                ContentDataGrid.ItemsSource = ContentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
+        private async Task SearchOrchestrator(GraphServiceClient graphServiceClient, string searchQuery)
+        {
+            ShowLoading("Loading data from Microsoft Graph...");
+            try
+            {
+                // Clear the ContentList before loading new data
+                ContentList.Clear();
+
+
+                // Get the names of checked options
+                var selectedContent = GetCheckedOptionNames();
+
+                if (selectedContent.Count == 0)
+                {
+                    // If no options are selected, show a message and return
+                    AppendToDetailsRichTextBlock("No content types selected for import.");
+                    return;
+                }
+
+                if (selectedContent.Contains("SettingsCatalog"))
+                {
+                    // Load Settings Catalog policies
+                    await LoadAllSettingsCatalogPoliciesAsync();
+                }
+                if (selectedContent.Contains("DeviceCompliance"))
+                {
+                    // Load Device Compliance policies
+                    await LoadAllDeviceCompliancePoliciesAsync();
+                }
+                if (selectedContent.Contains("DeviceConfiguration"))
+                {
+                    // Load Device Configuration policies
+                    await LoadAllDeviceConfigurationPoliciesAsync();
+                }
+                if (selectedContent.Contains("AppleBYODEnrollmentProfile"))
+                {
+                    // Load Apple BYOD Enrollment Profiles
+                    await LoadAllAppleBYODEnrollmentProfilesAsync();
+                }
+                if (selectedContent.Contains("PowerShellScript"))
+                {
+                    // Load PowerShell Scripts
+                    await LoadAllPowerShellScriptsAsync();
+                }
+                if (selectedContent.Contains("ProactiveRemediation"))
+                {
+                    // Load Proactive Remediations
+                    await LoadAllProactiveRemediationsAsync();
+                }
+                if (selectedContent.Contains("macOSShellScript"))
+                {
+                    // Load macOS Shell Scripts
+                    await LoadAllmacOSShellScriptsAsync();
+                }
+                if (selectedContent.Contains("WindowsAutopilot"))
+                {
+                    // Load Windows AutoPilot Profiles
+                    await LoadAllWindowsAutoPilotProfilesAsync();
+                }
+                if (selectedContent.Contains("WindowsDriverUpdate"))
+                {
+                    // Load Windows Driver Updates
+                    await LoadAllWindowsDriverUpdatesAsync();
+                }
+                if (selectedContent.Contains("WindowsFeatureUpdate"))
+                {
+                    // Load Windows Feature Updates
+                    await LoadAllWindowsFeatureUpdatesAsync();
+                }
+                if (selectedContent.Contains("WindowsQualityUpdatePolicy"))
+                {
+                    // Load Windows Quality Update policies
+                    await LoadAllWindowsQualityUpdatePoliciesAsync();
+                }
+                if (selectedContent.Contains("WindowsQualityUpdateProfile"))
+                {
+                    // Load Windows Quality Update profiles
+                    await LoadAllWindowsQualityUpdateProfilesAsync();
+                }
+                if (selectedContent.Contains("Filters"))
+                {
+                    // Load Assignment Filters
+                    await LoadAllAssignmentFiltersToBeImportedAsync();
+                }
+                if (selectedContent.Contains("EntraGroups"))
+                {
+                    // Load Entra Groups
+                    await LoadGroupsOrchestrator();
+                }
+
+
+                // TODO - method to clean up ContentList if needed
 
                 // Clean up content platform value (operating system names) in ContentList
                 foreach (var content in ContentList)
@@ -247,11 +357,7 @@ namespace IntuneTools.Pages
                     content.ContentPlatform = cleanedValue ?? string.Empty; // Ensure no null values
 
                 }
-
                 // More cleanup as needed
-
-
-
 
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
@@ -1061,7 +1167,6 @@ namespace IntuneTools.Pages
                 await ImportMultipleGroups(sourceGraphServiceClient, destinationGraphServiceClient, groups);
                 AppendToDetailsRichTextBlock("Entra Groups imported successfully.\n");
             }
-
             if (ContentList.Any(c => c.ContentType == "Settings Catalog"))
             {
                 // Import Settings Catalog policies
@@ -1194,7 +1299,17 @@ namespace IntuneTools.Pages
         {
             await MainImportProcess();
         }
-     
+        private async void SearchButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!string.IsNullOrEmpty(SearchQueryTextBox.Text))
+            {
+                await SearchOrchestrator(sourceGraphServiceClient, SearchQueryTextBox.Text);
+            }
+            else
+            {
+                AppendToDetailsRichTextBlock("Search query cannot be empty.");
+            }
+        }
         private async void ListAllButton_Click(object sender, RoutedEventArgs e)
         {
             // This method is called when the "List All" button is clicked
@@ -1217,11 +1332,6 @@ namespace IntuneTools.Pages
         {
             // This method is called when the "List All Assignment Filters" button is clicked
             await LoadAllAssignmentFiltersAsync();
-        }
-
-        private void SearchButton_Click(object sender, RoutedEventArgs e)
-        {
-            // TODO: Implement search functionality
         }
 
         private void ClearAllButton_Click(object sender, RoutedEventArgs e)
