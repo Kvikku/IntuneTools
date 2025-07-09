@@ -63,6 +63,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Remove="Pages\ApplicationPage.xaml" />
+    <None Remove="Pages\CleanupPage.xaml" />
   </ItemGroup>
   <!--<ItemGroup>
     <Page Remove="Pages\ImportPage.xaml" />
@@ -97,6 +98,11 @@
     <PackageReference Include="Microsoft.Identity.Client" Version="4.73.1" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.4188" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.250610002-experimental3" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Pages\CleanupPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Page Update="UI\BlankPage1.xaml">

@@ -41,6 +41,7 @@
                 <muxc:NavigationViewItem Content="Home" Tag="Home" Icon="Home"/>
                 <muxc:NavigationViewItem Content="Application" Tag="Application" Icon="AllApps"/>
                 <muxc:NavigationViewItem Content="Import" Tag="Import" Icon="Import"/>
+                <muxc:NavigationViewItem Content="Cleanup" Tag="Cleanup" Icon="Delete"/>
             </muxc:NavigationView.MenuItems>
 
             <Frame x:Name="ContentFrame"/>

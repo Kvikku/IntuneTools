@@ -130,6 +130,9 @@ namespace IntuneTools
                 case "Import":
                     ContentFrame.Navigate(typeof(ImportPage));
                     break;
+                case "Cleanup":
+                    ContentFrame.Navigate(typeof(CleanupPage));
+                    break;
                 default:
                     break;
             }
