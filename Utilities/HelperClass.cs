@@ -370,5 +370,41 @@ namespace IntuneTools.Utilities
                 hideLoading();
             }
         }
+
+        /// <summary>
+        /// Generic async helper to load all items, map them to content, update a collection, and bind to a UI control.
+        /// </summary>
+        /// <typeparam name="TPolicy">The type of the policy/item returned by the loader function.</typeparam>
+        /// <typeparam name="TContent">The type of the content to be displayed in the UI collection.</typeparam>
+        /// <param name="loaderFunc">A function that returns a Task of IEnumerable of TPolicy.</param>
+        /// <param name="contentList">The ObservableCollection to update with mapped content.</param>
+        /// <param name="mapFunc">A function to map TPolicy to TContent.</param>
+        /// <param name="showLoading">Action to show loading UI.</param>
+        /// <param name="hideLoading">Action to hide loading UI.</param>
+        /// <param name="bindToGrid">Action to bind the collection to the UI control (e.g., DataGrid).</param>
+        public static async Task LoadAndBindAsync<TPolicy, TContent>(
+            Func<Task<IEnumerable<TPolicy>>> loaderFunc,
+            ObservableCollection<TContent> contentList,
+            Func<TPolicy, TContent> mapFunc,
+            Action showLoading,
+            Action hideLoading,
+            Action<IEnumerable<TContent>> bindToGrid)
+        {
+            showLoading();
+            try
+            {
+                var items = await loaderFunc();
+                contentList.Clear();
+                foreach (var item in items)
+                {
+                    contentList.Add(mapFunc(item));
+                }
+                bindToGrid(contentList);
+            }
+            finally
+            {
+                hideLoading();
+            }
+        }
     }
 }

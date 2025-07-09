@@ -87,29 +87,20 @@ namespace IntuneTools.Pages
         /// </summary>
         private async Task LoadAllSettingsCatalogPoliciesAsync()
         {
-            ShowLoading("Loading settings catalog policies from Microsoft Graph...");
-            try
-            {
-                // Retrieve all settings catalog policies
-                var policies = await GetAllSettingsCatalogPolicies(sourceGraphServiceClient);
-                // Update ContentList for DataGrid
-                foreach (var policy in policies)
+            await LoadAndBindAsync<Microsoft.Graph.Beta.Models.DeviceManagementConfigurationPolicy, ContentInfo>(
+                loaderFunc: async () => (IEnumerable<Microsoft.Graph.Beta.Models.DeviceManagementConfigurationPolicy>)await GetAllSettingsCatalogPolicies(sourceGraphServiceClient),
+                contentList: ContentList,
+                mapFunc: policy => new ContentInfo
                 {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = policy.Name,
-                        ContentType = "Settings Catalog",
-                        ContentPlatform = policy.Platforms?.ToString() ?? string.Empty,
-                        ContentId = policy.Id
-                    });
-                }
-                // Bind to DataGrid
-                CleanupDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
+                    ContentName = policy.Name,
+                    ContentType = "Settings Catalog",
+                    ContentPlatform = policy.Platforms?.ToString() ?? string.Empty,
+                    ContentId = policy.Id
+                },
+                showLoading: () => ShowLoading("Loading settings catalog policies from Microsoft Graph..."),
+                hideLoading: HideLoading,
+                bindToGrid: items => CleanupDataGrid.ItemsSource = items
+            );
         }
         private async Task SearchForSettingsCatalogPoliciesAsync(string searchQuery)
         {
