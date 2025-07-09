@@ -24,7 +24,7 @@
             <!-- Add your controls here -->
         </StackPanel>
         <StackPanel Grid.Column="1" Grid.Row="0" Orientation="Horizontal" Margin="0,10,10,0" MinHeight="40" Spacing="10">
-            <Button x:Name="SearchButton" Content="Search" />
+            <Button x:Name="SearchButton" Content="Search" Click="Search_Click" />
             <Button x:Name="ListAllButton" Content="List All" Click="ListAll_Click" />
             <Button x:Name="DeleteButton" Content="Delete" />
         </StackPanel>

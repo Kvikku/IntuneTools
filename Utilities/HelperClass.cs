@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -329,6 +330,44 @@ namespace IntuneTools.Utilities
                     paragraph.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = text });
                     richTextBlock.Blocks.Add(paragraph);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Generic async helper to search for policies, map them to content, update a collection, and bind to a UI control.
+        /// </summary>
+        /// <typeparam name="TPolicy">The type of the policy returned by the search function.</typeparam>
+        /// <typeparam name="TContent">The type of the content to be displayed in the UI collection.</typeparam>
+        /// <param name="searchFunc">A function that takes a search query and returns a Task of IEnumerable of TPolicy.</param>
+        /// <param name="searchQuery">The search query string.</param>
+        /// <param name="contentList">The ObservableCollection to update with mapped content.</param>
+        /// <param name="mapFunc">A function to map TPolicy to TContent.</param>
+        /// <param name="showLoading">Action to show loading UI.</param>
+        /// <param name="hideLoading">Action to hide loading UI.</param>
+        /// <param name="bindToGrid">Action to bind the collection to the UI control (e.g., DataGrid).</param>
+        public static async Task SearchAndBindAsync<TPolicy, TContent>(
+            Func<string, Task<IEnumerable<TPolicy>>> searchFunc,
+            string searchQuery,
+            ObservableCollection<TContent> contentList,
+            Func<TPolicy, TContent> mapFunc,
+            Action showLoading,
+            Action hideLoading,
+            Action<IEnumerable<TContent>> bindToGrid)
+        {
+            showLoading();
+            try
+            {
+                var policies = await searchFunc(searchQuery);
+                contentList.Clear();
+                foreach (var policy in policies)
+                {
+                    contentList.Add(mapFunc(policy));
+                }
+                bindToGrid(contentList);
+            }
+            finally
+            {
+                hideLoading();
             }
         }
     }

@@ -111,10 +111,78 @@ namespace IntuneTools.Pages
                 HideLoading();
             }
         }
+        private async Task SearchForSettingsCatalogPoliciesAsync(string searchQuery)
+        {
+            await SearchAndBindAsync<Microsoft.Graph.Beta.Models.DeviceManagementConfigurationPolicy, ContentInfo>(
+                searchFunc: async q => (IEnumerable<Microsoft.Graph.Beta.Models.DeviceManagementConfigurationPolicy>)await SearchForSettingsCatalog(sourceGraphServiceClient, q),
+                searchQuery: searchQuery,
+                contentList: ContentList,
+                mapFunc: policy => new ContentInfo
+                {
+                    ContentName = policy.Name,
+                    ContentType = "Settings Catalog",
+                    ContentPlatform = policy.Platforms?.ToString() ?? string.Empty,
+                    ContentId = policy.Id
+                },
+                showLoading: () => ShowLoading("Loading settings catalog policies from Microsoft Graph..."),
+                hideLoading: HideLoading,
+                bindToGrid: items => CleanupDataGrid.ItemsSource = items
+            );
+        }
 
+        private List<string> GetSettingsCatalogIDs()
+        {
+            // This method retrieves the IDs of all settings catalog policies in ContentList
+            return ContentList
+                .Where(c => c.ContentType == "Settings Catalog")
+                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
+                .ToList();
+        }
+
+        private async Task DeleteSettingsCatalogsAsync()
+        {
+            ShowLoading("Deleting settings catalog policies from Microsoft Graph...");
+            try
+            {
+                // Get all settings catalog IDs
+                var settingsCatalogIDs = GetSettingsCatalogIDs();
+                if (settingsCatalogIDs.Count == 0)
+                {
+                    WriteToImportStatusFile("No settings catalog policies found to delete.");
+                    return;
+                }
+                // Delete each settings catalog policy
+                foreach (var id in settingsCatalogIDs)
+                {
+                    //await DeleteSettingsCatalogPolicy(sourceGraphServiceClient, id);
+                    WriteToImportStatusFile($"Deleted settings catalog policy with ID: {id}");
+                }
+            }
+            catch (Exception ex)
+            {
+                WriteToImportStatusFile($"Error deleting settings catalog policies: {ex.Message}", LogType.Error);
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
+        /// BUTTON HANDLERS ///
+        /// Buttons should be defined in the XAML file and linked to these methods.
+        /// Buttons should call other methods to perform specific actions.
+        /// Buttons should not directly perform actions themselves.
         private async void ListAll_Click(object sender, RoutedEventArgs e)
         {
             await LoadAllSettingsCatalogPoliciesAsync();
+        }
+        private async void Search_Click(object sender, RoutedEventArgs e)
+        {
+            var searchQuery = InputTextBox.Text;
+            if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                await SearchForSettingsCatalogPoliciesAsync(searchQuery);
+            }
         }
     }
 }
