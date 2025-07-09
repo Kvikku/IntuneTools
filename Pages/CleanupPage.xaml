@@ -38,6 +38,12 @@
             </controls:DataGrid.Columns>
         </controls:DataGrid>
 
+        <!-- Log Console and Clear Log Button moved to the right of the DataGrid -->
+        <StackPanel Grid.Column="2" Grid.Row="2" VerticalAlignment="Top" Margin="0,10,10,10" Orientation="Vertical" Width="350">
+            <Button x:Name="ClearLogButton" Content="Clear Log" Click="ClearLogButton_Click" Width="100" Margin="0,0,0,10"/>
+            <RichTextBlock x:Name="LogConsole" Margin="0,0,0,0" Height="300" Foreground="White" Padding="8"/>
+        </StackPanel>
+
         <!-- Loading Overlay and ProgressRing -->
         <Grid x:Name="LoadingOverlay" Visibility="Collapsed" Background="#80000000" Grid.ColumnSpan="3" Grid.RowSpan="3">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Background="#CCFFFFFF" Padding="40" CornerRadius="8">

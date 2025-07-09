@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Data;
+using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
@@ -162,6 +163,51 @@ namespace IntuneTools.Pages
         private async Task DeleteContent()
         {
             await DeleteSettingsCatalogsAsync();
+        }
+
+        // Append log text to the LogConsole RichTextBlock
+        private void AppendToDetailsRichTextBlock(string text)
+        {
+            Paragraph paragraph;
+            if (LogConsole.Blocks.Count == 0)
+            {
+                paragraph = new Paragraph();
+                LogConsole.Blocks.Add(paragraph);
+            }
+            else
+            {
+                paragraph = LogConsole.Blocks.First() as Paragraph;
+                if (paragraph == null)
+                {
+                    paragraph = new Paragraph();
+                    LogConsole.Blocks.Add(paragraph);
+                }
+            }
+            if (paragraph.Inlines.Count > 0)
+            {
+                paragraph.Inlines.Add(new LineBreak());
+            }
+            paragraph.Inlines.Add(new Run { Text = text });
+        }
+
+        // Handler for the 'Clear Log' button
+        private async void ClearLogButton_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new ContentDialog
+            {
+                Title = "Clear Log Console?",
+                Content = "Are you sure you want to clear all log console text? This action cannot be undone.",
+                PrimaryButtonText = "Clear",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync().AsTask();
+            if (result == ContentDialogResult.Primary)
+            {
+                LogConsole.Blocks.Clear();
+            }
         }
 
         /// BUTTON HANDLERS ///
