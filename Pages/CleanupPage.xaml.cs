@@ -1,3 +1,4 @@
+using Microsoft.Graph.Beta;
 using Microsoft.Graph.Beta.Models.Security;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -62,6 +63,11 @@ namespace IntuneTools.Pages
 
         public ObservableCollection<ContentInfo> ContentList { get; set; } = new ObservableCollection<ContentInfo>();
 
+
+        /// <summary>
+        /// Data Grid methods
+        /// </summary>
+
         private void ShowLoading(string message = "Loading data from Microsoft Graph...")
         {
             LoadingStatusText.Text = message;
@@ -72,7 +78,6 @@ namespace IntuneTools.Pages
             ListAllButton.IsEnabled = false;
             SearchButton.IsEnabled = false;
         }
-
         private void HideLoading()
         {
             LoadingOverlay.Visibility = Visibility.Collapsed;
@@ -82,92 +87,9 @@ namespace IntuneTools.Pages
             ListAllButton.IsEnabled = true;
             SearchButton.IsEnabled = true;
         }
-
-        /// <summary>
-        ///  Settings catalog
-        /// </summary>
-        private async Task LoadAllSettingsCatalogPoliciesAsync()
-        {
-            await LoadAndBindAsync<Microsoft.Graph.Beta.Models.DeviceManagementConfigurationPolicy, ContentInfo>(
-                loaderFunc: async () => (IEnumerable<Microsoft.Graph.Beta.Models.DeviceManagementConfigurationPolicy>)await GetAllSettingsCatalogPolicies(sourceGraphServiceClient),
-                contentList: ContentList,
-                mapFunc: policy => new ContentInfo
-                {
-                    ContentName = policy.Name,
-                    ContentType = "Settings Catalog",
-                    ContentPlatform = policy.Platforms?.ToString() ?? string.Empty,
-                    ContentId = policy.Id
-                },
-                showLoading: () => ShowLoading("Loading settings catalog policies from Microsoft Graph..."),
-                hideLoading: HideLoading,
-                bindToGrid: items => CleanupDataGrid.ItemsSource = items
-            );
-        }
-        private async Task SearchForSettingsCatalogPoliciesAsync(string searchQuery)
-        {
-            await SearchAndBindAsync<Microsoft.Graph.Beta.Models.DeviceManagementConfigurationPolicy, ContentInfo>(
-                searchFunc: async q => (IEnumerable<Microsoft.Graph.Beta.Models.DeviceManagementConfigurationPolicy>)await SearchForSettingsCatalog(sourceGraphServiceClient, q),
-                searchQuery: searchQuery,
-                contentList: ContentList,
-                mapFunc: policy => new ContentInfo
-                {
-                    ContentName = policy.Name,
-                    ContentType = "Settings Catalog",
-                    ContentPlatform = policy.Platforms?.ToString() ?? string.Empty,
-                    ContentId = policy.Id
-                },
-                showLoading: () => ShowLoading("Loading settings catalog policies from Microsoft Graph..."),
-                hideLoading: HideLoading,
-                bindToGrid: items => CleanupDataGrid.ItemsSource = items
-            );
-        }
-
-        private List<string> GetSettingsCatalogIDs()
-        {
-            // This method retrieves the IDs of all settings catalog policies in ContentList
-            return ContentList
-                .Where(c => c.ContentType == "Settings Catalog")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
-
-        private async Task DeleteSettingsCatalogsAsync()
-        {
-            ShowLoading("Deleting settings catalog policies from Microsoft Graph...");
-            try
-            {
-                // Get all settings catalog IDs
-                var settingsCatalogIDs = GetSettingsCatalogIDs();
-                if (settingsCatalogIDs.Count == 0)
-                {
-                    WriteToImportStatusFile("No settings catalog policies found to delete.");
-                    return;
-                }
-                // Delete each settings catalog policy
-                foreach (var id in settingsCatalogIDs)
-                {
-                    await DeleteSettingsCatalog(sourceGraphServiceClient, id);
-                    WriteToImportStatusFile($"Deleted settings catalog policy with ID: {id}");
-                }
-            }
-            catch (Exception ex)
-            {
-                WriteToImportStatusFile($"Error deleting settings catalog policies: {ex.Message}", LogType.Error);
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private async Task DeleteContent()
-        {
-            await DeleteSettingsCatalogsAsync();
-        }
-
-        // Append log text to the LogConsole RichTextBlock
         private void AppendToDetailsRichTextBlock(string text)
         {
+            // Append log text to the LogConsole RichTextBlock
             Paragraph paragraph;
             if (LogConsole.Blocks.Count == 0)
             {
@@ -190,6 +112,226 @@ namespace IntuneTools.Pages
             paragraph.Inlines.Add(new Run { Text = text });
         }
 
+        private async Task DeleteContent()
+        {
+            await DeleteSettingsCatalogsAsync();
+            await DeleteDeviceCompliancePoliciesAsync();
+        }
+
+        private async Task ListAllOrchestrator(GraphServiceClient graphServiceClient)
+        {
+            ShowLoading("Loading data from Microsoft Graph...");
+            AppendToDetailsRichTextBlock("Starting to load all content. This could take a while...");
+            try
+            {
+                // Clear the ContentList before loading new data
+                ContentList.Clear();
+
+                await LoadAllDeviceCompliancePoliciesAsync();
+                await LoadAllSettingsCatalogPoliciesAsync();
+            }
+            catch (Exception ex)
+            {
+                AppendToDetailsRichTextBlock($"Error during loading: {ex.Message}");
+                HideLoading();
+                return;
+            }
+        }
+
+
+
+
+
+
+        /// <summary>
+        ///  Settings catalog
+        /// </summary>
+        private async Task LoadAllSettingsCatalogPoliciesAsync()
+        {
+            await LoadAndBindAsync<Microsoft.Graph.Beta.Models.DeviceManagementConfigurationPolicy, ContentInfo>(
+                loaderFunc: async () => (IEnumerable<Microsoft.Graph.Beta.Models.DeviceManagementConfigurationPolicy>)await GetAllSettingsCatalogPolicies(sourceGraphServiceClient),
+                contentList: ContentList,
+                mapFunc: policy => new ContentInfo
+                {
+                    ContentName = policy.Name,
+                    ContentType = "Settings Catalog",
+                    ContentPlatform = policy.Platforms?.ToString() ?? string.Empty,
+                    ContentId = policy.Id
+                },
+                showLoading: () => ShowLoading("Loading settings catalog policies from Microsoft Graph..."),
+                hideLoading: HideLoading,
+                bindToGrid: items => CleanupDataGrid.ItemsSource = items
+            );
+            AppendToDetailsRichTextBlock($"Loaded {ContentList.Count} settings catalog policies.");
+        }
+        private async Task SearchForSettingsCatalogPoliciesAsync(string searchQuery)
+        {
+            await SearchAndBindAsync<Microsoft.Graph.Beta.Models.DeviceManagementConfigurationPolicy, ContentInfo>(
+                searchFunc: async q => (IEnumerable<Microsoft.Graph.Beta.Models.DeviceManagementConfigurationPolicy>)await SearchForSettingsCatalog(sourceGraphServiceClient, q),
+                searchQuery: searchQuery,
+                contentList: ContentList,
+                mapFunc: policy => new ContentInfo
+                {
+                    ContentName = policy.Name,
+                    ContentType = "Settings Catalog",
+                    ContentPlatform = policy.Platforms?.ToString() ?? string.Empty,
+                    ContentId = policy.Id
+                },
+                showLoading: () => ShowLoading("Loading settings catalog policies from Microsoft Graph..."),
+                hideLoading: HideLoading,
+                bindToGrid: items => CleanupDataGrid.ItemsSource = items
+            );
+            AppendToDetailsRichTextBlock($"Found {ContentList.Count} settings catalog policies matching '{searchQuery}'.");
+        }
+        private List<string> GetSettingsCatalogIDs()
+        {
+            // This method retrieves the IDs of all settings catalog policies in ContentList
+            return ContentList
+                .Where(c => c.ContentType == "Settings Catalog")
+                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
+                .ToList();
+        }
+        private async Task DeleteSettingsCatalogsAsync()
+        {
+            int count = 0;
+            ShowLoading("Deleting settings catalog policies from Microsoft Graph...");
+            try
+            {
+                // Get all settings catalog IDs
+                var settingsCatalogIDs = GetSettingsCatalogIDs();
+                if (settingsCatalogIDs.Count == 0)
+                {
+                    WriteToImportStatusFile("No settings catalog policies found to delete.");
+                    return;
+                }
+                
+                count = settingsCatalogIDs.Count;
+
+                WriteToImportStatusFile($"Found {count} settings catalog policies to delete.");
+
+                // Delete each settings catalog policy
+
+                foreach (var id in settingsCatalogIDs)
+                {
+                    await DeleteSettingsCatalog(sourceGraphServiceClient, id);
+                    WriteToImportStatusFile($"Deleted settings catalog policy with ID: {id}");
+                }
+            }
+            catch (Exception ex)
+            {
+                WriteToImportStatusFile($"Error deleting settings catalog policies: {ex.Message}", LogType.Error);
+            }
+            finally
+            {
+                AppendToDetailsRichTextBlock($"Deleted {count} settings catalog policies.");
+                HideLoading();
+            }
+        }
+
+        /// <summary>
+        ///  Device Compliance Policies
+        /// </summary>
+
+        private async Task LoadAllDeviceCompliancePoliciesAsync()
+        {
+            await LoadAndBindAsync<Microsoft.Graph.Beta.Models.DeviceCompliancePolicy, ContentInfo>(
+                loaderFunc: async () => (IEnumerable<Microsoft.Graph.Beta.Models.DeviceCompliancePolicy>)await GetAllDeviceCompliancePolicies(sourceGraphServiceClient),
+                contentList: ContentList,
+                mapFunc: policy => new ContentInfo
+                {
+                    ContentName = policy.DisplayName,
+                    ContentType = "Device Compliance Policy",
+                    ContentPlatform = policy.OdataType?.ToString() ?? string.Empty,
+                    ContentId = policy.Id
+                },
+                showLoading: () => ShowLoading("Loading device compliance policies from Microsoft Graph..."),
+                hideLoading: HideLoading,
+                bindToGrid: items => CleanupDataGrid.ItemsSource = items
+            );
+            AppendToDetailsRichTextBlock($"Loaded {ContentList.Count} device compliance policies.");
+        }
+        private async Task SearchForDeviceCompliancePoliciesAsync(string searchQuery)
+        {
+            await SearchAndBindAsync<Microsoft.Graph.Beta.Models.DeviceCompliancePolicy, ContentInfo>(
+                searchFunc: async q => (IEnumerable<Microsoft.Graph.Beta.Models.DeviceCompliancePolicy>)await SearchForDeviceCompliancePolicies(sourceGraphServiceClient, q),
+                searchQuery: searchQuery,
+                contentList: ContentList,
+                mapFunc: policy => new ContentInfo
+                {
+                    ContentName = policy.DisplayName,
+                    ContentType = "Device Compliance Policy",
+                    ContentPlatform = policy.OdataType?.ToString() ?? string.Empty,
+                    ContentId = policy.Id
+                },
+                showLoading: () => ShowLoading("Loading device compliance policies from Microsoft Graph..."),
+                hideLoading: HideLoading,
+                bindToGrid: items => CleanupDataGrid.ItemsSource = items
+            );
+            AppendToDetailsRichTextBlock($"Found {ContentList.Count} device compliance policies matching '{searchQuery}'.");
+        }
+        private List<string> GetDeviceCompliancePolicyIDs()
+        {
+            // This method retrieves the IDs of all device compliance policies in ContentList
+            return ContentList
+                .Where(c => c.ContentType == "Device Compliance Policy")
+                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
+                .ToList();
+        }
+        private async Task DeleteDeviceCompliancePoliciesAsync()
+        {
+            int count = 0;
+            ShowLoading("Deleting device compliance policies from Microsoft Graph...");
+            try
+            {
+                // Get all device compliance policy IDs
+                var deviceCompliancePolicyIDs = GetDeviceCompliancePolicyIDs();
+                if (deviceCompliancePolicyIDs.Count == 0)
+                {
+                    WriteToImportStatusFile("No device compliance policies found to delete.");
+                    return;
+                }
+                WriteToImportStatusFile($"Found {deviceCompliancePolicyIDs.Count} device compliance policies to delete.");
+                // Delete each device compliance policy
+                foreach (var id in deviceCompliancePolicyIDs)
+                {
+                    await DeleteDeviceCompliancePolicy(sourceGraphServiceClient, id);
+                    WriteToImportStatusFile($"Deleted device compliance policy with ID: {id}");
+                }
+            }
+            catch (Exception ex)
+            {
+                WriteToImportStatusFile($"Error deleting device compliance policies: {ex.Message}", LogType.Error);
+            }
+            finally
+            {
+                AppendToDetailsRichTextBlock($"Deleted {count} device compliance policies.");
+                HideLoading();
+            }
+        }
+
+
+
+
+
+
+
+        /// BUTTON HANDLERS ///
+        /// Buttons should be defined in the XAML file and linked to these methods.
+        /// Buttons should call other methods to perform specific actions.
+        /// Buttons should not directly perform actions themselves.
+        private async void ListAll_Click(object sender, RoutedEventArgs e)
+        {
+            await ListAllOrchestrator(sourceGraphServiceClient);
+        }
+        private async void Search_Click(object sender, RoutedEventArgs e)
+        {
+            var searchQuery = InputTextBox.Text;
+            if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                await SearchForSettingsCatalogPoliciesAsync(searchQuery);
+            }
+        }
+
         // Handler for the 'Clear Log' button
         private async void ClearLogButton_Click(object sender, RoutedEventArgs e)
         {
@@ -210,22 +352,6 @@ namespace IntuneTools.Pages
             }
         }
 
-        /// BUTTON HANDLERS ///
-        /// Buttons should be defined in the XAML file and linked to these methods.
-        /// Buttons should call other methods to perform specific actions.
-        /// Buttons should not directly perform actions themselves.
-        private async void ListAll_Click(object sender, RoutedEventArgs e)
-        {
-            await LoadAllSettingsCatalogPoliciesAsync();
-        }
-        private async void Search_Click(object sender, RoutedEventArgs e)
-        {
-            var searchQuery = InputTextBox.Text;
-            if (!string.IsNullOrWhiteSpace(searchQuery))
-            {
-                await SearchForSettingsCatalogPoliciesAsync(searchQuery);
-            }
-        }
         private async void DeleteButton_Click(object sender, RoutedEventArgs e)
         {
             var numberOfItems = ContentList.Count;
