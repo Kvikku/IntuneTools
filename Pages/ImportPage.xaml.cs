@@ -279,37 +279,37 @@ namespace IntuneTools.Pages
                 if (selectedContent.Contains("SettingsCatalog"))
                 {
                     // Load Settings Catalog policies
-                    await LoadAllSettingsCatalogPoliciesAsync();
+                    await SearchForSettingsCatalogPoliciesAsync(searchQuery);
                 }
                 if (selectedContent.Contains("DeviceCompliance"))
                 {
                     // Load Device Compliance policies
-                    await LoadAllDeviceCompliancePoliciesAsync();
+                    await SearchForDeviceCompliancePoliciesAsync(searchQuery);
                 }
                 if (selectedContent.Contains("DeviceConfiguration"))
                 {
                     // Load Device Configuration policies
-                    await LoadAllDeviceConfigurationPoliciesAsync();
+                    await SearchForDeviceConfigurationAsync(searchQuery);
                 }
                 if (selectedContent.Contains("AppleBYODEnrollmentProfile"))
                 {
                     // Load Apple BYOD Enrollment Profiles
-                    await LoadAllAppleBYODEnrollmentProfilesAsync();
+                    await SearchForAppleBYODEnrollmentProfilesAsync(searchQuery);
                 }
                 if (selectedContent.Contains("PowerShellScript"))
                 {
                     // Load PowerShell Scripts
-                    await LoadAllPowerShellScriptsAsync();
+                    await SearchForPowerShellScriptsAsync(searchQuery);
                 }
                 if (selectedContent.Contains("ProactiveRemediation"))
                 {
                     // Load Proactive Remediations
-                    await LoadAllProactiveRemediationsAsync();
+                    await SearchForProactiveRemediationsAsync(searchQuery);
                 }
                 if (selectedContent.Contains("macOSShellScript"))
                 {
                     // Load macOS Shell Scripts
-                    await LoadAllmacOSShellScriptsAsync();
+                    await SearchFormacOSShellScriptsAsync(searchQuery);
                 }
                 if (selectedContent.Contains("WindowsAutopilot"))
                 {
@@ -398,6 +398,33 @@ namespace IntuneTools.Pages
             }
         }
 
+        private async Task SearchForSettingsCatalogPoliciesAsync(string searchQuery)
+        {
+            ShowLoading("Loading settings catalog policies from Microsoft Graph...");
+            try
+            {
+                // Retrieve all settings catalog policies
+                var policies = await SearchForSettingsCatalog(sourceGraphServiceClient,searchQuery);
+                // Update ContentList for DataGrid
+                foreach (var policy in policies)
+                {
+                    ContentList.Add(new ContentInfo
+                    {
+                        ContentName = policy.Name,
+                        ContentType = "Settings Catalog",
+                        ContentPlatform = policy.Platforms?.ToString() ?? string.Empty,
+                        ContentId = policy.Id
+                    });
+                }
+                // Bind to DataGrid
+                ContentDataGrid.ItemsSource = ContentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
         private List<string> GetSettingsCatalogIDs()
         {
             // This method retrieves the IDs of all settings catalog policies in ContentList
@@ -425,6 +452,33 @@ namespace IntuneTools.Pages
                     {
                         ContentName = policy.DisplayName,
                         ContentType = "Device Configuration Policy",
+                        ContentPlatform = policy.OdataType?.ToString() ?? string.Empty,
+                        ContentId = policy.Id
+                    });
+                }
+                // Bind to DataGrid
+                ContentDataGrid.ItemsSource = ContentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
+        private async Task SearchForDeviceConfigurationAsync(string searchQuery)
+        {
+            ShowLoading("Loading settings catalog policies from Microsoft Graph...");
+            try
+            {
+                // Retrieve all settings catalog policies
+                var policies = await SearchForDeviceConfigurations(sourceGraphServiceClient, searchQuery);
+                // Update ContentList for DataGrid
+                foreach (var policy in policies)
+                {
+                    ContentList.Add(new ContentInfo
+                    {
+                        ContentName = policy.DisplayName,
+                        ContentType = "Device Configuration",
                         ContentPlatform = policy.OdataType?.ToString() ?? string.Empty,
                         ContentId = policy.Id
                     });
@@ -477,7 +531,32 @@ namespace IntuneTools.Pages
                 HideLoading();
             }
         }
-
+        private async Task SearchForDeviceCompliancePoliciesAsync(string searchQuery)
+        {
+            ShowLoading("Loading settings catalog policies from Microsoft Graph...");
+            try
+            {
+                // Retrieve all settings catalog policies
+                var policies = await SearchForDeviceCompliancePolicies(sourceGraphServiceClient, searchQuery);
+                // Update ContentList for DataGrid
+                foreach (var policy in policies)
+                {
+                    ContentList.Add(new ContentInfo
+                    {
+                        ContentName = policy.DisplayName,
+                        ContentType = "Device Compliance",
+                        ContentPlatform = policy.OdataType?.ToString() ?? string.Empty,
+                        ContentId = policy.Id
+                    });
+                }
+                // Bind to DataGrid
+                ContentDataGrid.ItemsSource = ContentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
         private List<string> GetDeviceComplianceIDs()
         {
             // This method retrieves the IDs of all settings catalog policies in ContentList
@@ -498,6 +577,32 @@ namespace IntuneTools.Pages
             {
                 // Retrieve all Apple BYOD Enrollment Profiles
                 var profiles = await GetAllAppleBYODEnrollmentProfiles(sourceGraphServiceClient);
+                // Update ContentList for DataGrid
+                foreach (var profile in profiles)
+                {
+                    ContentList.Add(new ContentInfo
+                    {
+                        ContentName = profile.DisplayName,
+                        ContentType = "Apple BYOD Enrollment Profile",
+                        ContentPlatform = "iOS",
+                        ContentId = profile.Id
+                    });
+                }
+                // Bind to DataGrid
+                ContentDataGrid.ItemsSource = ContentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+        private async Task SearchForAppleBYODEnrollmentProfilesAsync(string searchQuery)
+        {
+            ShowLoading("Loading Apple BYOD Enrollment Profiles from Microsoft Graph...");
+            try
+            {
+                // Retrieve all Apple BYOD Enrollment Profiles
+                var profiles = await SearchForAppleBYODEnrollmentProfiles(sourceGraphServiceClient, searchQuery);
                 // Update ContentList for DataGrid
                 foreach (var profile in profiles)
                 {
@@ -558,6 +663,32 @@ namespace IntuneTools.Pages
             }
         }
 
+        private async Task SearchForPowerShellScriptsAsync(string searchQuery)
+        {
+            ShowLoading("Loading PowerShell scripts from Microsoft Graph...");
+            try
+            {
+                // Retrieve all PowerShell scripts
+                var scripts = await SearchForPowerShellScripts(sourceGraphServiceClient, searchQuery);
+                // Update ContentList for DataGrid
+                foreach (var script in scripts)
+                {
+                    ContentList.Add(new ContentInfo
+                    {
+                        ContentName = script.DisplayName,
+                        ContentType = "PowerShell Script",
+                        ContentPlatform = "Windows",
+                        ContentId = script.Id
+                    });
+                }
+                // Bind to DataGrid
+                ContentDataGrid.ItemsSource = ContentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
         private List<string> GetPowerShellScriptIDs()
         {
             // This method retrieves the IDs of all PowerShell scripts in ContentList
@@ -578,6 +709,32 @@ namespace IntuneTools.Pages
             {
                 // Retrieve all proactive remediations
                 var scripts = await GetAllProactiveRemediations(sourceGraphServiceClient);
+                // Update ContentList for DataGrid
+                foreach (var script in scripts)
+                {
+                    ContentList.Add(new ContentInfo
+                    {
+                        ContentName = script.DisplayName,
+                        ContentType = "Proactive Remediation",
+                        ContentPlatform = "Windows",
+                        ContentId = script.Id
+                    });
+                }
+                // Bind to DataGrid
+                ContentDataGrid.ItemsSource = ContentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+        private async Task SearchForProactiveRemediationsAsync(string searchQuery)
+        {
+            ShowLoading("Loading proactive remediations from Microsoft Graph...");
+            try
+            {
+                // Retrieve all proactive remediations
+                var scripts = await SearchForProactiveRemediations(sourceGraphServiceClient, searchQuery);
                 // Update ContentList for DataGrid
                 foreach (var script in scripts)
                 {
@@ -618,6 +775,32 @@ namespace IntuneTools.Pages
             {
                 // Retrieve all macOS shell scripts
                 var scripts = await GetAllmacOSShellScripts(sourceGraphServiceClient);
+                // Update ContentList for DataGrid
+                foreach (var script in scripts)
+                {
+                    ContentList.Add(new ContentInfo
+                    {
+                        ContentName = script.DisplayName,
+                        ContentType = "macOS Shell Script",
+                        ContentPlatform = "macOS",
+                        ContentId = script.Id
+                    });
+                }
+                // Bind to DataGrid
+                ContentDataGrid.ItemsSource = ContentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+        private async Task SearchFormacOSShellScriptsAsync(string searchQuery)
+        {
+            ShowLoading("Loading macOS shell scripts from Microsoft Graph...");
+            try
+            {
+                // Retrieve all macOS shell scripts
+                var scripts = await SearchForShellScriptmacOS(sourceGraphServiceClient, searchQuery);
                 // Update ContentList for DataGrid
                 foreach (var script in scripts)
                 {
