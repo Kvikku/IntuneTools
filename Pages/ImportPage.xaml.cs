@@ -1,15 +1,16 @@
-using IntuneTools.Graph;
-using Microsoft.Graph.Beta;
-using Microsoft.UI.Xaml; // Added for RoutedEventArgs
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Documents; // Added for Paragraph and Run
+using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Net.Mime;
 using System.Threading.Tasks;
 using Windows.Foundation; // Added for IAsyncOperation
+using System.Runtime.CompilerServices; // Add this for await support on IAsyncOperation
+using Microsoft.UI.Xaml; // Added for RoutedEventArgs
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Documents; // Added for Paragraph and Run
+using IntuneTools.Graph;
+using Microsoft.Graph.Beta;
 using static IntuneTools.Graph.DestinationTenantGraphClient;
 using static IntuneTools.Graph.EntraHelperClasses.GroupHelperClass;
 using static IntuneTools.Graph.IntuneHelperClasses.AppleBYODEnrollmentProfileHelper;
@@ -28,6 +29,7 @@ using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHe
 using static IntuneTools.Utilities.HelperClass;
 using static IntuneTools.Utilities.SourceTenantGraphClient;
 using static IntuneTools.Utilities.Variables;
+using System.Collections.ObjectModel; // Add this for ObservableCollection
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -1028,7 +1030,7 @@ namespace IntuneTools.Pages
                 .ToList();
         }
 
-        /// <summary
+        /// <summary>
         /// Windows Quality Update policies
         /// Must not be confused with Windows quality update profiles AKA expedite
         /// </summary>
@@ -1394,6 +1396,7 @@ namespace IntuneTools.Pages
                 HideLoading();
             }
         }
+
 
 
 
@@ -1845,7 +1848,11 @@ namespace IntuneTools.Pages
                 XamlRoot = this.XamlRoot
             };
 
-           
+            var result = await dialog.ShowAsync().AsTask();
+            if (result == ContentDialogResult.Primary)
+            {
+                LogConsole.Blocks.Clear();
+            }
         }
     }
 }
