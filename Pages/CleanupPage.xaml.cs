@@ -145,7 +145,7 @@ namespace IntuneTools.Pages
                 // Delete each settings catalog policy
                 foreach (var id in settingsCatalogIDs)
                 {
-                    //await DeleteSettingsCatalogPolicy(sourceGraphServiceClient, id);
+                    await DeleteSettingsCatalog(sourceGraphServiceClient, id);
                     WriteToImportStatusFile($"Deleted settings catalog policy with ID: {id}");
                 }
             }
@@ -157,6 +157,11 @@ namespace IntuneTools.Pages
             {
                 HideLoading();
             }
+        }
+
+        private async Task DeleteContent()
+        {
+            await DeleteSettingsCatalogsAsync();
         }
 
         /// BUTTON HANDLERS ///
@@ -173,6 +178,26 @@ namespace IntuneTools.Pages
             if (!string.IsNullOrWhiteSpace(searchQuery))
             {
                 await SearchForSettingsCatalogPoliciesAsync(searchQuery);
+            }
+        }
+        private async Task DeleteButton_Click(object sender, RoutedEventArgs e)
+        {
+            var numberOfItems = ContentList.Count;
+
+            var dialog = new ContentDialog
+            {
+                Title = "Delete content?",
+                Content = $"Are you sure you want to delete all {numberOfItems} items? This action cannot be undone.",
+                PrimaryButtonText = "Delete",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync().AsTask();
+            if (result == ContentDialogResult.Primary)
+            {
+                await DeleteContent();
             }
         }
     }
