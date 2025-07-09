@@ -460,5 +460,32 @@ namespace IntuneTools.Pages
                 await DeleteContent();
             }
         }
+
+        // Handler for the 'Clear All' button
+        private void ClearAllButton_Click(object sender, RoutedEventArgs e)
+        {
+            ContentList.Clear();
+            CleanupDataGrid.ItemsSource = null;
+            CleanupDataGrid.ItemsSource = ContentList;
+            AppendToDetailsRichTextBlock("All items cleared from the list.");
+        }
+
+        // Handler for the 'Clear Selected' button
+        private void ClearSelectedButton_Click(object sender, RoutedEventArgs e)
+        {
+            var selectedItems = CleanupDataGrid.SelectedItems?.Cast<ContentInfo>().ToList();
+            if (selectedItems == null || selectedItems.Count == 0)
+            {
+                AppendToDetailsRichTextBlock("No items selected to clear.");
+                return;
+            }
+            foreach (var item in selectedItems)
+            {
+                ContentList.Remove(item);
+            }
+            CleanupDataGrid.ItemsSource = null;
+            CleanupDataGrid.ItemsSource = ContentList;
+            AppendToDetailsRichTextBlock($"Cleared {selectedItems.Count} selected item(s) from the list.");
+        }
     }
 }
