@@ -180,7 +180,7 @@ namespace IntuneTools.Pages
                 await SearchForSettingsCatalogPoliciesAsync(searchQuery);
             }
         }
-        private async Task DeleteButton_Click(object sender, RoutedEventArgs e)
+        private async void DeleteButton_Click(object sender, RoutedEventArgs e)
         {
             var numberOfItems = ContentList.Count;
 
