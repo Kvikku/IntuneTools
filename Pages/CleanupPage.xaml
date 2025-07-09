@@ -25,17 +25,25 @@
         </StackPanel>
         <StackPanel Grid.Column="1" Grid.Row="0" Orientation="Horizontal" Margin="0,10,10,0" MinHeight="40" Spacing="10">
             <Button x:Name="SearchButton" Content="Search" />
-            <Button x:Name="ListAllButton" Content="List All" />
+            <Button x:Name="ListAllButton" Content="List All" Click="ListAll_Click" />
             <Button x:Name="DeleteButton" Content="Delete" />
         </StackPanel>
         <TextBox x:Name="InputTextBox" Grid.Column="1" Grid.Row="1" Margin="0,5,10,5" PlaceholderText="Enter text here..." />
-        <controls:DataGrid x:Name="CleanupDataGrid" AutoGenerateColumns="False" Margin="0,10,10,10" Grid.Column="1" Grid.Row="2">
+        <controls:DataGrid x:Name="CleanupDataGrid" AutoGenerateColumns="False" Margin="0,10,10,10" Grid.Column="1" Grid.Row="2" Foreground="White">
             <controls:DataGrid.Columns>
-                <controls:DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*"/>
-                <controls:DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="*"/>
-                <controls:DataGridTextColumn Header="Platform" Binding="{Binding Platform}" Width="*"/>
-                <controls:DataGridTextColumn Header="ID" Binding="{Binding ID}" Width="*"/>
+                <controls:DataGridTextColumn Header="Name" Binding="{Binding ContentName}" Width="*"/>
+                <controls:DataGridTextColumn Header="Type" Binding="{Binding ContentType}" Width="*"/>
+                <controls:DataGridTextColumn Header="Platform" Binding="{Binding ContentPlatform}" Width="*"/>
+                <controls:DataGridTextColumn Header="ID" Binding="{Binding ContentId}" Width="*"/>
             </controls:DataGrid.Columns>
         </controls:DataGrid>
+
+        <!-- Loading Overlay and ProgressRing -->
+        <Grid x:Name="LoadingOverlay" Visibility="Collapsed" Background="#80000000" Grid.ColumnSpan="3" Grid.RowSpan="3">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Background="#CCFFFFFF" Padding="40" CornerRadius="8">
+                <ProgressRing x:Name="LoadingProgressRing" IsActive="False" Width="60" Height="60"/>
+                <TextBlock x:Name="LoadingStatusText" Text="Loading..." Margin="0,16,0,0" FontSize="18" HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Grid>
     </Grid>
 </Page>
