@@ -111,7 +111,6 @@ namespace IntuneTools.Pages
             }
             paragraph.Inlines.Add(new Run { Text = text });
         }
-
         private async Task DeleteContent()
         {
             await DeleteSettingsCatalogsAsync();
@@ -170,10 +169,6 @@ namespace IntuneTools.Pages
                 HideLoading();
             }
         }
-
-
-
-
 
 
         /// <summary>
