@@ -31,9 +31,10 @@
         <TextBox x:Name="InputTextBox" Grid.Column="1" Grid.Row="1" Margin="0,5,10,5" PlaceholderText="Enter text here..." />
         <controls:DataGrid x:Name="CleanupDataGrid" AutoGenerateColumns="False" Margin="0,10,10,10" Grid.Column="1" Grid.Row="2">
             <controls:DataGrid.Columns>
-                <controls:DataGridTextColumn Header="Item Name" Binding="{Binding ItemName}" Width="*"/>
-                <controls:DataGridTextColumn Header="Item ID" Binding="{Binding ItemId}" Width="*"/>
-                <controls:DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="*"/>
+                <controls:DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*"/>
+                <controls:DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="*"/>
+                <controls:DataGridTextColumn Header="Platform" Binding="{Binding Platform}" Width="*"/>
+                <controls:DataGridTextColumn Header="ID" Binding="{Binding ID}" Width="*"/>
             </controls:DataGrid.Columns>
         </controls:DataGrid>
     </Grid>
