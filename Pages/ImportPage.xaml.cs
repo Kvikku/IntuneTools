@@ -314,37 +314,37 @@ namespace IntuneTools.Pages
                 if (selectedContent.Contains("WindowsAutopilot"))
                 {
                     // Load Windows AutoPilot Profiles
-                    await LoadAllWindowsAutoPilotProfilesAsync();
+                    await SearchForWindowsAutoPilotProfilesAsync(searchQuery);
                 }
                 if (selectedContent.Contains("WindowsDriverUpdate"))
                 {
                     // Load Windows Driver Updates
-                    await LoadAllWindowsDriverUpdatesAsync();
+                    await SearchForWindowsDriverUpdatesAsync(searchQuery);
                 }
                 if (selectedContent.Contains("WindowsFeatureUpdate"))
                 {
                     // Load Windows Feature Updates
-                    await LoadAllWindowsFeatureUpdatesAsync();
+                    await SearchForWindowsFeatureUpdatesAsync(searchQuery);
                 }
                 if (selectedContent.Contains("WindowsQualityUpdatePolicy"))
                 {
                     // Load Windows Quality Update policies
-                    await LoadAllWindowsQualityUpdatePoliciesAsync();
+                    await SearchForWindowsQualityUpdatePoliciesAsync(searchQuery);
                 }
                 if (selectedContent.Contains("WindowsQualityUpdateProfile"))
                 {
                     // Load Windows Quality Update profiles
-                    await LoadAllWindowsQualityUpdateProfilesAsync();
+                    await SearchForWindowsQualityUpdateProfilesAsync(searchQuery);
                 }
                 if (selectedContent.Contains("Filters"))
                 {
                     // Load Assignment Filters
-                    await LoadAllAssignmentFiltersToBeImportedAsync();
+                    await SearchForAssignmentFiltersAsync(searchQuery);
                 }
                 if (selectedContent.Contains("EntraGroups"))
                 {
                     // Load Entra Groups
-                    await LoadGroupsOrchestrator();
+                    await SearchForGroupsOrchestrator(searchQuery);
                 }
 
 
@@ -860,6 +860,32 @@ namespace IntuneTools.Pages
                 HideLoading();
             }
         }
+        private async Task SearchForWindowsAutoPilotProfilesAsync(string searchQuery)
+        {
+            ShowLoading("Loading Windows AutoPilot profiles from Microsoft Graph...");
+            try
+            {
+                // Retrieve all Windows AutoPilot profiles
+                var profiles = await SearchForWindowsAutoPilotProfiles(sourceGraphServiceClient, searchQuery);
+                // Update ContentList for DataGrid
+                foreach (var profile in profiles)
+                {
+                    ContentList.Add(new ContentInfo
+                    {
+                        ContentName = profile.DisplayName,
+                        ContentType = "Windows AutoPilot Profile",
+                        ContentPlatform = "Windows",
+                        ContentId = profile.Id
+                    });
+                }
+                // Bind to DataGrid
+                ContentDataGrid.ItemsSource = ContentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
 
         private List<string> GetWindowsAutoPilotProfileIDs()
         {
@@ -900,6 +926,32 @@ namespace IntuneTools.Pages
                 HideLoading();
             }
         }
+        private async Task SearchForWindowsDriverUpdatesAsync(string searchQuery)
+        {
+            ShowLoading("Loading Windows Driver Updates from Microsoft Graph...");
+            try
+            {
+                // Retrieve all Windows Driver Updates
+                var updates = await SearchForDriverProfiles(sourceGraphServiceClient, searchQuery);
+                // Update ContentList for DataGrid
+                foreach (var update in updates)
+                {
+                    ContentList.Add(new ContentInfo
+                    {
+                        ContentName = update.DisplayName,
+                        ContentType = "Windows Driver Update",
+                        ContentPlatform = "Windows",
+                        ContentId = update.Id
+                    });
+                }
+                // Bind to DataGrid
+                ContentDataGrid.ItemsSource = ContentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
 
         private List<string> GetWindowsDriverUpdateIDs()
         {
@@ -921,6 +973,32 @@ namespace IntuneTools.Pages
             {
                 // Retrieve all Windows Feature Updates
                 var updates = await GetAllWindowsFeatureUpdateProfiles(sourceGraphServiceClient);
+                // Update ContentList for DataGrid
+                foreach (var update in updates)
+                {
+                    ContentList.Add(new ContentInfo
+                    {
+                        ContentName = update.DisplayName,
+                        ContentType = "Windows Feature Update",
+                        ContentPlatform = "Windows",
+                        ContentId = update.Id
+                    });
+                }
+                // Bind to DataGrid
+                ContentDataGrid.ItemsSource = ContentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+        private async Task SearchForWindowsFeatureUpdatesAsync(string searchQuery)
+        {
+            ShowLoading("Loading Windows Feature Updates from Microsoft Graph...");
+            try
+            {
+                // Retrieve all Windows Feature Updates
+                var updates = await SearchForWindowsFeatureUpdateProfiles(sourceGraphServiceClient, searchQuery);
                 // Update ContentList for DataGrid
                 foreach (var update in updates)
                 {
@@ -981,6 +1059,32 @@ namespace IntuneTools.Pages
                 HideLoading();
             }
         }
+        private async Task SearchForWindowsQualityUpdatePoliciesAsync(string searchQuery)
+        {
+            ShowLoading("Loading Windows Quality Update policies from Microsoft Graph...");
+            try
+            {
+                // Retrieve all Windows Quality Update policies
+                var policies = await SearchForWindowsQualityUpdatePolicies(sourceGraphServiceClient, searchQuery);
+                // Update ContentList for DataGrid
+                foreach (var policy in policies)
+                {
+                    ContentList.Add(new ContentInfo
+                    {
+                        ContentName = policy.DisplayName,
+                        ContentType = "Windows Quality Update Policy",
+                        ContentPlatform = "Windows",
+                        ContentId = policy.Id
+                    });
+                }
+                // Bind to DataGrid
+                ContentDataGrid.ItemsSource = ContentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
 
         private List<string> GetWindowsQualityUpdatePolicyIDs()
         {
@@ -1003,6 +1107,32 @@ namespace IntuneTools.Pages
             {
                 // Retrieve all Windows Quality Update profiles
                 var profiles = await GetAllWindowsQualityUpdateProfiles(sourceGraphServiceClient);
+                // Update ContentList for DataGrid
+                foreach (var profile in profiles)
+                {
+                    ContentList.Add(new ContentInfo
+                    {
+                        ContentName = profile.DisplayName,
+                        ContentType = "Windows Quality Update Profile",
+                        ContentPlatform = "Windows",
+                        ContentId = profile.Id
+                    });
+                }
+                // Bind to DataGrid
+                ContentDataGrid.ItemsSource = ContentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+        private async Task SearchForWindowsQualityUpdateProfilesAsync(string searchQuery)
+        {
+            ShowLoading("Loading Windows Quality Update profiles from Microsoft Graph...");
+            try
+            {
+                // Retrieve all Windows Quality Update profiles
+                var profiles = await SearchForWindowsQualityUpdateProfiles(sourceGraphServiceClient, searchQuery);
                 // Update ContentList for DataGrid
                 foreach (var profile in profiles)
                 {
@@ -1045,6 +1175,34 @@ namespace IntuneTools.Pages
                 GroupList.Clear();
                 // Load all groups from Graph API
                 var groups = await GetAllGroups(sourceGraphServiceClient);
+                // Update GroupList for DataGrid
+                foreach (var group in groups)
+                {
+                    ContentList.Add(new ContentInfo
+                    {
+                        ContentId = group.Id,
+                        ContentName = group.DisplayName,
+                        ContentType = "Entra Group",
+                        ContentPlatform = group.GroupTypes != null && group.GroupTypes.Contains("Unified") ? "Microsoft 365 Group" : "Security Group"
+                    });
+                }
+                // Bind to DataGrid
+                GroupDataGrid.ItemsSource = GroupList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+        private async Task SearchForGroupsOrchestrator(string searchQuery)
+        {
+            ShowLoading("Searching for groups in Microsoft Graph...");
+            try
+            {
+                // Clear the GroupList before loading new data
+                GroupList.Clear();
+                // Search for groups using the provided query
+                var groups = await SearchForGroups(sourceGraphServiceClient, searchQuery);
                 // Update GroupList for DataGrid
                 foreach (var group in groups)
                 {
@@ -1156,6 +1314,36 @@ namespace IntuneTools.Pages
                     });
                 }
 
+                // Bind to DataGrid
+                ContentDataGrid.ItemsSource = ContentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+        private async Task SearchForAssignmentFiltersAsync(string searchQuery)
+        {
+            // Clear the dictionary for filter names and IDs
+            filterNameAndID.Clear();
+            ShowLoading("Searching for assignment filters in Microsoft Graph...");
+            try
+            {
+                // Clear existing filter options
+                FilterOptions.Clear();
+                // Retrieve all assignment filters
+                var filters = await SearchForAssignmentFilters(sourceGraphServiceClient, searchQuery);
+                // Update FilterOptions for ComboBox
+                foreach (var filter in filters)
+                {
+                    ContentList.Add(new ContentInfo
+                    {
+                        ContentName = filter.DisplayName,
+                        ContentType = "Assignment filter",
+                        ContentPlatform = filter.Platform.ToString() ?? string.Empty,
+                        ContentId = filter.Id
+                    });
+                }
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
             }
