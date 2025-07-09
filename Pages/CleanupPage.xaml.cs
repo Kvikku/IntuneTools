@@ -128,6 +128,7 @@ namespace IntuneTools.Pages
 
                 await LoadAllDeviceCompliancePoliciesAsync();
                 await LoadAllSettingsCatalogPoliciesAsync();
+                await LoadAllDeviceConfigurationPoliciesAsync();
 
                 // Bind the combined list to the grid once
                 CleanupDataGrid.ItemsSource = ContentList;
@@ -154,6 +155,7 @@ namespace IntuneTools.Pages
                 ContentList.Clear();
                 await SearchForSettingsCatalogPoliciesAsync(searchQuery);
                 await SearchForDeviceCompliancePoliciesAsync(searchQuery);
+                await SearchForDeviceConfigurationPoliciesAsync(searchQuery);
 
                 // Bind the combined list to the grid once
                 CleanupDataGrid.ItemsSource = ContentList;
@@ -323,9 +325,79 @@ namespace IntuneTools.Pages
             }
         }
 
+        /// <summary>
+        ///  Device configuration policies
+        /// </summary>
 
-
-
+        private async Task LoadAllDeviceConfigurationPoliciesAsync()
+        {
+            var policies = await GetAllDeviceConfigurations(sourceGraphServiceClient);
+            foreach (var policy in policies)
+            {
+                ContentList.Add(new ContentInfo
+                {
+                    ContentName = policy.DisplayName,
+                    ContentType = "Device Configuration Policy",
+                    ContentPlatform = policy.OdataType?.ToString() ?? string.Empty,
+                    ContentId = policy.Id
+                });
+            }
+            AppendToDetailsRichTextBlock($"Loaded {policies.Count()} device configuration policies.");
+        }
+        private async Task SearchForDeviceConfigurationPoliciesAsync(string searchQuery)
+        {
+            var policies = await SearchForDeviceConfigurations(sourceGraphServiceClient, searchQuery);
+            foreach (var policy in policies)
+            {
+                ContentList.Add(new ContentInfo
+                {
+                    ContentName = policy.DisplayName,
+                    ContentType = "Device Configuration Policy",
+                    ContentPlatform = policy.OdataType?.ToString() ?? string.Empty,
+                    ContentId = policy.Id
+                });
+            }
+            AppendToDetailsRichTextBlock($"Found {policies.Count()} device configuration policies matching '{searchQuery}'.");
+        }
+        private List<string> GetDeviceConfigurationPolicyIDs()
+        {
+            // This method retrieves the IDs of all device configuration policies in ContentList
+            return ContentList
+                .Where(c => c.ContentType == "Device Configuration Policy")
+                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
+                .ToList();
+        }
+        private async Task DeleteDeviceConfigurationPoliciesAsync()
+        {
+            int count = 0;
+            ShowLoading("Deleting device configuration policies from Microsoft Graph...");
+            try
+            {
+                // Get all device configuration policy IDs
+                var deviceConfigurationPolicyIDs = GetDeviceConfigurationPolicyIDs();
+                if (deviceConfigurationPolicyIDs.Count == 0)
+                {
+                    WriteToImportStatusFile("No device configuration policies found to delete.");
+                    return;
+                }
+                WriteToImportStatusFile($"Found {deviceConfigurationPolicyIDs.Count} device configuration policies to delete.");
+                // Delete each device configuration policy
+                foreach (var id in deviceConfigurationPolicyIDs)
+                {
+                    await DeleteDeviceConfigurationPolicy(sourceGraphServiceClient, id);
+                    WriteToImportStatusFile($"Deleted device configuration policy with ID: {id}");
+                }
+            }
+            catch (Exception ex)
+            {
+                WriteToImportStatusFile($"Error deleting device configuration policies: {ex.Message}", LogType.Error);
+            }
+            finally
+            {
+                AppendToDetailsRichTextBlock($"Deleted {count} device configuration policies.");
+                HideLoading();
+            }
+        }
 
 
 
