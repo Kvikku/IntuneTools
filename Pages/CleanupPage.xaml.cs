@@ -129,12 +129,45 @@ namespace IntuneTools.Pages
 
                 await LoadAllDeviceCompliancePoliciesAsync();
                 await LoadAllSettingsCatalogPoliciesAsync();
+
+                // Bind the combined list to the grid once
+                CleanupDataGrid.ItemsSource = ContentList;
             }
             catch (Exception ex)
             {
                 AppendToDetailsRichTextBlock($"Error during loading: {ex.Message}");
                 HideLoading();
                 return;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
+        private async Task SearchOrchestrator(GraphServiceClient graphServiceClient, string searchQuery)
+        {
+            ShowLoading("Searching content in Microsoft Graph...");
+            AppendToDetailsRichTextBlock($"Searching for content matching '{searchQuery}'. This may take a while...");
+            try
+            {
+                // Clear the ContentList before loading new data
+                ContentList.Clear();
+                await SearchForSettingsCatalogPoliciesAsync(searchQuery);
+                await SearchForDeviceCompliancePoliciesAsync(searchQuery);
+
+                // Bind the combined list to the grid once
+                CleanupDataGrid.ItemsSource = ContentList;
+            }
+            catch (Exception ex)
+            {
+                AppendToDetailsRichTextBlock($"Error during search: {ex.Message}");
+                HideLoading();
+                return;
+            }
+            finally
+            {
+                HideLoading();
             }
         }
 
@@ -148,40 +181,33 @@ namespace IntuneTools.Pages
         /// </summary>
         private async Task LoadAllSettingsCatalogPoliciesAsync()
         {
-            await LoadAndBindAsync<Microsoft.Graph.Beta.Models.DeviceManagementConfigurationPolicy, ContentInfo>(
-                loaderFunc: async () => (IEnumerable<Microsoft.Graph.Beta.Models.DeviceManagementConfigurationPolicy>)await GetAllSettingsCatalogPolicies(sourceGraphServiceClient),
-                contentList: ContentList,
-                mapFunc: policy => new ContentInfo
+            var policies = await GetAllSettingsCatalogPolicies(sourceGraphServiceClient);
+            foreach (var policy in policies)
+            {
+                ContentList.Add(new ContentInfo
                 {
                     ContentName = policy.Name,
                     ContentType = "Settings Catalog",
                     ContentPlatform = policy.Platforms?.ToString() ?? string.Empty,
                     ContentId = policy.Id
-                },
-                showLoading: () => ShowLoading("Loading settings catalog policies from Microsoft Graph..."),
-                hideLoading: HideLoading,
-                bindToGrid: items => CleanupDataGrid.ItemsSource = items
-            );
-            AppendToDetailsRichTextBlock($"Loaded {ContentList.Count} settings catalog policies.");
+                });
+            }
+            AppendToDetailsRichTextBlock($"Loaded {policies.Count()} settings catalog policies.");
         }
         private async Task SearchForSettingsCatalogPoliciesAsync(string searchQuery)
         {
-            await SearchAndBindAsync<Microsoft.Graph.Beta.Models.DeviceManagementConfigurationPolicy, ContentInfo>(
-                searchFunc: async q => (IEnumerable<Microsoft.Graph.Beta.Models.DeviceManagementConfigurationPolicy>)await SearchForSettingsCatalog(sourceGraphServiceClient, q),
-                searchQuery: searchQuery,
-                contentList: ContentList,
-                mapFunc: policy => new ContentInfo
+            var policies = await SearchForSettingsCatalog(sourceGraphServiceClient, searchQuery);
+            foreach (var policy in policies)
+            {
+                ContentList.Add(new ContentInfo
                 {
                     ContentName = policy.Name,
                     ContentType = "Settings Catalog",
                     ContentPlatform = policy.Platforms?.ToString() ?? string.Empty,
                     ContentId = policy.Id
-                },
-                showLoading: () => ShowLoading("Loading settings catalog policies from Microsoft Graph..."),
-                hideLoading: HideLoading,
-                bindToGrid: items => CleanupDataGrid.ItemsSource = items
-            );
-            AppendToDetailsRichTextBlock($"Found {ContentList.Count} settings catalog policies matching '{searchQuery}'.");
+                });
+            }
+            AppendToDetailsRichTextBlock($"Found {policies.Count()} settings catalog policies matching '{searchQuery}'.");
         }
         private List<string> GetSettingsCatalogIDs()
         {
@@ -234,40 +260,33 @@ namespace IntuneTools.Pages
 
         private async Task LoadAllDeviceCompliancePoliciesAsync()
         {
-            await LoadAndBindAsync<Microsoft.Graph.Beta.Models.DeviceCompliancePolicy, ContentInfo>(
-                loaderFunc: async () => (IEnumerable<Microsoft.Graph.Beta.Models.DeviceCompliancePolicy>)await GetAllDeviceCompliancePolicies(sourceGraphServiceClient),
-                contentList: ContentList,
-                mapFunc: policy => new ContentInfo
+            var policies = await GetAllDeviceCompliancePolicies(sourceGraphServiceClient);
+            foreach (var policy in policies)
+            {
+                ContentList.Add(new ContentInfo
                 {
                     ContentName = policy.DisplayName,
                     ContentType = "Device Compliance Policy",
                     ContentPlatform = policy.OdataType?.ToString() ?? string.Empty,
                     ContentId = policy.Id
-                },
-                showLoading: () => ShowLoading("Loading device compliance policies from Microsoft Graph..."),
-                hideLoading: HideLoading,
-                bindToGrid: items => CleanupDataGrid.ItemsSource = items
-            );
-            AppendToDetailsRichTextBlock($"Loaded {ContentList.Count} device compliance policies.");
+                });
+            }
+            AppendToDetailsRichTextBlock($"Loaded {policies.Count()} device compliance policies.");
         }
         private async Task SearchForDeviceCompliancePoliciesAsync(string searchQuery)
         {
-            await SearchAndBindAsync<Microsoft.Graph.Beta.Models.DeviceCompliancePolicy, ContentInfo>(
-                searchFunc: async q => (IEnumerable<Microsoft.Graph.Beta.Models.DeviceCompliancePolicy>)await SearchForDeviceCompliancePolicies(sourceGraphServiceClient, q),
-                searchQuery: searchQuery,
-                contentList: ContentList,
-                mapFunc: policy => new ContentInfo
+            var policies = await SearchForDeviceCompliancePolicies(sourceGraphServiceClient, searchQuery);
+            foreach (var policy in policies)
+            {
+                ContentList.Add(new ContentInfo
                 {
                     ContentName = policy.DisplayName,
                     ContentType = "Device Compliance Policy",
                     ContentPlatform = policy.OdataType?.ToString() ?? string.Empty,
                     ContentId = policy.Id
-                },
-                showLoading: () => ShowLoading("Loading device compliance policies from Microsoft Graph..."),
-                hideLoading: HideLoading,
-                bindToGrid: items => CleanupDataGrid.ItemsSource = items
-            );
-            AppendToDetailsRichTextBlock($"Found {ContentList.Count} device compliance policies matching '{searchQuery}'.");
+                });
+            }
+            AppendToDetailsRichTextBlock($"Found {policies.Count()} device compliance policies matching '{searchQuery}'.");
         }
         private List<string> GetDeviceCompliancePolicyIDs()
         {
@@ -326,10 +345,12 @@ namespace IntuneTools.Pages
         private async void Search_Click(object sender, RoutedEventArgs e)
         {
             var searchQuery = InputTextBox.Text;
-            if (!string.IsNullOrWhiteSpace(searchQuery))
+            if (string.IsNullOrWhiteSpace(searchQuery))
             {
-                await SearchForSettingsCatalogPoliciesAsync(searchQuery);
+                AppendToDetailsRichTextBlock("Please enter a search query.");
+                return;
             }
+            await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
         }
 
         // Handler for the 'Clear Log' button
