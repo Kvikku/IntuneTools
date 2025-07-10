@@ -941,7 +941,7 @@ namespace IntuneTools.Pages
                 {
                     // Check if the policy is assigned to any devices
                     // The policy cannot be deleted if it has assignments
-                    var isAssigned = await CheckIfAutoPilotProfileHasAssignments(destinationGraphServiceClient, id);
+                    var isAssigned = await CheckIfAutoPilotProfileHasAssignments(sourceGraphServiceClient, id);
 
                     if (isAssigned)
                     {
@@ -952,7 +952,8 @@ namespace IntuneTools.Pages
                             Content = $"The Windows AutoPilot profile with ID: {id} is assigned to devices. Do you want to delete the assignments before deleting the profile?",
                             PrimaryButtonText = "Delete Assignments",
                             SecondaryButtonText = "Cancel",
-                            DefaultButton = ContentDialogButton.Secondary
+                            DefaultButton = ContentDialogButton.Secondary,
+                            XamlRoot = this.XamlRoot
                         };
                         var result = await dialog.ShowAsync();
                         if (result == ContentDialogResult.Primary)
