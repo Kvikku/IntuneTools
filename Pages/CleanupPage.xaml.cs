@@ -118,6 +118,8 @@ namespace IntuneTools.Pages
             await DeleteDeviceConfigurationPoliciesAsync();
             await DeleteAppleBYODEnrollmentProfilesAsync();
             await DeleteAssignmentFiltersAsync();
+            await DeleteEntraGroupsAsync();
+            await DeletePowerShellScriptsAsync();
 
 
 
@@ -139,6 +141,8 @@ namespace IntuneTools.Pages
                 await LoadAllDeviceConfigurationPoliciesAsync();
                 await LoadAllAppleBYODEnrollmentProfilesAsync();
                 await LoadAllAssignmentFiltersAsync();
+                await LoadAllEntraGroupsAsync();
+                await LoadAllPowerShellScriptsAsync();
 
                 // Bind the combined list to the grid once
                 CleanupDataGrid.ItemsSource = ContentList;
@@ -168,6 +172,8 @@ namespace IntuneTools.Pages
                 await SearchForDeviceConfigurationPoliciesAsync(searchQuery);
                 await SearchForAppleBYODEnrollmentProfilesAsync(searchQuery);
                 await SearchForAssignmentFiltersAsync(searchQuery);
+                await SearchForEntraGroupsAsync(searchQuery);
+                await SearchForPowerShellScriptsAsync(searchQuery);
 
                 // Bind the combined list to the grid once
                 CleanupDataGrid.ItemsSource = ContentList;
@@ -559,8 +565,153 @@ namespace IntuneTools.Pages
             }
         }
 
+        /// <summary>
+        /// Entra Groups
+        /// </summary>
 
+        private async Task LoadAllEntraGroupsAsync()
+        {
+            var groups = await GetAllGroups(sourceGraphServiceClient);
+            foreach (var group in groups)
+            {
+                ContentList.Add(new ContentInfo
+                {
+                    ContentName = group.DisplayName,
+                    ContentType = "Entra Group",
+                    ContentPlatform = "Entra ID",
+                    ContentId = group.Id
+                });
+            }
+            AppendToDetailsRichTextBlock($"Loaded {groups.Count()} Entra groups.");
+        }
+        private async Task SearchForEntraGroupsAsync(string searchQuery)
+        {
+            var groups = await SearchForGroups(sourceGraphServiceClient, searchQuery);
+            foreach (var group in groups)
+            {
+                ContentList.Add(new ContentInfo
+                {
+                    ContentName = group.DisplayName,
+                    ContentType = "Entra Group",
+                    ContentPlatform = "Entra ID",
+                    ContentId = group.Id
+                });
+            }
+            AppendToDetailsRichTextBlock($"Found {groups.Count()} Entra groups matching '{searchQuery}'.");
+        }
+        private List<string> GetEntraGroupIDs()
+        {
+            // This method retrieves the IDs of all Entra groups in ContentList
+            return ContentList
+                .Where(c => c.ContentType == "Entra Group")
+                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
+                .ToList();
+        }
+        private async Task DeleteEntraGroupsAsync()
+        {
+            int count = 0;
+            ShowLoading("Deleting Entra groups from Microsoft Graph...");
+            try
+            {
+                // Get all Entra group IDs
+                var entraGroupIDs = GetEntraGroupIDs();
+                if (entraGroupIDs.Count == 0)
+                {
+                    WriteToImportStatusFile("No Entra groups found to delete.");
+                    return;
+                }
+                WriteToImportStatusFile($"Found {entraGroupIDs.Count} Entra groups to delete.");
+                // Delete each Entra group
+                foreach (var id in entraGroupIDs)
+                {
+                    await DeleteSecurityGroup(sourceGraphServiceClient, id);
+                    WriteToImportStatusFile($"Deleted Entra group with ID: {id}");
+                }
+            }
+            catch (Exception ex)
+            {
+                WriteToImportStatusFile($"Error deleting Entra groups: {ex.Message}", LogType.Error);
+            }
+            finally
+            {
+                AppendToDetailsRichTextBlock($"Deleted {count} Entra groups.");
+                HideLoading();
+            }
+        }
 
+        /// <summary>
+        /// Powershell Scripts
+        /// </summary>
+
+        private async Task LoadAllPowerShellScriptsAsync()
+        {
+            var scripts = await GetAllPowerShellScripts(sourceGraphServiceClient);
+            foreach (var script in scripts)
+            {
+                ContentList.Add(new ContentInfo
+                {
+                    ContentName = script.DisplayName,
+                    ContentType = "PowerShell Script",
+                    ContentPlatform = "Windows",
+                    ContentId = script.Id
+                });
+            }
+            AppendToDetailsRichTextBlock($"Loaded {scripts.Count()} PowerShell scripts.");
+        }
+        private async Task SearchForPowerShellScriptsAsync(string searchQuery)
+        {
+            var scripts = await SearchForPowerShellScripts(sourceGraphServiceClient, searchQuery);
+            foreach (var script in scripts)
+            {
+                ContentList.Add(new ContentInfo
+                {
+                    ContentName = script.DisplayName,
+                    ContentType = "PowerShell Script",
+                    ContentPlatform = "Windows",
+                    ContentId = script.Id
+                });
+            }
+            AppendToDetailsRichTextBlock($"Found {scripts.Count()} PowerShell scripts matching '{searchQuery}'.");
+        }
+        private List<string> GetPowerShellScriptIDs()
+        {
+            // This method retrieves the IDs of all PowerShell scripts in ContentList
+            return ContentList
+                .Where(c => c.ContentType == "PowerShell Script")
+                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
+                .ToList();
+        }
+        private async Task DeletePowerShellScriptsAsync()
+        {
+            int count = 0;
+            ShowLoading("Deleting PowerShell scripts from Microsoft Graph...");
+            try
+            {
+                // Get all PowerShell script IDs
+                var powerShellScriptIDs = GetPowerShellScriptIDs();
+                if (powerShellScriptIDs.Count == 0)
+                {
+                    WriteToImportStatusFile("No PowerShell scripts found to delete.");
+                    return;
+                }
+                WriteToImportStatusFile($"Found {powerShellScriptIDs.Count} PowerShell scripts to delete.");
+                // Delete each PowerShell script
+                foreach (var id in powerShellScriptIDs)
+                {
+                    await DeletePowerShellScript(sourceGraphServiceClient, id);
+                    WriteToImportStatusFile($"Deleted PowerShell script with ID: {id}");
+                }
+            }
+            catch (Exception ex)
+            {
+                WriteToImportStatusFile($"Error deleting PowerShell scripts: {ex.Message}", LogType.Error);
+            }
+            finally
+            {
+                AppendToDetailsRichTextBlock($"Deleted {count} PowerShell scripts.");
+                HideLoading();
+            }
+        }
 
 
 
