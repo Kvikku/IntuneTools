@@ -120,11 +120,12 @@ namespace IntuneTools.Pages
             await DeleteAssignmentFiltersAsync();
             await DeleteEntraGroupsAsync();
             await DeletePowerShellScriptsAsync();
-
-
+            await DeleteProactiveRemediationsAsync();
+            await DeleteMacOSShellScriptsAsync();
+            await DeleteWindowsAutoPilotProfilesAsync();
+            await DeleteWindowsDriverUpdatesAsync();
 
             AppendToDetailsRichTextBlock("Content deletion completed.");
-
         }
 
         private async Task ListAllOrchestrator(GraphServiceClient graphServiceClient)
@@ -143,6 +144,10 @@ namespace IntuneTools.Pages
                 await LoadAllAssignmentFiltersAsync();
                 await LoadAllEntraGroupsAsync();
                 await LoadAllPowerShellScriptsAsync();
+                await LoadAllProactiveRemediationsAsync();
+                await LoadAllMacOSShellScriptsAsync();
+                await LoadAllWindowsAutoPilotProfilesAsync();
+                await LoadAllWindowsDriverUpdatesAsync();
 
                 // Bind the combined list to the grid once
                 CleanupDataGrid.ItemsSource = ContentList;
@@ -174,6 +179,10 @@ namespace IntuneTools.Pages
                 await SearchForAssignmentFiltersAsync(searchQuery);
                 await SearchForEntraGroupsAsync(searchQuery);
                 await SearchForPowerShellScriptsAsync(searchQuery);
+                await SearchForProactiveRemediationsAsync(searchQuery);
+                await SearchForMacOSShellScriptsAsync(searchQuery);
+                await SearchForWindowsAutoPilotProfilesAsync(searchQuery);
+                await SearchForWindowsDriverUpdatesAsync(searchQuery);
 
                 // Bind the combined list to the grid once
                 CleanupDataGrid.ItemsSource = ContentList;
@@ -713,7 +722,302 @@ namespace IntuneTools.Pages
             }
         }
 
+        /// <summary>
+        /// Proactive Remediations
+        /// </summary>
 
+        private async Task LoadAllProactiveRemediationsAsync()
+        {
+            var scripts = await GetAllProactiveRemediations(sourceGraphServiceClient);
+            foreach (var script in scripts)
+            {
+                ContentList.Add(new ContentInfo
+                {
+                    ContentName = script.DisplayName,
+                    ContentType = "Proactive Remediation",
+                    ContentPlatform = "Windows",
+                    ContentId = script.Id
+                });
+            }
+            AppendToDetailsRichTextBlock($"Loaded {scripts.Count()} proactive remediations.");
+        }
+        private async Task SearchForProactiveRemediationsAsync(string searchQuery)
+        {
+            var scripts = await SearchForProactiveRemediations(sourceGraphServiceClient, searchQuery);
+            foreach (var script in scripts)
+            {
+                ContentList.Add(new ContentInfo
+                {
+                    ContentName = script.DisplayName,
+                    ContentType = "Proactive Remediation",
+                    ContentPlatform = "Windows",
+                    ContentId = script.Id
+                });
+            }
+            AppendToDetailsRichTextBlock($"Found {scripts.Count()} proactive remediations matching '{searchQuery}'.");
+        }
+        private List<string> GetProactiveRemediationIDs()
+        {
+            // This method retrieves the IDs of all proactive remediations in ContentList
+            return ContentList
+                .Where(c => c.ContentType == "Proactive Remediation")
+                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
+                .ToList();
+        }
+        private async Task DeleteProactiveRemediationsAsync()
+        {
+            int count = 0;
+            ShowLoading("Deleting proactive remediations from Microsoft Graph...");
+            try
+            {
+                // Get all proactive remediation IDs
+                var proactiveRemediationIDs = GetProactiveRemediationIDs();
+                if (proactiveRemediationIDs.Count == 0)
+                {
+                    WriteToImportStatusFile("No proactive remediations found to delete.");
+                    return;
+                }
+                WriteToImportStatusFile($"Found {proactiveRemediationIDs.Count} proactive remediations to delete.");
+                // Delete each proactive remediation
+                foreach (var id in proactiveRemediationIDs)
+                {
+                    await DeleteProactiveRemediationScript(sourceGraphServiceClient, id);
+                    WriteToImportStatusFile($"Deleted proactive remediation with ID: {id}");
+                }
+            }
+            catch (Exception ex)
+            {
+                WriteToImportStatusFile($"Error deleting proactive remediations: {ex.Message}", LogType.Error);
+            }
+            finally
+            {
+                AppendToDetailsRichTextBlock($"Deleted {count} proactive remediations.");
+                HideLoading();
+            }
+        }
+
+        /// <summary>
+        /// MacOS shell scripts
+        /// </summary>
+
+        private async Task LoadAllMacOSShellScriptsAsync()
+        {
+            var scripts = await GetAllmacOSShellScripts(sourceGraphServiceClient);
+            foreach (var script in scripts)
+            {
+                ContentList.Add(new ContentInfo
+                {
+                    ContentName = script.DisplayName,
+                    ContentType = "MacOS Shell Script",
+                    ContentPlatform = "macOS",
+                    ContentId = script.Id
+                });
+            }
+            AppendToDetailsRichTextBlock($"Loaded {scripts.Count()} MacOS shell scripts.");
+        }
+        private async Task SearchForMacOSShellScriptsAsync(string searchQuery)
+        {
+            var scripts = await SearchForShellScriptmacOS(sourceGraphServiceClient, searchQuery);
+            foreach (var script in scripts)
+            {
+                ContentList.Add(new ContentInfo
+                {
+                    ContentName = script.DisplayName,
+                    ContentType = "MacOS Shell Script",
+                    ContentPlatform = "macOS",
+                    ContentId = script.Id
+                });
+            }
+            AppendToDetailsRichTextBlock($"Found {scripts.Count()} MacOS shell scripts matching '{searchQuery}'.");
+        }
+        private List<string> GetMacOSShellScriptIDs()
+        {
+            // This method retrieves the IDs of all MacOS shell scripts in ContentList
+            return ContentList
+                .Where(c => c.ContentType == "MacOS Shell Script")
+                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
+                .ToList();
+        }
+        private async Task DeleteMacOSShellScriptsAsync()
+        {
+            int count = 0;
+            ShowLoading("Deleting MacOS shell scripts from Microsoft Graph...");
+            try
+            {
+                // Get all MacOS shell script IDs
+                var macOSShellScriptIDs = GetMacOSShellScriptIDs();
+                if (macOSShellScriptIDs.Count == 0)
+                {
+                    WriteToImportStatusFile("No MacOS shell scripts found to delete.");
+                    return;
+                }
+                WriteToImportStatusFile($"Found {macOSShellScriptIDs.Count} MacOS shell scripts to delete.");
+                // Delete each MacOS shell script
+                foreach (var id in macOSShellScriptIDs)
+                {
+                    await DeleteMacosShellScript(sourceGraphServiceClient, id);
+                    WriteToImportStatusFile($"Deleted MacOS shell script with ID: {id}");
+                }
+            }
+            catch (Exception ex)
+            {
+                WriteToImportStatusFile($"Error deleting MacOS shell scripts: {ex.Message}", LogType.Error);
+            }
+            finally
+            {
+                AppendToDetailsRichTextBlock($"Deleted {count} MacOS shell scripts.");
+                HideLoading();
+            }
+        }
+
+        /// <summary>
+        /// Windows AutoPilot Profiles
+        /// </summary>
+
+        private async Task LoadAllWindowsAutoPilotProfilesAsync()
+        {
+            var profiles = await GetAllWindowsAutoPilotProfiles(sourceGraphServiceClient);
+            foreach (var profile in profiles)
+            {
+                ContentList.Add(new ContentInfo
+                {
+                    ContentName = profile.DisplayName,
+                    ContentType = "Windows AutoPilot Profile",
+                    ContentPlatform = "Windows",
+                    ContentId = profile.Id
+                });
+            }
+            AppendToDetailsRichTextBlock($"Loaded {profiles.Count()} Windows AutoPilot profiles.");
+        }
+        private async Task SearchForWindowsAutoPilotProfilesAsync(string searchQuery)
+        {
+            var profiles = await SearchForWindowsAutoPilotProfiles(sourceGraphServiceClient, searchQuery);
+            foreach (var profile in profiles)
+            {
+                ContentList.Add(new ContentInfo
+                {
+                    ContentName = profile.DisplayName,
+                    ContentType = "Windows AutoPilot Profile",
+                    ContentPlatform = "Windows",
+                    ContentId = profile.Id
+                });
+            }
+            AppendToDetailsRichTextBlock($"Found {profiles.Count()} Windows AutoPilot profiles matching '{searchQuery}'.");
+        }
+        private List<string> GetWindowsAutoPilotProfileIDs()
+        {
+            // This method retrieves the IDs of all Windows AutoPilot profiles in ContentList
+            return ContentList
+                .Where(c => c.ContentType == "Windows AutoPilot Profile")
+                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
+                .ToList();
+        }
+        private async Task DeleteWindowsAutoPilotProfilesAsync()
+
+        {
+            int count = 0;
+            ShowLoading("Deleting Windows AutoPilot profiles from Microsoft Graph...");
+            try
+            {
+                // Get all Windows AutoPilot profile IDs
+                var windowsAutoPilotProfileIDs = GetWindowsAutoPilotProfileIDs();
+                if (windowsAutoPilotProfileIDs.Count == 0)
+                {
+                    WriteToImportStatusFile("No Windows AutoPilot profiles found to delete.");
+                    return;
+                }
+                WriteToImportStatusFile($"Found {windowsAutoPilotProfileIDs.Count} Windows AutoPilot profiles to delete.");
+                // Delete each Windows AutoPilot profile
+                foreach (var id in windowsAutoPilotProfileIDs)
+                {
+                    await DeleteWindowsAutopilotProfile(sourceGraphServiceClient, id);
+                    WriteToImportStatusFile($"Deleted Windows AutoPilot profile with ID: {id}");
+                }
+            }
+            catch (Exception ex)
+            {
+                WriteToImportStatusFile($"Error deleting Windows AutoPilot profiles: {ex.Message}", LogType.Error);
+            }
+            finally
+            {
+                AppendToDetailsRichTextBlock($"Deleted {count} Windows AutoPilot profiles.");
+                HideLoading();
+            }
+        }
+
+        /// <summary>
+        /// Windows Driver Updates
+        /// </summary>
+
+        private async Task LoadAllWindowsDriverUpdatesAsync()
+        {
+            var updates = await GetAllDriverProfiles(sourceGraphServiceClient);
+            foreach (var update in updates)
+            {
+                ContentList.Add(new ContentInfo
+                {
+                    ContentName = update.DisplayName,
+                    ContentType = "Windows Driver Update",
+                    ContentPlatform = "Windows",
+                    ContentId = update.Id
+                });
+            }
+            AppendToDetailsRichTextBlock($"Loaded {updates.Count()} Windows driver updates.");
+        }
+        private async Task SearchForWindowsDriverUpdatesAsync(string searchQuery)
+        {
+            var updates = await SearchForDriverProfiles(sourceGraphServiceClient, searchQuery);
+            foreach (var update in updates)
+            {
+                ContentList.Add(new ContentInfo
+                {
+                    ContentName = update.DisplayName,
+                    ContentType = "Windows Driver Update",
+                    ContentPlatform = "Windows",
+                    ContentId = update.Id
+                });
+            }
+            AppendToDetailsRichTextBlock($"Found {updates.Count()} Windows driver updates matching '{searchQuery}'.");
+        }
+        private List<string> GetWindowsDriverUpdateIDs()
+        {
+            // This method retrieves the IDs of all Windows driver updates in ContentList
+            return ContentList
+                .Where(c => c.ContentType == "Windows Driver Update")
+                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
+                .ToList();
+        }
+        private async Task DeleteWindowsDriverUpdatesAsync()
+        {
+            int count = 0;
+            ShowLoading("Deleting Windows driver updates from Microsoft Graph...");
+            try
+            {
+                // Get all Windows driver update IDs
+                var windowsDriverUpdateIDs = GetWindowsDriverUpdateIDs();
+                if (windowsDriverUpdateIDs.Count == 0)
+                {
+                    WriteToImportStatusFile("No Windows driver updates found to delete.");
+                    return;
+                }
+                WriteToImportStatusFile($"Found {windowsDriverUpdateIDs.Count} Windows driver updates to delete.");
+                // Delete each Windows driver update
+                foreach (var id in windowsDriverUpdateIDs)
+                {
+                    await DeleteDriverProfile(sourceGraphServiceClient, id);
+                    WriteToImportStatusFile($"Deleted Windows driver update with ID: {id}");
+                }
+            }
+            catch (Exception ex)
+            {
+                WriteToImportStatusFile($"Error deleting Windows driver updates: {ex.Message}", LogType.Error);
+            }
+            finally
+            {
+                AppendToDetailsRichTextBlock($"Deleted {count} Windows driver updates.");
+                HideLoading();
+            }
+        }
 
         /// BUTTON HANDLERS ///
         /// Buttons should be defined in the XAML file and linked to these methods.
