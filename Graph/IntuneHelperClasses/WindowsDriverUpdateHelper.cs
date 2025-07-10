@@ -257,5 +257,33 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 WriteToImportStatusFile("An unexpected error occurred while preparing group assignments for a driver profile.",LogType.Error);
             }
         }
+        public static async Task DeleteDriverProfile(GraphServiceClient graphServiceClient, string profileID)
+        {
+            try
+            {
+                if (graphServiceClient == null)
+                {
+                    throw new ArgumentNullException(nameof(graphServiceClient));
+                }
+
+                if (string.IsNullOrEmpty(profileID))
+                {
+                    throw new ArgumentNullException(nameof(profileID), "Profile ID cannot be null or empty.");
+                }
+
+                WriteToImportStatusFile($"Attempting to delete Windows Driver Update Profile with ID: {profileID}");
+                await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileID].DeleteAsync();
+                WriteToImportStatusFile($"Successfully deleted Windows Driver Update Profile with ID: {profileID}");
+            }
+            catch (ServiceException svcex) when (svcex.ResponseStatusCode == (int)System.Net.HttpStatusCode.NotFound) // Corrected comparison
+            {
+                // Handle case where the profile doesn't exist (might have been deleted already)
+                WriteToImportStatusFile($"Windows Driver Update Profile with ID {profileID} not found. It might have already been deleted."); // Removed LogType
+            }
+            catch (Exception ex)
+            {
+                WriteToImportStatusFile($"An error occurred while deleting Windows Driver Update Profile with ID: {profileID}",LogType.Error);
+            }
+        }
     }
 }

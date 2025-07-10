@@ -217,6 +217,48 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
+        public static async Task DeleteWindowsAutoPilotProfileAssignments(GraphServiceClient graphServiceClient, string profileID)
+        {
+            try
+            {
+                if (graphServiceClient == null)
+                {
+                    throw new ArgumentNullException(nameof(graphServiceClient));
+                }
+
+                if (profileID == null)
+                {
+                    throw new InvalidOperationException("Profile ID cannot be null.");
+                }
+
+                // Get the assignments for the profile
+
+                var result = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].Assignments.GetAsync((requestConfiguration) =>
+                {
+                    requestConfiguration.QueryParameters.Top = 1000;
+                });
+
+                // If the result is not null and has assignments, delete them
+
+                if (result != null && result.Value != null && result.Value.Count > 0)
+                {
+                    foreach (var assignment in result.Value)
+                    {
+                        await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].Assignments[assignment.Id].DeleteAsync();
+                    }
+                }
+
+            }
+            catch (ODataError error)
+            {
+                WriteToImportStatusFile("An error occurred while attempting to delete Autopilot profile assignments", LogType.Error);
+            }
+            catch (Exception ex)
+            {
+                WriteToImportStatusFile("An error occurred while attempting to delete Autopilot profile assignments",LogType.Error);
+            }
+        }
+
         public static async Task<bool> CheckIfAutoPilotProfileHasAssignments(GraphServiceClient graphServiceClient, string profileID)
         {
             try
@@ -257,6 +299,29 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             {
 
                 return false;
+            }
+        }
+        public static async Task DeleteWindowsAutopilotProfile(GraphServiceClient graphServiceClient, string profileID)
+        {
+            try
+            {
+                if (graphServiceClient == null)
+                {
+                    throw new ArgumentNullException(nameof(graphServiceClient));
+                }
+
+                if (profileID == null)
+                {
+                    throw new InvalidOperationException("Profile ID cannot be null.");
+                }
+
+
+
+                await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].DeleteAsync();
+            }
+            catch (Exception ex)
+            {
+                WriteToImportStatusFile("An error occurred while deleting Windows Autopilot profiles",LogType.Error);
             }
         }
     }

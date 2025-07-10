@@ -230,5 +230,26 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 WriteToImportStatusFile($"An unexpected error occurred while preparing group assignments for profile ID {profileId}: {ex.Message}", LogType.Error);
             }
         }
+
+        public static async Task DeleteAppleBYODEnrollmentProfile(GraphServiceClient graphServiceClient, string profileID)
+        {
+            try
+            {
+                if (graphServiceClient == null)
+                {
+                    throw new ArgumentNullException(nameof(graphServiceClient));
+                }
+
+                if (profileID == null)
+                {
+                    throw new InvalidOperationException("Profile ID cannot be null.");
+                }
+                await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileID].DeleteAsync();
+            }
+            catch (Exception ex)
+            {
+                WriteToImportStatusFile("An error occurred while deleting Apple BYOD Enrollment profiles",LogType.Error);
+            }
+        }
     }
 }

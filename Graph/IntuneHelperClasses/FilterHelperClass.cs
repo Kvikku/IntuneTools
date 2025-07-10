@@ -177,5 +177,33 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 WriteToImportStatusFile($"{DateTime.Now.ToString()} - Finished importing {filterIds.Count} Assignment filters.");
             }
         }
+        public static async Task<bool> DeleteAssignmentFilter(GraphServiceClient graphServiceClient, string filterID)
+        {
+            try
+            {
+                if (graphServiceClient == null)
+                {
+                    throw new ArgumentNullException(nameof(graphServiceClient));
+                }
+
+                if (filterID == null)
+                {
+                    throw new InvalidOperationException("Filter ID cannot be null.");
+                }
+
+                var result = await graphServiceClient.DeviceManagement.AssignmentFilters[filterID].GetAsync();
+
+                await graphServiceClient.DeviceManagement.AssignmentFilters[filterID].DeleteAsync();
+                return true;
+            }
+            catch (ODataError odataError)
+            {
+                return false;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
     }
 }

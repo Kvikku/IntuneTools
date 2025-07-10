@@ -224,6 +224,28 @@ namespace IntuneTools.Graph.EntraHelperClasses
                 LogToImportStatusFile($"{DateTime.Now.ToString()} - Finished importing Security groups.");
             }
         }
+        public static async Task DeleteSecurityGroup(GraphServiceClient graphServiceClient, string groupId)
+        {
+            try
+            {
+                if (graphServiceClient == null)
+                {
+                    throw new ArgumentNullException(nameof(graphServiceClient));
+                }
 
+                if (groupId == null)
+                {
+                    throw new InvalidOperationException("Group ID cannot be null.");
+                }
+
+
+
+                await graphServiceClient.Groups[groupId].DeleteAsync();
+            }
+            catch (Exception ex)
+            {
+                WriteToImportStatusFile("An error occurred while deleting a security group",LogType.Error);
+            }
+        }
     }
 }

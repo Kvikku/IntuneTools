@@ -178,6 +178,25 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 WriteToImportStatusFile("An error occurred while assigning groups to a single PowerShell script",LogType.Error);
             }
         }
+        public static async Task DeletePowerShellScript(GraphServiceClient graphServiceClient, string scriptID)
+        {
+            try
+            {
+                if (graphServiceClient == null)
+                {
+                    throw new ArgumentNullException(nameof(graphServiceClient));
+                }
 
+                if (scriptID == null)
+                {
+                    throw new InvalidOperationException("Script ID cannot be null.");
+                }
+                await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].DeleteAsync();
+            }
+            catch (Exception ex)
+            {
+                WriteToImportStatusFile("An error occurred while deleting PowerShell scripts",LogType.Error);
+            }
+        }
     }
 }

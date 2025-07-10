@@ -274,6 +274,61 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
+        public static string TranslateComplianceODataTypeToPlatform(string odatatype)
+        {
+            string platform = "Unknown";
+
+            if (string.IsNullOrEmpty(odatatype))
+            {
+                return platform;
+            }
+
+            switch (odatatype.ToLower())
+            {
+                case "#microsoft.graph.ioscompliancepolicy":
+                    platform = "iOS";
+                    break;
+                case "#microsoft.graph.windows10compliancepolicy":
+                    platform = "Windows";
+                    break;
+                case "#microsoft.graph.macoscompliancepolicy":
+                    platform = "macOS";
+                    break;
+                case "#microsoft.graph.androidworkprofilecompliancepolicy":
+                    platform = "Android Work Profile";
+                    break;
+                case "#microsoft.graph.androiddeviceownercompliancepolicy":
+                    platform = "Android Device Owner";
+                    break;
+                default:
+                    platform = "Unknown";
+                    break;
+            }
+
+            return platform;
+        }
+
+        public static async Task DeleteDeviceCompliancePolicy(GraphServiceClient graphServiceClient, string policyID)
+        {
+            try
+            {
+                if (graphServiceClient == null)
+                {
+                    throw new ArgumentNullException(nameof(graphServiceClient));
+                }
+
+                if (policyID == null)
+                {
+                    throw new InvalidOperationException("Policy ID cannot be null.");
+                }
+                await graphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyID].DeleteAsync();
+            }
+            catch (Exception ex)
+            {
+                LogToImportStatusFile("An error occurred while deleting settings catalog policies",LogLevels.Error);
+            }
+        }
+
     }
 
 }
