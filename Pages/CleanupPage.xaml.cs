@@ -115,6 +115,14 @@ namespace IntuneTools.Pages
         {
             await DeleteSettingsCatalogsAsync();
             await DeleteDeviceCompliancePoliciesAsync();
+            await DeleteDeviceConfigurationPoliciesAsync();
+            await DeleteAppleBYODEnrollmentProfilesAsync();
+            await DeleteAssignmentFiltersAsync();
+
+
+
+            AppendToDetailsRichTextBlock("Content deletion completed.");
+
         }
 
         private async Task ListAllOrchestrator(GraphServiceClient graphServiceClient)
@@ -130,6 +138,7 @@ namespace IntuneTools.Pages
                 await LoadAllSettingsCatalogPoliciesAsync();
                 await LoadAllDeviceConfigurationPoliciesAsync();
                 await LoadAllAppleBYODEnrollmentProfilesAsync();
+                await LoadAllAssignmentFiltersAsync();
 
                 // Bind the combined list to the grid once
                 CleanupDataGrid.ItemsSource = ContentList;
@@ -158,6 +167,7 @@ namespace IntuneTools.Pages
                 await SearchForDeviceCompliancePoliciesAsync(searchQuery);
                 await SearchForDeviceConfigurationPoliciesAsync(searchQuery);
                 await SearchForAppleBYODEnrollmentProfilesAsync(searchQuery);
+                await SearchForAssignmentFiltersAsync(searchQuery);
 
                 // Bind the combined list to the grid once
                 CleanupDataGrid.ItemsSource = ContentList;
@@ -475,7 +485,79 @@ namespace IntuneTools.Pages
             }
         }
 
+        /// <summary>
+        /// Assignment Filters
+        /// </summary>
 
+        private async Task LoadAllAssignmentFiltersAsync()
+        {
+            var filters = await GetAllAssignmentFilters(sourceGraphServiceClient);
+            foreach (var filter in filters)
+            {
+                ContentList.Add(new ContentInfo
+                {
+                    ContentName = filter.DisplayName,
+                    ContentType = "Assignment Filter",
+                    ContentPlatform = filter.OdataType?.ToString() ?? string.Empty,
+                    ContentId = filter.Id
+                });
+            }
+            AppendToDetailsRichTextBlock($"Loaded {filters.Count()} assignment filters.");
+        }
+        private async Task SearchForAssignmentFiltersAsync(string searchQuery)
+        {
+            var filters = await SearchForAssignmentFilters(sourceGraphServiceClient, searchQuery);
+            foreach (var filter in filters)
+            {
+                ContentList.Add(new ContentInfo
+                {
+                    ContentName = filter.DisplayName,
+                    ContentType = "Assignment Filter",
+                    ContentPlatform = filter.OdataType?.ToString() ?? string.Empty,
+                    ContentId = filter.Id
+                });
+            }
+            AppendToDetailsRichTextBlock($"Found {filters.Count()} assignment filters matching '{searchQuery}'.");
+        }
+        private List<string> GetAssignmentFilterIDs()
+        {
+            // This method retrieves the IDs of all assignment filters in ContentList
+            return ContentList
+                .Where(c => c.ContentType == "Assignment Filter")
+                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
+                .ToList();
+        }
+        private async Task DeleteAssignmentFiltersAsync()
+        {
+            int count = 0;
+            ShowLoading("Deleting assignment filters from Microsoft Graph...");
+            try
+            {
+                // Get all assignment filter IDs
+                var assignmentFilterIDs = GetAssignmentFilterIDs();
+                if (assignmentFilterIDs.Count == 0)
+                {
+                    WriteToImportStatusFile("No assignment filters found to delete.");
+                    return;
+                }
+                WriteToImportStatusFile($"Found {assignmentFilterIDs.Count} assignment filters to delete.");
+                // Delete each assignment filter
+                foreach (var id in assignmentFilterIDs)
+                {
+                    await DeleteAssignmentFilter(sourceGraphServiceClient, id);
+                    WriteToImportStatusFile($"Deleted assignment filter with ID: {id}");
+                }
+            }
+            catch (Exception ex)
+            {
+                WriteToImportStatusFile($"Error deleting assignment filters: {ex.Message}", LogType.Error);
+            }
+            finally
+            {
+                AppendToDetailsRichTextBlock($"Deleted {count} assignment filters.");
+                HideLoading();
+            }
+        }
 
 
 
