@@ -129,6 +129,7 @@ namespace IntuneTools.Pages
                 await LoadAllDeviceCompliancePoliciesAsync();
                 await LoadAllSettingsCatalogPoliciesAsync();
                 await LoadAllDeviceConfigurationPoliciesAsync();
+                await LoadAllAppleBYODEnrollmentProfilesAsync();
 
                 // Bind the combined list to the grid once
                 CleanupDataGrid.ItemsSource = ContentList;
@@ -156,6 +157,7 @@ namespace IntuneTools.Pages
                 await SearchForSettingsCatalogPoliciesAsync(searchQuery);
                 await SearchForDeviceCompliancePoliciesAsync(searchQuery);
                 await SearchForDeviceConfigurationPoliciesAsync(searchQuery);
+                await SearchForAppleBYODEnrollmentProfilesAsync(searchQuery);
 
                 // Bind the combined list to the grid once
                 CleanupDataGrid.ItemsSource = ContentList;
@@ -398,6 +400,85 @@ namespace IntuneTools.Pages
                 HideLoading();
             }
         }
+
+        /// <summary>
+        /// Apple BYOD Enrollment Profiles
+        /// </summary>
+
+        private async Task LoadAllAppleBYODEnrollmentProfilesAsync()
+        {
+            var profiles = await GetAllAppleBYODEnrollmentProfiles(sourceGraphServiceClient);
+            foreach (var profile in profiles)
+            {
+                ContentList.Add(new ContentInfo
+                {
+                    ContentName = profile.DisplayName,
+                    ContentType = "Apple BYOD Enrollment Profile",
+                    ContentPlatform = "iOS/iPadOS",
+                    ContentId = profile.Id
+                });
+            }
+            AppendToDetailsRichTextBlock($"Loaded {profiles.Count()} Apple BYOD enrollment profiles.");
+        }
+        private async Task SearchForAppleBYODEnrollmentProfilesAsync(string searchQuery)
+        {
+            var profiles = await SearchForAppleBYODEnrollmentProfiles(sourceGraphServiceClient, searchQuery);
+            foreach (var profile in profiles)
+            {
+                ContentList.Add(new ContentInfo
+                {
+                    ContentName = profile.DisplayName,
+                    ContentType = "Apple BYOD Enrollment Profile",
+                    ContentPlatform = "iOS/iPadOS",
+                    ContentId = profile.Id
+                });
+            }
+            AppendToDetailsRichTextBlock($"Found {profiles.Count()} Apple BYOD enrollment profiles matching '{searchQuery}'.");
+        }
+        private List<string> GetAppleBYODEnrollmentProfileIDs()
+        {
+            // This method retrieves the IDs of all Apple BYOD enrollment profiles in ContentList
+            return ContentList
+                .Where(c => c.ContentType == "Apple BYOD Enrollment Profile")
+                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
+                .ToList();
+        }
+        private async Task DeleteAppleBYODEnrollmentProfilesAsync()
+        {
+            int count = 0;
+            ShowLoading("Deleting Apple BYOD enrollment profiles from Microsoft Graph...");
+            try
+            {
+                // Get all Apple BYOD enrollment profile IDs
+                var appleBYODEnrollmentProfileIDs = GetAppleBYODEnrollmentProfileIDs();
+                if (appleBYODEnrollmentProfileIDs.Count == 0)
+                {
+                    WriteToImportStatusFile("No Apple BYOD enrollment profiles found to delete.");
+                    return;
+                }
+                WriteToImportStatusFile($"Found {appleBYODEnrollmentProfileIDs.Count} Apple BYOD enrollment profiles to delete.");
+                // Delete each Apple BYOD enrollment profile
+                foreach (var id in appleBYODEnrollmentProfileIDs)
+                {
+                    await DeleteAppleBYODEnrollmentProfile(sourceGraphServiceClient, id);
+                    WriteToImportStatusFile($"Deleted Apple BYOD enrollment profile with ID: {id}");
+                }
+            }
+            catch (Exception ex)
+            {
+                WriteToImportStatusFile($"Error deleting Apple BYOD enrollment profiles: {ex.Message}", LogType.Error);
+            }
+            finally
+            {
+                AppendToDetailsRichTextBlock($"Deleted {count} Apple BYOD enrollment profiles.");
+                HideLoading();
+            }
+        }
+
+
+
+
+
 
 
 
