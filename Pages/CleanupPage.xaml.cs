@@ -124,6 +124,7 @@ namespace IntuneTools.Pages
             await DeleteMacOSShellScriptsAsync();
             await DeleteWindowsAutoPilotProfilesAsync();
             await DeleteWindowsDriverUpdatesAsync();
+            await DeleteWindowsFeatureUpdatesAsync();
 
             AppendToDetailsRichTextBlock("Content deletion completed.");
         }
@@ -148,6 +149,7 @@ namespace IntuneTools.Pages
                 await LoadAllMacOSShellScriptsAsync();
                 await LoadAllWindowsAutoPilotProfilesAsync();
                 await LoadAllWindowsDriverUpdatesAsync();
+                await LoadAllWindowsFeatureUpdatesAsync();
 
                 // Bind the combined list to the grid once
                 CleanupDataGrid.ItemsSource = ContentList;
@@ -183,6 +185,7 @@ namespace IntuneTools.Pages
                 await SearchForMacOSShellScriptsAsync(searchQuery);
                 await SearchForWindowsAutoPilotProfilesAsync(searchQuery);
                 await SearchForWindowsDriverUpdatesAsync(searchQuery);
+                await SearchForWindowsFeatureUpdatesAsync(searchQuery);
 
                 // Bind the combined list to the grid once
                 CleanupDataGrid.ItemsSource = ContentList;
@@ -948,7 +951,6 @@ namespace IntuneTools.Pages
         /// <summary>
         /// Windows Driver Updates
         /// </summary>
-
         private async Task LoadAllWindowsDriverUpdatesAsync()
         {
             var updates = await GetAllDriverProfiles(sourceGraphServiceClient);
@@ -1018,6 +1020,158 @@ namespace IntuneTools.Pages
                 HideLoading();
             }
         }
+
+        /// <summary>
+        /// Windows Feature Updates
+        /// </summary>
+
+        private async Task LoadAllWindowsFeatureUpdatesAsync()
+        {
+            var updates = await GetAllWindowsFeatureUpdateProfiles(sourceGraphServiceClient);
+            foreach (var update in updates)
+            {
+                ContentList.Add(new ContentInfo
+                {
+                    ContentName = update.DisplayName,
+                    ContentType = "Windows Feature Update",
+                    ContentPlatform = "Windows",
+                    ContentId = update.Id
+                });
+            }
+            AppendToDetailsRichTextBlock($"Loaded {updates.Count()} Windows feature updates.");
+        }
+        private async Task SearchForWindowsFeatureUpdatesAsync(string searchQuery)
+        {
+            var updates = await SearchForWindowsFeatureUpdateProfiles(sourceGraphServiceClient, searchQuery);
+            foreach (var update in updates)
+            {
+                ContentList.Add(new ContentInfo
+                {
+                    ContentName = update.DisplayName,
+                    ContentType = "Windows Feature Update",
+                    ContentPlatform = "Windows",
+                    ContentId = update.Id
+                });
+            }
+            AppendToDetailsRichTextBlock($"Found {updates.Count()} Windows feature updates matching '{searchQuery}'.");
+        }
+        private List<string> GetWindowsFeatureUpdateIDs()
+        {
+            // This method retrieves the IDs of all Windows feature updates in ContentList
+            return ContentList
+                .Where(c => c.ContentType == "Windows Feature Update")
+                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
+                .ToList();
+        }
+        private async Task DeleteWindowsFeatureUpdatesAsync()
+        {
+            int count = 0;
+            ShowLoading("Deleting Windows feature updates from Microsoft Graph...");
+            try
+            {
+                // Get all Windows feature update IDs
+                var windowsFeatureUpdateIDs = GetWindowsFeatureUpdateIDs();
+                if (windowsFeatureUpdateIDs.Count == 0)
+                {
+                    WriteToImportStatusFile("No Windows feature updates found to delete.");
+                    return;
+                }
+                WriteToImportStatusFile($"Found {windowsFeatureUpdateIDs.Count} Windows feature updates to delete.");
+                // Delete each Windows feature update
+                foreach (var id in windowsFeatureUpdateIDs)
+                {
+                    await DeleteWindowsFeatureUpdateProfile(sourceGraphServiceClient, id);
+                    WriteToImportStatusFile($"Deleted Windows feature update with ID: {id}");
+                }
+            }
+            catch (Exception ex)
+            {
+                WriteToImportStatusFile($"Error deleting Windows feature updates: {ex.Message}", LogType.Error);
+            }
+            finally
+            {
+                AppendToDetailsRichTextBlock($"Deleted {count} Windows feature updates.");
+                HideLoading();
+            }
+        }
+
+        /// <summary>
+        /// Windows Quality Update Policy
+        /// </summary>
+
+        private async Task LoadAllWindowsQualityUpdatePoliciesAsync()
+        {
+            var policies = await GetAllWindowsQualityUpdatePolicies(sourceGraphServiceClient);
+            foreach (var policy in policies)
+            {
+                ContentList.Add(new ContentInfo
+                {
+                    ContentName = policy.DisplayName,
+                    ContentType = "Windows Quality Update Policy",
+                    ContentPlatform = "Windows",
+                    ContentId = policy.Id
+                });
+            }
+            AppendToDetailsRichTextBlock($"Loaded {policies.Count()} Windows quality update policies.");
+        }
+        private async Task SearchForWindowsQualityUpdatePoliciesAsync(string searchQuery)
+        {
+            var policies = await SearchForWindowsQualityUpdatePolicies(sourceGraphServiceClient, searchQuery);
+            foreach (var policy in policies)
+            {
+                ContentList.Add(new ContentInfo
+                {
+                    ContentName = policy.DisplayName,
+                    ContentType = "Windows Quality Update Policy",
+                    ContentPlatform = "Windows",
+                    ContentId = policy.Id
+                });
+            }
+            AppendToDetailsRichTextBlock($"Found {policies.Count()} Windows quality update policies matching '{searchQuery}'.");
+        }
+        private List<string> GetWindowsQualityUpdatePolicyIDs()
+        {
+            // This method retrieves the IDs of all Windows quality update policies in ContentList
+            return ContentList
+                .Where(c => c.ContentType == "Windows Quality Update Policy")
+                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
+                .ToList();
+        }
+
+        private async Task DeleteWindowsQualityUpdatesAsync()
+        {
+            int count = 0;
+            ShowLoading("Deleting Windows quality updates from Microsoft Graph...");
+            try
+            {
+                // Get all Windows quality update IDs
+                var windowsQualityUpdateIDs = GetWindowsQualityUpdatePolicyIDs();
+                if (windowsQualityUpdateIDs.Count == 0)
+                {
+                    WriteToImportStatusFile("No Windows quality updates found to delete.");
+                    return;
+                }
+                WriteToImportStatusFile($"Found {windowsQualityUpdateIDs.Count} Windows quality updates to delete.");
+                // Delete each Windows quality update
+                foreach (var id in windowsQualityUpdateIDs)
+                {
+                    await DeleteWindowsQualityUpdatePolicy(sourceGraphServiceClient, id);
+                    WriteToImportStatusFile($"Deleted Windows quality update with ID: {id}");
+                }
+            }
+            catch (Exception ex)
+            {
+                WriteToImportStatusFile($"Error deleting Windows quality updates: {ex.Message}", LogType.Error);
+            }
+            finally
+            {
+                AppendToDetailsRichTextBlock($"Deleted {count} Windows quality updates.");
+                HideLoading();
+            }
+        }
+
+
+
 
         /// BUTTON HANDLERS ///
         /// Buttons should be defined in the XAML file and linked to these methods.

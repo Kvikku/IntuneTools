@@ -229,5 +229,27 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 WriteToImportStatusFile($"An error occurred while preparing assignment for policy {policyID}: {ex.Message}", LogType.Error);
             }
         }
+        public static async Task DeleteWindowsQualityUpdatePolicy(GraphServiceClient graphServiceClient, string policyID)
+        {
+            try
+            {
+                if (graphServiceClient == null)
+                {
+                    throw new ArgumentNullException(nameof(graphServiceClient));
+                }
+
+                if (policyID == null)
+                {
+                    throw new InvalidOperationException("Policy ID cannot be null.");
+                }
+
+                await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].DeleteAsync();
+            }
+            catch (Exception ex)
+            {
+                WriteToImportStatusFile("An error occurred while deleting a Windows Quality Update policy",LogType.Error);
+            }
+        }
+
     }
 }
