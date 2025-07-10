@@ -939,8 +939,45 @@ namespace IntuneTools.Pages
                 // Delete each Windows AutoPilot profile
                 foreach (var id in windowsAutoPilotProfileIDs)
                 {
-                    await DeleteWindowsAutopilotProfile(sourceGraphServiceClient, id);
-                    WriteToImportStatusFile($"Deleted Windows AutoPilot profile with ID: {id}");
+                    // Check if the policy is assigned to any devices
+                    // The policy cannot be deleted if it has assignments
+                    var isAssigned = await CheckIfAutoPilotProfileHasAssignments(destinationGraphServiceClient, id);
+
+                    if (isAssigned)
+                    {
+                        // Ask the user if they want to delete the assignments
+                        var dialog = new ContentDialog
+                        {
+                            Title = "Delete AutoPilot Profile",
+                            Content = $"The Windows AutoPilot profile with ID: {id} is assigned to devices. Do you want to delete the assignments before deleting the profile?",
+                            PrimaryButtonText = "Delete Assignments",
+                            SecondaryButtonText = "Cancel",
+                            DefaultButton = ContentDialogButton.Secondary
+                        };
+                        var result = await dialog.ShowAsync();
+                        if (result == ContentDialogResult.Primary)
+                        {
+                            // Delete the assignments first
+                            await DeleteWindowsAutoPilotProfileAssignments(sourceGraphServiceClient, id);
+                            WriteToImportStatusFile($"Deleted assignments for Windows AutoPilot profile with ID: {id}");
+
+                            // Now delete the profile
+                            await DeleteWindowsAutopilotProfile(sourceGraphServiceClient, id);
+                            WriteToImportStatusFile($"Deleted Windows AutoPilot profile with ID: {id}");
+                            count++;
+                        }
+                        else
+                        {
+                            // User chose not to delete assignments, skip deletion of the profile
+                            WriteToImportStatusFile($"Skipped deletion of Windows AutoPilot profile with ID: {id} as it is assigned to devices.", LogType.Warning);
+                        }
+                    }
+                    else
+                    {
+                        await DeleteWindowsAutopilotProfile(sourceGraphServiceClient, id);
+                        WriteToImportStatusFile($"Deleted Windows AutoPilot profile with ID: {id}");
+                        count++;
+                    }
                 }
             }
             catch (Exception ex)
