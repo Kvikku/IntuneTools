@@ -125,6 +125,8 @@ namespace IntuneTools.Pages
             await DeleteWindowsAutoPilotProfilesAsync();
             await DeleteWindowsDriverUpdatesAsync();
             await DeleteWindowsFeatureUpdatesAsync();
+            await DeleteWindowsQualityUpdatePoliciesAsync();
+            await DeleteWindowsQualityUpdateProfilesAsync();
 
             AppendToDetailsRichTextBlock("Content deletion completed.");
         }
@@ -150,6 +152,8 @@ namespace IntuneTools.Pages
                 await LoadAllWindowsAutoPilotProfilesAsync();
                 await LoadAllWindowsDriverUpdatesAsync();
                 await LoadAllWindowsFeatureUpdatesAsync();
+                await LoadAllWindowsQualityUpdatePoliciesAsync();
+                await LoadAllWindowsQualityUpdateProfilesAsync();
 
                 // Bind the combined list to the grid once
                 CleanupDataGrid.ItemsSource = ContentList;
@@ -186,6 +190,8 @@ namespace IntuneTools.Pages
                 await SearchForWindowsAutoPilotProfilesAsync(searchQuery);
                 await SearchForWindowsDriverUpdatesAsync(searchQuery);
                 await SearchForWindowsFeatureUpdatesAsync(searchQuery);
+                await SearchForWindowsQualityUpdatePoliciesAsync(searchQuery);
+                await SearchForWindowsQualityUpdateProfilesAsync(searchQuery);
 
                 // Bind the combined list to the grid once
                 CleanupDataGrid.ItemsSource = ContentList;
@@ -1137,8 +1143,7 @@ namespace IntuneTools.Pages
                 .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
         }
-
-        private async Task DeleteWindowsQualityUpdatesAsync()
+        private async Task DeleteWindowsQualityUpdatePoliciesAsync()
         {
             int count = 0;
             ShowLoading("Deleting Windows quality updates from Microsoft Graph...");
@@ -1170,7 +1175,79 @@ namespace IntuneTools.Pages
             }
         }
 
+        /// <summary>
+        /// Windows Quality Update Profile
+        /// </summary>
 
+        private async Task LoadAllWindowsQualityUpdateProfilesAsync()
+        {
+            var profiles = await GetAllWindowsQualityUpdateProfiles(sourceGraphServiceClient);
+            foreach (var profile in profiles)
+            {
+                ContentList.Add(new ContentInfo
+                {
+                    ContentName = profile.DisplayName,
+                    ContentType = "Windows Quality Update Profile",
+                    ContentPlatform = "Windows",
+                    ContentId = profile.Id
+                });
+            }
+            AppendToDetailsRichTextBlock($"Loaded {profiles.Count()} Windows quality update profiles.");
+        }
+        private async Task SearchForWindowsQualityUpdateProfilesAsync(string searchQuery)
+        {
+            var profiles = await SearchForWindowsQualityUpdateProfiles(sourceGraphServiceClient, searchQuery);
+            foreach (var profile in profiles)
+            {
+                ContentList.Add(new ContentInfo
+                {
+                    ContentName = profile.DisplayName,
+                    ContentType = "Windows Quality Update Profile",
+                    ContentPlatform = "Windows",
+                    ContentId = profile.Id
+                });
+            }
+            AppendToDetailsRichTextBlock($"Found {profiles.Count()} Windows quality update profiles matching '{searchQuery}'.");
+        }
+        private List<string> GetWindowsQualityUpdateProfileIDs()
+        {
+            // This method retrieves the IDs of all Windows quality update profiles in ContentList
+            return ContentList
+                .Where(c => c.ContentType == "Windows Quality Update Profile")
+                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
+                .ToList();
+        }
+        private async Task DeleteWindowsQualityUpdateProfilesAsync()
+        {
+            int count = 0;
+            ShowLoading("Deleting Windows quality update profiles from Microsoft Graph...");
+            try
+            {
+                // Get all Windows quality update profile IDs
+                var windowsQualityUpdateProfileIDs = GetWindowsQualityUpdateProfileIDs();
+                if (windowsQualityUpdateProfileIDs.Count == 0)
+                {
+                    WriteToImportStatusFile("No Windows quality update profiles found to delete.");
+                    return;
+                }
+                WriteToImportStatusFile($"Found {windowsQualityUpdateProfileIDs.Count} Windows quality update profiles to delete.");
+                // Delete each Windows quality update profile
+                foreach (var id in windowsQualityUpdateProfileIDs)
+                {
+                    await DeleteWindowsQualityUpdateProfile(sourceGraphServiceClient, id);
+                    WriteToImportStatusFile($"Deleted Windows quality update profile with ID: {id}");
+                }
+            }
+            catch (Exception ex)
+            {
+                WriteToImportStatusFile($"Error deleting Windows quality update profiles: {ex.Message}", LogType.Error);
+            }
+            finally
+            {
+                AppendToDetailsRichTextBlock($"Deleted {count} Windows quality update profiles.");
+                HideLoading();
+            }
+        }
 
 
         /// BUTTON HANDLERS ///

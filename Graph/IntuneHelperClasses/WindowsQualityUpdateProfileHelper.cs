@@ -209,5 +209,26 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 WriteToImportStatusFile($"An error occurred while preparing assignment for profile {profileID}: {ex.Message}");
             }
         }
+        public static async Task DeleteWindowsQualityUpdateProfile(GraphServiceClient graphServiceClient, string profileID)
+        {
+            try
+            {
+                if (graphServiceClient == null)
+                {
+                    throw new ArgumentNullException(nameof(graphServiceClient));
+                }
+
+                if (profileID == null)
+                {
+                    throw new InvalidOperationException("Profile ID cannot be null.");
+                }
+
+                await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileID].DeleteAsync();
+            }
+            catch (Exception ex)
+            {
+                WriteToImportStatusFile("An error occurred while deleting a Windows Quality Update profile",LogType.Error);
+            }
+        }
     }
 }
