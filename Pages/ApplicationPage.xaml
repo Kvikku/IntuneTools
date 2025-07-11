@@ -10,12 +10,19 @@
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <Grid>
+    <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <TextBox x:Name="txtBox" HorizontalAlignment="Left" Margin="10,10,0,0" TextWrapping="Wrap" Text="TextBox123" VerticalAlignment="Top" Width="200"/>
+
+        <!-- Page Title -->
+        <TextBlock Grid.Row="0" Text="Intune Assignments" 
+                   HorizontalAlignment="Left" 
+                   FontSize="38" 
+                   FontWeight="Bold"
+                   Margin="0,0,0,20"/>
+        
         <controls:DataGrid x:Name="AppDataGrid" Grid.Row="1" AutoGenerateColumns="False" Margin="10">
             <controls:DataGrid.Columns>
                 <controls:DataGridTextColumn Header="App Name" Binding="{Binding AppName}" Width="*"/>

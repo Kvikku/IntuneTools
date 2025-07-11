@@ -24,7 +24,7 @@
         </Grid.ColumnDefinitions>
 
         <!-- Page Title -->
-        <TextBlock Grid.Row="0" Grid.Column="0" Text="Import page" 
+        <TextBlock Grid.Row="0" Grid.Column="0" Text="Intune Import" 
                    HorizontalAlignment="Left" 
                    FontSize="38" 
                    FontWeight="Bold"
