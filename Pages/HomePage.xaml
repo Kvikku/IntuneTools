@@ -10,9 +10,16 @@
 
     <ScrollViewer>
         <StackPanel Padding="40" Spacing="20">
-            <TextBlock Text="Welcome to IntuneTools" FontSize="48" FontWeight="Bold" HorizontalAlignment="Left"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="Welcome to IntuneTools" FontSize="48" FontWeight="Bold" HorizontalAlignment="Left" Grid.Column="0"/>
+                <Image x:Name="LoginStatusImage" Width="48" Height="48" Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+            </Grid>
 
-            <TextBlock TextWrapping="Wrap" FontSize="18" Margin="0,20,0,0">
+            <TextBlock TextWrapping="WrapWholeWords" FontSize="18" Margin="0,20,0,0" MaxWidth="1200" HorizontalAlignment="Left">
                 IntuneTools is a powerful application designed to help you manage and migrate your Microsoft Intune environment with ease.
                 Whether you are looking to backup, restore, or clean up your Intune environment, this tool provides the necessary features to streamline your workflow.
             </TextBlock>

@@ -68,6 +68,7 @@ namespace IntuneTools.Utilities
         public static Dictionary<string, string> filterNameAndID = new Dictionary<string, string>();
         public static string SelectedFilterName = "";
 
-
+        //public static Microsoft.Graph.Beta.GraphServiceClient? sourceGraphServiceClient;
+        //public static Microsoft.Graph.Beta.GraphServiceClient? destinationGraphServiceClient;
     }
 }
