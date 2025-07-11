@@ -33,6 +33,7 @@ namespace IntuneTools.Pages
             if (sourceTenantName != string.Empty)
             {
                 UpdateImage(LoginStatusImage, "GreenCheck.png");
+                TenantNameText.Text = sourceTenantName;
             }
             else
             {
