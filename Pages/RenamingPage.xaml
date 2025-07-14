@@ -32,6 +32,7 @@
             <Button x:Name="ListAllButton" Content="List All" MinWidth="120" Click="ListAllButton_Click"  />
             <Button x:Name="ClearAllButton" Content="Clear All" MinWidth="120" Click="ClearAllButton_Click"/>
             <Button x:Name="ClearSelectedButton" Content="Clear Selected" MinWidth="120" Click="ClearSelectedButton_Click"/>
+            <Button x:Name="ClearLogButton" Content="Clear Log" MinWidth="120" Click="ClearLogButton_Click"/>
         </StackPanel>
         <TextBox x:Name="SearchQueryTextBox" Grid.Column="0" Grid.Row="2" Margin="0,5,10,5" PlaceholderText="Enter search query..." />
         <controls:DataGrid x:Name="RenamingDataGrid" AutoGenerateColumns="False" Margin="0,50,10,10" Grid.Column="0" Grid.Row="3" Foreground="White">

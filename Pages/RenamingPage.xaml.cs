@@ -833,6 +833,26 @@ namespace IntuneTools.Pages
             await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
         }
 
+        // Handler for the 'Clear Log' button
+        private async void ClearLogButton_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new ContentDialog
+            {
+                Title = "Clear Log Console?",
+                Content = "Are you sure you want to clear all log console text? This action cannot be undone.",
+                PrimaryButtonText = "Clear",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync().AsTask();
+            if (result == ContentDialogResult.Primary)
+            {
+                LogConsole.Blocks.Clear();
+            }
+        }
+
 
 
     }
