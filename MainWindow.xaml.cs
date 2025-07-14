@@ -133,6 +133,9 @@ namespace IntuneTools
                 case "Cleanup":
                     ContentFrame.Navigate(typeof(CleanupPage));
                     break;
+                case "Renaming":
+                    ContentFrame.Navigate(typeof(RenamingPage));
+                    break;
                 default:
                     break;
             }
