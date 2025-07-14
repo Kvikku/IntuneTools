@@ -106,7 +106,6 @@ namespace IntuneTools.Pages
             paragraph.Inlines.Add(new Run { Text = text });
         }
 
-
         private async Task ListAllOrchestrator(GraphServiceClient graphServiceClient)
         {
             ShowLoading("Loading data from Microsoft Graph...");
@@ -194,6 +193,10 @@ namespace IntuneTools.Pages
                 AppendToDetailsRichTextBlock("New name cannot be empty.");
                 return;
             }
+
+            var prefix = GetSelectedPrefixOption();
+
+
             try
             {
                 // Rename each content item based on its type
@@ -831,6 +834,20 @@ namespace IntuneTools.Pages
                 .Where(c => c.ContentType == "Windows Quality Update Profile")
                 .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
+        }
+
+        /// <summary>
+        /// Returns the value of the selected radio button in the OptionsExpander.
+        /// </summary>
+        public string? GetSelectedPrefixOption()
+        {
+            if (Parentheses.IsChecked == true)
+                return "Parentheses";
+            if (SquareBrackets.IsChecked == true)
+                return "SquareBrackets";
+            if (CurlyBrackets.IsChecked == true)
+                return "CurlyBrackets";
+            return null;
         }
 
 
