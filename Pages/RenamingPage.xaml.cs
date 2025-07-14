@@ -145,7 +145,6 @@ namespace IntuneTools.Pages
                 HideLoading();
             }
         }
-
         private async Task SearchOrchestrator(GraphServiceClient graphServiceClient, string searchQuery)
         {
             ShowLoading("Searching content in Microsoft Graph...");
@@ -183,7 +182,42 @@ namespace IntuneTools.Pages
                 HideLoading();
             }
         }
-
+        private async Task RenameContent(List<string> contentIDs, string newName)
+        {
+            if (contentIDs == null || contentIDs.Count == 0)
+            {
+                AppendToDetailsRichTextBlock("No content IDs provided for renaming.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(newName))
+            {
+                AppendToDetailsRichTextBlock("New name cannot be empty.");
+                return;
+            }
+            try
+            {
+                // Rename each content item based on its type
+                await RenameSettingsCatalogs(contentIDs, newName);
+                //await RenameDeviceCompliancePolicies(contentIDs, newName);
+                //await RenameDeviceConfigurationPolicies(contentIDs, newName);
+                //await RenameAppleBYODEnrollmentProfiles(contentIDs, newName);
+                //await RenameAssignmentFilters(contentIDs, newName);
+                //await RenameEntraGroups(contentIDs, newName);
+                //await RenamePowerShellScripts(contentIDs, newName);
+                //await RenameProactiveRemediations(contentIDs, newName);
+                //await RenameMacOSShellScripts(contentIDs, newName);
+                //await RenameWindowsAutoPilotProfiles(contentIDs, newName);
+                //await RenameWindowsDriverUpdates(contentIDs, newName);
+                //await RenameWindowsFeatureUpdates(contentIDs, newName);
+                //await RenameWindowsQualityUpdatePolicies(contentIDs, newName);
+                //await RenameWindowsQualityUpdateProfiles(contentIDs, newName);
+                AppendToDetailsRichTextBlock($"Renamed {contentIDs.Count} items to '{newName}'.");
+            }
+            catch (Exception ex)
+            {
+                AppendToDetailsRichTextBlock($"Error during renaming: {ex.Message}");
+            }
+        }
 
         /// <summary>
         ///  Settings catalog
@@ -226,6 +260,24 @@ namespace IntuneTools.Pages
                 .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
         }
+
+        private async Task RenameSettingsCatalogs(List<string> settingsCatalogIDs, string newName)
+        {
+            foreach (var id in settingsCatalogIDs)
+            {
+                try
+                {
+                    await RenameSettingsCatalogPolicy(sourceGraphServiceClient, id, newName);
+                    AppendToDetailsRichTextBlock($"Renamed Settings Catalog with ID {id} to '{newName}'.");
+                }
+                catch (Exception ex)
+                {
+                    AppendToDetailsRichTextBlock($"Error renaming Settings Catalog with ID {id}: {ex.Message}");
+                }
+            }
+        }
+
+
 
         private async Task LoadAllDeviceCompliancePoliciesAsync()
         {
@@ -851,6 +903,22 @@ namespace IntuneTools.Pages
             {
                 LogConsole.Blocks.Clear();
             }
+        }
+        private async void RenameButton_Click(object sender, RoutedEventArgs e)
+        {
+            var selectedItems = RenamingDataGrid.SelectedItems?.Cast<ContentInfo>().ToList();
+            if (selectedItems == null || selectedItems.Count == 0)
+            {
+                AppendToDetailsRichTextBlock("No items selected for renaming.");
+                return;
+            }
+            string newName = NewNameTextBox.Text.Trim();
+            if (string.IsNullOrEmpty(newName))
+            {
+                AppendToDetailsRichTextBlock("Please enter a new name.");
+                return;
+            }
+            await RenameContent(selectedItems.Select(i => i.ContentId).ToList(), newName);
         }
 
 

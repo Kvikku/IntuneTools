@@ -215,5 +215,38 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 LogToImportStatusFile(ex.Message, Utilities.Variables.LogLevels.Error);
             }
         }
+
+        public static async Task RenameSettingsCatalogPolicy(GraphServiceClient graphServiceClient, string policyID, string newName)
+        {
+            try
+            {
+                if (graphServiceClient == null)
+                {
+                    throw new ArgumentNullException(nameof(graphServiceClient));
+                }
+
+                if (policyID == null)
+                {
+                    throw new InvalidOperationException("Policy ID cannot be null.");
+                }
+
+                if (string.IsNullOrWhiteSpace(newName))
+                {
+                    throw new InvalidOperationException("New name cannot be null or empty.");
+                }
+
+                var policy = new DeviceManagementConfigurationPolicy
+                {
+                    Name = newName
+                };
+
+                await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].PatchAsync(policy);
+            }
+            catch (Exception ex)
+            {
+                LogToImportStatusFile("An error occurred while renaming settings catalog policies", Utilities.Variables.LogLevels.Warning);
+                LogToImportStatusFile(ex.Message, Utilities.Variables.LogLevels.Error);
+            }
+        }
     }
 }
