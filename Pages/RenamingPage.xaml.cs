@@ -107,7 +107,44 @@ namespace IntuneTools.Pages
         }
 
 
+        private async Task ListAllOrchestrator(GraphServiceClient graphServiceClient)
+        {
+            ShowLoading("Loading data from Microsoft Graph...");
+            AppendToDetailsRichTextBlock("Starting to load all content. This could take a while...");
+            try
+            {
+                // Clear the ContentList before loading new data
+                ContentList.Clear();
 
+                await LoadAllDeviceCompliancePoliciesAsync();
+                await LoadAllSettingsCatalogPoliciesAsync();
+                await LoadAllDeviceConfigurationPoliciesAsync();
+                await LoadAllAppleBYODEnrollmentProfilesAsync();
+                await LoadAllAssignmentFiltersAsync();
+                await LoadAllEntraGroupsAsync();
+                await LoadAllPowerShellScriptsAsync();
+                await LoadAllProactiveRemediationsAsync();
+                await LoadAllMacOSShellScriptsAsync();
+                await LoadAllWindowsAutoPilotProfilesAsync();
+                await LoadAllWindowsDriverUpdatesAsync();
+                await LoadAllWindowsFeatureUpdatesAsync();
+                await LoadAllWindowsQualityUpdatePoliciesAsync();
+                await LoadAllWindowsQualityUpdateProfilesAsync();
+
+                // Bind the combined list to the grid once
+                RenamingDataGrid.ItemsSource = ContentList;
+            }
+            catch (Exception ex)
+            {
+                AppendToDetailsRichTextBlock($"Error during loading: {ex.Message}");
+                HideLoading();
+                return;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
 
         private async Task SearchOrchestrator(GraphServiceClient graphServiceClient, string searchQuery)
         {
@@ -780,6 +817,23 @@ namespace IntuneTools.Pages
             RenamingDataGrid.ItemsSource = ContentList;
             AppendToDetailsRichTextBlock($"Cleared {selectedItems.Count} selected item(s) from the list.");
         }
+
+        private async void ListAllButton_Click(object sender, RoutedEventArgs e)
+        {
+            await ListAllOrchestrator(sourceGraphServiceClient);
+        }
+        private async void SearchButton_Click(object sender, RoutedEventArgs e)
+        {
+            string searchQuery = SearchQueryTextBox.Text.Trim();
+            if (string.IsNullOrEmpty(searchQuery))
+            {
+                AppendToDetailsRichTextBlock("Please enter a search query.");
+                return;
+            }
+            await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
+        }
+
+
 
     }
 
