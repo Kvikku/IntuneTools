@@ -105,5 +105,30 @@ namespace IntuneTools.Pages
             }
             paragraph.Inlines.Add(new Run { Text = text });
         }
+
+        private void ClearAllButton_Click(object sender, RoutedEventArgs e)
+        {
+            ContentList.Clear();
+            RenamingDataGrid.ItemsSource = null;
+            RenamingDataGrid.ItemsSource = ContentList;
+            AppendToDetailsRichTextBlock("All items cleared from the list.");
+        }
+
+        private void ClearSelectedButton_Click(object sender, RoutedEventArgs e)
+        {
+            var selectedItems = RenamingDataGrid.SelectedItems?.Cast<ContentInfo>().ToList();
+            if (selectedItems == null || selectedItems.Count == 0)
+            {
+                AppendToDetailsRichTextBlock("No items selected to clear.");
+                return;
+            }
+            foreach (var item in selectedItems)
+            {
+                ContentList.Remove(item);
+            }
+            RenamingDataGrid.ItemsSource = null;
+            RenamingDataGrid.ItemsSource = ContentList;
+            AppendToDetailsRichTextBlock($"Cleared {selectedItems.Count} selected item(s) from the list.");
+        }
     }
 }
