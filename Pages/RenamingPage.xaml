@@ -35,9 +35,9 @@
             <!-- Options Expander with three checkboxes placed to the right of Clear Selected button -->
             <Expander x:Name="OptionsExpander" Header="Prefix" IsExpanded="False" Margin="20,0,0,0" VerticalAlignment="Center">
                 <StackPanel x:Name="OptionsPanel" Orientation="Vertical" VerticalAlignment="Center">
-                    <CheckBox x:Name="Option1CheckBox" Content="Parentheses (  )" IsThreeState="False" />
-                    <CheckBox x:Name="Option2CheckBox" Content="Square brackets [  ]" IsThreeState="False" />
-                    <CheckBox x:Name="Option3CheckBox" Content="Curly brackets {  }" IsThreeState="False" />
+                    <RadioButton x:Name="Option1RadioButton" Content="Parentheses (  )" GroupName="PrefixOptions" />
+                    <RadioButton x:Name="Option2RadioButton" Content="Square brackets [  ]" GroupName="PrefixOptions" />
+                    <RadioButton x:Name="Option3RadioButton" Content="Curly brackets {  }" GroupName="PrefixOptions" />
                 </StackPanel>
             </Expander>
         </StackPanel>
