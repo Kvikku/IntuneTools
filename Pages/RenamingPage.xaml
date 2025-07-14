@@ -40,5 +40,18 @@
                 <controls:DataGridTextColumn Header="ID" Binding="{Binding ContentId}" Width="2*"/>
             </controls:DataGrid.Columns>
         </controls:DataGrid>
+
+        <!-- Log Console -->
+        <StackPanel Grid.Column="1" Grid.Row="3" VerticalAlignment="Stretch" Margin="0,10,10,10" Orientation="Vertical">
+            <RichTextBlock x:Name="LogConsole" Margin="0,0,0,0" Foreground="White" Padding="8"/>
+        </StackPanel>
+
+        <!-- Loading Overlay and ProgressRing -->
+        <Grid x:Name="LoadingOverlay" Visibility="Collapsed" Background="#80000000" Grid.ColumnSpan="2" Grid.RowSpan="4">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Background="#CCFFFFFF" Padding="40" CornerRadius="8">
+                <ProgressRing x:Name="LoadingProgressRing" IsActive="False" Width="60" Height="60"/>
+                <TextBlock x:Name="LoadingStatusText" Text="Loading..." Margin="0,16,0,0" FontSize="18" HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Grid>
     </Grid>
 </Page>
