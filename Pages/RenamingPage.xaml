@@ -32,10 +32,9 @@
             <Button x:Name="ListAllButton" Content="List All" MinWidth="120" Click="ListAllButton_Click"  />
             <Button x:Name="ClearAllButton" Content="Clear All" MinWidth="120" Click="ClearAllButton_Click"/>
             <Button x:Name="ClearSelectedButton" Content="Clear Selected" MinWidth="120" Click="ClearSelectedButton_Click"/>
-            <Button x:Name="ClearLogButton" Content="Clear Log" MinWidth="120" Click="ClearLogButton_Click"/>
         </StackPanel>
-        <TextBox x:Name="SearchQueryTextBox" Grid.Column="0" Grid.Row="2" Margin="0,5,10,5" PlaceholderText="Enter search query..." />
-        <controls:DataGrid x:Name="RenamingDataGrid" AutoGenerateColumns="False" Margin="0,50,10,10" Grid.Column="0" Grid.Row="3" Foreground="White">
+        <TextBox x:Name="SearchQueryTextBox" Grid.Column="0" Grid.Row="2" Margin="0,5,10,0" PlaceholderText="Enter search query..." />
+        <controls:DataGrid x:Name="RenamingDataGrid" AutoGenerateColumns="False" Margin="0,10,10,10" Grid.Column="0" Grid.Row="3" Foreground="White">
             <controls:DataGrid.Columns>
                 <controls:DataGridTextColumn Header="Name" Binding="{Binding ContentName}" Width="2*"/>
                 <controls:DataGridTextColumn Header="Type" Binding="{Binding ContentType}" Width="*"/>
@@ -44,8 +43,9 @@
             </controls:DataGrid.Columns>
         </controls:DataGrid>
 
-        <!-- Log Console -->
+        <!-- Log Console and Clear Log Button moved to the right of the DataGrid -->
         <StackPanel Grid.Column="1" Grid.Row="3" VerticalAlignment="Stretch" Margin="0,10,10,10" Orientation="Vertical">
+            <Button x:Name="ClearLogButton" Content="Clear Log" Click="ClearLogButton_Click" Width="100" Margin="0,0,0,10"/>
             <RichTextBlock x:Name="LogConsole" Margin="0,0,0,0" Foreground="White" Padding="8"/>
         </StackPanel>
 
