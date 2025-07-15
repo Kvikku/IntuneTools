@@ -36,7 +36,7 @@
             <Button x:Name="RenameButton" Content="Rename" MinWidth="120" Margin="0,0,0,0" Click="RenameButton_Click" />
             <!-- Options Expander with three checkboxes placed to the right of Rename button -->
         </StackPanel>
-        <TextBox x:Name="SearchQueryTextBox" Grid.Column="0" Grid.Row="2" Margin="0,5,10,0" PlaceholderText="Enter search query..." />
+        <TextBox x:Name="SearchQueryTextBox" Grid.Column="0" Grid.Row="2" Margin="0,5,0,0" PlaceholderText="Enter search query..." MinWidth="600" HorizontalAlignment="Left" />
         <!-- Options Expander moved above NewNameTextBox -->
         <Expander x:Name="OptionsExpander" Header="Prefix" IsExpanded="False" Margin="0,0,0,0" VerticalAlignment="Center" Grid.Column="1" Grid.Row="2">
             <StackPanel x:Name="OptionsPanel" Orientation="Vertical" VerticalAlignment="Center">
