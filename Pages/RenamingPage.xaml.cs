@@ -281,11 +281,19 @@ namespace IntuneTools.Pages
                     }
                 }
 
+                if (ContentList.Any(c => c.ContentType == "MacOS Shell Script"))
+                {
+                    var macOSShellScriptIDs = GetMacOSShellScriptIDs();
+                    if (macOSShellScriptIDs.Count > 0)
+                    {
+                        await RenameMacOSShellScripts(macOSShellScriptIDs, prefix);
+                    }
+                }
+
                 //await RenameAssignmentFilters(contentIDs, newName);
                 //await RenameEntraGroups(contentIDs, newName);
                 //await RenamePowerShellScripts(contentIDs, newName);
                 //await RenameProactiveRemediations(contentIDs, newName);
-                //await RenameMacOSShellScripts(contentIDs, newName);
                 //await RenameWindowsAutoPilotProfiles(contentIDs, newName);
                 //await RenameWindowsDriverUpdates(contentIDs, newName);
                 //await RenameWindowsFeatureUpdates(contentIDs, newName);
@@ -315,7 +323,21 @@ namespace IntuneTools.Pages
             }
         }
 
-
+        private async Task RenameMacOSShellScripts(List<string> scriptIDs, string prefix)
+        {
+            foreach (var id in scriptIDs)
+            {
+                try
+                {
+                    await RenameMacOSShellScript(sourceGraphServiceClient, id, prefix);
+                    AppendToDetailsRichTextBlock($"Renamed MacOS Shell Script with ID {id} with prefix '{prefix}'.");
+                }
+                catch (Exception ex)
+                {
+                    AppendToDetailsRichTextBlock($"Error renaming MacOS Shell Script with ID {id}: {ex.Message}");
+                }
+            }
+        }
 
         /// <summary>
         ///  Settings catalog
