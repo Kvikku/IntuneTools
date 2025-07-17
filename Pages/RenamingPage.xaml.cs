@@ -243,8 +243,6 @@ namespace IntuneTools.Pages
                 return;
             }
 
-            
-
             try
             {
                 if (ContentList.Any(c => c.ContentType == "Settings Catalog"))
@@ -274,8 +272,15 @@ namespace IntuneTools.Pages
                     }
                 }
 
+                if (ContentList.Any(c => c.ContentType == "Apple BYOD Enrollment Profile"))
+                {
+                    var appleBYODProfileIDs = GetAppleBYODEnrollmentProfileIDs();
+                    if (appleBYODProfileIDs.Count > 0)
+                    {
+                        await RenameAppleBYODEnrollmentProfiles(appleBYODProfileIDs, prefix);
+                    }
+                }
 
-                //await RenameAppleBYODEnrollmentProfiles(contentIDs, newName);
                 //await RenameAssignmentFilters(contentIDs, newName);
                 //await RenameEntraGroups(contentIDs, newName);
                 //await RenamePowerShellScripts(contentIDs, newName);
@@ -294,7 +299,22 @@ namespace IntuneTools.Pages
             }
         }
 
-        
+        private async Task RenameAppleBYODEnrollmentProfiles(List<string> profileIDs, string prefix)
+        {
+            foreach (var id in profileIDs)
+            {
+                try
+                {
+                    await RenameAppleBYODEnrollmentProfile(sourceGraphServiceClient, id, prefix);
+                    AppendToDetailsRichTextBlock($"Renamed Apple BYOD Enrollment Profile with ID {id} with prefix '{prefix}'.");
+                }
+                catch (Exception ex)
+                {
+                    AppendToDetailsRichTextBlock($"Error renaming Apple BYOD Enrollment Profile with ID {id}: {ex.Message}");
+                }
+            }
+        }
+
 
 
         /// <summary>
