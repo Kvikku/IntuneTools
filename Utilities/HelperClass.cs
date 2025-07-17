@@ -410,7 +410,7 @@ namespace IntuneTools.Utilities
         {
             if (string.IsNullOrWhiteSpace(policyName))
             {
-                return policyName;
+                return newPolicyName;
             }
 
             char firstChar = policyName[0];
@@ -418,34 +418,27 @@ namespace IntuneTools.Utilities
 
             switch (firstChar)
             {
-                case '(':
-                    expectedClosingChar = ')';
-                    break;
-                case '[':
-                    expectedClosingChar = ']';
-                    break;
-                case '{':
-                    expectedClosingChar = '}';
-                    break;
+                case '(': expectedClosingChar = ')'; break;
+                case '[': expectedClosingChar = ']'; break;
+                case '{': expectedClosingChar = '}'; break;
                 default:
                     // The policy name does not start with a recognized prefix bracket.
-                    return policyName;
+                    // Prepend the new prefix to the original name, ensuring a single space
+                    return newPolicyName + " " + policyName.TrimStart();
             }
 
             int closingIndex = policyName.IndexOf(expectedClosingChar);
 
-            // Check if the closing bracket exists and is not the character immediately after the opening one.
             if (closingIndex > 0)
             {
                 // Extract the rest of the string after the prefix.
-                string restOfName = policyName.Substring(closingIndex + 1);
-
-                // Return the new name combined with the rest of the original name.
-                return newPolicyName + restOfName;
+                string restOfName = policyName.Substring(closingIndex + 1).TrimStart();
+                // Return the new name combined with the rest of the original name, ensuring a single space
+                return newPolicyName + " " + restOfName;
             }
 
-            // If no valid closing bracket is found, return the original name.
-            return policyName;
+            // If no valid closing bracket is found, prepend the new prefix, ensuring a single space
+            return newPolicyName + " " + policyName.TrimStart();
         }
     }
 }
