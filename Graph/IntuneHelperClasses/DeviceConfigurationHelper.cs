@@ -264,5 +264,49 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 WriteToImportStatusFile($"An error occurred while deleting the device configuration policy: {ex.Message}", LogType.Error);
             }
         }
+        public static async Task RenameDeviceConfigurationPolicy(GraphServiceClient graphServiceClient, string policyID, string newName)
+        {
+            try
+            {
+                if (graphServiceClient == null)
+                {
+                    throw new ArgumentNullException(nameof(graphServiceClient));
+                }
+
+                if (policyID == null)
+                {
+                    throw new InvalidOperationException("Policy ID cannot be null.");
+                }
+
+                if (string.IsNullOrWhiteSpace(newName))
+                {
+                    throw new InvalidOperationException("New name cannot be null or empty.");
+                }
+
+                // Look up the existing policy to determine its specific type
+                var existingPolicy = await graphServiceClient.DeviceManagement.DeviceConfigurations[policyID].GetAsync();
+
+                if (existingPolicy == null)
+                {
+                    throw new InvalidOperationException($"Policy with ID '{policyID}' not found.");
+                }
+
+                var name = FindPreFixInPolicyName(existingPolicy.DisplayName, newName);
+
+                // Create an instance of the specific policy type using reflection
+                var policyType = existingPolicy.GetType();
+                var policy = (DeviceConfiguration)Activator.CreateInstance(policyType);
+                
+                // Set the DisplayName on the new instance
+                policy.DisplayName = name;
+
+                await graphServiceClient.DeviceManagement.DeviceConfigurations[policyID].PatchAsync(policy);
+            }
+            catch (Exception ex)
+            {
+                WriteToImportStatusFile("An error occurred while renaming device configuration policies", LogType.Warning);
+                WriteToImportStatusFile(ex.Message, LogType.Error);
+            }
+        }
     }
 }

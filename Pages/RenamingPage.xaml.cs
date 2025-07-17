@@ -265,8 +265,16 @@ namespace IntuneTools.Pages
                     }
                 }
 
+                if (ContentList.Any(c => c.ContentType == "Device Configuration Policy"))
+                {
+                    var deviceConfigurationPolicyIDs = GetDeviceConfigurationPolicyIDs();
+                    if (deviceConfigurationPolicyIDs.Count > 0)
+                    {
+                        await RenameDeviceConfigurationPolicies(deviceConfigurationPolicyIDs, prefix);
+                    }
+                }
 
-                //await RenameDeviceConfigurationPolicies(contentIDs, newName);
+
                 //await RenameAppleBYODEnrollmentProfiles(contentIDs, newName);
                 //await RenameAssignmentFilters(contentIDs, newName);
                 //await RenameEntraGroups(contentIDs, newName);
@@ -445,6 +453,22 @@ namespace IntuneTools.Pages
                 .Where(c => c.ContentType == "Device Configuration Policy")
                 .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
+        }
+
+        private async Task RenameDeviceConfigurationPolicies(List<string> deviceConfigurationPolicyIDs, string prefix)
+        {
+            foreach (var id in deviceConfigurationPolicyIDs)
+            {
+                try
+                {
+                    await RenameDeviceConfigurationPolicy(sourceGraphServiceClient, id, prefix);
+                    AppendToDetailsRichTextBlock($"Renamed Device Configuration Policy with ID {id} with prefix '{prefix}'.");
+                }
+                catch (Exception ex)
+                {
+                    AppendToDetailsRichTextBlock($"Error renaming Device Configuration Policy with ID {id}: {ex.Message}");
+                }
+            }
         }
 
         /// <summary>
