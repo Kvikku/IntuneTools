@@ -36,6 +36,7 @@ using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHe
 using static IntuneTools.Utilities.HelperClass;
 using static IntuneTools.Utilities.SourceTenantGraphClient;
 using static IntuneTools.Utilities.Variables;
+using Microsoft.Graph.Beta.DeviceManagement.ComanagedDevices.RetrievePowerliftAppDiagnosticsDetailsWithUserPrincipalName;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -61,6 +62,10 @@ namespace IntuneTools.Pages
         {
             this.InitializeComponent();
         }
+
+        /// <summary>
+        ///  Local helper methods
+        /// </summary>
 
         private void ShowLoading(string message = "Loading data from Microsoft Graph...")
         {
@@ -105,7 +110,6 @@ namespace IntuneTools.Pages
             }
             paragraph.Inlines.Add(new Run { Text = text });
         }
-
         private async Task ListAllOrchestrator(GraphServiceClient graphServiceClient)
         {
             ShowLoading("Loading data from Microsoft Graph...");
@@ -194,13 +198,57 @@ namespace IntuneTools.Pages
                 return;
             }
 
-            var prefix = GetSelectedPrefixOption();
+            var prefixSymbol = GetSelectedPrefixOption();
+            if (prefixSymbol == null)
+            {
+                AppendToDetailsRichTextBlock("Please select a prefix option.");
+                return;
+            }
+
+            string prefix = $"{prefixSymbol[0]}{newName}{prefixSymbol[1]}";
+
+            // Find the corresponding names for the content IDs
+
+            List<string> contentNames = new List<string>();
+            foreach (var id in contentIDs)
+            {
+                var name = string.Empty;
+                var content = ContentList.FirstOrDefault(c => c.ContentId == id);
+                if (content != null)
+                {
+                    name = FindPreFixInPolicyName(content.ContentName,prefix);
+                }
+                contentNames.Add(name);
+            };
+
+            // display a dialog box with the new names and confirm renaming
+            if (contentNames.Count == 0)
+            {
+                AppendToDetailsRichTextBlock("No content names found for the provided IDs.");
+                return;
+            }
+            string contentNamesList = string.Join("\n", contentNames);
+            ContentDialog renameDialog = new ContentDialog
+            {
+                Title = "Confirm Renaming",
+                Content = $"The new policy names will look like this. Proceed?\n\n{contentNamesList}",
+                PrimaryButtonText = "Rename",
+                CloseButtonText = "Cancel",
+                XamlRoot = this.XamlRoot
+};
+            var dialogResult = await renameDialog.ShowAsync();
+            if (dialogResult != ContentDialogResult.Primary)
+            {
+                AppendToDetailsRichTextBlock("Renaming operation cancelled.");
+                return;
+            }
+
 
 
             try
             {
                 // Rename each content item based on its type
-                await RenameSettingsCatalogs(contentIDs, newName);
+                await RenameSettingsCatalogs(contentIDs, prefix);
                 //await RenameDeviceCompliancePolicies(contentIDs, newName);
                 //await RenameDeviceConfigurationPolicies(contentIDs, newName);
                 //await RenameAppleBYODEnrollmentProfiles(contentIDs, newName);
@@ -214,13 +262,16 @@ namespace IntuneTools.Pages
                 //await RenameWindowsFeatureUpdates(contentIDs, newName);
                 //await RenameWindowsQualityUpdatePolicies(contentIDs, newName);
                 //await RenameWindowsQualityUpdateProfiles(contentIDs, newName);
-                AppendToDetailsRichTextBlock($"Renamed {contentIDs.Count} items to '{newName}'.");
+                AppendToDetailsRichTextBlock($"Renamed {contentIDs.Count} items with prefix '{prefix}'.");
             }
             catch (Exception ex)
             {
                 AppendToDetailsRichTextBlock($"Error during renaming: {ex.Message}");
             }
         }
+
+        
+
 
         /// <summary>
         ///  Settings catalog
@@ -842,11 +893,11 @@ namespace IntuneTools.Pages
         public string? GetSelectedPrefixOption()
         {
             if (Parentheses.IsChecked == true)
-                return "Parentheses";
+                return "()";
             if (SquareBrackets.IsChecked == true)
-                return "SquareBrackets";
+                return "[]";
             if (CurlyBrackets.IsChecked == true)
-                return "CurlyBrackets";
+                return "{}";
             return null;
         }
 
@@ -922,7 +973,7 @@ namespace IntuneTools.Pages
             }
         }
         private async void RenameButton_Click(object sender, RoutedEventArgs e)
-        {
+        {   
             var selectedItems = RenamingDataGrid.SelectedItems?.Cast<ContentInfo>().ToList();
             if (selectedItems == null || selectedItems.Count == 0)
             {
@@ -937,9 +988,6 @@ namespace IntuneTools.Pages
             }
             await RenameContent(selectedItems.Select(i => i.ContentId).ToList(), newName);
         }
-
-
-
     }
 
 }

@@ -235,6 +235,8 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     throw new InvalidOperationException("New name cannot be null or empty.");
                 }
 
+
+
                 var policy = new DeviceManagementConfigurationPolicy
                 {
                     Name = newName

@@ -406,5 +406,46 @@ namespace IntuneTools.Utilities
                 hideLoading();
             }
         }
+        public static string FindPreFixInPolicyName(string policyName, string newPolicyName)
+        {
+            if (string.IsNullOrWhiteSpace(policyName))
+            {
+                return policyName;
+            }
+
+            char firstChar = policyName[0];
+            char expectedClosingChar;
+
+            switch (firstChar)
+            {
+                case '(':
+                    expectedClosingChar = ')';
+                    break;
+                case '[':
+                    expectedClosingChar = ']';
+                    break;
+                case '{':
+                    expectedClosingChar = '}';
+                    break;
+                default:
+                    // The policy name does not start with a recognized prefix bracket.
+                    return policyName;
+            }
+
+            int closingIndex = policyName.IndexOf(expectedClosingChar);
+
+            // Check if the closing bracket exists and is not the character immediately after the opening one.
+            if (closingIndex > 0)
+            {
+                // Extract the rest of the string after the prefix.
+                string restOfName = policyName.Substring(closingIndex + 1);
+
+                // Return the new name combined with the rest of the original name.
+                return newPolicyName + restOfName;
+            }
+
+            // If no valid closing bracket is found, return the original name.
+            return policyName;
+        }
     }
 }
