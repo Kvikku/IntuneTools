@@ -235,11 +235,16 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     throw new InvalidOperationException("New name cannot be null or empty.");
                 }
 
+                // Look up the existing policy
+
+                var existingPolicy = await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].GetAsync();
+
+                var name = FindPreFixInPolicyName(existingPolicy.Name,newName);
 
 
                 var policy = new DeviceManagementConfigurationPolicy
                 {
-                    Name = newName
+                    Name = name
                 };
 
                 await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].PatchAsync(policy);

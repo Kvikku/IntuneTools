@@ -243,12 +243,19 @@ namespace IntuneTools.Pages
                 return;
             }
 
-
+            
 
             try
             {
-                // Rename each content item based on its type
-                await RenameSettingsCatalogs(contentIDs, prefix);
+                if (ContentList.Any(c => c.ContentType == "Settings Catalog"))
+                {
+                    var settingsCatalogIDs = GetSettingsCatalogIDs();
+                    if (settingsCatalogIDs.Count > 0)
+                    {
+                        await RenameSettingsCatalogs(settingsCatalogIDs, prefix);
+                    }
+                }
+                
                 //await RenameDeviceCompliancePolicies(contentIDs, newName);
                 //await RenameDeviceConfigurationPolicies(contentIDs, newName);
                 //await RenameAppleBYODEnrollmentProfiles(contentIDs, newName);
@@ -315,14 +322,14 @@ namespace IntuneTools.Pages
                 .ToList();
         }
 
-        private async Task RenameSettingsCatalogs(List<string> settingsCatalogIDs, string newName)
+        private async Task RenameSettingsCatalogs(List<string> settingsCatalogIDs, string prefix)
         {
             foreach (var id in settingsCatalogIDs)
             {
                 try
                 {
-                    await RenameSettingsCatalogPolicy(sourceGraphServiceClient, id, newName);
-                    AppendToDetailsRichTextBlock($"Renamed Settings Catalog with ID {id} to '{newName}'.");
+                    await RenameSettingsCatalogPolicy(sourceGraphServiceClient, id, prefix);
+                    AppendToDetailsRichTextBlock($"Renamed Settings Catalog with ID {id} with prefix '{prefix}'.");
                 }
                 catch (Exception ex)
                 {
