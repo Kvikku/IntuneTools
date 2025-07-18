@@ -288,6 +288,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 profile.DisplayName = name;
 
                 await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileID].PatchAsync(profile);
+                WriteToImportStatusFile($"Successfully renamed Apple BYOD Enrollment profile with ID {profileID} to '{name}'.");
             }
             catch (Exception ex)
             {
