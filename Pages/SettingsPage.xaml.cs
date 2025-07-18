@@ -187,7 +187,20 @@ namespace IntuneTools.Pages
 
         private void OpenLogFileLocation_Click(object sender, RoutedEventArgs e)
         {
-            Process.Start("explorer.exe", Variables.logFileFolder);
+            if (Directory.Exists(Variables.logFileFolder))
+            {
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = "explorer.exe",
+                    Arguments = Variables.logFileFolder,
+                    UseShellExecute = true
+                };
+                Process.Start(startInfo);
+            }
+            else
+            {
+                Log($"Invalid log file folder path: {Variables.logFileFolder}");
+            }
         }
     }
 }
