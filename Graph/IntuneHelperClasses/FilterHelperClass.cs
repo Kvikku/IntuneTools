@@ -205,5 +205,47 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 return false;
             }
         }
+        public static async Task RenameAssignmentFilter(GraphServiceClient graphServiceClient, string filterID, string newName)
+        {
+            try
+            {
+                if (graphServiceClient == null)
+                {
+                    throw new ArgumentNullException(nameof(graphServiceClient));
+                }
+
+                if (filterID == null)
+                {
+                    throw new InvalidOperationException("Filter ID cannot be null.");
+                }
+
+                if (string.IsNullOrWhiteSpace(newName))
+                {
+                    throw new InvalidOperationException("New name cannot be null or empty.");
+                }
+
+                // Look up the existing filter
+                var existingFilter = await graphServiceClient.DeviceManagement.AssignmentFilters[filterID].GetAsync();
+
+                if (existingFilter == null)
+                {
+                    throw new InvalidOperationException($"Filter with ID '{filterID}' not found.");
+                }
+
+                var name = FindPreFixInPolicyName(existingFilter.DisplayName, newName);
+
+                var filter = new DeviceAndAppManagementAssignmentFilter
+                {
+                    DisplayName = name,
+                };
+
+                await graphServiceClient.DeviceManagement.AssignmentFilters[filterID].PatchAsync(filter);
+            }
+            catch (Exception ex)
+            {
+                WriteToImportStatusFile("An error occurred while renaming assignment filter", LogType.Warning);
+                WriteToImportStatusFile(ex.Message, LogType.Error);
+            }
+        }
     }
 }

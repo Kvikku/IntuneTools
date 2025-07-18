@@ -353,8 +353,23 @@ namespace IntuneTools.Pages
                     }
                 }
 
-                //await RenameAssignmentFilters(contentIDs, newName);
-                //await RenameEntraGroups(contentIDs, newName);
+                if (ContentList.Any(c => c.ContentType == "Assignment Filter"))
+                {
+                    var assignmentFilterIDs = GetAssignmentFilterIDs();
+                    if (assignmentFilterIDs.Count > 0)
+                    {
+                        await RenameAssignmentFilters(assignmentFilterIDs, prefix);
+                    }
+                }
+
+                if (ContentList.Any(c => c.ContentType == "Entra Group"))
+                {
+                    var entraGroupIDs = GetEntraGroupIDs();
+                    if (entraGroupIDs.Count > 0)
+                    {
+                        await RenameEntraGroups(entraGroupIDs, prefix);
+                    }
+                }
                 AppendToDetailsRichTextBlock($"Renamed {contentIDs.Count} items with prefix '{prefix}'.");
             }
             catch (Exception ex)
@@ -503,6 +518,38 @@ namespace IntuneTools.Pages
                 catch (Exception ex)
                 {
                     AppendToDetailsRichTextBlock($"Error renaming Windows Quality Update Profile with ID {id}: {ex.Message}");
+                }
+            }
+        }
+
+        private async Task RenameAssignmentFilters(List<string> filterIDs, string prefix)
+        {
+            foreach (var id in filterIDs)
+            {
+                try
+                {
+                    await RenameAssignmentFilter(sourceGraphServiceClient, id, prefix);
+                    AppendToDetailsRichTextBlock($"Renamed Assignment Filter with ID {id} with prefix '{prefix}'.");
+                }
+                catch (Exception ex)
+                {
+                    AppendToDetailsRichTextBlock($"Error renaming Assignment Filter with ID {id}: {ex.Message}");
+                }
+            }
+        }
+
+        private async Task RenameEntraGroups(List<string> groupIDs, string prefix)
+        {
+            foreach (var id in groupIDs)
+            {
+                try
+                {
+                    await RenameGroup(sourceGraphServiceClient, id, prefix);
+                    AppendToDetailsRichTextBlock($"Renamed Entra Group with ID {id} with prefix '{prefix}'.");
+                }
+                catch (Exception ex)
+                {
+                    AppendToDetailsRichTextBlock($"Error renaming Entra Group with ID {id}: {ex.Message}");
                 }
             }
         }
