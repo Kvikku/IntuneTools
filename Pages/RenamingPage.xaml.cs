@@ -326,11 +326,35 @@ namespace IntuneTools.Pages
                     }
                 }
 
+                if (ContentList.Any(c => c.ContentType == "Windows Feature Update"))
+                {
+                    var windowsFeatureUpdateIDs = GetWindowsFeatureUpdateIDs();
+                    if (windowsFeatureUpdateIDs.Count > 0)
+                    {
+                        await RenameWindowsFeatureUpdates(windowsFeatureUpdateIDs, prefix);
+                    }
+                }
+
+                if (ContentList.Any(c => c.ContentType == "Windows Quality Update Policy"))
+                {
+                    var windowsQualityUpdatePolicyIDs = GetWindowsQualityUpdatePolicyIDs();
+                    if (windowsQualityUpdatePolicyIDs.Count > 0)
+                    {
+                        await RenameWindowsQualityUpdatePolicies(windowsQualityUpdatePolicyIDs, prefix);
+                    }
+                }
+
+                if (ContentList.Any(c => c.ContentType == "Windows Quality Update Profile"))
+                {
+                    var windowsQualityUpdateProfileIDs = GetWindowsQualityUpdateProfileIDs();
+                    if (windowsQualityUpdateProfileIDs.Count > 0)
+                    {
+                        await RenameWindowsQualityUpdateProfiles(windowsQualityUpdateProfileIDs, prefix);
+                    }
+                }
+
                 //await RenameAssignmentFilters(contentIDs, newName);
                 //await RenameEntraGroups(contentIDs, newName);
-                //await RenameWindowsFeatureUpdates(contentIDs, newName);
-                //await RenameWindowsQualityUpdatePolicies(contentIDs, newName);
-                //await RenameWindowsQualityUpdateProfiles(contentIDs, newName);
                 AppendToDetailsRichTextBlock($"Renamed {contentIDs.Count} items with prefix '{prefix}'.");
             }
             catch (Exception ex)
@@ -431,6 +455,54 @@ namespace IntuneTools.Pages
                 catch (Exception ex)
                 {
                     AppendToDetailsRichTextBlock($"Error renaming Windows Driver Update with ID {id}: {ex.Message}");
+                }
+            }
+        }
+
+        private async Task RenameWindowsFeatureUpdates(List<string> profileIDs, string prefix)
+        {
+            foreach (var id in profileIDs)
+            {
+                try
+                {
+                    await RenameWindowsFeatureUpdateProfile(sourceGraphServiceClient, id, prefix);
+                    AppendToDetailsRichTextBlock($"Renamed Windows Feature Update with ID {id} with prefix '{prefix}'.");
+                }
+                catch (Exception ex)
+                {
+                    AppendToDetailsRichTextBlock($"Error renaming Windows Feature Update with ID {id}: {ex.Message}");
+                }
+            }
+        }
+
+        private async Task RenameWindowsQualityUpdatePolicies(List<string> policyIDs, string prefix)
+        {
+            foreach (var id in policyIDs)
+            {
+                try
+                {
+                    await RenameWindowsQualityUpdatePolicy(sourceGraphServiceClient, id, prefix);
+                    AppendToDetailsRichTextBlock($"Renamed Windows Quality Update Policy with ID {id} with prefix '{prefix}'.");
+                }
+                catch (Exception ex)
+                {
+                    AppendToDetailsRichTextBlock($"Error renaming Windows Quality Update Policy with ID {id}: {ex.Message}");
+                }
+            }
+        }
+
+        private async Task RenameWindowsQualityUpdateProfiles(List<string> profileIDs, string prefix)
+        {
+            foreach (var id in profileIDs)
+            {
+                try
+                {
+                    await RenameWindowsQualityUpdateProfile(sourceGraphServiceClient, id, prefix);
+                    AppendToDetailsRichTextBlock($"Renamed Windows Quality Update Profile with ID {id} with prefix '{prefix}'.");
+                }
+                catch (Exception ex)
+                {
+                    AppendToDetailsRichTextBlock($"Error renaming Windows Quality Update Profile with ID {id}: {ex.Message}");
                 }
             }
         }
