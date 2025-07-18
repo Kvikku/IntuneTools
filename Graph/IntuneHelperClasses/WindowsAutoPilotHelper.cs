@@ -324,5 +324,48 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 WriteToImportStatusFile("An error occurred while deleting Windows Autopilot profiles",LogType.Error);
             }
         }
+
+        public static async Task RenameWindowsAutoPilotProfile(GraphServiceClient graphServiceClient, string profileID, string newName)
+        {
+            try
+            {
+                if (graphServiceClient == null)
+                {
+                    throw new ArgumentNullException(nameof(graphServiceClient));
+                }
+
+                if (profileID == null)
+                {
+                    throw new InvalidOperationException("Profile ID cannot be null.");
+                }
+
+                if (string.IsNullOrWhiteSpace(newName))
+                {
+                    throw new InvalidOperationException("New name cannot be null or empty.");
+                }
+
+                // Look up the existing profile
+                var existingProfile = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].GetAsync();
+
+                if (existingProfile == null)
+                {
+                    throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
+                }
+
+                var name = FindPreFixInPolicyName(existingProfile.DisplayName, newName);
+
+                var profile = new WindowsAutopilotDeploymentProfile
+                {
+                    DisplayName = name,
+                };
+
+                await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].PatchAsync(profile);
+            }
+            catch (Exception ex)
+            {
+                WriteToImportStatusFile("An error occurred while renaming Windows Autopilot profiles", LogType.Warning);
+                WriteToImportStatusFile(ex.Message, LogType.Error);
+            }
+        }
     }
 }

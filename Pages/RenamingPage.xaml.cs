@@ -308,10 +308,26 @@ namespace IntuneTools.Pages
                     }
                 }
 
+                if (ContentList.Any(c => c.ContentType == "Windows AutoPilot Profile"))
+                {
+                    var windowsAutoPilotProfileIDs = GetWindowsAutoPilotProfileIDs();
+                    if (windowsAutoPilotProfileIDs.Count > 0)
+                    {
+                        await RenameWindowsAutoPilotProfiles(windowsAutoPilotProfileIDs, prefix);
+                    }
+                }
+
+                if (ContentList.Any(c => c.ContentType == "Windows Driver Update"))
+                {
+                    var windowsDriverUpdateIDs = GetWindowsDriverUpdateIDs();
+                    if (windowsDriverUpdateIDs.Count > 0)
+                    {
+                        await RenameWindowsDriverUpdates(windowsDriverUpdateIDs, prefix);
+                    }
+                }
+
                 //await RenameAssignmentFilters(contentIDs, newName);
                 //await RenameEntraGroups(contentIDs, newName);
-                //await RenameWindowsAutoPilotProfiles(contentIDs, newName);
-                //await RenameWindowsDriverUpdates(contentIDs, newName);
                 //await RenameWindowsFeatureUpdates(contentIDs, newName);
                 //await RenameWindowsQualityUpdatePolicies(contentIDs, newName);
                 //await RenameWindowsQualityUpdateProfiles(contentIDs, newName);
@@ -383,6 +399,38 @@ namespace IntuneTools.Pages
                 catch (Exception ex)
                 {
                     AppendToDetailsRichTextBlock($"Error renaming Proactive Remediation with ID {id}: {ex.Message}");
+                }
+            }
+        }
+
+        private async Task RenameWindowsAutoPilotProfiles(List<string> profileIDs, string prefix)
+        {
+            foreach (var id in profileIDs)
+            {
+                try
+                {
+                    await RenameWindowsAutoPilotProfile(sourceGraphServiceClient, id, prefix);
+                    AppendToDetailsRichTextBlock($"Renamed Windows AutoPilot Profile with ID {id} with prefix '{prefix}'.");
+                }
+                catch (Exception ex)
+                {
+                    AppendToDetailsRichTextBlock($"Error renaming Windows AutoPilot Profile with ID {id}: {ex.Message}");
+                }
+            }
+        }
+
+        private async Task RenameWindowsDriverUpdates(List<string> profileIDs, string prefix)
+        {
+            foreach (var id in profileIDs)
+            {
+                try
+                {
+                    await RenameDriverProfile(sourceGraphServiceClient, id, prefix);
+                    AppendToDetailsRichTextBlock($"Renamed Windows Driver Update with ID {id} with prefix '{prefix}'.");
+                }
+                catch (Exception ex)
+                {
+                    AppendToDetailsRichTextBlock($"Error renaming Windows Driver Update with ID {id}: {ex.Message}");
                 }
             }
         }
