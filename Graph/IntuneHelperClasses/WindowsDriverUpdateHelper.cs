@@ -320,6 +320,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 };
 
                 await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileID].PatchAsync(profile);
+                WriteToImportStatusFile($"Successfully renamed Windows Driver Update Profile from '{existingProfile.DisplayName}' to '{name}'");
             }
             catch (Exception ex)
             {

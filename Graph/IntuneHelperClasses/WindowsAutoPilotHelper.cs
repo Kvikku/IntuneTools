@@ -360,6 +360,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 };
 
                 await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].PatchAsync(profile);
+                WriteToImportStatusFile($"Renamed Windows Autopilot profile '{existingProfile.DisplayName}' to '{name}'", LogType.Info);
             }
             catch (Exception ex)
             {

@@ -248,6 +248,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 };
 
                 await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].PatchAsync(policy);
+                LogToImportStatusFile($"Renamed policy {policyID} to {name}");
             }
             catch (Exception ex)
             {

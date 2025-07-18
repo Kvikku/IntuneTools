@@ -286,6 +286,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 };
 
                 await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].PatchAsync(policy);
+                WriteToImportStatusFile($"Successfully renamed Windows Quality Update policy {policyID} to '{name}'");
             }
             catch (Exception ex)
             {

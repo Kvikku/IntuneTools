@@ -366,6 +366,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 policy.DisplayName = name;
 
                 await graphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyID].PatchAsync(policy);
+                LogToImportStatusFile($"Successfully renamed device compliance policy to '{name}'", Utilities.Variables.LogLevels.Info);
             }
             catch (Exception ex)
             {

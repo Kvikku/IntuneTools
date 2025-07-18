@@ -286,6 +286,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 };
 
                 await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileID].PatchAsync(profile);
+                WriteToImportStatusFile($"Renamed Windows Feature Update profile '{existingProfile.DisplayName}' to '{name}' (ID: {profileID})");
             }
             catch (Exception ex)
             {

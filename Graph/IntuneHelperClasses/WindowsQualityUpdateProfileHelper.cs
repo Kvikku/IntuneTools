@@ -265,6 +265,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 };
 
                 await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileID].PatchAsync(profile);
+                WriteToImportStatusFile($"Successfully renamed Windows Quality Update profile {profileID} to '{name}'");
             }
             catch (Exception ex)
             {

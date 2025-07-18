@@ -241,6 +241,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 };
 
                 await graphServiceClient.DeviceManagement.DeviceHealthScripts[scriptID].PatchAsync(script);
+                WriteToImportStatusFile($"Renamed Proactive remediation script {scriptID} to {name}");
             }
             catch (Exception ex)
             {

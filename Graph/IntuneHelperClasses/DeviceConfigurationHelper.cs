@@ -301,6 +301,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 policy.DisplayName = name;
 
                 await graphServiceClient.DeviceManagement.DeviceConfigurations[policyID].PatchAsync(policy);
+                WriteToImportStatusFile($"Successfully renamed device configuration policy {policyID} to {name}");
             }
             catch (Exception ex)
             {

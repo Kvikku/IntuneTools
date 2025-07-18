@@ -277,6 +277,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 script.DisplayName = name;
 
                 await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptID].PatchAsync(script);
+                WriteToImportStatusFile($"Renamed macOS shell script '{existingScript.DisplayName}' to '{name}' (ID: {scriptID})");
             }
             catch (Exception ex)
             {

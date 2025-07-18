@@ -240,6 +240,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 };
 
                 await graphServiceClient.DeviceManagement.AssignmentFilters[filterID].PatchAsync(filter);
+                WriteToImportStatusFile($"Successfully renamed filter with ID '{filterID}' to '{name}'.", LogType.Info);
             }
             catch (Exception ex)
             {

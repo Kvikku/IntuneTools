@@ -233,6 +233,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 };
 
                 await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].PatchAsync(script);
+                WriteToImportStatusFile($"Renamed Powershell script {scriptID} to {name}");
             }
             catch (Exception ex)
             {
