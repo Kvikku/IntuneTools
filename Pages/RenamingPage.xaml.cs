@@ -1222,7 +1222,7 @@ namespace IntuneTools.Pages
 
 
 
-        /// <summary
+        /// <summary>
         /// Button handlers
         /// </summary>
 
