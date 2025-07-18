@@ -207,7 +207,7 @@ namespace IntuneTools.Pages
 
             string prefix = $"{prefixSymbol[0]}{newName}{prefixSymbol[1]}";
 
-            // Find the corresponding names for the content IDs
+            // Find the corresponding names for the content ID
 
             List<string> contentNames = new List<string>();
             foreach (var id in contentIDs)
@@ -290,10 +290,26 @@ namespace IntuneTools.Pages
                     }
                 }
 
+                if (ContentList.Any(c => c.ContentType == "PowerShell Script"))
+                {
+                    var powerShellScriptIDs = GetPowerShellScriptIDs();
+                    if (powerShellScriptIDs.Count > 0)
+                    {
+                        await RenamePowerShellScripts(powerShellScriptIDs, prefix);
+                    }
+                }
+
+                if (ContentList.Any(c => c.ContentType == "Proactive Remediation"))
+                {
+                    var proactiveRemediationIDs = GetProactiveRemediationIDs();
+                    if (proactiveRemediationIDs.Count > 0)
+                    {
+                        await RenameProactiveRemediations(proactiveRemediationIDs, prefix);
+                    }
+                }
+
                 //await RenameAssignmentFilters(contentIDs, newName);
                 //await RenameEntraGroups(contentIDs, newName);
-                //await RenamePowerShellScripts(contentIDs, newName);
-                //await RenameProactiveRemediations(contentIDs, newName);
                 //await RenameWindowsAutoPilotProfiles(contentIDs, newName);
                 //await RenameWindowsDriverUpdates(contentIDs, newName);
                 //await RenameWindowsFeatureUpdates(contentIDs, newName);
@@ -335,6 +351,38 @@ namespace IntuneTools.Pages
                 catch (Exception ex)
                 {
                     AppendToDetailsRichTextBlock($"Error renaming MacOS Shell Script with ID {id}: {ex.Message}");
+                }
+            }
+        }
+
+        private async Task RenamePowerShellScripts(List<string> scriptIDs, string prefix)
+        {
+            foreach (var id in scriptIDs)
+            {
+                try
+                {
+                    await RenamePowerShellScript(sourceGraphServiceClient, id, prefix);
+                    AppendToDetailsRichTextBlock($"Renamed PowerShell Script with ID {id} with prefix '{prefix}'.");
+                }
+                catch (Exception ex)
+                {
+                    AppendToDetailsRichTextBlock($"Error renaming PowerShell Script with ID {id}: {ex.Message}");
+                }
+            }
+        }
+
+        private async Task RenameProactiveRemediations(List<string> scriptIDs, string prefix)
+        {
+            foreach (var id in scriptIDs)
+            {
+                try
+                {
+                    await RenameProactiveRemediation(sourceGraphServiceClient, id, prefix);
+                    AppendToDetailsRichTextBlock($"Renamed Proactive Remediation with ID {id} with prefix '{prefix}'.");
+                }
+                catch (Exception ex)
+                {
+                    AppendToDetailsRichTextBlock($"Error renaming Proactive Remediation with ID {id}: {ex.Message}");
                 }
             }
         }

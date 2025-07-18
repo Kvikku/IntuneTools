@@ -198,5 +198,47 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 WriteToImportStatusFile("An error occurred while deleting PowerShell scripts",LogType.Error);
             }
         }
+        public static async Task RenamePowerShellScript(GraphServiceClient graphServiceClient, string scriptID, string newName)
+        {
+            try
+            {
+                if (graphServiceClient == null)
+                {
+                    throw new ArgumentNullException(nameof(graphServiceClient));
+                }
+
+                if (scriptID == null)
+                {
+                    throw new InvalidOperationException("Script ID cannot be null.");
+                }
+
+                if (string.IsNullOrWhiteSpace(newName))
+                {
+                    throw new InvalidOperationException("New name cannot be null or empty.");
+                }
+
+                // Look up the existing script
+                var existingScript = await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].GetAsync();
+
+                if (existingScript == null)
+                {
+                    throw new InvalidOperationException($"Script with ID '{scriptID}' not found.");
+                }
+
+                var name = FindPreFixInPolicyName(existingScript.DisplayName, newName);
+
+                var script = new DeviceManagementScript
+                {
+                    DisplayName = name,
+                };
+
+                await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].PatchAsync(script);
+            }
+            catch (Exception ex)
+            {
+                WriteToImportStatusFile("An error occurred while renaming PowerShell scripts", LogType.Warning);
+                WriteToImportStatusFile(ex.Message, LogType.Error);
+            }
+        }
     }
 }
