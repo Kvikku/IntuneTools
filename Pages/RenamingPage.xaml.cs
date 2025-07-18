@@ -1297,7 +1297,7 @@ namespace IntuneTools.Pages
                 AppendToDetailsRichTextBlock("Please enter a new name.");
                 return;
             }
-            await RenameContent(selectedItems.Select(i => i.ContentId).ToList(), newName);
+            await RenameContent(selectedItems.Select(i => i.ContentId).Where(id => !string.IsNullOrEmpty(id)).ToList(), newName);
         }
     }
 
