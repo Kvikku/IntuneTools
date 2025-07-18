@@ -241,6 +241,7 @@ namespace IntuneTools.Utilities
                 Log("XamlRoot is null, cannot display ContentDialog.", LogLevels.Error);
                 // Consider a non-UI fallback if critical, e.g., writing to console or a log file.
                 Console.WriteLine($"Error: XamlRoot is null. Dialog Title: {title}, Message: {message}");
+
             }
         }
 
@@ -411,6 +412,35 @@ namespace IntuneTools.Utilities
             if (string.IsNullOrWhiteSpace(policyName))
             {
                 return newPolicyName;
+            }
+
+            // Trim leading/trailing whitespace from the policy name.
+            policyName = policyName.Trim();
+
+            // Clean up double brackets like [[...]] or ((...)) or {{...}}
+            if (policyName.StartsWith("[[") && policyName.Contains("]]"))
+            {
+                int doubleBracketClosingIndex = policyName.IndexOf("]]");
+                if (doubleBracketClosingIndex > 1)
+                {
+                    policyName = policyName.Remove(doubleBracketClosingIndex, 1).Remove(0, 1);
+                }
+            }
+            else if (policyName.StartsWith("((") && policyName.Contains("))"))
+            {
+                int doubleBracketClosingIndex = policyName.IndexOf("))");
+                if (doubleBracketClosingIndex > 1)
+                {
+                    policyName = policyName.Remove(doubleBracketClosingIndex, 1).Remove(0, 1);
+                }
+            }
+            else if (policyName.StartsWith("{{") && policyName.Contains("}}"))
+            {
+                int doubleBracketClosingIndex = policyName.IndexOf("}}");
+                if (doubleBracketClosingIndex > 1)
+                {
+                    policyName = policyName.Remove(doubleBracketClosingIndex, 1).Remove(0, 1);
+                }
             }
 
             char firstChar = policyName[0];
