@@ -35,6 +35,8 @@
                 <Button x:Name="DestinationLoginButton" Content="Login" Width="100" HorizontalAlignment="Center" Click="DestinationLoginButton_Click"/>
                 <Image x:Name="DestinationLoginStatusImage" Width="24" Height="24" Source="/Assets/RedCross.png"/>
             </StackPanel>
+
+            <Button Content="Open Log File Location" HorizontalAlignment="Center" Margin="0,20,0,0" Click="OpenLogFileLocation_Click"/>
         </StackPanel>
     </Grid>
 </Page>
