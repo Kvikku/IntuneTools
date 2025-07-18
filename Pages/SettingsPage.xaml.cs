@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml; // Added for RoutedEventArgs
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation; // Added for NavigationEventArgs
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -181,6 +182,24 @@ namespace IntuneTools.Pages
             {
                 Log("Failed to authenticate to destination tenant.");
                 UpdateImage(DestinationLoginStatusImage, "RedCross.png");
+            }
+        }
+
+        private void OpenLogFileLocation_Click(object sender, RoutedEventArgs e)
+        {
+            if (Directory.Exists(Variables.logFileFolder))
+            {
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = "explorer.exe",
+                    Arguments = Variables.logFileFolder,
+                    UseShellExecute = true
+                };
+                Process.Start(startInfo);
+            }
+            else
+            {
+                Log($"Invalid log file folder path: {Variables.logFileFolder}");
             }
         }
     }

@@ -26,13 +26,6 @@
 
             <!-- Title -->
             <TextBlock Text="IntuneTools" VerticalAlignment="Center" Margin="10,0,0,0" FontWeight="Bold" Foreground="White" />
-
-            <!-- Window Control Buttons -->
-            <StackPanel Orientation="Horizontal" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0">
-                <Button Content="_" Width="32" Height="32" Click="MinimizeWindow_Click" Background="Transparent" BorderBrush="Transparent" Foreground="White" />
-                <Button Content="☐" Width="32" Height="32" Click="MaximizeWindow_Click" Background="Transparent" BorderBrush="Transparent" Foreground="White" />
-                <Button Content="X" Width="32" Height="32" Click="CloseWindow_Click" Background="Transparent" BorderBrush="Transparent" Foreground="White" />
-            </StackPanel>
         </Grid>
 
         <!-- NavigationView -->

@@ -240,5 +240,50 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 WriteToImportStatusFile("An error occurred while deleting macOS shell script",LogType.Error);
             }
         }
+        public static async Task RenameMacOSShellScript(GraphServiceClient graphServiceClient, string scriptID, string newName)
+        {
+            try
+            {
+                if (graphServiceClient == null)
+                {
+                    throw new ArgumentNullException(nameof(graphServiceClient));
+                }
+
+                if (scriptID == null)
+                {
+                    throw new InvalidOperationException("Script ID cannot be null.");
+                }
+
+                if (string.IsNullOrWhiteSpace(newName))
+                {
+                    throw new InvalidOperationException("New name cannot be null or empty.");
+                }
+
+                // Look up the existing script
+                var existingScript = await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptID].GetAsync();
+
+                if (existingScript == null)
+                {
+                    throw new InvalidOperationException($"Script with ID '{scriptID}' not found.");
+                }
+
+                var name = FindPreFixInPolicyName(existingScript.DisplayName, newName);
+
+                // Create an instance of the specific script type using reflection
+                var scriptType = existingScript.GetType();
+                var script = (DeviceShellScript)Activator.CreateInstance(scriptType);
+
+                // Set the DisplayName on the new instance
+                script.DisplayName = name;
+
+                await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptID].PatchAsync(script);
+                WriteToImportStatusFile($"Renamed macOS shell script '{existingScript.DisplayName}' to '{name}' (ID: {scriptID})");
+            }
+            catch (Exception ex)
+            {
+                WriteToImportStatusFile("An error occurred while renaming macOS shell scripts", LogType.Warning);
+                WriteToImportStatusFile(ex.Message, LogType.Error);
+            }
+        }
     }
 }

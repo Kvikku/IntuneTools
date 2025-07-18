@@ -251,5 +251,48 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
+        public static async Task RenameWindowsQualityUpdatePolicy(GraphServiceClient graphServiceClient, string policyID, string newName)
+        {
+            try
+            {
+                if (graphServiceClient == null)
+                {
+                    throw new ArgumentNullException(nameof(graphServiceClient));
+                }
+
+                if (policyID == null)
+                {
+                    throw new InvalidOperationException("Policy ID cannot be null.");
+                }
+
+                if (string.IsNullOrWhiteSpace(newName))
+                {
+                    throw new InvalidOperationException("New name cannot be null or empty.");
+                }
+
+                // Look up the existing policy
+                var existingPolicy = await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].GetAsync();
+
+                if (existingPolicy == null)
+                {
+                    throw new InvalidOperationException($"Policy with ID '{policyID}' not found.");
+                }
+
+                var name = FindPreFixInPolicyName(existingPolicy.DisplayName, newName);
+
+                var policy = new WindowsQualityUpdatePolicy
+                {
+                    DisplayName = name,
+                };
+
+                await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].PatchAsync(policy);
+                WriteToImportStatusFile($"Successfully renamed Windows Quality Update policy {policyID} to '{name}'");
+            }
+            catch (Exception ex)
+            {
+                WriteToImportStatusFile("An error occurred while renaming Windows Quality Update policy", LogType.Warning);
+                WriteToImportStatusFile(ex.Message, LogType.Error);
+            }
+        }
     }
 }

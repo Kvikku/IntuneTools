@@ -54,11 +54,11 @@ namespace IntuneTools
                 appWindow.TitleBar.ExtendsContentIntoTitleBar = true;
                 appWindow.TitleBar.ButtonBackgroundColor = Microsoft.UI.Colors.Transparent;
                 appWindow.TitleBar.ButtonInactiveBackgroundColor = Microsoft.UI.Colors.Transparent;
-                appWindow.TitleBar.ButtonForegroundColor = Microsoft.UI.Colors.Transparent;
-                appWindow.TitleBar.ButtonHoverBackgroundColor = Microsoft.UI.Colors.Transparent;
-                appWindow.TitleBar.ButtonHoverForegroundColor = Microsoft.UI.Colors.Transparent;
-                appWindow.TitleBar.ButtonPressedBackgroundColor = Microsoft.UI.Colors.Transparent;
-                appWindow.TitleBar.ButtonPressedForegroundColor = Microsoft.UI.Colors.Transparent;
+                appWindow.TitleBar.ButtonForegroundColor = Microsoft.UI.Colors.White;
+                appWindow.TitleBar.ButtonHoverBackgroundColor = Microsoft.UI.Colors.DarkGray;
+                appWindow.TitleBar.ButtonHoverForegroundColor = Microsoft.UI.Colors.White;
+                appWindow.TitleBar.ButtonPressedBackgroundColor = Microsoft.UI.Colors.Gray;
+                appWindow.TitleBar.ButtonPressedForegroundColor = Microsoft.UI.Colors.White;
             }
 
             // Minimize/close the NavigationView pane by default
@@ -71,34 +71,6 @@ namespace IntuneTools
         private void myButton_Click(object sender, RoutedEventArgs e)
         {
             //myButton.Content = "Clicked";
-        }
-
-        private void MinimizeWindow_Click(object sender, RoutedEventArgs e)
-        {
-            if (appWindow.Presenter is OverlappedPresenter presenter)
-            {
-                presenter.Minimize();
-            }
-        }
-
-        private void MaximizeWindow_Click(object sender, RoutedEventArgs e)
-        {
-            if (appWindow.Presenter is OverlappedPresenter presenter)
-            {
-                if (presenter.State == OverlappedPresenterState.Maximized)
-                {
-                    presenter.Restore();
-                }
-                else
-                {
-                    presenter.Maximize();
-                }
-            }
-        }
-
-        private void CloseWindow_Click(object sender, RoutedEventArgs e)
-        {
-            appWindow.Destroy();
         }
 
         private void NavView_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)

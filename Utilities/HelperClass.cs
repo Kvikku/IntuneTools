@@ -241,6 +241,7 @@ namespace IntuneTools.Utilities
                 Log("XamlRoot is null, cannot display ContentDialog.", LogLevels.Error);
                 // Consider a non-UI fallback if critical, e.g., writing to console or a log file.
                 Console.WriteLine($"Error: XamlRoot is null. Dialog Title: {title}, Message: {message}");
+
             }
         }
 
@@ -405,6 +406,69 @@ namespace IntuneTools.Utilities
             {
                 hideLoading();
             }
+        }
+        public static string FindPreFixInPolicyName(string policyName, string newPolicyName)
+        {
+            if (string.IsNullOrWhiteSpace(policyName))
+            {
+                return newPolicyName;
+            }
+
+            // Trim leading/trailing whitespace from the policy name.
+            policyName = policyName.Trim();
+
+            // Clean up double brackets like [[...]] or ((...)) or {{...}}
+            if (policyName.StartsWith("[[") && policyName.Contains("]]"))
+            {
+                int doubleBracketClosingIndex = policyName.IndexOf("]]");
+                if (doubleBracketClosingIndex > 1)
+                {
+                    policyName = policyName.Remove(doubleBracketClosingIndex, 1).Remove(0, 1);
+                }
+            }
+            else if (policyName.StartsWith("((") && policyName.Contains("))"))
+            {
+                int doubleBracketClosingIndex = policyName.IndexOf("))");
+                if (doubleBracketClosingIndex > 1)
+                {
+                    policyName = policyName.Remove(doubleBracketClosingIndex, 1).Remove(0, 1);
+                }
+            }
+            else if (policyName.StartsWith("{{") && policyName.Contains("}}"))
+            {
+                int doubleBracketClosingIndex = policyName.IndexOf("}}");
+                if (doubleBracketClosingIndex > 1)
+                {
+                    policyName = policyName.Remove(doubleBracketClosingIndex, 1).Remove(0, 1);
+                }
+            }
+
+            char firstChar = policyName[0];
+            char expectedClosingChar;
+
+            switch (firstChar)
+            {
+                case '(': expectedClosingChar = ')'; break;
+                case '[': expectedClosingChar = ']'; break;
+                case '{': expectedClosingChar = '}'; break;
+                default:
+                    // The policy name does not start with a recognized prefix bracket.
+                    // Prepend the new prefix to the original name, ensuring a single space
+                    return newPolicyName + " " + policyName.TrimStart();
+            }
+
+            int closingIndex = policyName.IndexOf(expectedClosingChar);
+
+            if (closingIndex > 0)
+            {
+                // Extract the rest of the string after the prefix.
+                string restOfName = policyName.Substring(closingIndex + 1).TrimStart();
+                // Return the new name combined with the rest of the original name, ensuring a single space
+                return newPolicyName + " " + restOfName;
+            }
+
+            // If no valid closing bracket is found, prepend the new prefix, ensuring a single space
+            return newPolicyName + " " + policyName.TrimStart();
         }
     }
 }

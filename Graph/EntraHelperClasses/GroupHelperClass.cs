@@ -247,5 +247,47 @@ namespace IntuneTools.Graph.EntraHelperClasses
                 WriteToImportStatusFile("An error occurred while deleting a security group",LogType.Error);
             }
         }
+        public static async Task RenameGroup(GraphServiceClient graphServiceClient, string groupID, string newName)
+        {
+            try
+            {
+                if (graphServiceClient == null)
+                {
+                    throw new ArgumentNullException(nameof(graphServiceClient));
+                }
+
+                if (groupID == null)
+                {
+                    throw new InvalidOperationException("Group ID cannot be null.");
+                }
+
+                if (string.IsNullOrWhiteSpace(newName))
+                {
+                    throw new InvalidOperationException("New name cannot be null or empty.");
+                }
+
+                // Look up the existing group
+                var existingGroup = await graphServiceClient.Groups[groupID].GetAsync();
+
+                if (existingGroup == null)
+                {
+                    throw new InvalidOperationException($"Group with ID '{groupID}' not found.");
+                }
+
+                var name = FindPreFixInPolicyName(existingGroup.DisplayName, newName);
+
+                var group = new Group
+                {
+                    DisplayName = name,
+                };
+
+                await graphServiceClient.Groups[groupID].PatchAsync(group);
+            }
+            catch (Exception ex)
+            {
+                WriteToImportStatusFile("An error occurred while renaming group", LogType.Warning);
+                WriteToImportStatusFile(ex.Message, LogType.Error);
+            }
+        }
     }
 }

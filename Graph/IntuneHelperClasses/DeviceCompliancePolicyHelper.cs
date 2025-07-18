@@ -329,6 +329,51 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
+        public static async Task RenameDeviceCompliancePolicy(GraphServiceClient graphServiceClient, string policyID, string newName)
+        {
+            try
+            {
+                if (graphServiceClient == null)
+                {
+                    throw new ArgumentNullException(nameof(graphServiceClient));
+                }
+
+                if (policyID == null)
+                {
+                    throw new InvalidOperationException("Policy ID cannot be null.");
+                }
+
+                if (string.IsNullOrWhiteSpace(newName))
+                {
+                    throw new InvalidOperationException("New name cannot be null or empty.");
+                }
+
+                // Look up the existing policy to determine its specific type
+                var existingPolicy = await graphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyID].GetAsync();
+
+                if (existingPolicy == null)
+                {
+                    throw new InvalidOperationException($"Policy with ID '{policyID}' not found.");
+                }
+
+                var name = FindPreFixInPolicyName(existingPolicy.DisplayName, newName);
+
+                // Create an instance of the specific policy type using reflection
+                var policyType = existingPolicy.GetType();
+                var policy = (DeviceCompliancePolicy)Activator.CreateInstance(policyType);
+                
+                // Set the DisplayName on the new instance
+                policy.DisplayName = name;
+
+                await graphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyID].PatchAsync(policy);
+                LogToImportStatusFile($"Successfully renamed device compliance policy to '{name}'", Utilities.Variables.LogLevels.Info);
+            }
+            catch (Exception ex)
+            {
+                LogToImportStatusFile("An error occurred while renaming device compliance policies", Utilities.Variables.LogLevels.Warning);
+                LogToImportStatusFile(ex.Message, Utilities.Variables.LogLevels.Error);
+            }
+        }
     }
 
 }

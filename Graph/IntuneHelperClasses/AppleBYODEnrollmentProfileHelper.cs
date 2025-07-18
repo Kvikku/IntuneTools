@@ -251,5 +251,50 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 WriteToImportStatusFile("An error occurred while deleting Apple BYOD Enrollment profiles",LogType.Error);
             }
         }
+        public static async Task RenameAppleBYODEnrollmentProfile(GraphServiceClient graphServiceClient, string profileID, string newName)
+        {
+            try
+            {
+                if (graphServiceClient == null)
+                {
+                    throw new ArgumentNullException(nameof(graphServiceClient));
+                }
+
+                if (profileID == null)
+                {
+                    throw new InvalidOperationException("Profile ID cannot be null.");
+                }
+
+                if (string.IsNullOrWhiteSpace(newName))
+                {
+                    throw new InvalidOperationException("New name cannot be null or empty.");
+                }
+
+                // Look up the existing profile
+                var existingProfile = await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileID].GetAsync();
+
+                if (existingProfile == null)
+                {
+                    throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
+                }
+
+                var name = FindPreFixInPolicyName(existingProfile.DisplayName, newName);
+
+                // Create an instance of the specific profile type using reflection
+                var profileType = existingProfile.GetType();
+                var profile = (AppleUserInitiatedEnrollmentProfile)Activator.CreateInstance(profileType);
+
+                // Set the DisplayName on the new instance
+                profile.DisplayName = name;
+
+                await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileID].PatchAsync(profile);
+                WriteToImportStatusFile($"Successfully renamed Apple BYOD Enrollment profile with ID {profileID} to '{name}'.");
+            }
+            catch (Exception ex)
+            {
+                WriteToImportStatusFile("An error occurred while renaming Apple BYOD Enrollment profiles", LogType.Warning);
+                WriteToImportStatusFile(ex.Message, LogType.Error);
+            }
+        }
     }
 }

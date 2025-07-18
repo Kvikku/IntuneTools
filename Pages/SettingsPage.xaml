@@ -13,7 +13,7 @@
             <TextBlock Text="Settings Page" HorizontalAlignment="Center" FontSize="48" Margin="0,0,0,20"/>
             
             <TextBlock Text="Source Tenant" HorizontalAlignment="Left" FontSize="18"/>
-            <TextBlock Text="Source tenant will be used for Intune Cleanup and Assignment" HorizontalAlignment="Left" FontSize="10"/>
+            <TextBlock Text="Will be used for Cleanup, Renaming and Assignment" HorizontalAlignment="Left" FontSize="10"/>
             <ComboBox x:Name="SourceEnvironmentComboBox" PlaceholderText="Select Environment" Width="300" Margin="0,0,0,5" SelectionChanged="SourceEnvironmentComboBox_SelectionChanged">
                 <!-- Items will be populated from code-behind -->
             </ComboBox>
@@ -25,7 +25,7 @@
             </StackPanel>
 
             <TextBlock Text="Destination Tenant" HorizontalAlignment="Left" FontSize="18"/>
-            <TextBlock Text="Destination tenant is only used for importing content" HorizontalAlignment="Left" FontSize="10"/>
+            <TextBlock Text="Only used for importing content" HorizontalAlignment="Left" FontSize="10"/>
             <ComboBox x:Name="DestinationEnvironmentComboBox" PlaceholderText="Select Environment" Width="300" Margin="0,0,0,5" SelectionChanged="DestinationEnvironmentComboBox_SelectionChanged">
                 <!-- Items will be populated from code-behind -->
             </ComboBox>
@@ -35,6 +35,8 @@
                 <Button x:Name="DestinationLoginButton" Content="Login" Width="100" HorizontalAlignment="Center" Click="DestinationLoginButton_Click"/>
                 <Image x:Name="DestinationLoginStatusImage" Width="24" Height="24" Source="/Assets/RedCross.png"/>
             </StackPanel>
+
+            <Button Content="Open Log File Location" HorizontalAlignment="Center" Margin="0,20,0,0" Click="OpenLogFileLocation_Click"/>
         </StackPanel>
     </Grid>
 </Page>
