@@ -26,10 +26,6 @@
 
             <!-- Title -->
             <TextBlock Text="IntuneTools" VerticalAlignment="Center" Margin="10,0,0,0" FontWeight="Bold" Foreground="White" />
-
-            <!-- Window Control Buttons -->
-            <StackPanel x:Name="WindowButtons" Orientation="Horizontal" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0">
-            </StackPanel>
         </Grid>
 
         <!-- NavigationView -->
