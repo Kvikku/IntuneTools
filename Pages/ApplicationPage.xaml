@@ -16,12 +16,18 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Page Title -->
-        <TextBlock Grid.Row="0" Text="Intune Assignments" 
-                   HorizontalAlignment="Left" 
-                   FontSize="38" 
-                   FontWeight="Bold"
-                   Margin="0,0,0,20"/>
+        <!-- Page Title and Info -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,20">
+            <TextBlock Text="Intune Assignments" 
+                       HorizontalAlignment="Left" 
+                       FontSize="38" 
+                       FontWeight="Bold"/>
+            <TextBlock Text="⚠️ Work in Progress - Bulk assignment feature coming soon" 
+                       Foreground="{ThemeResource SystemAccentColor}"
+                       FontStyle="Italic"
+                       FontSize="16"
+                       Margin="0,8,0,0"/>
+        </StackPanel>
         
         <controls:DataGrid x:Name="AppDataGrid" Grid.Row="1" AutoGenerateColumns="False" Margin="10">
             <controls:DataGrid.Columns>
