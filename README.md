@@ -24,3 +24,10 @@ And before you ask - No, we don't talk about policy sets in Intune. Policy sets 
 
 
 __NOTE - This application is a work in progress. Errors, crashes and unexpected behaviour can occur__
+
+
+# Features in development
+
+- Bulk assignments
+- Delete duplicate policies/apps
+- Bulk add objects to groups (community request :D )
