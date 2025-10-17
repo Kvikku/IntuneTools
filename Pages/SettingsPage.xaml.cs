@@ -202,7 +202,7 @@ namespace IntuneTools.Pages
                     Arguments = Variables.logFileFolder,
                     UseShellExecute = true
                 };
-                Process.Start(startInfo);
+                System.Diagnostics.Process.Start(startInfo);
             }
             else
             {

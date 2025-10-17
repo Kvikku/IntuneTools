@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using MsalPrompt = Microsoft.Identity.Client.Prompt;
 
 using static IntuneTools.Utilities.HelperClass;
 
@@ -50,7 +51,7 @@ namespace IntuneTools.Graph
                 if (!accounts.Any())
                 {
                     result = await app.AcquireTokenInteractive(destinationScope)
-                        .WithPrompt(Prompt.SelectAccount)
+                        .WithPrompt(MsalPrompt.SelectAccount)
                         .WithExtraScopesToConsent(destinationScope) // Add this line to consent to all scopes
                         .ExecuteAsync();
                 }
@@ -64,7 +65,7 @@ namespace IntuneTools.Graph
                     catch (MsalUiRequiredException)
                     {
                         result = await app.AcquireTokenInteractive(destinationScope)
-                            .WithPrompt(Prompt.SelectAccount)
+                            .WithPrompt(MsalPrompt.SelectAccount)
                             .WithExtraScopesToConsent(destinationScope) // Add this line to consent to all scopes
                             .ExecuteAsync();
                     }
@@ -119,8 +120,8 @@ namespace IntuneTools.Graph
                         try
                         {
                             result = await app.AcquireTokenInteractive(destinationScope)
-                            .WithPrompt(Prompt.SelectAccount)
-                            .ExecuteAsync();
+                                .WithPrompt(MsalPrompt.SelectAccount)
+                                .ExecuteAsync();
                         }
                         catch (Microsoft.Identity.Client.MsalServiceException me)
                         {
