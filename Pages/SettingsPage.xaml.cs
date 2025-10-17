@@ -10,9 +10,11 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using static IntuneTools.Graph.DestinationTenantGraphClient;
+using static IntuneTools.Graph.DestinationUserAuthentication;
 using static IntuneTools.Utilities.HelperClass;
 using static IntuneTools.Utilities.SourceTenantGraphClient;
 using static IntuneTools.Utilities.Variables;
+using static IntuneTools.Graph.UserAuthentication;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -131,20 +133,23 @@ namespace IntuneTools.Pages
 
         private async Task AuthenticateToSourceTenant()
         {
-            SourceTenantGraphClient.sourceClientID = SourceClientIdTextBox.Text;
-            SourceTenantGraphClient.sourceTenantID = SourceTenantIdTextBox.Text;
-            SourceTenantGraphClient.sourceAccessToken = null;
-            SourceTenantGraphClient.sourceAuthority = $"https://login.microsoftonline.com/{SourceTenantGraphClient.sourceTenantID}";
-            var client = await SourceTenantGraphClient.GetSourceGraphClient();
+            //SourceTenantGraphClient.sourceClientID = SourceClientIdTextBox.Text;
+            //SourceTenantGraphClient.sourceTenantID = SourceTenantIdTextBox.Text;
+            //SourceTenantGraphClient.sourceAccessToken = null;
+            //SourceTenantGraphClient.sourceAuthority = $"https://login.microsoftonline.com/{SourceTenantGraphClient.sourceTenantID}";
 
-            if (client != null)
+            var Client = await UserAuthentication.GetGraphClientAsync();
+
+            //var client = await SourceTenantGraphClient.GetSourceGraphClient();
+
+            if (Client != null)
             {
-                sourceGraphServiceClient = client;
-                sourceTenantName = await GetAzureTenantName(client);
+                sourceGraphServiceClient = Client;
+                sourceTenantName = await GetAzureTenantName(Client);
                 Log($"Source Tenant Name: {sourceTenantName}");
                 UpdateImage(SourceLoginStatusImage, "GreenCheck.png");
-                Variables.sourceClientID = SourceClientIdTextBox.Text;
-                Variables.sourceTenantID = SourceTenantIdTextBox.Text;
+                //Variables.sourceClientID = SourceClientIdTextBox.Text;
+                //Variables.sourceTenantID = SourceTenantIdTextBox.Text;
             }
             else
             {
@@ -162,11 +167,13 @@ namespace IntuneTools.Pages
 
         private async Task AuthenticateToDestinationTenant()
         {
-            DestinationTenantGraphClient.destinationClientID = DestinationClientIdTextBox.Text;
-            DestinationTenantGraphClient.destinationTenantID = DestinationTenantIdTextBox.Text;
-            DestinationTenantGraphClient.destinationAccessToken = null;
-            DestinationTenantGraphClient.destinationAuthority = $"https://login.microsoftonline.com/{DestinationTenantGraphClient.destinationTenantID}";
-            var client = await DestinationTenantGraphClient.GetDestinationGraphClient();
+            //DestinationTenantGraphClient.destinationClientID = DestinationClientIdTextBox.Text;
+            //DestinationTenantGraphClient.destinationTenantID = DestinationTenantIdTextBox.Text;
+            //DestinationTenantGraphClient.destinationAccessToken = null;
+            //DestinationTenantGraphClient.destinationAuthority = $"https://login.microsoftonline.com/{DestinationTenantGraphClient.destinationTenantID}";
+            //var client = await DestinationTenantGraphClient.GetDestinationGraphClient();
+
+            var client = await DestinationUserAuthentication.GetGraphClientAsync();
 
             if (client != null)
             {
@@ -174,8 +181,8 @@ namespace IntuneTools.Pages
                 destinationTenantName = await GetAzureTenantName(client);
                 Log($"Destination Tenant Name: {destinationTenantName}");
                 UpdateImage(DestinationLoginStatusImage, "GreenCheck.png");
-                Variables.destinationClientID = DestinationClientIdTextBox.Text;
-                Variables.destinationTenantID = DestinationTenantIdTextBox.Text;
+                //Variables.destinationClientID = DestinationClientIdTextBox.Text;
+                //Variables.destinationTenantID = DestinationTenantIdTextBox.Text;
 
             }
             else
