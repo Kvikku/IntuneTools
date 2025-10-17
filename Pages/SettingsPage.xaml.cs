@@ -37,48 +37,48 @@ namespace IntuneTools.Pages
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            LoadTenantSettings();
+            //LoadTenantSettings();
         }
 
-        private void LoadTenantSettings()
-        {
-            _sourceTenantSettings = LoadSettingsFromFile(Variables.sourceTenantSettingsFileFullPath);
-            _destinationTenantSettings = LoadSettingsFromFile(Variables.destinationTenantSettingsFileFullPath);
+        //private void LoadTenantSettings()
+        //{
+        //    _sourceTenantSettings = LoadSettingsFromFile(Variables.sourceTenantSettingsFileFullPath);
+        //    _destinationTenantSettings = LoadSettingsFromFile(Variables.destinationTenantSettingsFileFullPath);
 
-            PopulateComboBox(SourceEnvironmentComboBox, _sourceTenantSettings);
-            PopulateComboBox(DestinationEnvironmentComboBox, _destinationTenantSettings);
+        //    PopulateComboBox(SourceEnvironmentComboBox, _sourceTenantSettings);
+        //    PopulateComboBox(DestinationEnvironmentComboBox, _destinationTenantSettings);
 
-            // Populate the login information for source and destination tenants
+        //    // Populate the login information for source and destination tenants
 
-            if (_sourceTenantSettings != null && _sourceTenantSettings.Count > 0)
-            {
-                SourceEnvironmentComboBox.SelectedIndex = 0; // Select the first item by default
-            }
+        //    if (_sourceTenantSettings != null && _sourceTenantSettings.Count > 0)
+        //    {
+        //        SourceEnvironmentComboBox.SelectedIndex = 0; // Select the first item by default
+        //    }
 
-            if (sourceGraphServiceClient != null)
-            {
-                UpdateImage(SourceLoginStatusImage, "GreenCheck.png");
-            }
-            else
-            {
-                UpdateImage(SourceLoginStatusImage, "RedCross.png");
-            }
+        //    if (sourceGraphServiceClient != null)
+        //    {
+        //        UpdateImage(SourceLoginStatusImage, "GreenCheck.png");
+        //    }
+        //    else
+        //    {
+        //        UpdateImage(SourceLoginStatusImage, "RedCross.png");
+        //    }
 
-            if (_destinationTenantSettings != null && _destinationTenantSettings.Count > 0)
-            {
-                DestinationEnvironmentComboBox.SelectedIndex = 0; // Select the first item by default
-            }
+        //    if (_destinationTenantSettings != null && _destinationTenantSettings.Count > 0)
+        //    {
+        //        DestinationEnvironmentComboBox.SelectedIndex = 0; // Select the first item by default
+        //    }
 
-            if (destinationGraphServiceClient != null)
-            {
-                UpdateImage(DestinationLoginStatusImage, "GreenCheck.png");
-            }
-            else
-            {
-                UpdateImage(DestinationLoginStatusImage, "RedCross.png");
-            }
+        //    if (destinationGraphServiceClient != null)
+        //    {
+        //        UpdateImage(DestinationLoginStatusImage, "GreenCheck.png");
+        //    }
+        //    else
+        //    {
+        //        UpdateImage(DestinationLoginStatusImage, "RedCross.png");
+        //    }
 
-        }
+        //}
 
         private Dictionary<string, Dictionary<string, string>>? LoadSettingsFromFile(string filePath)
         {
@@ -101,15 +101,15 @@ namespace IntuneTools.Pages
             }
         }
 
-        private void SourceEnvironmentComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            UpdateTenantFields(SourceEnvironmentComboBox, _sourceTenantSettings, SourceTenantIdTextBox, SourceClientIdTextBox);
-        }
+        //private void SourceEnvironmentComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        //{
+        //    UpdateTenantFields(SourceEnvironmentComboBox, _sourceTenantSettings, SourceTenantIdTextBox, SourceClientIdTextBox);
+        //}
 
-        private void DestinationEnvironmentComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            UpdateTenantFields(DestinationEnvironmentComboBox, _destinationTenantSettings, DestinationTenantIdTextBox, DestinationClientIdTextBox);
-        }
+        //private void DestinationEnvironmentComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        //{
+        //    UpdateTenantFields(DestinationEnvironmentComboBox, _destinationTenantSettings, DestinationTenantIdTextBox, DestinationClientIdTextBox);
+        //}
 
         private void UpdateTenantFields(ComboBox comboBox, Dictionary<string, Dictionary<string, string>>? settings, TextBox tenantIdTextBox, TextBox clientIdTextBox)
         {
