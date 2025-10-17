@@ -42,7 +42,7 @@ public static class SourceUserAuthentication
     private static IPublicClientApplication? _pca;
     private static MsalAccessTokenProvider? _tokenProvider;
     private static BaseBearerTokenAuthenticationProvider? _authProvider;
-    private static GraphServiceClient? _graphClient;
+    public static GraphServiceClient? sourceGraphServiceClient;
 
     public static IAccount? SignedInAccount { get; private set; }
     public static string? TenantId { get; private set; }
@@ -87,10 +87,10 @@ public static class SourceUserAuthentication
 
             _tokenProvider = new MsalAccessTokenProvider(_pca, scopes);
             _authProvider = new BaseBearerTokenAuthenticationProvider(_tokenProvider);
-            _graphClient = new GraphServiceClient(_authProvider);
+            sourceGraphServiceClient = new GraphServiceClient(_authProvider);
         }
 
-        return _graphClient;
+        return sourceGraphServiceClient;
     }
 
     public static async Task<string> GetAccessTokenAsync(string[] scopes = null)

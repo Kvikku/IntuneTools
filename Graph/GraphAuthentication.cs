@@ -105,10 +105,10 @@ namespace IntuneTools.Graph
                     try
                     {
                         result = await app.AcquireTokenInteractive(newScope)
-    .WithPrompt(MsalPrompt.SelectAccount)
-    //.WithUseEmbeddedWebView(true)
-    //.WithEmbeddedWebViewOptions(new EmbeddedWebViewOptions() { Title = "Sign in to your account" })
-    .ExecuteAsync();
+                        .WithPrompt(MsalPrompt.SelectAccount)
+                        //.WithUseEmbeddedWebView(true)
+                        //.WithEmbeddedWebViewOptions(new EmbeddedWebViewOptions() { Title = "Sign in to your account" })
+                        .ExecuteAsync();
                     }
                     catch (Microsoft.Identity.Client.MsalServiceException me)
                     {

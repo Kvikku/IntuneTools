@@ -9,10 +9,8 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using static IntuneTools.Graph.DestinationTenantGraphClient;
 using static IntuneTools.Graph.DestinationUserAuthentication;
 using static IntuneTools.Utilities.HelperClass;
-using static IntuneTools.Utilities.SourceTenantGraphClient;
 using static IntuneTools.Utilities.Variables;
 using static IntuneTools.Graph.SourceUserAuthentication;
 
