@@ -14,7 +14,7 @@ using static IntuneTools.Graph.DestinationUserAuthentication;
 using static IntuneTools.Utilities.HelperClass;
 using static IntuneTools.Utilities.SourceTenantGraphClient;
 using static IntuneTools.Utilities.Variables;
-using static IntuneTools.Graph.UserAuthentication;
+using static IntuneTools.Graph.SourceUserAuthentication;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -138,7 +138,7 @@ namespace IntuneTools.Pages
             //SourceTenantGraphClient.sourceAccessToken = null;
             //SourceTenantGraphClient.sourceAuthority = $"https://login.microsoftonline.com/{SourceTenantGraphClient.sourceTenantID}";
 
-            var Client = await UserAuthentication.GetGraphClientAsync();
+            var Client = await SourceUserAuthentication.GetGraphClientAsync();
 
             //var client = await SourceTenantGraphClient.GetSourceGraphClient();
 

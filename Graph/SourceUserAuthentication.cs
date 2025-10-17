@@ -13,7 +13,7 @@ namespace IntuneTools.Graph;
 /// Provides reusable user-interactive authentication against Microsoft Graph (delegated) using MSAL PublicClientApplication.
 /// Wraps acquisition logic and returns a GraphServiceClient configured with a token provider that silently refreshes tokens.
 /// </summary>
-public static class UserAuthentication
+public static class SourceUserAuthentication
 {
     // Delegated permission scopes (adjust as needed)
     public static readonly string[] DefaultScopes = new[]
