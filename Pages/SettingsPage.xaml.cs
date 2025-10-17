@@ -9,10 +9,10 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using static IntuneTools.Graph.DestinationTenantGraphClient;
+using static IntuneTools.Graph.DestinationUserAuthentication;
 using static IntuneTools.Utilities.HelperClass;
-using static IntuneTools.Utilities.SourceTenantGraphClient;
 using static IntuneTools.Utilities.Variables;
+using static IntuneTools.Graph.SourceUserAuthentication;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -35,48 +35,48 @@ namespace IntuneTools.Pages
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            LoadTenantSettings();
+            //LoadTenantSettings();
         }
 
-        private void LoadTenantSettings()
-        {
-            _sourceTenantSettings = LoadSettingsFromFile(Variables.sourceTenantSettingsFileFullPath);
-            _destinationTenantSettings = LoadSettingsFromFile(Variables.destinationTenantSettingsFileFullPath);
+        //private void LoadTenantSettings()
+        //{
+        //    _sourceTenantSettings = LoadSettingsFromFile(Variables.sourceTenantSettingsFileFullPath);
+        //    _destinationTenantSettings = LoadSettingsFromFile(Variables.destinationTenantSettingsFileFullPath);
 
-            PopulateComboBox(SourceEnvironmentComboBox, _sourceTenantSettings);
-            PopulateComboBox(DestinationEnvironmentComboBox, _destinationTenantSettings);
+        //    PopulateComboBox(SourceEnvironmentComboBox, _sourceTenantSettings);
+        //    PopulateComboBox(DestinationEnvironmentComboBox, _destinationTenantSettings);
 
-            // Populate the login information for source and destination tenants
+        //    // Populate the login information for source and destination tenants
 
-            if (_sourceTenantSettings != null && _sourceTenantSettings.Count > 0)
-            {
-                SourceEnvironmentComboBox.SelectedIndex = 0; // Select the first item by default
-            }
+        //    if (_sourceTenantSettings != null && _sourceTenantSettings.Count > 0)
+        //    {
+        //        SourceEnvironmentComboBox.SelectedIndex = 0; // Select the first item by default
+        //    }
 
-            if (sourceGraphServiceClient != null)
-            {
-                UpdateImage(SourceLoginStatusImage, "GreenCheck.png");
-            }
-            else
-            {
-                UpdateImage(SourceLoginStatusImage, "RedCross.png");
-            }
+        //    if (sourceGraphServiceClient != null)
+        //    {
+        //        UpdateImage(SourceLoginStatusImage, "GreenCheck.png");
+        //    }
+        //    else
+        //    {
+        //        UpdateImage(SourceLoginStatusImage, "RedCross.png");
+        //    }
 
-            if (_destinationTenantSettings != null && _destinationTenantSettings.Count > 0)
-            {
-                DestinationEnvironmentComboBox.SelectedIndex = 0; // Select the first item by default
-            }
+        //    if (_destinationTenantSettings != null && _destinationTenantSettings.Count > 0)
+        //    {
+        //        DestinationEnvironmentComboBox.SelectedIndex = 0; // Select the first item by default
+        //    }
 
-            if (destinationGraphServiceClient != null)
-            {
-                UpdateImage(DestinationLoginStatusImage, "GreenCheck.png");
-            }
-            else
-            {
-                UpdateImage(DestinationLoginStatusImage, "RedCross.png");
-            }
+        //    if (destinationGraphServiceClient != null)
+        //    {
+        //        UpdateImage(DestinationLoginStatusImage, "GreenCheck.png");
+        //    }
+        //    else
+        //    {
+        //        UpdateImage(DestinationLoginStatusImage, "RedCross.png");
+        //    }
 
-        }
+        //}
 
         private Dictionary<string, Dictionary<string, string>>? LoadSettingsFromFile(string filePath)
         {
@@ -99,15 +99,15 @@ namespace IntuneTools.Pages
             }
         }
 
-        private void SourceEnvironmentComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            UpdateTenantFields(SourceEnvironmentComboBox, _sourceTenantSettings, SourceTenantIdTextBox, SourceClientIdTextBox);
-        }
+        //private void SourceEnvironmentComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        //{
+        //    UpdateTenantFields(SourceEnvironmentComboBox, _sourceTenantSettings, SourceTenantIdTextBox, SourceClientIdTextBox);
+        //}
 
-        private void DestinationEnvironmentComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            UpdateTenantFields(DestinationEnvironmentComboBox, _destinationTenantSettings, DestinationTenantIdTextBox, DestinationClientIdTextBox);
-        }
+        //private void DestinationEnvironmentComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        //{
+        //    UpdateTenantFields(DestinationEnvironmentComboBox, _destinationTenantSettings, DestinationTenantIdTextBox, DestinationClientIdTextBox);
+        //}
 
         private void UpdateTenantFields(ComboBox comboBox, Dictionary<string, Dictionary<string, string>>? settings, TextBox tenantIdTextBox, TextBox clientIdTextBox)
         {
@@ -131,20 +131,23 @@ namespace IntuneTools.Pages
 
         private async Task AuthenticateToSourceTenant()
         {
-            SourceTenantGraphClient.sourceClientID = SourceClientIdTextBox.Text;
-            SourceTenantGraphClient.sourceTenantID = SourceTenantIdTextBox.Text;
-            SourceTenantGraphClient.sourceAccessToken = null;
-            SourceTenantGraphClient.sourceAuthority = $"https://login.microsoftonline.com/{SourceTenantGraphClient.sourceTenantID}";
-            var client = await SourceTenantGraphClient.GetSourceGraphClient();
+            //SourceTenantGraphClient.sourceClientID = SourceClientIdTextBox.Text;
+            //SourceTenantGraphClient.sourceTenantID = SourceTenantIdTextBox.Text;
+            //SourceTenantGraphClient.sourceAccessToken = null;
+            //SourceTenantGraphClient.sourceAuthority = $"https://login.microsoftonline.com/{SourceTenantGraphClient.sourceTenantID}";
 
-            if (client != null)
+            var Client = await SourceUserAuthentication.GetGraphClientAsync();
+
+            //var client = await SourceTenantGraphClient.GetSourceGraphClient();
+
+            if (Client != null)
             {
-                sourceGraphServiceClient = client;
-                sourceTenantName = await GetAzureTenantName(client);
+                sourceGraphServiceClient = Client;
+                sourceTenantName = await GetAzureTenantName(Client);
                 Log($"Source Tenant Name: {sourceTenantName}");
                 UpdateImage(SourceLoginStatusImage, "GreenCheck.png");
-                Variables.sourceClientID = SourceClientIdTextBox.Text;
-                Variables.sourceTenantID = SourceTenantIdTextBox.Text;
+                //Variables.sourceClientID = SourceClientIdTextBox.Text;
+                //Variables.sourceTenantID = SourceTenantIdTextBox.Text;
             }
             else
             {
@@ -162,11 +165,13 @@ namespace IntuneTools.Pages
 
         private async Task AuthenticateToDestinationTenant()
         {
-            DestinationTenantGraphClient.destinationClientID = DestinationClientIdTextBox.Text;
-            DestinationTenantGraphClient.destinationTenantID = DestinationTenantIdTextBox.Text;
-            DestinationTenantGraphClient.destinationAccessToken = null;
-            DestinationTenantGraphClient.destinationAuthority = $"https://login.microsoftonline.com/{DestinationTenantGraphClient.destinationTenantID}";
-            var client = await DestinationTenantGraphClient.GetDestinationGraphClient();
+            //DestinationTenantGraphClient.destinationClientID = DestinationClientIdTextBox.Text;
+            //DestinationTenantGraphClient.destinationTenantID = DestinationTenantIdTextBox.Text;
+            //DestinationTenantGraphClient.destinationAccessToken = null;
+            //DestinationTenantGraphClient.destinationAuthority = $"https://login.microsoftonline.com/{DestinationTenantGraphClient.destinationTenantID}";
+            //var client = await DestinationTenantGraphClient.GetDestinationGraphClient();
+
+            var client = await DestinationUserAuthentication.GetGraphClientAsync();
 
             if (client != null)
             {
@@ -174,8 +179,8 @@ namespace IntuneTools.Pages
                 destinationTenantName = await GetAzureTenantName(client);
                 Log($"Destination Tenant Name: {destinationTenantName}");
                 UpdateImage(DestinationLoginStatusImage, "GreenCheck.png");
-                Variables.destinationClientID = DestinationClientIdTextBox.Text;
-                Variables.destinationTenantID = DestinationTenantIdTextBox.Text;
+                //Variables.destinationClientID = DestinationClientIdTextBox.Text;
+                //Variables.destinationTenantID = DestinationTenantIdTextBox.Text;
 
             }
             else
@@ -195,7 +200,7 @@ namespace IntuneTools.Pages
                     Arguments = Variables.logFileFolder,
                     UseShellExecute = true
                 };
-                Process.Start(startInfo);
+                System.Diagnostics.Process.Start(startInfo);
             }
             else
             {

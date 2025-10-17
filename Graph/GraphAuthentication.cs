@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
+using MsalPrompt = Microsoft.Identity.Client.Prompt;
 
 using static IntuneTools.Utilities.HelperClass;
 
@@ -104,7 +105,7 @@ namespace IntuneTools.Graph
                     try
                     {
                         result = await app.AcquireTokenInteractive(newScope)
-                        .WithPrompt(Prompt.SelectAccount)
+                        .WithPrompt(MsalPrompt.SelectAccount)
                         //.WithUseEmbeddedWebView(true)
                         //.WithEmbeddedWebViewOptions(new EmbeddedWebViewOptions() { Title = "Sign in to your account" })
                         .ExecuteAsync();
