@@ -13,7 +13,7 @@
             <TextBlock Text="Settings Page" HorizontalAlignment="Center" FontSize="48" Margin="0,0,0,20"/>
             
             <TextBlock Text="Source Tenant" HorizontalAlignment="Left" FontSize="18"/>
-            <TextBlock Text="Will be used for Cleanup, Renaming and Assignment" HorizontalAlignment="Left" FontSize="16"/>
+            <TextBlock Text="Will be used for Import, Cleanup, Renaming and Assignment" HorizontalAlignment="Left" FontSize="16"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,20" Spacing="10">
                 <Button x:Name="SourceLoginButton" Content="Login" Width="100" HorizontalAlignment="Center" Click="SourceLoginButton_Click"/>
                 <Image x:Name="SourceLoginStatusImage" Width="24" Height="24" Source="/Assets/RedCross.png"/>
