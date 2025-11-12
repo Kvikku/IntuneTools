@@ -10,6 +10,7 @@ namespace IntuneTools.Pages
     {
         public string Name { get; set; }
         public string Id { get; set; }
+        public string Type { get; set; }
         public string Platform { get; set; }
     }
 
@@ -23,9 +24,10 @@ namespace IntuneTools.Pages
         {
             this.InitializeComponent();
 
-            AssignmentList.Add(new AssignmentInfo { Name = "App One", Id = "001", Platform = "Windows" });
-            AssignmentList.Add(new AssignmentInfo { Name = "App Two", Id = "002", Platform = "Windows" });
-            AssignmentList.Add(new AssignmentInfo { Name = "App Three", Id = "003", Platform = "Windows" });
+            AssignmentList.Add(new AssignmentInfo { Name = "App One", Id = "001", Platform = "Windows", Type = "Win32" });
+            AssignmentList.Add(new AssignmentInfo { Name = "App Two", Id = "002", Platform = "Windows", Type = "Win32" });
+            AssignmentList.Add(new AssignmentInfo { Name = "App Three", Id = "003", Platform = "Windows", Type = "Win32" });
+            AssignmentList.Add(new AssignmentInfo { Name = "App Four", Id = "004", Platform = "Windows", Type = "Win32" });
 
             AppDataGrid.ItemsSource = AssignmentList;
 

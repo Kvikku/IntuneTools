@@ -83,6 +83,7 @@
                 <controls:DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*"/>
                 <controls:DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="*"/>
                 <controls:DataGridTextColumn Header="Platform" Binding="{Binding Platform}" Width="*"/>
+                <controls:DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="*"/>
             </controls:DataGrid.Columns>
         </controls:DataGrid>
     </Grid>
