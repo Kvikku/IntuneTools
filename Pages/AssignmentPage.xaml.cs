@@ -6,6 +6,23 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
+using Windows.ApplicationModel.Contacts;
+using static IntuneTools.Graph.EntraHelperClasses.GroupHelperClass;
+using static IntuneTools.Graph.IntuneHelperClasses.AppleBYODEnrollmentProfileHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.DeviceCompliancePolicyHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.DeviceConfigurationHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.FilterHelperClass;
+using static IntuneTools.Graph.IntuneHelperClasses.SettingsCatalogHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.PowerShellScriptsHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.ProactiveRemediationsHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.macOSShellScript;
+using static IntuneTools.Graph.IntuneHelperClasses.WindowsAutoPilotHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.WindowsDriverUpdateHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.WindowsFeatureUpdateHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdatePolicyHandler;
+using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHelper;
+using static IntuneTools.Utilities.HelperClass;
+using static IntuneTools.Utilities.Variables;
 
 namespace IntuneTools.Pages
 {
@@ -23,9 +40,17 @@ namespace IntuneTools.Pages
         private bool _suppressOptionEvents = false;
         private bool _suppressSelectAllEvents = false;
 
+        private readonly Dictionary<string, Func<Task>> _assignmentLoaders;
+
         public AssignmentPage()
         {
             this.InitializeComponent();
+
+            // Initialize the dictionary here, where 'this' is available
+            _assignmentLoaders = new Dictionary<string, Func<Task>>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["SettingsCatalog"] = async () => await LoadAllSettingsCatalogPoliciesAsync(),
+            };
 
             AssignmentList.Add(new AssignmentInfo { Name = "App One", Id = "001", Platform = "Windows", Type = "Win32" });
             AssignmentList.Add(new AssignmentInfo { Name = "App Two", Id = "002", Platform = "Windows", Type = "Win32" });
@@ -39,7 +64,30 @@ namespace IntuneTools.Pages
             AppendToDetailsRichTextBlock("Assignment page loaded.");
         }
 
-        
+        #region Loading Overlay
+
+        private void ShowLoading(string message = "Loading data from Microsoft Graph...")
+        {
+            LoadingStatusText.Text = message;
+            LoadingOverlay.Visibility = Visibility.Visible;
+            LoadingProgressRing.IsActive = true;
+
+            SearchButton.IsEnabled = false;
+            ListAllButton.IsEnabled = false;
+            RemoveSelectedButton.IsEnabled = false;
+        }
+
+        private void HideLoading()
+        {
+            LoadingOverlay.Visibility = Visibility.Collapsed;
+            LoadingProgressRing.IsActive = false;
+
+            SearchButton.IsEnabled = true;
+            ListAllButton.IsEnabled = true;
+            RemoveSelectedButton.IsEnabled = true;
+        }
+
+        #endregion
 
         #region Orchestrators
 
@@ -48,16 +96,73 @@ namespace IntuneTools.Pages
             AssignmentList.Clear();
 
             var selectedContent = GetCheckedOptionNames();
-
-           
             if (selectedContent.Count == 0)
             {
-                // If no options are selected, show a message and return
                 AppendToDetailsRichTextBlock("No content types selected for import.");
+                AppendToDetailsRichTextBlock("Please select at least one content type and try again.");
                 return;
             }
 
             AppendToDetailsRichTextBlock("Listing all content.");
+
+            ShowLoading("Loading assignment data...");
+
+            try
+            {
+                foreach (var option in selectedContent)
+                {
+                    if (_assignmentLoaders.TryGetValue(option, out var loader))
+                    {
+                        try
+                        {
+                            await loader();
+                        }
+                        catch (Exception ex)
+                        {
+                            AppendToDetailsRichTextBlock($"Failed loading assignments for '{option}': {ex.Message}");
+                        }
+                    }
+                    else
+                    {
+                        AppendToDetailsRichTextBlock($"No assignment loader registered for '{option}'.");
+                    }
+                }
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
+        #endregion
+
+        #region Content loaders
+
+        private async Task LoadAllSettingsCatalogPoliciesAsync()
+        {
+            ShowLoading("Loading settings catalog policies from Microsoft Graph...");
+            try
+            {
+                // Retrieve all settings catalog policies
+                var policies = await GetAllSettingsCatalogPolicies(sourceGraphServiceClient);
+                // Update AssignmentList for DataGrid
+                foreach (var policy in policies)
+                {
+                    AssignmentList.Add(new AssignmentInfo
+                    {
+                        Name = policy.Name,
+                        Type = "Settings Catalog",
+                        Platform = policy.Platforms?.ToString() ?? string.Empty,
+                        Id = policy.Id
+                    });
+                }
+                // Bind to DataGrid
+                AppDataGrid.ItemsSource = AssignmentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
         }
 
         #endregion
@@ -70,6 +175,7 @@ namespace IntuneTools.Pages
 
         private async void ListAllButton_Click(object sender, RoutedEventArgs e)
         {
+            // sourceGraphServiceClient is assumed available in your existing context
             await ListAllOrchestrator(sourceGraphServiceClient);
         }
 
@@ -195,7 +301,6 @@ namespace IntuneTools.Pages
 
         private void SelectAll_Indeterminate(object sender, RoutedEventArgs e)
         {
-            // Optional: handle indeterminate state
         }
 
         private void Option_Checked(object sender, RoutedEventArgs e)
@@ -213,7 +318,6 @@ namespace IntuneTools.Pages
         private void UpdateSelectAllCheckBox()
         {
             var optionCheckBoxes = OptionsPanel.Children.OfType<CheckBox>().Where(cb => cb.Name != "OptionsAllCheckBox").ToList();
-
             if (!optionCheckBoxes.Any())
                 return;
 

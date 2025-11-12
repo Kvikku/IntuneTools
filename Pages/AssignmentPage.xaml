@@ -77,19 +77,42 @@
             </Expander>
         </StackPanel>
 
-        <controls:DataGrid x:Name="AppDataGrid"
-                           Grid.Row="2"
-                           Grid.Column="0"
-                           AutoGenerateColumns="False"
-                           SelectionMode="Extended"
-                           Margin="10">
-            <controls:DataGrid.Columns>
-                <controls:DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*"/>
-                <controls:DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="*"/>
-                <controls:DataGridTextColumn Header="Platform" Binding="{Binding Platform}" Width="*"/>
-                <controls:DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="*"/>
-            </controls:DataGrid.Columns>
-        </controls:DataGrid>
+        <!-- DataGrid area with loading overlay -->
+        <Grid Grid.Row="2" Grid.Column="0">
+            <controls:DataGrid x:Name="AppDataGrid"
+                               AutoGenerateColumns="False"
+                               SelectionMode="Extended"
+                               Margin="10">
+                <controls:DataGrid.Columns>
+                    <controls:DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*"/>
+                    <controls:DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="*"/>
+                    <controls:DataGridTextColumn Header="Platform" Binding="{Binding Platform}" Width="*"/>
+                    <controls:DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="*"/>
+                </controls:DataGrid.Columns>
+            </controls:DataGrid>
+
+            <!-- Loading Overlay -->
+            <Border x:Name="LoadingOverlay"
+                    Background="{ThemeResource SystemControlAcrylicWindowBrush}"
+                    Visibility="Collapsed"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch">
+                <StackPanel Orientation="Vertical"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Spacing="15">
+                    <ProgressRing x:Name="LoadingProgressRing"
+                                  IsActive="True"
+                                  Width="50"
+                                  Height="50"/>
+                    <TextBlock x:Name="LoadingStatusText"
+                               Text="Loading data from Microsoft Graph..."
+                               HorizontalAlignment="Center"
+                               FontSize="14"
+                               Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                </StackPanel>
+            </Border>
+        </Grid>
 
         <!-- Log Panel -->
         <StackPanel x:Name="LogPanel"
