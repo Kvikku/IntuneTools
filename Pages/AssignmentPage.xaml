@@ -13,7 +13,7 @@
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>  <!-- Header -->
-            <RowDefinition Height="Auto"/>  <!-- Action buttons -->
+            <RowDefinition Height="Auto"/>  <!-- Action buttons + Options -->
             <RowDefinition Height="*"/>     <!-- Data grid -->
         </Grid.RowDefinitions>
 
@@ -29,7 +29,7 @@
                        Margin="0,8,0,0"/>
         </StackPanel>
 
-        <!-- New buttons row -->
+        <!-- Buttons + Options Expander -->
         <StackPanel Grid.Row="1"
                     Orientation="Horizontal"
                     Spacing="12"
@@ -46,6 +46,32 @@
                     Content="Remove selected"
                     Click="RemoveSelectedButton_Click"
                     Style="{StaticResource DefaultButtonStyle}"/>
+
+            <!-- Added Options Expander copied from ImportPage.xaml line 68 -->
+            <Expander x:Name="OptionsExpander" Header="Options" IsExpanded="False" Margin="20,0,0,0" VerticalAlignment="Top">
+                <StackPanel x:Name="OptionsPanel" Orientation="Vertical" VerticalAlignment="Center">
+                    <CheckBox x:Name="OptionsAllCheckBox" 
+                              Content="Select all" 
+                              IsThreeState="False" 
+                              Checked="SelectAll_Checked" 
+                              Unchecked="SelectAll_Unchecked" 
+                              Indeterminate="SelectAll_Indeterminate" />
+                    <CheckBox x:Name="SettingsCatalog" Content="Settings Catalog" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
+                    <CheckBox x:Name="DeviceCompliance" Content="Device Compliance" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
+                    <CheckBox x:Name="EntraGroups" Content="Entra Groups" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
+                    <CheckBox x:Name="DeviceConfiguration" Content="Device Configuration" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
+                    <CheckBox x:Name="AppleBYODEnrollmentProfile" Content="Apple BYOD enrollment profile" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
+                    <CheckBox x:Name="Filters" Content="Filters" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
+                    <CheckBox x:Name="PowerShellScript" Content="PowerShell Scripts" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
+                    <CheckBox x:Name="ProactiveRemediation" Content="Remediation Scripts" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
+                    <CheckBox x:Name="macOSShellScript" Content="macOS Shell Scripts" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
+                    <CheckBox x:Name="WindowsAutopilot" Content="Windows Autopilot" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
+                    <CheckBox x:Name="WindowsDriverUpdate" Content="Windows Driver Update" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
+                    <CheckBox x:Name="WindowsFeatureUpdate" Content="Windows Feature Update" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
+                    <CheckBox x:Name="WindowsQualityUpdatePolicy" Content="Windows Quality Update Policy" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
+                    <CheckBox x:Name="WindowsQualityUpdateProfile" Content="Windows Quality Update Profile" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
+                </StackPanel>
+            </Expander>
         </StackPanel>
 
         <controls:DataGrid x:Name="AppDataGrid"

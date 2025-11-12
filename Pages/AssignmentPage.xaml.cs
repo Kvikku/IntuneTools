@@ -16,7 +16,8 @@ namespace IntuneTools.Pages
     public sealed partial class AssignmentPage : Page
     {
         public static ObservableCollection<AssignmentInfo> AssignmentList { get; } = new();
-
+        private bool _suppressOptionEvents = false;
+        private bool _suppressSelectAllEvents = false;
         public AssignmentPage()
         {
             this.InitializeComponent();
@@ -68,6 +69,82 @@ namespace IntuneTools.Pages
             {
                 AssignmentList.Remove(item);
             }
+        }
+
+        #endregion
+
+        #region Helpers
+        // Handler for the 'Select all' checkbox Checked event
+        private void SelectAll_Checked(object sender, RoutedEventArgs e)
+        {
+            if (_suppressSelectAllEvents) return;
+            _suppressOptionEvents = true;
+            foreach (var child in OptionsPanel.Children)
+            {
+                if (child is CheckBox cb && cb.Name != "OptionsAllCheckBox")
+                {
+                    cb.IsChecked = true;
+                }
+            }
+            _suppressOptionEvents = false;
+        }
+
+        // Handler for the 'Select all' checkbox Unchecked event
+        private void SelectAll_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (_suppressSelectAllEvents) return;
+            _suppressOptionEvents = true;
+            foreach (var child in OptionsPanel.Children)
+            {
+                if (child is CheckBox cb && cb.Name != "OptionsAllCheckBox")
+                {
+                    cb.IsChecked = false;
+                }
+            }
+            _suppressOptionEvents = false;
+        }
+
+        // Handler for the 'Select all' checkbox Indeterminate event
+        private void SelectAll_Indeterminate(object sender, RoutedEventArgs e)
+        {
+            // Do nothing, or optionally set all to null if you want
+            // Option1CheckBox.IsChecked = null;
+            // Option2CheckBox.IsChecked = null;
+            // Option3CheckBox.IsChecked = null;
+        }
+
+        // Handler for individual option checkbox Checked event
+        private void Option_Checked(object sender, RoutedEventArgs e)
+        {
+            if (_suppressOptionEvents) return;
+            UpdateSelectAllCheckBox();
+        }
+
+        // Handler for individual option checkbox Unchecked event
+        private void Option_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (_suppressOptionEvents) return;
+            UpdateSelectAllCheckBox();
+        }
+
+        // Helper to update the 'Select all' checkbox state based on options
+        private void UpdateSelectAllCheckBox()
+        {
+            var optionCheckBoxes = OptionsPanel.Children.OfType<CheckBox>().Where(cb => cb.Name != "OptionsAllCheckBox").ToList();
+
+            if (!optionCheckBoxes.Any())
+                return;
+
+            bool?[] states = optionCheckBoxes.Select(cb => cb.IsChecked).ToArray();
+
+            _suppressSelectAllEvents = true;
+            if (states.All(x => x == true))
+                OptionsAllCheckBox.IsChecked = true;
+            else if (states.All(x => x == false))
+                OptionsAllCheckBox.IsChecked = false;
+            else
+                OptionsAllCheckBox.IsChecked = null;
+            _suppressSelectAllEvents = false;
         }
 
         #endregion
