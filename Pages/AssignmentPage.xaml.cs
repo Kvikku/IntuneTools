@@ -124,7 +124,8 @@ namespace IntuneTools.Pages
                     }
                     else
                     {
-                        AppendToDetailsRichTextBlock($"No assignment loader registered for '{option}'.");
+                        // Do we want to log unregistered options? Decide later.
+                        //AppendToDetailsRichTextBlock($"No assignment loader registered for '{option}'.");
                     }
                 }
             }
