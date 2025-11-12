@@ -128,7 +128,7 @@ namespace IntuneTools.Pages
             Search.IsEnabled = true;
         }
 
-        public List<string> GetCheckedOptionNames()
+        private List<string> GetCheckedOptionNames()
         {
             var checkedNames = new List<string>();
             foreach (var child in OptionsPanel.Children)

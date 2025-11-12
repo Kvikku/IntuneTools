@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -58,12 +59,15 @@ namespace IntuneTools.Pages
 
         #region Orchestrators
 
-        private static async Task ListAllOrchestrator(GraphServiceClient graphServiceClient)
+        private async Task ListAllOrchestrator(GraphServiceClient graphServiceClient)
         {
             // Main logic to list all assignments
 
             // Clear the list before populating
             AssignmentList.Clear();
+
+
+            var selectedContent = GetCheckedOptionNames();
         }
 
         #endregion
@@ -100,6 +104,21 @@ namespace IntuneTools.Pages
         #endregion
 
         #region Helpers
+
+        public List<string> GetCheckedOptionNames()
+        {
+            var checkedNames = new List<string>();
+            foreach (var child in OptionsPanel.Children)
+            {
+                if (child is CheckBox cb && cb.IsChecked == true)
+                {
+                    checkedNames.Add(cb.Name); // or cb.Content.ToString() for display text
+                }
+            }
+            return checkedNames;
+        }
+
+
         // Handler for the 'Select all' checkbox Checked event
         private void SelectAll_Checked(object sender, RoutedEventArgs e)
         {
