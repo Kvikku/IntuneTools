@@ -13,7 +13,8 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>  <!-- Header -->
             <RowDefinition Height="Auto"/>  <!-- Action buttons + Options -->
-            <RowDefinition Height="*"/>     <!-- Data grid + Side panel + Log -->
+            <RowDefinition Height="*"/>     <!-- Data grid + Side panel -->
+            <RowDefinition Height="Auto"/>  <!-- Log panel -->
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>   <!-- Full width for rows 0 & 1 -->
@@ -108,11 +109,10 @@
         </StackPanel>
 
         <!-- Main Content Row -->
-        <Grid Grid.Row="2">
+        <Grid Grid.Row="2" Margin="0,0,0,20">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>          <!-- DataGrid -->
                 <ColumnDefinition Width="340"/>        <!-- Assignment side panel -->
-                <ColumnDefinition Width="Auto"/>       <!-- Log panel -->
             </Grid.ColumnDefinitions>
 
             <!-- DataGrid with loading overlay -->
@@ -154,7 +154,7 @@
             <!-- Assignment Side Panel -->
             <StackPanel Grid.Column="1"
                         Orientation="Vertical"
-                        Margin="0,0,16,0">
+                        Margin="0,0,0,0">
                 <TextBlock Text="Assign to Groups"
                            FontSize="20"
                            FontWeight="SemiBold"
@@ -182,10 +182,10 @@
                 <controls:DataGrid x:Name="GroupDataGrid"
                                    AutoGenerateColumns="False"
                                    HeadersVisibility="Column"
-                                   Height="250"
+                                   Height="180"
                                    Width="300"
                                    SelectionMode="Extended"
-                                   Margin="0,0,0,12">
+                                   Margin="0,0,0,16">
                     <controls:DataGrid.Columns>
                         <controls:DataGridTextColumn Header="Group Name" Binding="{Binding GroupName}" Width="*"/>
                     </controls:DataGrid.Columns>
@@ -204,35 +204,34 @@
                     </StackPanel>
                 </Button>
             </StackPanel>
-
-            <!-- Log Panel -->
-            <StackPanel x:Name="LogPanel"
-                        Grid.Column="2"
-                        Orientation="Horizontal"
-                        Margin="0,0,0,0"
-                        VerticalAlignment="Top"
-                        HorizontalAlignment="Right">
-                <ScrollViewer Width="400" MaxHeight="400"
-                              HorizontalScrollBarVisibility="Disabled"
-                              VerticalScrollBarVisibility="Auto"
-                              HorizontalScrollMode="Disabled"
-                              VerticalScrollMode="Enabled">
-                    <RichTextBlock x:Name="LogConsole"
-                                   Width="300"
-                                   HorizontalAlignment="Stretch"
-                                   IsTextSelectionEnabled="True"
-                                   TextWrapping="Wrap"/>
-                </ScrollViewer>
-                <Button x:Name="ClearLogButton"
-                        Width="50"
-                        Height="50"
-                        ToolTipService.ToolTip="Clear Log"
-                        Click="ClearLogButton_Click"
-                        VerticalAlignment="Top"
-                        Margin="16,0,0,0">
-                    <FontIcon Glyph="&#xE74D;" FontFamily="Segoe MDL2 Assets"/>
-                </Button>
-            </StackPanel>
         </Grid>
+
+        <!-- Log Panel (moved below) -->
+        <StackPanel Grid.Row="3"
+                    Orientation="Horizontal"
+                    Margin="0,0,0,0"
+                    HorizontalAlignment="Stretch">
+            <ScrollViewer HorizontalAlignment="Stretch"
+                          HorizontalScrollBarVisibility="Disabled"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollMode="Disabled"
+                          VerticalScrollMode="Enabled"
+                          MaxHeight="200"
+                          Margin="0,0,12,0">
+                <RichTextBlock x:Name="LogConsole"
+                               HorizontalAlignment="Stretch"
+                               IsTextSelectionEnabled="True"
+                               TextWrapping="Wrap"/>
+            </ScrollViewer>
+            <Button x:Name="ClearLogButton"
+                    Width="50"
+                    Height="50"
+                    ToolTipService.ToolTip="Clear Log"
+                    Click="ClearLogButton_Click"
+                    VerticalAlignment="Top"
+                    Margin="0,0,0,0">
+                <FontIcon Glyph="&#xE74D;" FontFamily="Segoe MDL2 Assets"/>
+            </Button>
+        </StackPanel>
     </Grid>
 </Page>
