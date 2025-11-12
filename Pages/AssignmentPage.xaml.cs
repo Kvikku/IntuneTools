@@ -102,6 +102,17 @@ namespace IntuneTools.Pages
         #endregion
 
         #region Orchestrators
+
+        private async Task MainOrchestrator(GraphServiceClient graphServiceClient)
+        {
+            // Main orchestrator of assignment operations
+
+            // Get all content
+
+            var content = GetAllContentFromDatagrid();
+
+        }
+
         private async Task ListAllOrchestrator(GraphServiceClient graphServiceClient)
         {
             AssignmentList.Clear();
@@ -135,9 +146,28 @@ namespace IntuneTools.Pages
                 HideLoading();
             }
         }
+
+
         #endregion
 
         #region Content loaders
+
+        private async Task GetAllContentFromDatagrid()
+        {
+            // Gather all content from the datagrid and send to orchestrator
+
+            Dictionary<string, string> content = new();
+
+
+            foreach (var item in AssignmentList)
+            {
+                content[item.Id] = item.Type;
+            }
+
+            // TODO: Send content to orchestrator
+            AppendToDetailsRichTextBlock($"Gathered {content.Count} items from DataGrid.");
+        }
+
         private async Task LoadAllSettingsCatalogPoliciesAsync()
         {
             ShowLoading("Loading settings catalog policies from Microsoft Graph...");
@@ -252,6 +282,9 @@ namespace IntuneTools.Pages
 
         private async void AssignButton_Click(object sender, RoutedEventArgs e)
         {
+
+            await MainOrchestrator(sourceGraphServiceClient);
+
             // Validate selections
             if (AppDataGrid.SelectedItems == null || AppDataGrid.SelectedItems.Count == 0)
             {
