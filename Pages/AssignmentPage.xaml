@@ -12,11 +12,12 @@
 
     <Grid Margin="20">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>  <!-- Header -->
+            <RowDefinition Height="Auto"/>  <!-- Action buttons -->
+            <RowDefinition Height="*"/>     <!-- Data grid -->
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Margin="0,0,0,20">
+        <StackPanel Grid.Row="0" Margin="0,0,0,16">
             <TextBlock Text="Intune Assignments"
                        HorizontalAlignment="Left"
                        FontSize="38"
@@ -28,7 +29,26 @@
                        Margin="0,8,0,0"/>
         </StackPanel>
 
-        <controls:DataGrid x:Name="AppDataGrid" Grid.Row="1" AutoGenerateColumns="False" Margin="10">
+        <!-- New buttons row -->
+        <StackPanel Grid.Row="1"
+                    Orientation="Horizontal"
+                    Spacing="12"
+                    Margin="0,0,0,12">
+            <Button x:Name="SearchButton"
+                    Content="Search"
+                    Style="{StaticResource DefaultButtonStyle}"/>
+            <Button x:Name="ListAllButton"
+                    Content="List all"
+                    Style="{StaticResource DefaultButtonStyle}"/>
+            <Button x:Name="RemoveSelectedButton"
+                    Content="Remove selected"
+                    Style="{StaticResource DefaultButtonStyle}"/>
+        </StackPanel>
+
+        <controls:DataGrid x:Name="AppDataGrid"
+                           Grid.Row="2"
+                           AutoGenerateColumns="False"
+                           Margin="10">
             <controls:DataGrid.Columns>
                 <controls:DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*"/>
                 <controls:DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="*"/>
