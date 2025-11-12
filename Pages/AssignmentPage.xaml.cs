@@ -18,6 +18,7 @@ namespace IntuneTools.Pages
         public static ObservableCollection<AssignmentInfo> AssignmentList { get; } = new();
         private bool _suppressOptionEvents = false;
         private bool _suppressSelectAllEvents = false;
+
         public AssignmentPage()
         {
             this.InitializeComponent();
@@ -27,8 +28,31 @@ namespace IntuneTools.Pages
             AssignmentList.Add(new AssignmentInfo { Name = "App Three", Id = "003", Platform = "Windows" });
 
             AppDataGrid.ItemsSource = AssignmentList;
+
+            // Ensure all option checkboxes are auto-checked when the page loads.
+            this.Loaded += AssignmentPage_Loaded;
         }
 
+        private void AssignmentPage_Loaded(object sender, RoutedEventArgs e)
+        {
+            AutoCheckAllOptions();
+        }
+
+        private void AutoCheckAllOptions()
+        {
+            // Set individual option checkboxes to checked without triggering cascading updates.
+            _suppressOptionEvents = true;
+            foreach (var cb in OptionsPanel.Children.OfType<CheckBox>().Where(cb => cb.Name != "OptionsAllCheckBox"))
+            {
+                cb.IsChecked = true;
+            }
+            _suppressOptionEvents = false;
+
+            // Reflect the state in the 'Select all' checkbox without triggering its handler logic.
+            _suppressSelectAllEvents = true;
+            OptionsAllCheckBox.IsChecked = true;
+            _suppressSelectAllEvents = false;
+        }
 
         #region Orchestrators
 
@@ -107,10 +131,7 @@ namespace IntuneTools.Pages
         // Handler for the 'Select all' checkbox Indeterminate event
         private void SelectAll_Indeterminate(object sender, RoutedEventArgs e)
         {
-            // Do nothing, or optionally set all to null if you want
-            // Option1CheckBox.IsChecked = null;
-            // Option2CheckBox.IsChecked = null;
-            // Option3CheckBox.IsChecked = null;
+            // Optional: handle indeterminate state
         }
 
         // Handler for individual option checkbox Checked event
