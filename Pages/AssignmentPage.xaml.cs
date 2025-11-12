@@ -168,7 +168,7 @@ namespace IntuneTools.Pages
             ShowLoading("Loading groups from Microsoft Graph...");
             try
             {
-                var groups = await GetAllGroups(destinationGraphServiceClient);
+                var groups = await GetAllGroups(sourceGraphServiceClient);
                 foreach (var group in groups)
                 {
                     GroupList.Add(new GroupInfo { GroupName = group.DisplayName });
@@ -187,7 +187,7 @@ namespace IntuneTools.Pages
             ShowLoading("Searching for groups in Microsoft Graph...");
             try
             {
-                var groups = await SearchForGroups(destinationGraphServiceClient, searchQuery);
+                var groups = await SearchForGroups(sourceGraphServiceClient, searchQuery);
                 foreach (var group in groups)
                 {
                     GroupList.Add(new GroupInfo { GroupName = group.DisplayName });
