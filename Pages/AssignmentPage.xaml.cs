@@ -36,60 +36,28 @@ namespace IntuneTools.Pages
 
             this.Loaded += AssignmentPage_Loaded;
 
-            AppendToDetailsRichTextBlock("Console output");
+            AppendToDetailsRichTextBlock("Assignment page loaded.");
         }
 
-        private void AssignmentPage_Loaded(object sender, RoutedEventArgs e)
-        {
-            AutoCheckAllOptions();
-        }
-
-        private void AutoCheckAllOptions()
-        {
-            _suppressOptionEvents = true;
-            foreach (var cb in OptionsPanel.Children.OfType<CheckBox>().Where(cb => cb.Name != "OptionsAllCheckBox"))
-            {
-                cb.IsChecked = true;
-            }
-            _suppressOptionEvents = false;
-
-            _suppressSelectAllEvents = true;
-            OptionsAllCheckBox.IsChecked = true;
-            _suppressSelectAllEvents = false;
-        }
-
-        private void AppendToDetailsRichTextBlock(string text)
-        {
-            Paragraph paragraph;
-            if (LogConsole.Blocks.Count == 0)
-            {
-                paragraph = new Paragraph();
-                LogConsole.Blocks.Add(paragraph);
-            }
-            else
-            {
-                paragraph = LogConsole.Blocks.First() as Paragraph;
-                if (paragraph == null)
-                {
-                    paragraph = new Paragraph();
-                    LogConsole.Blocks.Add(paragraph);
-                }
-            }
-            if (paragraph.Inlines.Count > 0)
-            {
-                paragraph.Inlines.Add(new LineBreak());
-            }
-            paragraph.Inlines.Add(new Run { Text = text });
-        }
+        
 
         #region Orchestrators
 
         private async Task ListAllOrchestrator(GraphServiceClient graphServiceClient)
         {
             AssignmentList.Clear();
+
             var selectedContent = GetCheckedOptionNames();
-            // TODO: Populate AssignmentList based on selectedContent and graphServiceClient
-            AppendToDetailsRichTextBlock("List all orchestrator executed.");
+
+           
+            if (selectedContent.Count == 0)
+            {
+                // If no options are selected, show a message and return
+                AppendToDetailsRichTextBlock("No content types selected for import.");
+                return;
+            }
+
+            AppendToDetailsRichTextBlock("Listing all content.");
         }
 
         #endregion
@@ -140,6 +108,49 @@ namespace IntuneTools.Pages
         #endregion
 
         #region Helpers
+
+        private void AssignmentPage_Loaded(object sender, RoutedEventArgs e)
+        {
+            AutoCheckAllOptions();
+        }
+
+        private void AutoCheckAllOptions()
+        {
+            _suppressOptionEvents = true;
+            foreach (var cb in OptionsPanel.Children.OfType<CheckBox>().Where(cb => cb.Name != "OptionsAllCheckBox"))
+            {
+                cb.IsChecked = true;
+            }
+            _suppressOptionEvents = false;
+
+            _suppressSelectAllEvents = true;
+            OptionsAllCheckBox.IsChecked = true;
+            _suppressSelectAllEvents = false;
+        }
+
+        private void AppendToDetailsRichTextBlock(string text)
+        {
+            Paragraph paragraph;
+            if (LogConsole.Blocks.Count == 0)
+            {
+                paragraph = new Paragraph();
+                LogConsole.Blocks.Add(paragraph);
+            }
+            else
+            {
+                paragraph = LogConsole.Blocks.First() as Paragraph;
+                if (paragraph == null)
+                {
+                    paragraph = new Paragraph();
+                    LogConsole.Blocks.Add(paragraph);
+                }
+            }
+            if (paragraph.Inlines.Count > 0)
+            {
+                paragraph.Inlines.Add(new LineBreak());
+            }
+            paragraph.Inlines.Add(new Run { Text = text });
+        }
 
         public List<string> GetCheckedOptionNames()
         {
