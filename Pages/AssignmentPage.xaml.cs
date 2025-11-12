@@ -37,6 +37,7 @@ namespace IntuneTools.Pages
     public class AssignmentGroupInfo
     {
         public string? GroupName { get; set; }
+        public string? GroupId { get; set; }
     }
 
     public class AssignmentFilterInfo
@@ -47,7 +48,7 @@ namespace IntuneTools.Pages
     public sealed partial class AssignmentPage : Page
     {
         public static ObservableCollection<AssignmentInfo> AssignmentList { get; } = new();
-        public ObservableCollection<GroupInfo> GroupList { get; } = new();
+        public ObservableCollection<AssignmentGroupInfo> GroupList { get; } = new();
         public ObservableCollection<string> FilterOptions { get; } = new();
 
         private bool _suppressOptionEvents = false;
@@ -112,7 +113,7 @@ namespace IntuneTools.Pages
             var content = GetAllContentFromDatagrid();
 
             // Get groups
-            var selectedGroups = GroupDataGrid.SelectedItems?.Cast<GroupInfo>().ToList();
+            var selectedGroups = GroupDataGrid.SelectedItems?.Cast<AssignmentGroupInfo>().ToList();
             if (selectedGroups == null || selectedGroups.Count == 0)
             {
                 AppendToDetailsRichTextBlock("No groups selected for assignment.");
@@ -213,7 +214,11 @@ namespace IntuneTools.Pages
                 var groups = await GetAllGroups(sourceGraphServiceClient);
                 foreach (var group in groups)
                 {
-                    GroupList.Add(new GroupInfo { GroupName = group.DisplayName });
+                    GroupList.Add(new AssignmentGroupInfo 
+                    { 
+                        GroupName = group.DisplayName,
+                        GroupId = group.Id
+                    });
                 }
                 GroupDataGrid.ItemsSource = GroupList;
             }
@@ -232,7 +237,11 @@ namespace IntuneTools.Pages
                 var groups = await SearchForGroups(sourceGraphServiceClient, searchQuery);
                 foreach (var group in groups)
                 {
-                    GroupList.Add(new GroupInfo { GroupName = group.DisplayName });
+                    GroupList.Add(new AssignmentGroupInfo 
+                    { 
+                        GroupName = group.DisplayName,
+                        GroupId = group.Id
+                    });
                 }
                 GroupDataGrid.ItemsSource = GroupList;
             }
@@ -279,20 +288,54 @@ namespace IntuneTools.Pages
 
         private void RemoveSelectedButton_Click(object sender, RoutedEventArgs e)
         {
-            if (AppDataGrid.SelectedItems == null || AppDataGrid.SelectedItems.Count == 0)
-                return;
-
-            var toRemove = AppDataGrid.SelectedItems.Cast<AssignmentInfo>().ToList();
-            foreach (var item in toRemove)
+            if (AppDataGrid.SelectedItems.Count > 0)
             {
-                AssignmentList.Remove(item);
+                var selectedItems = AppDataGrid.SelectedItems.Cast<AssignmentInfo>().ToList();
+                foreach (var item in selectedItems)
+                {
+                    AssignmentList.Remove(item);
+                }
+                AppendToDetailsRichTextBlock($"Removed {selectedItems.Count} selected item(s).");
             }
-            AppendToDetailsRichTextBlock($"Removed {toRemove.Count} item(s).");
+            else
+            {
+                AppendToDetailsRichTextBlock("No items selected to remove.");
+            }
+        }
+
+        private async void RemoveAllButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (AssignmentList.Count == 0)
+            {
+                AppendToDetailsRichTextBlock("The list is already empty.");
+                return;
+            }
+
+            var dialog = new ContentDialog
+            {
+                Title = "Remove All Items?",
+                Content = $"Are you sure you want to remove all {AssignmentList.Count} items from the list?",
+                PrimaryButtonText = "Remove All",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+            if (result == ContentDialogResult.Primary)
+            {
+                var count = AssignmentList.Count;
+                AssignmentList.Clear();
+                AppendToDetailsRichTextBlock($"Removed all {count} items from the list.");
+            }
+            else
+            {
+                AppendToDetailsRichTextBlock("Operation to remove all items was cancelled.");
+            }
         }
 
         private async void AssignButton_Click(object sender, RoutedEventArgs e)
         {
-
             await MainOrchestrator(sourceGraphServiceClient);
 
             // Validate selections
@@ -312,7 +355,7 @@ namespace IntuneTools.Pages
 
             // Get selected items and groups
             var selectedItems = AppDataGrid.SelectedItems.Cast<AssignmentInfo>().ToList();
-            var selectedGroups = GroupDataGrid.SelectedItems.Cast<GroupInfo>().ToList();
+            var selectedGroups = GroupDataGrid.SelectedItems.Cast<AssignmentGroupInfo>().ToList();
 
             // Get filter if selected
             string filterInfo = string.Empty;
@@ -357,7 +400,7 @@ namespace IntuneTools.Pages
                         {
                             // TODO: Implement actual assignment logic based on item.Type
                             // For now, just log the action
-                            AppendToDetailsRichTextBlock($"Assigning '{item.Name}' to group '{group.GroupName}'...");
+                            AppendToDetailsRichTextBlock($"Assigning '{item.Name}' to group '{group.GroupName}' (ID: {group.GroupId})...");
                             
                             // Simulate assignment delay
                             await Task.Delay(100);
@@ -523,16 +566,10 @@ namespace IntuneTools.Pages
 
         private void SelectAll_Checked(object sender, RoutedEventArgs e)
         {
-            if (_suppressSelectAllEvents) return;
-            _suppressOptionEvents = true;
-            foreach (var child in OptionsPanel.Children)
+            foreach (var checkbox in OptionsPanel.Children.OfType<CheckBox>())
             {
-                if (child is CheckBox cb && cb.Name != "OptionsAllCheckBox")
-                {
-                    cb.IsChecked = true;
-                }
+                checkbox.IsChecked = true;
             }
-            _suppressOptionEvents = false;
         }
 
         private void SelectAll_Unchecked(object sender, RoutedEventArgs e)
