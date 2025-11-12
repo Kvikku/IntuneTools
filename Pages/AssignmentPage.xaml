@@ -90,7 +90,8 @@
                       Header="Assignment Filter"
                       IsExpanded="False"
                       Margin="12,0,0,0"
-                      VerticalAlignment="Top">
+                      VerticalAlignment="Top"
+                      Expanding="FilterExpander_Expanding">
                 <StackPanel Orientation="Vertical">
                     <CheckBox x:Name="FiltersCheckBox"
                               Content="Use Assignment Filter"

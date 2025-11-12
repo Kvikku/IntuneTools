@@ -21,8 +21,10 @@ using static IntuneTools.Graph.IntuneHelperClasses.WindowsDriverUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsFeatureUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdatePolicyHandler;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.FilterHelperClass;
 using static IntuneTools.Utilities.HelperClass;
 using static IntuneTools.Utilities.Variables;
+using IntuneTools.Graph.IntuneHelperClasses;
 
 namespace IntuneTools.Pages
 {
@@ -47,6 +49,7 @@ namespace IntuneTools.Pages
 
     public sealed partial class AssignmentPage : Page
     {
+        #region Variables and Properties
         public static ObservableCollection<AssignmentInfo> AssignmentList { get; } = new();
         public ObservableCollection<AssignmentGroupInfo> GroupList { get; } = new();
         public ObservableCollection<string> FilterOptions { get; } = new();
@@ -56,6 +59,9 @@ namespace IntuneTools.Pages
 
         private readonly Dictionary<string, Func<Task>> _assignmentLoaders;
 
+        private DeviceAndAppManagementAssignmentFilter? _selectedFilter;
+
+        #endregion
         public AssignmentPage()
         {
             this.InitializeComponent();
@@ -505,6 +511,27 @@ namespace IntuneTools.Pages
                 if (filterNameAndID.TryGetValue(selected, out var id))
                 {
                     SelectedFilterID = id;
+                }
+            }
+        }
+
+        private async void FilterExpander_Expanding(Expander sender, ExpanderExpandingEventArgs args)
+        {
+            if (FilterSelectionComboBox.Items.Count == 0)
+            {
+                try
+                {
+                    var filters = await FilterHelperClass.GetAllAssignmentFilters(sourceGraphServiceClient);
+                    if (filters != null)
+                    {
+                        FilterSelectionComboBox.ItemsSource = filters;
+                        FilterSelectionComboBox.DisplayMemberPath = "DisplayName";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Handle exceptions, e.g., log them or show a message
+                    // Log("Failed to load filters: " + ex.Message);
                 }
             }
         }
