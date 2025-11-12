@@ -111,6 +111,15 @@ namespace IntuneTools.Pages
 
             var content = GetAllContentFromDatagrid();
 
+            // Get groups
+            var selectedGroups = GroupDataGrid.SelectedItems?.Cast<GroupInfo>().ToList();
+            if (selectedGroups == null || selectedGroups.Count == 0)
+            {
+                AppendToDetailsRichTextBlock("No groups selected for assignment.");
+                return;
+            }
+
+
         }
 
         private async Task ListAllOrchestrator(GraphServiceClient graphServiceClient)
@@ -152,22 +161,23 @@ namespace IntuneTools.Pages
 
         #region Content loaders
 
-        private async Task GetAllContentFromDatagrid()
+        private Dictionary<string, string> GetAllContentFromDatagrid()
         {
             // Gather all content from the datagrid and send to orchestrator
 
             Dictionary<string, string> content = new();
-
 
             foreach (var item in AssignmentList)
             {
                 content[item.Id] = item.Type;
             }
 
-            // TODO: Send content to orchestrator
             AppendToDetailsRichTextBlock($"Gathered {content.Count} items from DataGrid.");
+            
+            return content;
         }
 
+        
         private async Task LoadAllSettingsCatalogPoliciesAsync()
         {
             ShowLoading("Loading settings catalog policies from Microsoft Graph...");
