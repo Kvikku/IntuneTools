@@ -1,5 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Documents;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -32,8 +34,9 @@ namespace IntuneTools.Pages
 
             AppDataGrid.ItemsSource = AssignmentList;
 
-            // Ensure all option checkboxes are auto-checked when the page loads.
             this.Loaded += AssignmentPage_Loaded;
+
+            AppendToDetailsRichTextBlock("Console output");
         }
 
         private void AssignmentPage_Loaded(object sender, RoutedEventArgs e)
@@ -43,7 +46,6 @@ namespace IntuneTools.Pages
 
         private void AutoCheckAllOptions()
         {
-            // Set individual option checkboxes to checked without triggering cascading updates.
             _suppressOptionEvents = true;
             foreach (var cb in OptionsPanel.Children.OfType<CheckBox>().Where(cb => cb.Name != "OptionsAllCheckBox"))
             {
@@ -51,41 +53,55 @@ namespace IntuneTools.Pages
             }
             _suppressOptionEvents = false;
 
-            // Reflect the state in the 'Select all' checkbox without triggering its handler logic.
             _suppressSelectAllEvents = true;
             OptionsAllCheckBox.IsChecked = true;
             _suppressSelectAllEvents = false;
+        }
+
+        private void AppendToDetailsRichTextBlock(string text)
+        {
+            Paragraph paragraph;
+            if (LogConsole.Blocks.Count == 0)
+            {
+                paragraph = new Paragraph();
+                LogConsole.Blocks.Add(paragraph);
+            }
+            else
+            {
+                paragraph = LogConsole.Blocks.First() as Paragraph;
+                if (paragraph == null)
+                {
+                    paragraph = new Paragraph();
+                    LogConsole.Blocks.Add(paragraph);
+                }
+            }
+            if (paragraph.Inlines.Count > 0)
+            {
+                paragraph.Inlines.Add(new LineBreak());
+            }
+            paragraph.Inlines.Add(new Run { Text = text });
         }
 
         #region Orchestrators
 
         private async Task ListAllOrchestrator(GraphServiceClient graphServiceClient)
         {
-            // Main logic to list all assignments
-
-            // Clear the list before populating
             AssignmentList.Clear();
-
-
             var selectedContent = GetCheckedOptionNames();
+            // TODO: Populate AssignmentList based on selectedContent and graphServiceClient
+            AppendToDetailsRichTextBlock("List all orchestrator executed.");
         }
 
         #endregion
 
-
-
-
         #region Button click handlers
         private void SearchButton_Click(object sender, RoutedEventArgs e)
         {
-            // Placeholder: Implement a search UI/filter later.
-            // Example: Show a dialog or filter AppList based on criteria.
+            AppendToDetailsRichTextBlock("Search clicked (not implemented).");
         }
 
         private async void ListAllButton_Click(object sender, RoutedEventArgs e)
         {
-            // If you implement filtering later, reset ItemsSource here.
-
             await ListAllOrchestrator(sourceGraphServiceClient);
         }
 
@@ -98,6 +114,26 @@ namespace IntuneTools.Pages
             foreach (var item in toRemove)
             {
                 AssignmentList.Remove(item);
+            }
+            AppendToDetailsRichTextBlock($"Removed {toRemove.Count} item(s).");
+        }
+
+        private async void ClearLogButton_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new ContentDialog
+            {
+                Title = "Clear Log Console?",
+                Content = "Are you sure you want to clear all log console text? This action cannot be undone.",
+                PrimaryButtonText = "Clear",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync().AsTask();
+            if (result == ContentDialogResult.Primary)
+            {
+                LogConsole.Blocks.Clear();
             }
         }
 
@@ -112,14 +148,12 @@ namespace IntuneTools.Pages
             {
                 if (child is CheckBox cb && cb.IsChecked == true)
                 {
-                    checkedNames.Add(cb.Name); // or cb.Content.ToString() for display text
+                    checkedNames.Add(cb.Name);
                 }
             }
             return checkedNames;
         }
 
-
-        // Handler for the 'Select all' checkbox Checked event
         private void SelectAll_Checked(object sender, RoutedEventArgs e)
         {
             if (_suppressSelectAllEvents) return;
@@ -134,7 +168,6 @@ namespace IntuneTools.Pages
             _suppressOptionEvents = false;
         }
 
-        // Handler for the 'Select all' checkbox Unchecked event
         private void SelectAll_Unchecked(object sender, RoutedEventArgs e)
         {
             if (_suppressSelectAllEvents) return;
@@ -149,27 +182,23 @@ namespace IntuneTools.Pages
             _suppressOptionEvents = false;
         }
 
-        // Handler for the 'Select all' checkbox Indeterminate event
         private void SelectAll_Indeterminate(object sender, RoutedEventArgs e)
         {
             // Optional: handle indeterminate state
         }
 
-        // Handler for individual option checkbox Checked event
         private void Option_Checked(object sender, RoutedEventArgs e)
         {
             if (_suppressOptionEvents) return;
             UpdateSelectAllCheckBox();
         }
 
-        // Handler for individual option checkbox Unchecked event
         private void Option_Unchecked(object sender, RoutedEventArgs e)
         {
             if (_suppressOptionEvents) return;
             UpdateSelectAllCheckBox();
         }
 
-        // Helper to update the 'Select all' checkbox state based on options
         private void UpdateSelectAllCheckBox()
         {
             var optionCheckBoxes = OptionsPanel.Children.OfType<CheckBox>().Where(cb => cb.Name != "OptionsAllCheckBox").ToList();

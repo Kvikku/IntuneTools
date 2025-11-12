@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <Page
     x:Class="IntuneTools.Pages.AssignmentPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -14,10 +13,14 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>  <!-- Header -->
             <RowDefinition Height="Auto"/>  <!-- Action buttons + Options -->
-            <RowDefinition Height="*"/>     <!-- Data grid -->
+            <RowDefinition Height="*"/>     <!-- Data grid + Log console -->
         </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>   <!-- Main content -->
+            <ColumnDefinition Width="Auto"/> <!-- Log panel -->
+        </Grid.ColumnDefinitions>
 
-        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+        <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,16">
             <TextBlock Text="Intune Assignments"
                        HorizontalAlignment="Left"
                        FontSize="38"
@@ -31,6 +34,7 @@
 
         <!-- Buttons + Options Expander -->
         <StackPanel Grid.Row="1"
+                    Grid.Column="0"
                     Orientation="Horizontal"
                     Spacing="12"
                     Margin="0,0,0,12">
@@ -47,7 +51,6 @@
                     Click="RemoveSelectedButton_Click"
                     Style="{StaticResource DefaultButtonStyle}"/>
 
-            <!-- Added Options Expander copied from ImportPage.xaml line 68 -->
             <Expander x:Name="OptionsExpander" Header="Options" IsExpanded="False" Margin="20,0,0,0" VerticalAlignment="Top">
                 <StackPanel x:Name="OptionsPanel" Orientation="Vertical" VerticalAlignment="Center">
                     <CheckBox x:Name="OptionsAllCheckBox" 
@@ -76,6 +79,7 @@
 
         <controls:DataGrid x:Name="AppDataGrid"
                            Grid.Row="2"
+                           Grid.Column="0"
                            AutoGenerateColumns="False"
                            SelectionMode="Extended"
                            Margin="10">
@@ -86,5 +90,35 @@
                 <controls:DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="*"/>
             </controls:DataGrid.Columns>
         </controls:DataGrid>
+
+        <!-- Log Panel -->
+        <StackPanel x:Name="LogPanel"
+                    Grid.Row="2"
+                    Grid.Column="1"
+                    Orientation="Horizontal"
+                    Margin="20,0,0,0"
+                    VerticalAlignment="Top"
+                    HorizontalAlignment="Right">
+            <ScrollViewer Width="400" MaxHeight="400"
+                          HorizontalScrollBarVisibility="Disabled"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollMode="Disabled"
+                          VerticalScrollMode="Enabled">
+                <RichTextBlock x:Name="LogConsole"
+                               Width="300"
+                               HorizontalAlignment="Stretch"
+                               IsTextSelectionEnabled="True"
+                               TextWrapping="Wrap"/>
+            </ScrollViewer>
+            <Button x:Name="ClearLogButton"
+                    Width="50"
+                    Height="50"
+                    ToolTipService.ToolTip="Clear Log"
+                    Click="ClearLogButton_Click"
+                    VerticalAlignment="Top"
+                    Margin="16,0,0,0">
+                <FontIcon Glyph="&#xE74D;" FontFamily="Segoe MDL2 Assets"/>
+            </Button>
+        </StackPanel>
     </Grid>
 </Page>
