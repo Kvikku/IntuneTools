@@ -65,7 +65,6 @@
     <Content Remove="Assets\Wide310x150Logo.scale-400.png" />
   </ItemGroup>
   <ItemGroup>
-    <None Remove="Pages\ApplicationPage.xaml" />
     <None Remove="Pages\CleanupPage.xaml" />
     <None Remove="Pages\RenamingPage.xaml" />
   </ItemGroup>
@@ -119,7 +118,7 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Page Update="Pages\ApplicationPage.xaml">
+    <Page Update="Pages\AssignmentPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Update="Pages\SettingsPage.xaml">
