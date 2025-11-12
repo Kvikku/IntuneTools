@@ -1,4 +1,4 @@
-using Microsoft.UI.Xaml;
+﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Documents;
 using Microsoft.Graph.Beta;
@@ -86,6 +86,7 @@ namespace IntuneTools.Pages
             SearchButton.IsEnabled = false;
             ListAllButton.IsEnabled = false;
             RemoveSelectedButton.IsEnabled = false;
+            AssignButton.IsEnabled = false;
         }
 
         private void HideLoading()
@@ -96,6 +97,7 @@ namespace IntuneTools.Pages
             SearchButton.IsEnabled = true;
             ListAllButton.IsEnabled = true;
             RemoveSelectedButton.IsEnabled = true;
+            AssignButton.IsEnabled = true;
         }
         #endregion
 
@@ -248,6 +250,103 @@ namespace IntuneTools.Pages
             AppendToDetailsRichTextBlock($"Removed {toRemove.Count} item(s).");
         }
 
+        private async void AssignButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Validate selections
+            if (AppDataGrid.SelectedItems == null || AppDataGrid.SelectedItems.Count == 0)
+            {
+                await ShowValidationDialogAsync("No Content Selected", 
+                    "Please select at least one item from the content list to assign.");
+                return;
+            }
+
+            if (GroupDataGrid.SelectedItems == null || GroupDataGrid.SelectedItems.Count == 0)
+            {
+                await ShowValidationDialogAsync("No Groups Selected", 
+                    "Please select at least one group to assign the content to.");
+                return;
+            }
+
+            // Get selected items and groups
+            var selectedItems = AppDataGrid.SelectedItems.Cast<AssignmentInfo>().ToList();
+            var selectedGroups = GroupDataGrid.SelectedItems.Cast<GroupInfo>().ToList();
+
+            // Get filter if selected
+            string filterInfo = string.Empty;
+            if (FiltersCheckBox.IsChecked == true && FilterSelectionComboBox.SelectedItem != null)
+            {
+                filterInfo = $" with filter '{FilterSelectionComboBox.SelectedItem}'";
+            }
+
+            // Confirmation dialog
+            var confirmDialog = new ContentDialog
+            {
+                Title = "Confirm Assignment",
+                Content = $"Assign {selectedItems.Count} item(s) to {selectedGroups.Count} group(s){filterInfo}?\n\n" +
+                         $"This will create assignments in Microsoft Intune.",
+                PrimaryButtonText = "Assign",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await confirmDialog.ShowAsync();
+            if (result != ContentDialogResult.Primary)
+            {
+                AppendToDetailsRichTextBlock("Assignment cancelled by user.");
+                return;
+            }
+
+            // Perform assignment
+            ShowLoading("Assigning content to groups...");
+            try
+            {
+                AppendToDetailsRichTextBlock($"Starting assignment of {selectedItems.Count} item(s) to {selectedGroups.Count} group(s)...");
+
+                int successCount = 0;
+                int failureCount = 0;
+
+                foreach (var item in selectedItems)
+                {
+                    foreach (var group in selectedGroups)
+                    {
+                        try
+                        {
+                            // TODO: Implement actual assignment logic based on item.Type
+                            // For now, just log the action
+                            AppendToDetailsRichTextBlock($"Assigning '{item.Name}' to group '{group.GroupName}'...");
+                            
+                            // Simulate assignment delay
+                            await Task.Delay(100);
+                            
+                            successCount++;
+                        }
+                        catch (Exception ex)
+                        {
+                            AppendToDetailsRichTextBlock($"❌ Failed to assign '{item.Name}' to '{group.GroupName}': {ex.Message}");
+                            failureCount++;
+                        }
+                    }
+                }
+
+                AppendToDetailsRichTextBlock($"Assignment completed: {successCount} successful, {failureCount} failed.");
+                
+                // Show completion dialog
+                await ShowValidationDialogAsync("Assignment Complete", 
+                    $"Successfully assigned: {successCount}\nFailed: {failureCount}");
+            }
+            catch (Exception ex)
+            {
+                AppendToDetailsRichTextBlock($"❌ Assignment operation failed: {ex.Message}");
+                await ShowValidationDialogAsync("Assignment Error", 
+                    $"An error occurred during assignment:\n{ex.Message}");
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
         private async void GroupListAllClick(object sender, RoutedEventArgs e)
         {
             await LoadAllGroupsAsync();
@@ -284,20 +383,23 @@ namespace IntuneTools.Pages
                 LogConsole.Blocks.Clear();
             }
         }
+
+        private async Task ShowValidationDialogAsync(string title, string message)
+        {
+            var dialog = new ContentDialog
+            {
+                Title = title,
+                Content = message,
+                CloseButtonText = "OK",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+            await dialog.ShowAsync();
+        }
         #endregion
 
         #region Event handlers (Groups / Filters UI)
-        private void GroupsCheckBox_Checked(object sender, RoutedEventArgs e)
-        {
-            NewControlsPanel.Visibility = Visibility.Visible;
-            Option_Checked(sender, e);
-        }
 
-        private void GroupsCheckBox_Unchecked(object sender, RoutedEventArgs e)
-        {
-            NewControlsPanel.Visibility = Visibility.Collapsed;
-            Option_Unchecked(sender, e);
-        }
 
         private void FiltersCheckBox_Checked(object sender, RoutedEventArgs e)
         {

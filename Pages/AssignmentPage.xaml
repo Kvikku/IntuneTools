@@ -50,8 +50,9 @@
                     Click="RemoveSelectedButton_Click"
                     Style="{StaticResource DefaultButtonStyle}"/>
 
-            <Expander x:Name="OptionsExpander"
-                      Header="Options"
+            <!-- Content Types Expander -->
+            <Expander x:Name="ContentTypesExpander"
+                      Header="Content Types"
                       IsExpanded="False"
                       Margin="20,0,0,0"
                       VerticalAlignment="Top">
@@ -76,6 +77,32 @@
                     <CheckBox x:Name="WindowsFeatureUpdate" Content="Windows Feature Update" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
                     <CheckBox x:Name="WindowsQualityUpdatePolicy" Content="Windows Quality Update Policy" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
                     <CheckBox x:Name="WindowsQualityUpdateProfile" Content="Windows Quality Update Profile" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                </StackPanel>
+            </Expander>
+
+            <!-- Assignment Filter Expander -->
+            <Expander x:Name="FilterExpander"
+                      Header="Assignment Filter"
+                      IsExpanded="False"
+                      Margin="12,0,0,0"
+                      VerticalAlignment="Top">
+                <StackPanel Orientation="Vertical">
+                    <CheckBox x:Name="FiltersCheckBox"
+                              Content="Use Assignment Filter"
+                              IsThreeState="False"
+                              Checked="FiltersCheckBox_Checked"
+                              Unchecked="FiltersCheckBox_Unchecked"
+                              Click="FilterCheckBoxClick"
+                              Margin="0,0,0,8"/>
+                    
+                    <!-- Filter selection -->
+                    <ComboBox x:Name="FilterSelectionComboBox"
+                              Width="250"
+                              PlaceholderText="Select a filter..."
+                              Visibility="Collapsed"
+                              SelectionChanged="FilterSelectionComboBox_SelectionChanged"
+                              HorizontalAlignment="Left"
+                              Margin="0,0,0,0"/>
                 </StackPanel>
             </Expander>
         </StackPanel>
@@ -128,67 +155,54 @@
             <StackPanel Grid.Column="1"
                         Orientation="Vertical"
                         Margin="0,0,16,0">
-                <TextBlock Text="Assignments"
+                <TextBlock Text="Assign to Groups"
                            FontSize="20"
                            FontWeight="SemiBold"
                            Margin="0,0,0,12"/>
 
-                <!-- Groups & Filters toggles -->
-                <StackPanel Orientation="Horizontal" Spacing="20" Margin="0,0,0,8">
-                    <CheckBox x:Name="GroupsCheckBox"
-                              Content="Groups"
-                              IsThreeState="False"
-                              Checked="GroupsCheckBox_Checked"
-                              Unchecked="GroupsCheckBox_Unchecked"/>
-                    <CheckBox x:Name="FiltersCheckBox"
-                              Content="Filters"
-                              IsThreeState="False"
-                              Checked="FiltersCheckBox_Checked"
-                              Unchecked="FiltersCheckBox_Unchecked"
-                              Click="FilterCheckBoxClick"/>
+                <!-- Group search panel (always visible) -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <TextBox x:Name="GroupSearchTextBox"
+                             PlaceholderText="Search groups..."
+                             Width="190"
+                             Margin="0,0,8,0"/>
+                    <Button x:Name="NewButton1"
+                            Content="Search"
+                            Width="70"
+                            Click="GroupSearchClick"/>
                 </StackPanel>
-
-                <!-- Filter selection -->
-                <ComboBox x:Name="FilterSelectionComboBox"
-                          Width="250"
-                          PlaceholderText="Select a filter..."
-                          Visibility="Collapsed"
-                          SelectionChanged="FilterSelectionComboBox_SelectionChanged"
-                          Margin="0,0,0,12"/>
-
-                <!-- Group search panel -->
-                <StackPanel x:Name="NewControlsPanel"
-                            Orientation="Vertical"
-                            Visibility="Collapsed">
-                    <TextBlock Text="Groups"
-                               FontSize="16"
-                               FontWeight="SemiBold"
-                               Margin="0,0,0,8"/>
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                        <TextBox x:Name="GroupSearchTextBox"
-                                 PlaceholderText="Search groups..."
-                                 Width="190"
-                                 Margin="0,0,8,0"/>
-                        <Button x:Name="NewButton1"
-                                Content="Search"
-                                Width="70"
-                                Click="GroupSearchClick"/>
+                
+                <Button x:Name="NewButton2"
+                        Content="List all"
+                        Width="100"
+                        Margin="0,0,0,12"
+                        HorizontalAlignment="Left"
+                        Click="GroupListAllClick"/>
+                
+                <controls:DataGrid x:Name="GroupDataGrid"
+                                   AutoGenerateColumns="False"
+                                   HeadersVisibility="Column"
+                                   Height="250"
+                                   Width="300"
+                                   SelectionMode="Extended"
+                                   Margin="0,0,0,12">
+                    <controls:DataGrid.Columns>
+                        <controls:DataGridTextColumn Header="Group Name" Binding="{Binding GroupName}" Width="*"/>
+                    </controls:DataGrid.Columns>
+                </controls:DataGrid>
+                
+                <!-- ASSIGN BUTTON - Primary action -->
+                <Button x:Name="AssignButton"
+                        Click="AssignButton_Click"
+                        HorizontalAlignment="Stretch"
+                        Style="{StaticResource AccentButtonStyle}"
+                        Height="40"
+                        FontWeight="SemiBold">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE8FB;" FontSize="16"/>
+                        <TextBlock Text="Assign to Groups" VerticalAlignment="Center"/>
                     </StackPanel>
-                    <Button x:Name="NewButton2"
-                            Content="List all"
-                            Width="100"
-                            Margin="0,0,0,12"
-                            Click="GroupListAllClick"/>
-                    <controls:DataGrid x:Name="GroupDataGrid"
-                                       AutoGenerateColumns="False"
-                                       HeadersVisibility="Column"
-                                       Height="250"
-                                       Width="300">
-                        <controls:DataGrid.Columns>
-                            <controls:DataGridTextColumn Header="Group Name" Binding="{Binding GroupName}" Width="*"/>
-                        </controls:DataGrid.Columns>
-                    </controls:DataGrid>
-                </StackPanel>
+                </Button>
             </StackPanel>
 
             <!-- Log Panel -->
