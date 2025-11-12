@@ -1,12 +1,12 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Documents;
+using Microsoft.Graph.Beta;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
-using Windows.ApplicationModel.Contacts;
 using static IntuneTools.Graph.EntraHelperClasses.GroupHelperClass;
 using static IntuneTools.Graph.IntuneHelperClasses.AppleBYODEnrollmentProfileHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceCompliancePolicyHelper;
@@ -34,9 +34,22 @@ namespace IntuneTools.Pages
         public string Platform { get; set; }
     }
 
+    public class AssignmentGroupInfo
+    {
+        public string? GroupName { get; set; }
+    }
+
+    public class AssignmentFilterInfo
+    {
+        public string? FilterName { get; set; }
+    }
+
     public sealed partial class AssignmentPage : Page
     {
         public static ObservableCollection<AssignmentInfo> AssignmentList { get; } = new();
+        public ObservableCollection<GroupInfo> GroupList { get; } = new();
+        public ObservableCollection<string> FilterOptions { get; } = new();
+
         private bool _suppressOptionEvents = false;
         private bool _suppressSelectAllEvents = false;
 
@@ -46,7 +59,6 @@ namespace IntuneTools.Pages
         {
             this.InitializeComponent();
 
-            // Initialize the dictionary here, where 'this' is available
             _assignmentLoaders = new Dictionary<string, Func<Task>>(StringComparer.OrdinalIgnoreCase)
             {
                 ["SettingsCatalog"] = async () => await LoadAllSettingsCatalogPoliciesAsync(),
@@ -65,7 +77,6 @@ namespace IntuneTools.Pages
         }
 
         #region Loading Overlay
-
         private void ShowLoading(string message = "Loading data from Microsoft Graph...")
         {
             LoadingStatusText.Text = message;
@@ -86,11 +97,9 @@ namespace IntuneTools.Pages
             ListAllButton.IsEnabled = true;
             RemoveSelectedButton.IsEnabled = true;
         }
-
         #endregion
 
         #region Orchestrators
-
         private async Task ListAllOrchestrator(GraphServiceClient graphServiceClient)
         {
             AssignmentList.Clear();
@@ -104,28 +113,18 @@ namespace IntuneTools.Pages
             }
 
             AppendToDetailsRichTextBlock("Listing all content.");
-
             ShowLoading("Loading assignment data...");
-
             try
             {
                 foreach (var option in selectedContent)
                 {
                     if (_assignmentLoaders.TryGetValue(option, out var loader))
                     {
-                        try
-                        {
-                            await loader();
-                        }
+                        try { await loader(); }
                         catch (Exception ex)
                         {
                             AppendToDetailsRichTextBlock($"Failed loading assignments for '{option}': {ex.Message}");
                         }
-                    }
-                    else
-                    {
-                        // Do we want to log unregistered options? Decide later.
-                        //AppendToDetailsRichTextBlock($"No assignment loader registered for '{option}'.");
                     }
                 }
             }
@@ -134,19 +133,15 @@ namespace IntuneTools.Pages
                 HideLoading();
             }
         }
-
         #endregion
 
         #region Content loaders
-
         private async Task LoadAllSettingsCatalogPoliciesAsync()
         {
             ShowLoading("Loading settings catalog policies from Microsoft Graph...");
             try
             {
-                // Retrieve all settings catalog policies
                 var policies = await GetAllSettingsCatalogPolicies(sourceGraphServiceClient);
-                // Update AssignmentList for DataGrid
                 foreach (var policy in policies)
                 {
                     AssignmentList.Add(new AssignmentInfo
@@ -157,7 +152,6 @@ namespace IntuneTools.Pages
                         Id = policy.Id
                     });
                 }
-                // Bind to DataGrid
                 AppDataGrid.ItemsSource = AssignmentList;
             }
             finally
@@ -165,10 +159,72 @@ namespace IntuneTools.Pages
                 HideLoading();
             }
         }
-
         #endregion
 
-        #region Button click handlers
+        #region Group / Filter retrieval
+        private async Task LoadAllGroupsAsync()
+        {
+            GroupList.Clear();
+            ShowLoading("Loading groups from Microsoft Graph...");
+            try
+            {
+                var groups = await GetAllGroups(destinationGraphServiceClient);
+                foreach (var group in groups)
+                {
+                    GroupList.Add(new GroupInfo { GroupName = group.DisplayName });
+                }
+                GroupDataGrid.ItemsSource = GroupList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
+        private async Task SearchForGroupsAsync(string searchQuery)
+        {
+            GroupList.Clear();
+            ShowLoading("Searching for groups in Microsoft Graph...");
+            try
+            {
+                var groups = await SearchForGroups(destinationGraphServiceClient, searchQuery);
+                foreach (var group in groups)
+                {
+                    GroupList.Add(new GroupInfo { GroupName = group.DisplayName });
+                }
+                GroupDataGrid.ItemsSource = GroupList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
+        private async Task LoadAllAssignmentFiltersAsync()
+        {
+            filterNameAndID.Clear();
+            ShowLoading("Loading assignment filters from Microsoft Graph...");
+            try
+            {
+                FilterOptions.Clear();
+                var filters = await GetAllAssignmentFilters(destinationGraphServiceClient);
+                foreach (var filter in filters)
+                {
+                    FilterOptions.Add(filter.DisplayName);
+                    if (!filterNameAndID.ContainsKey(filter.DisplayName))
+                        filterNameAndID[filter.DisplayName] = filter.Id;
+                }
+                if (FilterSelectionComboBox.ItemsSource != FilterOptions)
+                    FilterSelectionComboBox.ItemsSource = FilterOptions;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+        #endregion
+
+        #region Button handlers
         private void SearchButton_Click(object sender, RoutedEventArgs e)
         {
             AppendToDetailsRichTextBlock("Search clicked (not implemented).");
@@ -176,7 +232,6 @@ namespace IntuneTools.Pages
 
         private async void ListAllButton_Click(object sender, RoutedEventArgs e)
         {
-            // sourceGraphServiceClient is assumed available in your existing context
             await ListAllOrchestrator(sourceGraphServiceClient);
         }
 
@@ -191,6 +246,24 @@ namespace IntuneTools.Pages
                 AssignmentList.Remove(item);
             }
             AppendToDetailsRichTextBlock($"Removed {toRemove.Count} item(s).");
+        }
+
+        private async void GroupListAllClick(object sender, RoutedEventArgs e)
+        {
+            await LoadAllGroupsAsync();
+        }
+
+        private async void GroupSearchClick(object sender, RoutedEventArgs e)
+        {
+            await SearchForGroupsAsync(GroupSearchTextBox.Text);
+        }
+
+        private async void FilterCheckBoxClick(object sender, RoutedEventArgs e)
+        {
+            if (FiltersCheckBox.IsChecked == true)
+            {
+                await LoadAllAssignmentFiltersAsync();
+            }
         }
 
         private async void ClearLogButton_Click(object sender, RoutedEventArgs e)
@@ -211,11 +284,45 @@ namespace IntuneTools.Pages
                 LogConsole.Blocks.Clear();
             }
         }
+        #endregion
 
+        #region Event handlers (Groups / Filters UI)
+        private void GroupsCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            NewControlsPanel.Visibility = Visibility.Visible;
+            Option_Checked(sender, e);
+        }
+
+        private void GroupsCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            NewControlsPanel.Visibility = Visibility.Collapsed;
+            Option_Unchecked(sender, e);
+        }
+
+        private void FiltersCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            FilterSelectionComboBox.Visibility = Visibility.Visible;
+        }
+
+        private void FiltersCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            FilterSelectionComboBox.Visibility = Visibility.Collapsed;
+        }
+
+        private void FilterSelectionComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (FilterSelectionComboBox.SelectedItem != null)
+            {
+                var selected = FilterSelectionComboBox.SelectedItem.ToString();
+                if (filterNameAndID.TryGetValue(selected, out var id))
+                {
+                    SelectedFilterID = id;
+                }
+            }
+        }
         #endregion
 
         #region Helpers
-
         private void AssignmentPage_Loaded(object sender, RoutedEventArgs e)
         {
             AutoCheckAllOptions();
@@ -245,12 +352,9 @@ namespace IntuneTools.Pages
             }
             else
             {
-                paragraph = LogConsole.Blocks.First() as Paragraph;
-                if (paragraph == null)
-                {
-                    paragraph = new Paragraph();
+                paragraph = LogConsole.Blocks.First() as Paragraph ?? new Paragraph();
+                if (!LogConsole.Blocks.Contains(paragraph))
                     LogConsole.Blocks.Add(paragraph);
-                }
             }
             if (paragraph.Inlines.Count > 0)
             {
@@ -300,9 +404,7 @@ namespace IntuneTools.Pages
             _suppressOptionEvents = false;
         }
 
-        private void SelectAll_Indeterminate(object sender, RoutedEventArgs e)
-        {
-        }
+        private void SelectAll_Indeterminate(object sender, RoutedEventArgs e) { }
 
         private void Option_Checked(object sender, RoutedEventArgs e)
         {
@@ -323,7 +425,6 @@ namespace IntuneTools.Pages
                 return;
 
             bool?[] states = optionCheckBoxes.Select(cb => cb.IsChecked).ToArray();
-
             _suppressSelectAllEvents = true;
             if (states.All(x => x == true))
                 OptionsAllCheckBox.IsChecked = true;
@@ -333,7 +434,6 @@ namespace IntuneTools.Pages
                 OptionsAllCheckBox.IsChecked = null;
             _suppressSelectAllEvents = false;
         }
-
         #endregion
     }
 }
