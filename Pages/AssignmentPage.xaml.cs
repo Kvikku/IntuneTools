@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace IntuneTools.Pages
 {
@@ -25,5 +26,33 @@ namespace IntuneTools.Pages
 
             AppDataGrid.ItemsSource = AppList;
         }
+
+
+        #region Button click handlers
+        private void SearchButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Placeholder: Implement a search UI/filter later.
+            // Example: Show a dialog or filter AppList based on criteria.
+        }
+
+        private void ListAllButton_Click(object sender, RoutedEventArgs e)
+        {
+            // If you implement filtering later, reset ItemsSource here.
+            AppDataGrid.ItemsSource = AppList;
+        }
+
+        private void RemoveSelectedButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (AppDataGrid.SelectedItems == null || AppDataGrid.SelectedItems.Count == 0)
+                return;
+
+            var toRemove = AppDataGrid.SelectedItems.Cast<AssignmentInfo>().ToList();
+            foreach (var item in toRemove)
+            {
+                AppList.Remove(item);
+            }
+        }
+
+        #endregion
     }
 }
