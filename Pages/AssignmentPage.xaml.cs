@@ -4,24 +4,24 @@ using System.Collections.ObjectModel;
 
 namespace IntuneTools.Pages
 {
-    public class AppInfo
+    public class AssignmentInfo
     {
-        public string AppName { get; set; }
-        public string AppId { get; set; }
-        public string Version { get; set; }
+        public string Name { get; set; }
+        public string Id { get; set; }
+        public string Platform { get; set; }
     }
 
     public sealed partial class AssignmentPage : Page
     {
-        public ObservableCollection<AppInfo> AppList { get; } = new();
+        public ObservableCollection<AssignmentInfo> AppList { get; } = new();
 
         public AssignmentPage()
         {
             this.InitializeComponent();
 
-            AppList.Add(new AppInfo { AppName = "App One", AppId = "001", Version = "1.0" });
-            AppList.Add(new AppInfo { AppName = "App Two", AppId = "002", Version = "2.0" });
-            AppList.Add(new AppInfo { AppName = "App Three", AppId = "003", Version = "3.0" });
+            AppList.Add(new AssignmentInfo { Name = "App One", Id = "001", Platform = "Windows" });
+            AppList.Add(new AssignmentInfo { Name = "App Two", Id = "002", Platform = "Windows" });
+            AppList.Add(new AssignmentInfo { Name = "App Three", Id = "003", Platform = "Windows" });
 
             AppDataGrid.ItemsSource = AppList;
         }

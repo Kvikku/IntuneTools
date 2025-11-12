@@ -30,9 +30,9 @@
 
         <controls:DataGrid x:Name="AppDataGrid" Grid.Row="1" AutoGenerateColumns="False" Margin="10">
             <controls:DataGrid.Columns>
-                <controls:DataGridTextColumn Header="App Name" Binding="{Binding AppName}" Width="*"/>
-                <controls:DataGridTextColumn Header="App ID" Binding="{Binding AppId}" Width="*"/>
-                <controls:DataGridTextColumn Header="Version" Binding="{Binding Version}" Width="*"/>
+                <controls:DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*"/>
+                <controls:DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="*"/>
+                <controls:DataGridTextColumn Header="Platform" Binding="{Binding Platform}" Width="*"/>
             </controls:DataGrid.Columns>
         </controls:DataGrid>
     </Grid>
