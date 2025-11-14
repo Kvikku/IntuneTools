@@ -119,8 +119,17 @@ namespace IntuneTools.Pages
         {
             // Main orchestrator of assignment operations
 
-            // Get all content
 
+            // Validate selections 
+            if (GroupDataGrid.SelectedItems == null || GroupDataGrid.SelectedItems.Count == 0)
+            {
+                await ShowValidationDialogAsync("No Groups Selected",
+                    "Please select at least one group to assign the content to.");
+                return;
+            }
+
+
+            // Get all content
             var content = GetAllContentFromDatagrid();
 
             // Get groups
@@ -132,12 +141,84 @@ namespace IntuneTools.Pages
                 return;
             }
 
-            // Get filter if selected
+            // Log the filter
+            AppendToDetailsRichTextBlock("Filter: " + _selectedFilterName);
 
-
-            // Get install intent
+            // Get and log install intent
             UpdateSelectedInstallIntent();
 
+
+            // Get selected items and groups
+            //var selectedItems = AppDataGrid.SelectedItems.Cast<AssignmentInfo>().ToList();
+
+
+            // Confirmation dialog
+            var confirmDialog = new ContentDialog
+            {
+                Title = "Confirm Assignment",
+                Content = $"Assign {content.Count} item(s) to {selectedGroups.Count} group(s) with filter {_selectedFilterName} and intent {_selectedInstallIntent}?\n\n" +
+                         $"This will create assignments in Microsoft Intune.",
+                PrimaryButtonText = "Assign",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await confirmDialog.ShowAsync();
+            if (result != ContentDialogResult.Primary)
+            {
+                AppendToDetailsRichTextBlock("Assignment cancelled by user.");
+                return;
+            }
+
+            // Perform assignment
+            ShowLoading("Assigning content to groups...");
+            try
+            {
+                AppendToDetailsRichTextBlock($"Starting assignment of {content.Count} item(s) to {selectedGroups.Count} group(s)...");
+
+                int successCount = 0;
+                int failureCount = 0;
+
+                foreach (var item in content)
+                {
+                    foreach (var group in selectedGroups)
+                    {
+                        try
+                        {
+                            // TODO: Implement actual assignment logic based on item.Type
+                            // For now, just log the action
+                            AppendToDetailsRichTextBlock($"Assigning '{item.Key}' to group '{group.GroupName}' (ID: {group.GroupId})...");
+
+                            // Simulate assignment delay
+                            await Task.Delay(100);
+
+                            successCount++;
+                        }
+                        catch (Exception ex)
+                        {
+                            AppendToDetailsRichTextBlock($"❌ Failed to assign '{item.Key}' to '{group.GroupName}': {ex.Message}");
+                            failureCount++;
+                        }
+                    }
+                }
+
+                AppendToDetailsRichTextBlock($"Assignment completed: {successCount} successful, {failureCount} failed.");
+
+                // Show completion dialog
+                await ShowValidationDialogAsync("Assignment Complete",
+                    $"Successfully assigned: {successCount}\nFailed: {failureCount}");
+            }
+            catch (Exception ex)
+            {
+                AppendToDetailsRichTextBlock($"❌ Assignment operation failed: {ex.Message}");
+                await ShowValidationDialogAsync("Assignment Error",
+                    $"An error occurred during assignment:\n{ex.Message}");
+            }
+            finally
+            {
+                HideLoading();
+            }
 
         }
 
@@ -233,7 +314,7 @@ namespace IntuneTools.Pages
                 if (Enum.TryParse(intent, out InstallIntent parsedIntent))
                 {
                     _selectedInstallIntent = parsedIntent;
-                    AppendToDetailsRichTextBlock($"Assignment intent set to: {_selectedInstallIntent}");
+                    AppendToDetailsRichTextBlock($"Intent: {_selectedInstallIntent}");
                 }
                 else
                 {
@@ -422,97 +503,6 @@ namespace IntuneTools.Pages
         private async void AssignButton_Click(object sender, RoutedEventArgs e)
         {
             await MainOrchestrator(sourceGraphServiceClient);
-
-            // Validate selections
-            if (AppDataGrid.SelectedItems == null || AppDataGrid.SelectedItems.Count == 0)
-            {
-                await ShowValidationDialogAsync("No Content Selected", 
-                    "Please select at least one item from the content list to assign.");
-                return;
-            }
-
-            if (GroupDataGrid.SelectedItems == null || GroupDataGrid.SelectedItems.Count == 0)
-            {
-                await ShowValidationDialogAsync("No Groups Selected", 
-                    "Please select at least one group to assign the content to.");
-                return;
-            }
-
-            // Get selected items and groups
-            var selectedItems = AppDataGrid.SelectedItems.Cast<AssignmentInfo>().ToList();
-            var selectedGroups = GroupDataGrid.SelectedItems.Cast<AssignmentGroupInfo>().ToList();
-
-            // Get filter if selected
-            string filterInfo = string.Empty;
-
-
-            // Confirmation dialog
-            var confirmDialog = new ContentDialog
-            {
-                Title = "Confirm Assignment",
-                Content = $"Assign {selectedItems.Count} item(s) to {selectedGroups.Count} group(s){filterInfo}?\n\n" +
-                         $"This will create assignments in Microsoft Intune.",
-                PrimaryButtonText = "Assign",
-                CloseButtonText = "Cancel",
-                DefaultButton = ContentDialogButton.Close,
-                XamlRoot = this.XamlRoot
-            };
-
-            var result = await confirmDialog.ShowAsync();
-            if (result != ContentDialogResult.Primary)
-            {
-                AppendToDetailsRichTextBlock("Assignment cancelled by user.");
-                return;
-            }
-
-            // Perform assignment
-            ShowLoading("Assigning content to groups...");
-            try
-            {
-                AppendToDetailsRichTextBlock($"Starting assignment of {selectedItems.Count} item(s) to {selectedGroups.Count} group(s)...");
-
-                int successCount = 0;
-                int failureCount = 0;
-
-                foreach (var item in selectedItems)
-                {
-                    foreach (var group in selectedGroups)
-                    {
-                        try
-                        {
-                            // TODO: Implement actual assignment logic based on item.Type
-                            // For now, just log the action
-                            AppendToDetailsRichTextBlock($"Assigning '{item.Name}' to group '{group.GroupName}' (ID: {group.GroupId})...");
-                            
-                            // Simulate assignment delay
-                            await Task.Delay(100);
-                            
-                            successCount++;
-                        }
-                        catch (Exception ex)
-                        {
-                            AppendToDetailsRichTextBlock($"❌ Failed to assign '{item.Name}' to '{group.GroupName}': {ex.Message}");
-                            failureCount++;
-                        }
-                    }
-                }
-
-                AppendToDetailsRichTextBlock($"Assignment completed: {successCount} successful, {failureCount} failed.");
-                
-                // Show completion dialog
-                await ShowValidationDialogAsync("Assignment Complete", 
-                    $"Successfully assigned: {successCount}\nFailed: {failureCount}");
-            }
-            catch (Exception ex)
-            {
-                AppendToDetailsRichTextBlock($"❌ Assignment operation failed: {ex.Message}");
-                await ShowValidationDialogAsync("Assignment Error", 
-                    $"An error occurred during assignment:\n{ex.Message}");
-            }
-            finally
-            {
-                HideLoading();
-            }
         }
 
         private async void GroupListAllClick(object sender, RoutedEventArgs e)
@@ -582,13 +572,13 @@ namespace IntuneTools.Pages
             {
                 _selectedFilterID = selectedFilter;
                 _selectedFilterName = selectedFilter.DisplayName;
-                AppendToDetailsRichTextBlock($"Selected filter: '{_selectedFilterName}' (ID: {_selectedFilterID.Id})");
+                //AppendToDetailsRichTextBlock($"Selected filter: '{_selectedFilterName}' (ID: {_selectedFilterID.Id})");
             }
             else
             {
                 _selectedFilterID = null;
                 _selectedFilterName = string.Empty;
-                AppendToDetailsRichTextBlock("Filter selection cleared.");
+                //AppendToDetailsRichTextBlock("Filter selection cleared.");
             }
         }
 
