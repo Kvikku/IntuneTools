@@ -156,7 +156,7 @@ namespace IntuneTools.Pages
             var confirmDialog = new ContentDialog
             {
                 Title = "Confirm Assignment",
-                Content = $"Assign {content.Count} item(s) to {selectedGroups.Count} group(s) with filter {_selectedFilterName} and intent {_selectedInstallIntent}?\n\n" +
+                Content = $"Assign {content.Count} item(s) to {selectedGroups.Count} group(s) with filter '{_selectedFilterName}' and intent '{_selectedInstallIntent}'?\n\n" +
                          $"This will create assignments in Microsoft Intune.",
                 PrimaryButtonText = "Assign",
                 CloseButtonText = "Cancel",
