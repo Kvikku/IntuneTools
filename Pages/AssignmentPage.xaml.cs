@@ -25,6 +25,7 @@ using static IntuneTools.Graph.IntuneHelperClasses.FilterHelperClass;
 using static IntuneTools.Utilities.HelperClass;
 using static IntuneTools.Utilities.Variables;
 using IntuneTools.Graph.IntuneHelperClasses;
+using Microsoft.Graph.Beta.Models;
 
 namespace IntuneTools.Pages
 {
@@ -54,6 +55,7 @@ namespace IntuneTools.Pages
         public ObservableCollection<AssignmentGroupInfo> GroupList { get; } = new();
         public ObservableCollection<string> FilterOptions { get; } = new();
 
+        private List<AssignmentInfo> _allAssignments = new();
         private bool _suppressOptionEvents = false;
         private bool _suppressSelectAllEvents = false;
 
@@ -76,6 +78,7 @@ namespace IntuneTools.Pages
             AssignmentList.Add(new AssignmentInfo { Name = "App Three", Id = "003", Platform = "Windows", Type = "Win32" });
             AssignmentList.Add(new AssignmentInfo { Name = "App Four", Id = "004", Platform = "Windows", Type = "Win32" });
 
+            _allAssignments.AddRange(AssignmentList);
             AppDataGrid.ItemsSource = AssignmentList;
 
             this.Loaded += AssignmentPage_Loaded;
@@ -90,7 +93,7 @@ namespace IntuneTools.Pages
             LoadingOverlay.Visibility = Visibility.Visible;
             LoadingProgressRing.IsActive = true;
 
-            SearchButton.IsEnabled = false;
+            ContentSearchBox.IsEnabled = false;
             ListAllButton.IsEnabled = false;
             RemoveSelectedButton.IsEnabled = false;
             AssignButton.IsEnabled = false;
@@ -101,7 +104,7 @@ namespace IntuneTools.Pages
             LoadingOverlay.Visibility = Visibility.Collapsed;
             LoadingProgressRing.IsActive = false;
 
-            SearchButton.IsEnabled = true;
+            ContentSearchBox.IsEnabled = true;
             ListAllButton.IsEnabled = true;
             RemoveSelectedButton.IsEnabled = true;
             AssignButton.IsEnabled = true;
@@ -132,6 +135,7 @@ namespace IntuneTools.Pages
         private async Task ListAllOrchestrator(GraphServiceClient graphServiceClient)
         {
             AssignmentList.Clear();
+            _allAssignments.Clear();
 
             var selectedContent = GetCheckedOptionNames();
             if (selectedContent.Count == 0)
@@ -156,6 +160,7 @@ namespace IntuneTools.Pages
                         }
                     }
                 }
+                _allAssignments.AddRange(AssignmentList);
             }
             finally
             {
@@ -193,13 +198,14 @@ namespace IntuneTools.Pages
                 var policies = await GetAllSettingsCatalogPolicies(sourceGraphServiceClient);
                 foreach (var policy in policies)
                 {
-                    AssignmentList.Add(new AssignmentInfo
+                    var assignmentInfo = new AssignmentInfo
                     {
                         Name = policy.Name,
                         Type = "Settings Catalog",
                         Platform = policy.Platforms?.ToString() ?? string.Empty,
                         Id = policy.Id
-                    });
+                    };
+                    AssignmentList.Add(assignmentInfo);
                 }
                 AppDataGrid.ItemsSource = AssignmentList;
             }
@@ -282,9 +288,48 @@ namespace IntuneTools.Pages
         #endregion
 
         #region Button handlers
-        private void SearchButton_Click(object sender, RoutedEventArgs e)
+        private void ContentSearchBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
         {
-            AppendToDetailsRichTextBlock("Search clicked (not implemented).");
+            var query = sender.Text;
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                // If query is empty, restore the full list
+                AssignmentList.Clear();
+                foreach (var item in _allAssignments)
+                {
+                    AssignmentList.Add(item);
+                }
+                AppendToDetailsRichTextBlock("Search cleared. Displaying all items.");
+            }
+            else
+            {
+                // Perform search
+                var filtered = _allAssignments.Where(item =>
+                    item.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                    item.Type.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                    item.Platform.Contains(query, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                AssignmentList.Clear();
+                foreach (var item in filtered)
+                {
+                    AssignmentList.Add(item);
+                }
+                AppendToDetailsRichTextBlock($"Search for '{query}' found {filtered.Count} item(s).");
+            }
+        }
+
+        private void ContentSearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+        {
+            // If the text box is cleared, restore the full list.
+            if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput && string.IsNullOrEmpty(sender.Text))
+            {
+                AssignmentList.Clear();
+                foreach (var item in _allAssignments)
+                {
+                    AssignmentList.Add(item);
+                }
+            }
         }
 
         private async void ListAllButton_Click(object sender, RoutedEventArgs e)
@@ -300,6 +345,7 @@ namespace IntuneTools.Pages
                 foreach (var item in selectedItems)
                 {
                     AssignmentList.Remove(item);
+                    _allAssignments.Remove(item);
                 }
                 AppendToDetailsRichTextBlock($"Removed {selectedItems.Count} selected item(s).");
             }
@@ -332,6 +378,7 @@ namespace IntuneTools.Pages
             {
                 var count = AssignmentList.Count;
                 AssignmentList.Clear();
+                _allAssignments.Clear();
                 AppendToDetailsRichTextBlock($"Removed all {count} items from the list.");
             }
             else
