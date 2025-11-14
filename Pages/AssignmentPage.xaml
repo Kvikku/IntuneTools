@@ -106,7 +106,19 @@
 
             <!-- DataGrid with loading overlay -->
             <Grid Grid.Column="0">
-                <controls:DataGrid x:Name="AppDataGrid"
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <InfoBar Grid.Row="0"
+                         IsOpen="True"
+                         Severity="Informational"
+                         Title="Staging Area"
+                         Message="This grid acts as a staging area. All items listed below will be assigned to the selected groups. Use the 'Remove' buttons to exclude items you do not wish to assign."
+                         IsClosable="True"
+                         Margin="0,0,12,12"/>
+                <controls:DataGrid Grid.Row="1"
+                                   x:Name="AppDataGrid"
                                    AutoGenerateColumns="False"
                                    SelectionMode="Extended"
                                    Margin="0,0,12,0">
@@ -118,7 +130,8 @@
                     </controls:DataGrid.Columns>
                 </controls:DataGrid>
 
-                <Border x:Name="LoadingOverlay"
+                <Border Grid.RowSpan="2"
+                        x:Name="LoadingOverlay"
                         Background="{ThemeResource SystemControlAcrylicWindowBrush}"
                         Visibility="Collapsed"
                         HorizontalAlignment="Stretch"
