@@ -63,6 +63,7 @@ namespace IntuneTools.Pages
 
         private DeviceAndAppManagementAssignmentFilter? _selectedFilterID;
         private string _selectedFilterName;
+        private InstallIntent _selectedInstallIntent;
 
         #endregion
         public AssignmentPage()
@@ -133,6 +134,9 @@ namespace IntuneTools.Pages
 
             // Get filter if selected
 
+
+            // Get install intent
+            UpdateSelectedInstallIntent();
 
 
         }
@@ -222,6 +226,28 @@ namespace IntuneTools.Pages
         #endregion
 
         #region Group / Filter retrieval
+        private void UpdateSelectedInstallIntent()
+        {
+            if (AssignmentIntentComboBox.SelectedItem is ComboBoxItem selectedItem && selectedItem.Content is string intent)
+            {
+                if (Enum.TryParse(intent, out InstallIntent parsedIntent))
+                {
+                    _selectedInstallIntent = parsedIntent;
+                    AppendToDetailsRichTextBlock($"Assignment intent set to: {_selectedInstallIntent}");
+                }
+                else
+                {
+                    AppendToDetailsRichTextBlock($"Warning: Could not parse assignment intent '{intent}'. Defaulting to 'Required'.");
+                    _selectedInstallIntent = InstallIntent.Required;
+                }
+            }
+            else
+            {
+                AppendToDetailsRichTextBlock("Warning: No assignment intent selected. Defaulting to 'Required'.");
+                _selectedInstallIntent = InstallIntent.Required;
+            }
+        }
+
         private async Task LoadAllGroupsAsync()
         {
             GroupList.Clear();
