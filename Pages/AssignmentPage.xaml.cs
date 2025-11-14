@@ -61,7 +61,8 @@ namespace IntuneTools.Pages
 
         private readonly Dictionary<string, Func<Task>> _assignmentLoaders;
 
-        private DeviceAndAppManagementAssignmentFilter? _selectedFilter;
+        private DeviceAndAppManagementAssignmentFilter? _selectedFilterID;
+        private string _selectedFilterName;
 
         #endregion
         public AssignmentPage()
@@ -126,8 +127,12 @@ namespace IntuneTools.Pages
             if (selectedGroups == null || selectedGroups.Count == 0)
             {
                 AppendToDetailsRichTextBlock("No groups selected for assignment.");
+                AppendToDetailsRichTextBlock("Please select at least one group and try again.");
                 return;
             }
+
+            // Get filter if selected
+
 
 
         }
