@@ -11,9 +11,12 @@
 
     <Grid Margin="20">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>  <!-- Header -->
-            <RowDefinition Height="Auto"/>  <!-- Action buttons + Options -->
-            <RowDefinition Height="*"/>     <!-- Data grid + Side panel -->
+            <RowDefinition Height="Auto"/>
+            <!-- Header -->
+            <RowDefinition Height="Auto"/>
+            <!-- Action buttons + Options -->
+            <RowDefinition Height="*"/>
+            <!-- Data grid + Side panel -->
         </Grid.RowDefinitions>
 
         <!-- Header -->
@@ -42,25 +45,18 @@
                     <AppBarButton x:Name="RemoveSelectedButton" Icon="Delete" Label="Remove Selected" Click="RemoveSelectedButton_Click" ToolTipService.ToolTip="Remove selected items from the grid."/>
                     <AppBarButton x:Name="RemoveAllButton" Icon="Clear" Label="Remove All" Click="RemoveAllButton_Click" ToolTipService.ToolTip="Clear all items from the grid."/>
                     <AppBarSeparator/>
-                    <AppBarButton Icon="Filter" Label="Assignment Filter">
-                        <AppBarButton.Flyout>
-                            <Flyout Placement="BottomEdgeAlignedLeft">
-                                <StackPanel Orientation="Vertical" Spacing="8" MinWidth="300">
-                                    <ToggleSwitch x:Name="FilterToggle" 
-                                                  Header="Use Assignment Filter" 
-                                                  OffContent="Disabled" 
-                                                  OnContent="Enabled"
-                                                  Toggled="FilterToggle_Toggled"/>
-                                    <ComboBox x:Name="FilterSelectionComboBox"
-                                              Width="250"
-                                              PlaceholderText="Select a filter..."
-                                              Visibility="Collapsed"
-                                              SelectionChanged="FilterSelectionComboBox_SelectionChanged"
-                                              HorizontalAlignment="Left"/>
-                                </StackPanel>
-                            </Flyout>
-                        </AppBarButton.Flyout>
-                    </AppBarButton>
+                    <ToggleSwitch x:Name="FilterToggle"
+                                  Header="Use Assignment Filter"
+                                  OffContent="Disabled"
+                                  OnContent="Enabled"
+                                  Toggled="FilterToggle_Toggled"/>
+                    <ComboBox x:Name="FilterSelectionComboBox"
+                              Width="250"
+                              PlaceholderText="Select a filter..."
+                              Visibility="Collapsed"
+                              SelectionChanged="FilterSelectionComboBox_SelectionChanged"
+                              VerticalAlignment="Bottom"/>
+                    <AppBarSeparator/>
                     <AppBarButton Icon="ViewAll" Label="Content Types">
                         <AppBarButton.Flyout>
                             <Flyout Placement="BottomEdgeAlignedLeft">
@@ -100,8 +96,10 @@
         <!-- Main Content Row -->
         <Grid Grid.Row="2" Margin="0,0,0,20">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>          <!-- DataGrid -->
-                <ColumnDefinition Width="340"/>        <!-- Assignment side panel -->
+                <ColumnDefinition Width="*"/>
+                <!-- DataGrid -->
+                <ColumnDefinition Width="340"/>
+                <!-- Assignment side panel -->
             </Grid.ColumnDefinitions>
 
             <!-- DataGrid with loading overlay -->
@@ -173,13 +171,13 @@
                         <FontIcon Glyph="&#xE721;" FontSize="14"/>
                     </Button>
                 </StackPanel>
-                
+
                 <Button x:Name="GroupListAllButton"
                         Content="List all groups"
                         Margin="0,0,0,12"
                         HorizontalAlignment="Left"
                         Click="GroupListAllClick"/>
-                
+
                 <controls:DataGrid x:Name="GroupDataGrid"
                                    AutoGenerateColumns="False"
                                    HeadersVisibility="Column"
@@ -192,7 +190,7 @@
                         <controls:DataGridTextColumn Header="ID" Binding="{Binding GroupId}" Width="*"/>
                     </controls:DataGrid.Columns>
                 </controls:DataGrid>
-                
+
                 <!-- ASSIGN BUTTON - Primary action -->
                 <Button x:Name="AssignButton"
                         Click="AssignButton_Click"
@@ -205,7 +203,7 @@
                         <TextBlock Text="Assign to Groups" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
-                
+
                 <!-- Log Panel -->
                 <ScrollViewer HorizontalScrollBarVisibility="Disabled"
                               VerticalScrollBarVisibility="Auto"

@@ -53,7 +53,7 @@ namespace IntuneTools.Pages
         #region Variables and Properties
         public static ObservableCollection<AssignmentInfo> AssignmentList { get; } = new();
         public ObservableCollection<AssignmentGroupInfo> GroupList { get; } = new();
-        public ObservableCollection<string> FilterOptions { get; } = new();
+        public ObservableCollection<DeviceAndAppManagementAssignmentFilter> FilterOptions { get; } = new();
 
         private List<AssignmentInfo> _allAssignments = new();
         private bool _suppressOptionEvents = false;
@@ -270,7 +270,6 @@ namespace IntuneTools.Pages
 
         private async Task LoadAllAssignmentFiltersAsync()
         {
-            filterNameAndID.Clear();
             ShowLoading("Loading assignment filters from Microsoft Graph...");
             try
             {
@@ -278,12 +277,14 @@ namespace IntuneTools.Pages
                 var filters = await GetAllAssignmentFilters(sourceGraphServiceClient);
                 foreach (var filter in filters)
                 {
-                    FilterOptions.Add(filter.DisplayName);
-                    if (!filterNameAndID.ContainsKey(filter.DisplayName))
-                        filterNameAndID[filter.DisplayName] = filter.Id;
+                    FilterOptions.Add(filter);
                 }
+
                 if (FilterSelectionComboBox.ItemsSource != FilterOptions)
+                {
                     FilterSelectionComboBox.ItemsSource = FilterOptions;
+                    FilterSelectionComboBox.DisplayMemberPath = "DisplayName";
+                }
             }
             finally
             {
@@ -551,13 +552,17 @@ namespace IntuneTools.Pages
 
         private void FilterSelectionComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (FilterSelectionComboBox.SelectedItem != null)
+            if (FilterSelectionComboBox.SelectedItem is DeviceAndAppManagementAssignmentFilter selectedFilter)
             {
-                var selected = FilterSelectionComboBox.SelectedItem.ToString();
-                if (filterNameAndID.TryGetValue(selected, out var id))
-                {
-                    SelectedFilterID = id;
-                }
+                _selectedFilterID = selectedFilter;
+                _selectedFilterName = selectedFilter.DisplayName;
+                AppendToDetailsRichTextBlock($"Selected filter: '{_selectedFilterName}' (ID: {_selectedFilterID.Id})");
+            }
+            else
+            {
+                _selectedFilterID = null;
+                _selectedFilterName = string.Empty;
+                AppendToDetailsRichTextBlock("Filter selection cleared.");
             }
         }
 
