@@ -264,7 +264,7 @@ namespace IntuneTools.Pages
             try
             {
                 FilterOptions.Clear();
-                var filters = await GetAllAssignmentFilters(destinationGraphServiceClient);
+                var filters = await GetAllAssignmentFilters(sourceGraphServiceClient);
                 foreach (var filter in filters)
                 {
                     FilterOptions.Add(filter.DisplayName);
@@ -365,10 +365,7 @@ namespace IntuneTools.Pages
 
             // Get filter if selected
             string filterInfo = string.Empty;
-            if (FiltersCheckBox.IsChecked == true && FilterSelectionComboBox.SelectedItem != null)
-            {
-                filterInfo = $" with filter '{FilterSelectionComboBox.SelectedItem}'";
-            }
+
 
             // Confirmation dialog
             var confirmDialog = new ContentDialog
@@ -451,10 +448,7 @@ namespace IntuneTools.Pages
 
         private async void FilterCheckBoxClick(object sender, RoutedEventArgs e)
         {
-            if (FiltersCheckBox.IsChecked == true)
-            {
-                await LoadAllAssignmentFiltersAsync();
-            }
+            
         }
 
         private async void ClearLogButton_Click(object sender, RoutedEventArgs e)
@@ -532,6 +526,26 @@ namespace IntuneTools.Pages
                 {
                     // Handle exceptions, e.g., log them or show a message
                     // Log("Failed to load filters: " + ex.Message);
+                }
+            }
+        }
+
+        private async void FilterToggle_Toggled(object sender, RoutedEventArgs e)
+        {
+            if (sender is ToggleSwitch toggleSwitch)
+            {
+                if (toggleSwitch.IsOn)
+                {
+                    FilterSelectionComboBox.Visibility = Visibility.Visible;
+                    if (FilterSelectionComboBox.Items.Count == 0)
+                    {
+                        await LoadAllAssignmentFiltersAsync();
+                    }
+                }
+                else
+                {
+                    FilterSelectionComboBox.Visibility = Visibility.Collapsed;
+                    FilterSelectionComboBox.SelectedItem = null;
                 }
             }
         }

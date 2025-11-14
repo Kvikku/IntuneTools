@@ -85,32 +85,20 @@
                 </StackPanel>
             </Expander>
 
-            <!-- Assignment Filter Expander -->
-            <Expander x:Name="FilterExpander"
-                      Header="Assignment Filter"
-                      IsExpanded="False"
-                      Margin="12,0,0,0"
-                      VerticalAlignment="Top"
-                      Expanding="FilterExpander_Expanding">
-                <StackPanel Orientation="Vertical">
-                    <CheckBox x:Name="FiltersCheckBox"
-                              Content="Use Assignment Filter"
-                              IsThreeState="False"
-                              Checked="FiltersCheckBox_Checked"
-                              Unchecked="FiltersCheckBox_Unchecked"
-                              Click="FilterCheckBoxClick"
-                              Margin="0,0,0,8"/>
-                    
-                    <!-- Filter selection -->
-                    <ComboBox x:Name="FilterSelectionComboBox"
-                              Width="250"
-                              PlaceholderText="Select a filter..."
-                              Visibility="Collapsed"
-                              SelectionChanged="FilterSelectionComboBox_SelectionChanged"
-                              HorizontalAlignment="Left"
-                              Margin="0,0,0,0"/>
-                </StackPanel>
-            </Expander>
+            <!-- Assignment Filter -->
+            <StackPanel Orientation="Vertical" Margin="12,0,0,0" Spacing="8">
+                <ToggleSwitch x:Name="FilterToggle" 
+                              Header="Use Assignment Filter" 
+                              OffContent="Disabled" 
+                              OnContent="Enabled"
+                              Toggled="FilterToggle_Toggled"/>
+                <ComboBox x:Name="FilterSelectionComboBox"
+                          Width="250"
+                          PlaceholderText="Select a filter..."
+                          Visibility="Collapsed"
+                          SelectionChanged="FilterSelectionComboBox_SelectionChanged"
+                          HorizontalAlignment="Left"/>
+            </StackPanel>
         </StackPanel>
 
         <!-- Main Content Row -->
