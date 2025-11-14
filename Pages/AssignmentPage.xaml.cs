@@ -187,6 +187,9 @@ namespace IntuneTools.Pages
                         try
                         {
                             // TODO: Implement actual assignment logic based on item.Type
+
+
+
                             // For now, just log the action
                             AppendToDetailsRichTextBlock($"Assigning '{item.Key}' to group '{group.GroupName}' (ID: {group.GroupId})...");
 
