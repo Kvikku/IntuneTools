@@ -57,6 +57,16 @@
                               SelectionChanged="FilterSelectionComboBox_SelectionChanged"
                               VerticalAlignment="Bottom"/>
                     <AppBarSeparator/>
+                    <ComboBox x:Name="AssignmentIntentComboBox"
+                              Header="Assignment Intent"
+                              PlaceholderText="Select an intent"
+                              Width="150"
+                              VerticalAlignment="Bottom"
+                              SelectedIndex="0">
+                        <ComboBoxItem Content="Required"/>
+                        <ComboBoxItem Content="Available"/>
+                        <ComboBoxItem Content="Uninstall"/>
+                    </ComboBox>
                     <AppBarButton Icon="ViewAll" Label="Content Types">
                         <AppBarButton.Flyout>
                             <Flyout Placement="BottomEdgeAlignedLeft">
