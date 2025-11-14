@@ -141,6 +141,14 @@ namespace IntuneTools.Pages
                 return;
             }
 
+            // Prepare group list for assignment
+            List<string> groupList = new();
+
+            foreach (var group in selectedGroups)
+            {
+                groupList.Add(group.GroupId);
+            }
+
             // Log the filter
             AppendToDetailsRichTextBlock("Filter: " + _selectedFilterName);
 
@@ -182,6 +190,11 @@ namespace IntuneTools.Pages
 
                 foreach (var item in content)
                 {
+
+                    // Test settings catalog
+
+                    await AssignGroupsToSingleSettingsCatalog(item.Key, groupList, sourceGraphServiceClient);
+
                     foreach (var group in selectedGroups)
                     {
                         try
@@ -575,12 +588,15 @@ namespace IntuneTools.Pages
             {
                 _selectedFilterID = selectedFilter;
                 _selectedFilterName = selectedFilter.DisplayName;
+                SelectedFilterID = _selectedFilterID.Id;
+
                 //AppendToDetailsRichTextBlock($"Selected filter: '{_selectedFilterName}' (ID: {_selectedFilterID.Id})");
             }
             else
             {
                 _selectedFilterID = null;
                 _selectedFilterName = string.Empty;
+                SelectedFilterID = null;
                 //AppendToDetailsRichTextBlock("Filter selection cleared.");
             }
         }

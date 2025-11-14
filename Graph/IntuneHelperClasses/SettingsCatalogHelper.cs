@@ -171,6 +171,14 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     assignments.Add(assignment);
                 }
 
+                // Find existing assignments to avoid overwriting
+
+                var existingAssignments = await destinationGraphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].Assignments.GetAsync();
+                if (existingAssignments != null && existingAssignments.Value != null)
+                {
+                    assignments.AddRange(existingAssignments.Value);
+                }
+
                 var requestBody = new Microsoft.Graph.Beta.DeviceManagement.ConfigurationPolicies.Item.Assign.AssignPostRequestBody
                 {
                     Assignments = assignments
