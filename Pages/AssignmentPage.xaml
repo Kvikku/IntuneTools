@@ -65,7 +65,7 @@
                                   Toggled="FilterModeToggle_Toggled"/>
                     <AppBarSeparator/>
                     <ComboBox x:Name="AssignmentIntentComboBox"
-                              Header="Assignment Intent"
+                              Header="Assignment Intent (Apps only)"
                               PlaceholderText="Select an intent"
                               Width="150"
                               VerticalAlignment="Bottom"
