@@ -204,7 +204,7 @@ namespace IntuneTools.Pages
 
                     // Test settings catalog
 
-                    await AssignGroupsToSingleSettingsCatalog(item.Key, groupList, sourceGraphServiceClient);
+                    await AssignGroupsToSingleSettingsCatalog(item.Value, groupList, sourceGraphServiceClient);
 
                     foreach (var group in selectedGroups)
                     {
@@ -215,10 +215,8 @@ namespace IntuneTools.Pages
 
 
                             // For now, just log the action
-                            AppendToDetailsRichTextBlock($"Assigning '{item.Key}' to group '{group.GroupName}' (ID: {group.GroupId})...");
+                            AppendToDetailsRichTextBlock($"Assigning '{item.Key}' to group '{group.GroupName}'.");
 
-                            // Simulate assignment delay
-                            await Task.Delay(100);
 
                             successCount++;
                         }
