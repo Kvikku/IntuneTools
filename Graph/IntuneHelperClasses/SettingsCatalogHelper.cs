@@ -180,16 +180,8 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     Assignments = assignments
                 };
 
-                // Remove duplicates by target.groupId (keep first occurrence).
-                // Pseudocode:
-                // Initialize a HashSet<string> for seen groupIds.
-                // Iterate over all assignments:
-                //   Extract groupId if Target is GroupAssignmentTarget.
-                //   If groupId is null -> keep (non-group target).
-                //   If groupId not in HashSet -> add to distinct list and record.
-                //   Else -> skip (duplicate).
-                // Replace requestBody.Assignments with distinct list.
-                // Optionally log number removed.
+
+                // Remove duplicates by target.groupId
                 var seenGroupIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 var distinct = new List<DeviceManagementConfigurationPolicyAssignment>();
                 int duplicates = 0;
