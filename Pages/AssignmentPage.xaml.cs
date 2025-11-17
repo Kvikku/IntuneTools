@@ -65,7 +65,13 @@ namespace IntuneTools.Pages
         private string _selectedFilterName;
         private InstallIntent _selectedInstallIntent;
 
+        // New: Include / Exclude filter mode (default Include)
+        private string _selectedFilterMode = "Include";
+
+        // UI initialization flag to prevent early event handlers from using null controls (e.g., LogConsole)
+        private bool _uiInitialized = false;
         #endregion
+
         public AssignmentPage()
         {
             this.InitializeComponent();
@@ -84,8 +90,7 @@ namespace IntuneTools.Pages
             AppDataGrid.ItemsSource = AssignmentList;
 
             this.Loaded += AssignmentPage_Loaded;
-
-            AppendToDetailsRichTextBlock("Assignment page loaded.");
+            // Removed direct logging call here to avoid NullReference due to control construction order.
         }
 
         #region Loading Overlay
@@ -624,21 +629,52 @@ namespace IntuneTools.Pages
 
         private async void FilterToggle_Toggled(object sender, RoutedEventArgs e)
         {
+            if (!_uiInitialized) return; // Prevent early logging before controls are ready
+
             if (sender is ToggleSwitch toggleSwitch)
             {
                 if (toggleSwitch.IsOn)
                 {
                     FilterSelectionComboBox.Visibility = Visibility.Visible;
+
+                    if (FilterModeToggle is not null)
+                    {
+                        // Ensure default is Include when shown
+                        FilterModeToggle.IsOn = true; // On now means Include
+                        FilterModeToggle.Visibility = Visibility.Visible;
+                    }
+
                     if (FilterSelectionComboBox.Items.Count == 0)
                     {
                         await LoadAllAssignmentFiltersAsync();
                     }
+                    _selectedFilterMode = "Include";
+                    AppendToDetailsRichTextBlock("Assignment filter enabled (Mode=" + _selectedFilterMode + ").");
                 }
                 else
                 {
                     FilterSelectionComboBox.Visibility = Visibility.Collapsed;
                     FilterSelectionComboBox.SelectedItem = null;
+
+                    if (FilterModeToggle is not null)
+                    {
+                        FilterModeToggle.Visibility = Visibility.Collapsed;
+                        FilterModeToggle.IsOn = true; // Keep semantic default (Include) even while hidden
+                    }
+                    _selectedFilterMode = "Include";
+                    AppendToDetailsRichTextBlock("Assignment filter disabled.");
                 }
+            }
+        }
+
+        // Updated semantics: IsOn = Include, IsOff = Exclude
+        private void FilterModeToggle_Toggled(object sender, RoutedEventArgs e)
+        {
+            if (!_uiInitialized) return; // Prevent logging before LogConsole is ready
+            if (sender is ToggleSwitch ts)
+            {
+                _selectedFilterMode = ts.IsOn ? "Include" : "Exclude";
+                AppendToDetailsRichTextBlock($"Filter mode set to '{_selectedFilterMode}'.");
             }
         }
         #endregion
@@ -646,7 +682,9 @@ namespace IntuneTools.Pages
         #region Helpers
         private void AssignmentPage_Loaded(object sender, RoutedEventArgs e)
         {
+            _uiInitialized = true; // UI now safe for logging
             AutoCheckAllOptions();
+            AppendToDetailsRichTextBlock("Assignment page loaded.");
         }
 
         private void AutoCheckAllOptions()
@@ -665,6 +703,9 @@ namespace IntuneTools.Pages
 
         private void AppendToDetailsRichTextBlock(string text)
         {
+            // Guard against null LogConsole (early calls) or not yet initialized UI
+            if (LogConsole == null || !_uiInitialized) return;
+
             Paragraph paragraph;
             if (LogConsole.Blocks.Count == 0)
             {

@@ -56,6 +56,13 @@
                               Visibility="Collapsed"
                               SelectionChanged="FilterSelectionComboBox_SelectionChanged"
                               VerticalAlignment="Bottom"/>
+                    <ToggleSwitch x:Name="FilterModeToggle"
+                                  OnContent="Include"
+                                  OffContent="Exclude"
+                                  IsOn="True"
+                                  Visibility="Collapsed"
+                                  VerticalAlignment="Bottom"
+                                  Toggled="FilterModeToggle_Toggled"/>
                     <AppBarSeparator/>
                     <ComboBox x:Name="AssignmentIntentComboBox"
                               Header="Assignment Intent"
