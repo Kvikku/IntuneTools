@@ -201,28 +201,21 @@ namespace IntuneTools.Pages
 
                 foreach (var item in content)
                 {
-
-                    // Test settings catalog
-
-                    await AssignGroupsToSingleSettingsCatalog(item.Value, groupList, sourceGraphServiceClient);
+                    // item.Key = Id, item.Value = AssignmentInfo
+                    await AssignGroupsToSingleSettingsCatalog(item.Value.Type, groupList, sourceGraphServiceClient);
 
                     foreach (var group in selectedGroups)
                     {
                         try
                         {
-                            // TODO: Implement actual assignment logic based on item.Type
-
-
-
-                            // For now, just log the action
-                            AppendToDetailsRichTextBlock($"Assigning '{item.Key}' to group '{group.GroupName}'.");
-
-
+                            AppendToDetailsRichTextBlock(
+                                $"Assigning '{item.Value.Name}' to group '{group.GroupName}'.");
                             successCount++;
                         }
                         catch (Exception ex)
                         {
-                            AppendToDetailsRichTextBlock($"❌ Failed to assign '{item.Key}' to '{group.GroupName}': {ex.Message}");
+                            AppendToDetailsRichTextBlock(
+                                $"❌ Failed to assign '{item.Value.Name}' (ID: {item.Key}) to '{group.GroupName}': {ex.Message}");
                             failureCount++;
                         }
                     }
@@ -288,23 +281,22 @@ namespace IntuneTools.Pages
 
         #region Content loaders
 
-        private Dictionary<string, string> GetAllContentFromDatagrid()
+        private Dictionary<string, AssignmentInfo> GetAllContentFromDatagrid()
         {
-            // Gather all content from the datagrid and send to orchestrator
-
-            Dictionary<string, string> content = new();
+            // Gather all content (full objects) from the datagrid and send to orchestrator
+            var content = new Dictionary<string, AssignmentInfo>();
 
             foreach (var item in AssignmentList)
             {
-                content[item.Id] = item.Type;
+                // Key = Id, Value = full AssignmentInfo (includes Name, Type, Platform)
+                content[item.Id] = item;
             }
 
             AppendToDetailsRichTextBlock($"Gathered {content.Count} items from DataGrid.");
-            
             return content;
         }
 
-        
+
         private async Task LoadAllSettingsCatalogPoliciesAsync()
         {
             ShowLoading("Loading settings catalog policies from Microsoft Graph...");
