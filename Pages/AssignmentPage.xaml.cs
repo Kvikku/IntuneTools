@@ -202,7 +202,7 @@ namespace IntuneTools.Pages
                 foreach (var item in content)
                 {
                     // item.Key = Id, item.Value = AssignmentInfo
-                    await AssignGroupsToSingleSettingsCatalog(item.Value.Type, groupList, sourceGraphServiceClient);
+                    await AssignGroupsToSingleSettingsCatalog(item.Value.Id, groupList, sourceGraphServiceClient);
 
                     foreach (var group in selectedGroups)
                     {

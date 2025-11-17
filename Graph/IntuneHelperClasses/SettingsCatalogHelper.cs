@@ -128,7 +128,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task AssignGroupsToSingleSettingsCatalog(string policyID, List<string> groupID, GraphServiceClient destinationGraphServiceClient)
+        public static async Task AssignGroupsToSingleSettingsCatalog(string policyID, List<string> groupID, GraphServiceClient _graphServiceClient)
         {
             try
             {
@@ -136,21 +136,26 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 {
                     throw new ArgumentNullException(nameof(policyID));
                 }
-
                 if (groupID == null)
                 {
                     throw new ArgumentNullException(nameof(groupID));
                 }
-
-                if (destinationGraphServiceClient == null)
+                if (_graphServiceClient == null)
                 {
-                    throw new ArgumentNullException(nameof(destinationGraphServiceClient));
+                    throw new ArgumentNullException(nameof(_graphServiceClient));
                 }
 
-                List<DeviceManagementConfigurationPolicyAssignment> assignments = new List<DeviceManagementConfigurationPolicyAssignment>();
+                var assignments = new List<DeviceManagementConfigurationPolicyAssignment>();
+                var seenGroupIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+                // Step 1: Add new assignments to request body
                 foreach (var group in groupID)
                 {
+                    if (string.IsNullOrWhiteSpace(group) || !seenGroupIds.Add(group))
+                    {
+                        continue;
+                    }
+
                     var assignment = new DeviceManagementConfigurationPolicyAssignment
                     {
                         OdataType = "#microsoft.graph.deviceManagementConfigurationPolicyAssignment",
@@ -160,75 +165,67 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                             OdataType = "#microsoft.graph.groupAssignmentTarget",
                             DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
                             DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType,
-                            GroupId = group,
+                            GroupId = group
                         },
                         Source = DeviceAndAppManagementAssignmentSource.Direct,
-                        SourceId = group,
+                        SourceId = group
                     };
                     assignments.Add(assignment);
                 }
 
-                // Merge existing assignments
-                var existingAssignments = await destinationGraphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].Assignments.GetAsync();
+                // Step 2: Check for existing assignments and add only if not already present
+                var existingAssignments = await _graphServiceClient
+                    .DeviceManagement
+                    .ConfigurationPolicies[policyID]
+                    .Assignments
+                    .GetAsync();
+
                 if (existingAssignments?.Value != null)
                 {
-                    assignments.AddRange(existingAssignments.Value);
+                    foreach (var existing in existingAssignments.Value)
+                    {
+                        var existingGroupId = (existing.Target as GroupAssignmentTarget)?.GroupId;
+
+                        // Always include non-group assignments
+                        if (string.IsNullOrWhiteSpace(existingGroupId))
+                        {
+                            assignments.Add(existing);
+                            continue;
+                        }
+
+                        // Only add if not already in the new assignments
+                        if (seenGroupIds.Add(existingGroupId))
+                        {
+                            assignments.Add(existing);
+                        }
+                    }
                 }
 
+                // Step 3: Update the policy with the request body
                 var requestBody = new Microsoft.Graph.Beta.DeviceManagement.ConfigurationPolicies.Item.Assign.AssignPostRequestBody
                 {
                     Assignments = assignments
                 };
 
-
-                // Remove duplicates by target.groupId
-                var seenGroupIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                var distinct = new List<DeviceManagementConfigurationPolicyAssignment>();
-                int duplicates = 0;
-
-                foreach (var assignment in requestBody.Assignments)
-                {
-                    var groupTarget = assignment.Target as GroupAssignmentTarget;
-                    var groupId = groupTarget?.GroupId;
-
-                    if (groupId == null)
-                    {
-                        // Non-group assignment (or malformed) - keep.
-                        distinct.Add(assignment);
-                        continue;
-                    }
-
-                    if (seenGroupIds.Add(groupId))
-                    {
-                        distinct.Add(assignment);
-                    }
-                    else
-                    {
-                        duplicates++;
-                    }
-                }
-
-                if (duplicates > 0)
-                {
-                    WriteToImportStatusFile($"Removed {duplicates} duplicate group assignments for policy {policyID}.");
-                }
-
-                requestBody.Assignments = distinct;
-
                 try
                 {
-                    var result = await destinationGraphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].Assign.PostAsAssignPostResponseAsync(requestBody);
-                    WriteToImportStatusFile("Assigned groups to policy " + policyID + " with filter type " + deviceAndAppManagementAssignmentFilterType.ToString());
+                    await _graphServiceClient
+                        .DeviceManagement
+                        .ConfigurationPolicies[policyID]
+                        .Assign
+                        .PostAsAssignPostResponseAsync(requestBody);
+
+                    WriteToImportStatusFile($"Assigned {assignments.Count} assignments to policy {policyID} with filter type {deviceAndAppManagementAssignmentFilterType}.");
                 }
                 catch (Exception ex)
                 {
-                    LogToImportStatusFile("An error occurred while searching for settings catalog policies", Utilities.Variables.LogLevels.Warning);
+                    LogToImportStatusFile("An error occurred while assigning groups to settings catalog policy", Utilities.Variables.LogLevels.Warning);
                     LogToImportStatusFile(ex.Message, Utilities.Variables.LogLevels.Error);
                 }
             }
             catch (Exception ex)
             {
-                LogToImportStatusFile("An error occurred while searching for settings catalog policies", Utilities.Variables.LogLevels.Warning);
+                LogToImportStatusFile("An error occurred while assigning groups to settings catalog policy", Utilities.Variables.LogLevels.Warning);
                 LogToImportStatusFile(ex.Message, Utilities.Variables.LogLevels.Error);
             }
         }
