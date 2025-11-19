@@ -127,7 +127,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         if (assignments && groups != null && groups.Any() && importedProfile?.Id != null)
                         {
-                            await AssignGroupsToSingleWindowsQualityUpdateProfile(importedProfile.Id, groups, destinationGraphServiceClient, filter);
+                            await AssignGroupsToSingleWindowsQualityUpdateProfile(importedProfile.Id, groups, destinationGraphServiceClient);
                         }
                     }
                     catch (Exception ex)
@@ -147,7 +147,16 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         }
 
 
-        public static async Task AssignGroupsToSingleWindowsQualityUpdateProfile(string profileID, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient, bool applyFilter)
+        /// <summary>
+        /// Assigns groups to a single Windows Quality Update Profile (Expedite).
+        /// Windows Quality Update profiles can ONLY be assigned to device groups - not All Users or All Devices.
+        /// </summary>
+        /// <param name="profileID">The ID of the profile to assign groups to.</param>
+        /// <param name="groupIDs">List of group IDs to assign.</param>
+        /// <param name="destinationGraphServiceClient">GraphServiceClient for the destination tenant.</param>
+        /// <param name="applyFilter">Whether to apply assignment filters.</param>
+        /// <returns>A Task representing the asynchronous assignment operation.</returns>
+        public static async Task AssignGroupsToSingleWindowsQualityUpdateProfile(string profileID, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
         {
             try
             {
@@ -156,10 +165,9 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     throw new ArgumentNullException(nameof(profileID));
                 }
 
-                if (groupIDs == null || !groupIDs.Any())
+                if (groupIDs == null)
                 {
-                    WriteToImportStatusFile($"No groups provided for assignment to profile {profileID}. Skipping assignment.");
-                    return;
+                    throw new ArgumentNullException(nameof(groupIDs));
                 }
 
                 if (destinationGraphServiceClient == null)
@@ -167,28 +175,94 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     throw new ArgumentNullException(nameof(destinationGraphServiceClient));
                 }
 
-                WriteToImportStatusFile($"Assigning {groupIDs.Count} groups to Windows Quality Update profile {profileID}. Apply filter: {applyFilter}");
+                var assignments = new List<WindowsQualityUpdateProfileAssignment>();
+                var seenGroupIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-                List<WindowsQualityUpdateProfileAssignment> assignments = new List<WindowsQualityUpdateProfileAssignment>();
+                WriteToImportStatusFile($"Assigning {groupIDs.Count} groups to Windows Quality Update profile {profileID}.");
 
+                // Step 1: Add new assignments to request body
                 foreach (var groupId in groupIDs)
                 {
+                    if (string.IsNullOrWhiteSpace(groupId) || !seenGroupIds.Add(groupId))
+                    {
+                        continue;
+                    }
+
+                    // Check if this is All Users - Quality Update profiles cannot be assigned to All Users
+                    if (groupId.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                    {
+                        WriteToImportStatusFile($"Warning: Windows Quality Update profiles cannot be assigned to 'All Users'. Only device groups are supported. Skipping this assignment.", LogType.Warning);
+                        continue;
+                    }
+
+                    // Check if this is All Devices - Quality Update profiles cannot be assigned to All Devices
+                    if (groupId.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                    {
+                        WriteToImportStatusFile($"Warning: Windows Quality Update profiles cannot be assigned to 'All Devices'. Only device groups are supported. Skipping this assignment.", LogType.Warning);
+                        continue;
+                    }
+
+                    // Regular group assignment (device groups only)
                     var assignmentTarget = new GroupAssignmentTarget
                     {
                         OdataType = "#microsoft.graph.groupAssignmentTarget",
                         GroupId = groupId,
-                        DeviceAndAppManagementAssignmentFilterId = applyFilter ? SelectedFilterID : null,
-                        DeviceAndAppManagementAssignmentFilterType = applyFilter ? deviceAndAppManagementAssignmentFilterType : Microsoft.Graph.Beta.Models.DeviceAndAppManagementAssignmentFilterType.None,
+                        DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
+                        DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
                     };
 
                     var assignment = new WindowsQualityUpdateProfileAssignment
                     {
                         OdataType = "#microsoft.graph.windowsQualityUpdateProfileAssignment",
-                        Target = assignmentTarget,
+                        Target = assignmentTarget
                     };
+
                     assignments.Add(assignment);
                 }
 
+                // Step 2: Check for existing assignments and add only if not already present
+                var existingAssignments = await destinationGraphServiceClient
+                    .DeviceManagement
+                    .WindowsQualityUpdateProfiles[profileID]
+                    .Assignments
+                    .GetAsync();
+
+                if (existingAssignments?.Value != null)
+                {
+                    foreach (var existing in existingAssignments.Value)
+                    {
+                        // Check the type of assignment target
+                        if (existing.Target is AllLicensedUsersAssignmentTarget)
+                        {
+                            // Skip All Users assignments - they shouldn't exist but handle gracefully
+                            WriteToImportStatusFile($"Warning: Found existing 'All Users' assignment on Quality Update profile {profileID}. This should not exist and will be skipped.", LogType.Warning);
+                            continue;
+                        }
+                        else if (existing.Target is AllDevicesAssignmentTarget)
+                        {
+                            // Skip All Devices assignments - they shouldn't exist but handle gracefully
+                            WriteToImportStatusFile($"Warning: Found existing 'All Devices' assignment on Quality Update profile {profileID}. This should not exist and will be skipped.", LogType.Warning);
+                            continue;
+                        }
+                        else if (existing.Target is GroupAssignmentTarget groupTarget)
+                        {
+                            var existingGroupId = groupTarget.GroupId;
+
+                            // Only add if not already in the new assignments
+                            if (!string.IsNullOrWhiteSpace(existingGroupId) && seenGroupIds.Add(existingGroupId))
+                            {
+                                assignments.Add(existing);
+                            }
+                        }
+                        else
+                        {
+                            // Include any other assignment types (e.g., exclusions, etc.)
+                            assignments.Add(existing);
+                        }
+                    }
+                }
+
+                // Step 3: Update the profile with the assignments
                 var requestBody = new Microsoft.Graph.Beta.DeviceManagement.WindowsQualityUpdateProfiles.Item.Assign.AssignPostRequestBody
                 {
                     Assignments = assignments
@@ -197,16 +271,20 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 try
                 {
                     await destinationGraphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileID].Assign.PostAsync(requestBody);
-                    WriteToImportStatusFile($"Successfully assigned {groupIDs.Count} groups to profile {profileID}. Filter applied: {applyFilter}");
+                    WriteToImportStatusFile($"Assigned {assignments.Count} assignments to Quality Update profile {profileID}.");
                 }
                 catch (Exception ex)
                 {
-                    WriteToImportStatusFile($"Error assigning groups to profile {profileID}: {ex.Message}");
+                    WriteToImportStatusFile($"Error assigning groups to profile {profileID}: {ex.Message}", LogType.Error);
                 }
+            }
+            catch (ArgumentNullException argEx)
+            {
+                WriteToImportStatusFile($"Argument null exception during group assignment setup: {argEx.Message}", LogType.Error);
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile($"An error occurred while preparing assignment for profile {profileID}: {ex.Message}");
+                WriteToImportStatusFile($"An error occurred while preparing assignment for profile {profileID}: {ex.Message}", LogType.Warning);
             }
         }
         public static async Task DeleteWindowsQualityUpdateProfile(GraphServiceClient graphServiceClient, string profileID)

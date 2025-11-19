@@ -87,7 +87,8 @@ namespace IntuneTools.Pages
                 ["WindowsAutopilot"] = async () => await LoadAllWindowsAutopilotProfilesAsync(),
                 ["WindowsDriverUpdate"] = async () => await LoadAllWindowsDriverUpdateProfilesAsync(),
                 ["WindowsFeatureUpdate"] = async () => await LoadAllWindowsFeatureUpdateProfilesAsync(),
-                ["WindowsQualityUpdatePolicy"] = async () => await LoadAllWindowsQualityUpdatePoliciesAsync()
+                ["WindowsQualityUpdatePolicy"] = async () => await LoadAllWindowsQualityUpdatePoliciesAsync(),
+                ["WindowsQualityUpdateProfile"] = async () => await LoadAllWindowsQualityUpdateProfilesAsync(),
             };
 
             AssignmentList.Add(new AssignmentInfo { Name = "App One", Id = "001", Platform = "Windows", Type = "Win32" });
@@ -258,6 +259,10 @@ namespace IntuneTools.Pages
                     if (item.Value.Type == "Windows Quality Update Policy")
                     {
                         await AssignGroupsToSingleWindowsQualityUpdatePolicy(item.Value.Id, groupList, sourceGraphServiceClient);
+                    }
+                    if (item.Value.Type == "Windows Quality Update Profile")
+                    {
+                        await AssignGroupsToSingleWindowsQualityUpdateProfile(item.Value.Id, groupList, sourceGraphServiceClient);
                     }
 
 
@@ -599,6 +604,31 @@ namespace IntuneTools.Pages
                     {
                         Name = profile.DisplayName,
                         Type = "Windows Quality Update Policy",
+                        Platform = "Windows",
+                        Id = profile.Id
+                    };
+                    AssignmentList.Add(assignmentInfo);
+                }
+                AppDataGrid.ItemsSource = AssignmentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
+        private async Task LoadAllWindowsQualityUpdateProfilesAsync()
+        {
+            ShowLoading("Loading Windows Quality Update profiles from Microsoft Graph...");
+            try
+            {
+                var profiles = await GetAllWindowsQualityUpdateProfiles(sourceGraphServiceClient);
+                foreach (var profile in profiles)
+                {
+                    var assignmentInfo = new AssignmentInfo
+                    {
+                        Name = profile.DisplayName,
+                        Type = "Windows Quality Update Profile",
                         Platform = "Windows",
                         Id = profile.Id
                     };
