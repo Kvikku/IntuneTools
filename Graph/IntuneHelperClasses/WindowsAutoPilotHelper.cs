@@ -172,48 +172,145 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     throw new ArgumentNullException(nameof(destinationGraphServiceClient));
                 }
 
-                List<WindowsAutopilotDeploymentProfileAssignment> assignments = new List<WindowsAutopilotDeploymentProfileAssignment>();
+                var assignments = new List<WindowsAutopilotDeploymentProfileAssignment>();
+                var seenGroupIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var hasAllDevices = false;
 
+                // Step 1: Add new assignments to list
                 foreach (var group in groupID)
                 {
-                    var assignment = new WindowsAutopilotDeploymentProfileAssignment
+                    if (string.IsNullOrWhiteSpace(group) || !seenGroupIds.Add(group))
                     {
-                        Id = profileID + "_" + group + "_0",
-                        Source = DeviceAndAppManagementAssignmentSource.Direct,
-                        SourceId = profileID,
-                        Target = new GroupAssignmentTarget
+                        continue;
+                    }
+
+                    // Check if this is All Users - AutoPilot profiles cannot be assigned to All Users
+                    if (group.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                    {
+                        WriteToImportStatusFile($"Warning: AutoPilot profiles cannot be assigned to 'All Users'. Skipping this assignment.", LogType.Warning);
+                        continue;
+                    }
+
+                    WindowsAutopilotDeploymentProfileAssignment assignment;
+
+                    // Check if this is All Devices
+                    if (group.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                    {
+                        hasAllDevices = true;
+                        assignment = new WindowsAutopilotDeploymentProfileAssignment
                         {
-                            OdataType = "#microsoft.graph.groupAssignmentTarget",
-                            GroupId = group,
-                        },
-                    };
+                            Source = DeviceAndAppManagementAssignmentSource.Direct,
+                            SourceId = profileID,
+                            Target = new AllDevicesAssignmentTarget
+                            {
+                                OdataType = "#microsoft.graph.allDevicesAssignmentTarget"
+                            }
+                        };
+                    }
+                    else
+                    {
+                        // Regular group assignment
+                        assignment = new WindowsAutopilotDeploymentProfileAssignment
+                        {
+                            Source = DeviceAndAppManagementAssignmentSource.Direct,
+                            SourceId = profileID,
+                            Target = new GroupAssignmentTarget
+                            {
+                                OdataType = "#microsoft.graph.groupAssignmentTarget",
+                                GroupId = group
+                            }
+                        };
+                    }
+
                     assignments.Add(assignment);
-
-                    await destinationGraphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].Assignments.PostAsync(assignment);
                 }
 
-                //var requestBody = new Microsoft.Graph.Beta.DeviceManagement.WindowsAutopilotDeploymentProfiles.Item.Assign.AssignPostRequestBody
-                //{
-                //    AdditionalData = new Dictionary<string, object>
-                //    {
-                //        { "Assignments", assignments }
-                //    },
-                //};
+                // Step 2: Check for existing assignments and add only if not already present
+                var existingAssignments = await destinationGraphServiceClient
+                    .DeviceManagement
+                    .WindowsAutopilotDeploymentProfiles[profileID]
+                    .Assignments
+                    .GetAsync();
 
-
-                try
+                if (existingAssignments?.Value != null)
                 {
-                    //await destinationGraphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].Assign.PostAsync(requestBody);
-                    WriteToImportStatusFile("Assigned groups to profile " + profileID + " with filter type" + deviceAndAppManagementAssignmentFilterType.ToString());
+                    foreach (var existing in existingAssignments.Value)
+                    {
+                        // Check the type of assignment target
+                        if (existing.Target is AllLicensedUsersAssignmentTarget)
+                        {
+                            // Skip All Users assignments - they shouldn't exist but handle gracefully
+                            WriteToImportStatusFile($"Warning: Found existing 'All Users' assignment on AutoPilot profile {profileID}. This should not exist and will be skipped.", LogType.Warning);
+                            continue;
+                        }
+                        else if (existing.Target is AllDevicesAssignmentTarget)
+                        {
+                            // Skip if we're already adding All Devices
+                            if (!hasAllDevices)
+                            {
+                                assignments.Add(existing);
+                            }
+                        }
+                        else if (existing.Target is GroupAssignmentTarget groupTarget)
+                        {
+                            var existingGroupId = groupTarget.GroupId;
+
+                            // Only add if not already in the new assignments
+                            if (!string.IsNullOrWhiteSpace(existingGroupId) && seenGroupIds.Add(existingGroupId))
+                            {
+                                assignments.Add(existing);
+                            }
+                        }
+                        else
+                        {
+                            // Include any other assignment types (e.g., exclusions, etc.)
+                            assignments.Add(existing);
+                        }
+                    }
                 }
-                catch (Exception ex)
+
+                // Step 3: Post assignments individually (AutoPilot profiles require individual posts)
+                int successCount = 0;
+                foreach (var assignment in assignments)
                 {
-                    LogToImportStatusFile($"Error assigning groups to profile {profileID}",LogLevels.Error);
+                    // Skip existing assignments that were already posted
+                    if (!string.IsNullOrEmpty(assignment.Id))
+                    {
+                        successCount++;
+                        continue;
+                    }
+
+                    try
+                    {
+                        await destinationGraphServiceClient
+                            .DeviceManagement
+                            .WindowsAutopilotDeploymentProfiles[profileID]
+                            .Assignments
+                            .PostAsync(assignment);
+
+                        successCount++;
+
+                        string targetType = assignment.Target switch
+                        {
+                            AllDevicesAssignmentTarget => "All Devices",
+                            GroupAssignmentTarget gt => $"group {gt.GroupId}",
+                            _ => "unknown target"
+                        };
+
+                        WriteToImportStatusFile($"Assigned {targetType} to AutoPilot profile {profileID}.");
+                    }
+                    catch (Exception ex)
+                    {
+                        LogToImportStatusFile($"Error assigning to profile {profileID}: {ex.Message}", LogLevels.Error);
+                    }
                 }
+
+                WriteToImportStatusFile($"Assigned {successCount} of {assignments.Count} assignments to AutoPilot profile {profileID}.");
             }
             catch (Exception ex)
             {
-                LogToImportStatusFile("An error occurred while assigning groups to a single Windows AutoPilot profile", LogLevels.Error);
+                LogToImportStatusFile("An error occurred while assigning groups to a single Windows AutoPilot profile", LogLevels.Warning);
+                LogToImportStatusFile(ex.Message, LogLevels.Error);
             }
         }
 
