@@ -87,6 +87,7 @@ namespace IntuneTools.Pages
                 ["WindowsAutopilot"] = async () => await LoadAllWindowsAutopilotProfilesAsync(),
                 ["WindowsDriverUpdate"] = async () => await LoadAllWindowsDriverUpdateProfilesAsync(),
                 ["WindowsFeatureUpdate"] = async () => await LoadAllWindowsFeatureUpdateProfilesAsync(),
+                ["WindowsQualityUpdatePolicy"] = async () => await LoadAllWindowsQualityUpdatePoliciesAsync()
             };
 
             AssignmentList.Add(new AssignmentInfo { Name = "App One", Id = "001", Platform = "Windows", Type = "Win32" });
@@ -253,6 +254,10 @@ namespace IntuneTools.Pages
                     if (item.Value.Type == "Windows Feature Update Profile")
                     {
                         await AssignGroupsToSingleWindowsFeatureUpdateProfile(item.Value.Id, groupList, sourceGraphServiceClient);
+                    }
+                    if (item.Value.Type == "Windows Quality Update Policy")
+                    {
+                        await AssignGroupsToSingleWindowsQualityUpdatePolicy(item.Value.Id, groupList, sourceGraphServiceClient);
                     }
 
 
@@ -582,6 +587,30 @@ namespace IntuneTools.Pages
             }
         }
 
+        private async Task LoadAllWindowsQualityUpdatePoliciesAsync()
+        {
+            ShowLoading("Loading Windows Quality Update policies from Microsoft Graph...");
+            try
+            {
+                var profiles = await GetAllWindowsQualityUpdatePolicies(sourceGraphServiceClient);
+                foreach (var profile in profiles)
+                {
+                    var assignmentInfo = new AssignmentInfo
+                    {
+                        Name = profile.DisplayName,
+                        Type = "Windows Quality Update Policy",
+                        Platform = "Windows",
+                        Id = profile.Id
+                    };
+                    AssignmentList.Add(assignmentInfo);
+                }
+                AppDataGrid.ItemsSource = AssignmentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
 
         #endregion
 
