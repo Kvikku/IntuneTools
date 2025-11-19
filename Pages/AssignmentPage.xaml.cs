@@ -86,6 +86,7 @@ namespace IntuneTools.Pages
                 ["ProactiveRemediation"] = async () => await LoadAllProactiveRemediationScriptsAsync(),
                 ["WindowsAutopilot"] = async () => await LoadAllWindowsAutopilotProfilesAsync(),
                 ["WindowsDriverUpdate"] = async () => await LoadAllWindowsDriverUpdateProfilesAsync(),
+                ["WindowsFeatureUpdate"] = async () => await LoadAllWindowsFeatureUpdateProfilesAsync(),
             };
 
             AssignmentList.Add(new AssignmentInfo { Name = "App One", Id = "001", Platform = "Windows", Type = "Win32" });
@@ -248,6 +249,10 @@ namespace IntuneTools.Pages
                     if (item.Value.Type == "Windows Driver Update Profile")
                     {
                         await AssignGroupsToSingleDriverProfile(item.Value.Id, groupList, sourceGraphServiceClient);
+                    }
+                    if (item.Value.Type == "Windows Feature Update Profile")
+                    {
+                        await AssignGroupsToSingleWindowsFeatureUpdateProfile(item.Value.Id, groupList, sourceGraphServiceClient);
                     }
 
 
@@ -551,6 +556,32 @@ namespace IntuneTools.Pages
                 HideLoading();
             }
         }
+
+        private async Task LoadAllWindowsFeatureUpdateProfilesAsync()
+        {
+            ShowLoading("Loading Windows Feature Update profiles from Microsoft Graph...");
+            try
+            {
+                var profiles = await GetAllWindowsFeatureUpdateProfiles(sourceGraphServiceClient);
+                foreach (var profile in profiles)
+                {
+                    var assignmentInfo = new AssignmentInfo
+                    {
+                        Name = profile.DisplayName,
+                        Type = "Windows Feature Update Profile",
+                        Platform = "Windows",
+                        Id = profile.Id
+                    };
+                    AssignmentList.Add(assignmentInfo);
+                }
+                AppDataGrid.ItemsSource = AssignmentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
 
         #endregion
 
