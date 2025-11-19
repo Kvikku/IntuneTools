@@ -80,6 +80,7 @@ namespace IntuneTools.Pages
             {
                 ["SettingsCatalog"] = async () => await LoadAllSettingsCatalogPoliciesAsync(),
                 ["DeviceCompliance"] = async () => await LoadAllDeviceCompliancePoliciesAsync(),
+                ["DeviceConfiguration"] = async () => await LoadAllDeviceConfigurationPoliciesAsync(),
             };
 
             AssignmentList.Add(new AssignmentInfo { Name = "App One", Id = "001", Platform = "Windows", Type = "Win32" });
@@ -219,9 +220,13 @@ namespace IntuneTools.Pages
                     {
                         await AssignGroupsToSingleSettingsCatalog(item.Value.Id, groupList, sourceGraphServiceClient);
                     }
+                    if (item.Value.Type == "Device Configuration")
+                    {
+                        await AssignGroupsToSingleDeviceConfiguration(item.Value.Id, groupList, sourceGraphServiceClient);
+                    }
 
 
-                    
+
 
 
                     foreach (var group in selectedGroups)
@@ -356,6 +361,33 @@ namespace IntuneTools.Pages
                     {
                         Name = policy.DisplayName,
                         Type = "Device Compliance",
+                        Platform = platform,
+                        Id = policy.Id
+                    };
+                    AssignmentList.Add(assignmentInfo);
+                }
+                AppDataGrid.ItemsSource = AssignmentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
+        private async Task LoadAllDeviceConfigurationPoliciesAsync()
+        {
+            ShowLoading("Loading device configuration policies from Microsoft Graph...");
+            try
+            {
+                var policies = await GetAllDeviceConfigurations(sourceGraphServiceClient);
+                foreach (var policy in policies)
+                {
+                    var platform = TranslatePolicyPlatformName(policy.OdataType);
+
+                    var assignmentInfo = new AssignmentInfo
+                    {
+                        Name = policy.DisplayName,
+                        Type = "Device Configuration",
                         Platform = platform,
                         Id = policy.Id
                     };
