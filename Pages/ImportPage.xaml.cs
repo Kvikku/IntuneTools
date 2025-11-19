@@ -1,25 +1,26 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net.Mime;
-using System.Threading.Tasks;
-using Windows.Foundation; // Added for IAsyncOperation
-using System.Runtime.CompilerServices; // Add this for await support on IAsyncOperation
+using IntuneTools.Graph;
+using Microsoft.Graph.Beta;
 using Microsoft.UI.Xaml; // Added for RoutedEventArgs
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Documents; // Added for Paragraph and Run
-using IntuneTools.Graph;
-using Microsoft.Graph.Beta;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel; // Add this for ObservableCollection
+using System.IO;
+using System.Linq;
+using System.Net.Mime;
+using System.Runtime.CompilerServices; // Add this for await support on IAsyncOperation
+using System.Threading.Tasks;
+using Windows.Foundation; // Added for IAsyncOperation
 using static IntuneTools.Graph.EntraHelperClasses.GroupHelperClass;
 using static IntuneTools.Graph.IntuneHelperClasses.AppleBYODEnrollmentProfileHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceCompliancePolicyHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceConfigurationHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.FilterHelperClass;
-using static IntuneTools.Graph.IntuneHelperClasses.SettingsCatalogHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.macOSShellScript;
 using static IntuneTools.Graph.IntuneHelperClasses.PowerShellScriptsHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.ProactiveRemediationsHelper;
-using static IntuneTools.Graph.IntuneHelperClasses.macOSShellScript;
+using static IntuneTools.Graph.IntuneHelperClasses.SettingsCatalogHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsAutoPilotHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsDriverUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsFeatureUpdateHelper;
@@ -27,7 +28,6 @@ using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdatePolicyHan
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHelper;
 using static IntuneTools.Utilities.HelperClass;
 using static IntuneTools.Utilities.Variables;
-using System.Collections.ObjectModel; // Add this for ObservableCollection
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -1468,6 +1468,7 @@ namespace IntuneTools.Pages
                 string selectedFilter = FilterSelectionComboBox.SelectedItem.ToString();
                 
                 SelectedFilterID = filterNameAndID.ContainsKey(selectedFilter) ? filterNameAndID[selectedFilter] : null;
+                deviceAndAppManagementAssignmentFilterType = DeviceAndAppManagementAssignmentFilterType.Include;
 
                 LogToImportStatusFile($"- {selectedFilter}", LogLevels.Info);
                 AppendToDetailsRichTextBlock($"- {selectedFilter}\n");
