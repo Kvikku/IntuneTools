@@ -85,6 +85,7 @@ namespace IntuneTools.Pages
                 ["PowerShellScript"] = async () => await LoadAllPowershellScriptsAsync(),
                 ["ProactiveRemediation"] = async () => await LoadAllProactiveRemediationScriptsAsync(),
                 ["WindowsAutopilot"] = async () => await LoadAllWindowsAutopilotProfilesAsync(),
+                ["WindowsDriverUpdate"] = async () => await LoadAllWindowsDriverUpdateProfilesAsync(),
             };
 
             AssignmentList.Add(new AssignmentInfo { Name = "App One", Id = "001", Platform = "Windows", Type = "Win32" });
@@ -243,6 +244,10 @@ namespace IntuneTools.Pages
                     if (item.Value.Type == "Windows Autopilot Profile")
                     {
                         await AssignGroupsToSingleWindowsAutoPilotProfile(item.Value.Id, groupList, sourceGraphServiceClient);
+                    }
+                    if (item.Value.Type == "Windows Driver Update Profile")
+                    {
+                        await AssignGroupsToSingleDriverProfile(item.Value.Id, groupList, sourceGraphServiceClient);
                     }
 
 
@@ -521,6 +526,31 @@ namespace IntuneTools.Pages
             }
         }
 
+
+        private async Task LoadAllWindowsDriverUpdateProfilesAsync()
+        {
+            ShowLoading("Loading Windows Driver Update profiles from Microsoft Graph...");
+            try
+            {
+                var profiles = await GetAllDriverProfiles(sourceGraphServiceClient);
+                foreach (var profile in profiles)
+                {
+                    var assignmentInfo = new AssignmentInfo
+                    {
+                        Name = profile.DisplayName,
+                        Type = "Windows Driver Update Profile",
+                        Platform = "Windows",
+                        Id = profile.Id
+                    };
+                    AssignmentList.Add(assignmentInfo);
+                }
+                AppDataGrid.ItemsSource = AssignmentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
 
         #endregion
 

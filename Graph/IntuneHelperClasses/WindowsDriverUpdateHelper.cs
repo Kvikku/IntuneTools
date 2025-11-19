@@ -148,7 +148,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         if (assignments && importResult?.Id != null)
                         {
                             // Assign groups using the specific method for Driver Update Profiles
-                            await AssignGroupsToSingleDriverProfile(importResult.Id, groups, destinationGraphServiceClient, filter); // Pass filter status
+                            await AssignGroupsToSingleDriverProfile(importResult.Id, groups, destinationGraphServiceClient); // Pass filter status
                         }
                     }
                     catch (Exception ex)
@@ -171,13 +171,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         // Note: Assignment structure for Driver Update Profiles differs from Settings Catalog.
         /// <summary>
         /// Assigns groups to a single Windows Driver Update Profile.
+        /// Windows Driver Update profiles can ONLY be assigned to device groups - not All Users or All Devices.
         /// </summary>
         /// <param name="profileID">The ID of the profile to assign groups to.</param>
         /// <param name="groupIDs">List of group IDs to assign.</param>
         /// <param name="destinationGraphServiceClient">GraphServiceClient for the destination tenant.</param>
-        /// <param name="useFilter">Whether to apply assignment filters.</param>
         /// <returns>A Task representing the asynchronous assignment operation.</returns>
-        public static async Task AssignGroupsToSingleDriverProfile(string profileID, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient, bool useFilter)
+        public static async Task AssignGroupsToSingleDriverProfile(string profileID, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
         {
             try
             {
@@ -186,10 +186,9 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     throw new ArgumentNullException(nameof(profileID));
                 }
 
-                if (groupIDs == null || !groupIDs.Any())
+                if (groupIDs == null)
                 {
-                    LogToImportStatusFile($"No groups provided for assignment to profile {profileID}."); // Removed LogType
-                    return; // Nothing to assign
+                    throw new ArgumentNullException(nameof(groupIDs));
                 }
 
                 if (destinationGraphServiceClient == null)
@@ -197,13 +196,34 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     throw new ArgumentNullException(nameof(destinationGraphServiceClient));
                 }
 
-                LogToImportStatusFile($"Assigning {groupIDs.Count} groups to driver profile {profileID}. Filter enabled: {useFilter}");
-
-
                 var assignments = new List<WindowsDriverUpdateProfileAssignment>();
+                var seenGroupIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+                LogToImportStatusFile($"Assigning {groupIDs.Count} groups to driver profile {profileID}.");
+
+                // Step 1: Add new assignments to request body
                 foreach (var groupId in groupIDs)
                 {
+                    if (string.IsNullOrWhiteSpace(groupId) || !seenGroupIds.Add(groupId))
+                    {
+                        continue;
+                    }
+
+                    // Check if this is All Users - Driver Update profiles cannot be assigned to All Users
+                    if (groupId.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                    {
+                        WriteToImportStatusFile($"Warning: Windows Driver Update profiles cannot be assigned to 'All Users'. Only device groups are supported. Skipping this assignment.", LogType.Warning);
+                        continue;
+                    }
+
+                    // Check if this is All Devices - Driver Update profiles cannot be assigned to All Devices
+                    if (groupId.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                    {
+                        WriteToImportStatusFile($"Warning: Windows Driver Update profiles cannot be assigned to 'All Devices'. Only device groups are supported. Skipping this assignment.", LogType.Warning);
+                        continue;
+                    }
+
+                    // Regular group assignment (device groups only)
                     var assignment = new WindowsDriverUpdateProfileAssignment
                     {
                         OdataType = "#microsoft.graph.windowsDriverUpdateProfileAssignment",
@@ -211,50 +231,85 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         {
                             OdataType = "#microsoft.graph.groupAssignmentTarget",
                             GroupId = groupId,
-                            // Apply filter information if 'useFilter' is true and a filter is selected
-                            DeviceAndAppManagementAssignmentFilterId = useFilter ? SelectedFilterID : null, // Use SelectedFilterID from GlobalVariables
-                            DeviceAndAppManagementAssignmentFilterType = useFilter ? deviceAndAppManagementAssignmentFilterType : Microsoft.Graph.Beta.Models.DeviceAndAppManagementAssignmentFilterType.None // Use type from GlobalVariables
+                            DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
+                            DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
                         }
-                        // Source and SourceId might not be applicable/required for driver profile assignments directly via POST /assign
                     };
+
                     assignments.Add(assignment);
                 }
 
+                // Step 2: Check for existing assignments and add only if not already present
+                var existingAssignments = await destinationGraphServiceClient
+                    .DeviceManagement
+                    .WindowsDriverUpdateProfiles[profileID]
+                    .Assignments
+                    .GetAsync();
 
-                // The endpoint for assigning driver profiles is different
+                if (existingAssignments?.Value != null)
+                {
+                    foreach (var existing in existingAssignments.Value)
+                    {
+                        // Check the type of assignment target
+                        if (existing.Target is AllLicensedUsersAssignmentTarget)
+                        {
+                            // Skip All Users assignments - they shouldn't exist but handle gracefully
+                            WriteToImportStatusFile($"Warning: Found existing 'All Users' assignment on Driver Update profile {profileID}. This should not exist and will be skipped.", LogType.Warning);
+                            continue;
+                        }
+                        else if (existing.Target is AllDevicesAssignmentTarget)
+                        {
+                            // Skip All Devices assignments - they shouldn't exist but handle gracefully
+                            WriteToImportStatusFile($"Warning: Found existing 'All Devices' assignment on Driver Update profile {profileID}. This should not exist and will be skipped.", LogType.Warning);
+                            continue;
+                        }
+                        else if (existing.Target is GroupAssignmentTarget groupTarget)
+                        {
+                            var existingGroupId = groupTarget.GroupId;
+
+                            // Only add if not already in the new assignments
+                            if (!string.IsNullOrWhiteSpace(existingGroupId) && seenGroupIds.Add(existingGroupId))
+                            {
+                                assignments.Add(existing);
+                            }
+                        }
+                        else
+                        {
+                            // Include any other assignment types (e.g., exclusions, etc.)
+                            assignments.Add(existing);
+                        }
+                    }
+                }
+
+                // Step 3: Update the profile with the assignments
                 var requestBody = new Microsoft.Graph.Beta.DeviceManagement.WindowsDriverUpdateProfiles.Item.Assign.AssignPostRequestBody
                 {
                     Assignments = assignments
                 };
 
-
                 try
                 {
-                    // Use the correct endpoint and method for driver profile assignment
                     await destinationGraphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileID].Assign.PostAsync(requestBody);
-                    WriteToImportStatusFile($"Successfully initiated assignment of {groupIDs.Count} groups to profile {profileID}. Filter: {SelectedFilterID ?? "None"}");
+                    WriteToImportStatusFile($"Assigned {assignments.Count} assignments to driver profile {profileID}. Filter: {SelectedFilterID ?? "None"}");
                 }
                 catch (ServiceException svcex)
                 {
-                    // More specific error handling for Graph API calls
-                    // Extracting the error message might require inspecting the exception details further
-                    string errorMessage = svcex.Message; // Basic message
-                                                         // Consider logging svcex.ToString() for more details if needed
-                    WriteToImportStatusFile($"Graph API error assigning groups to profile {profileID}: {errorMessage}"); // Removed LogType
+                    WriteToImportStatusFile($"Graph API error assigning groups to profile {profileID}: {svcex.Message}", LogType.Error);
                 }
                 catch (Exception ex)
                 {
-                    WriteToImportStatusFile($"Error assigning groups to profile {profileID}: {ex.Message}"); // Removed LogType
+                    WriteToImportStatusFile($"Error assigning groups to profile {profileID}: {ex.Message}", LogType.Error);
                 }
             }
             catch (ArgumentNullException argEx)
             {
-                WriteToImportStatusFile("Argument null exception during group assignment setup.",LogType.Error);
+                WriteToImportStatusFile("Argument null exception during group assignment setup.", LogType.Error);
+                WriteToImportStatusFile(argEx.Message, LogType.Error);
             }
             catch (Exception ex)
             {
-                // Catch unexpected errors during the setup phase
-                WriteToImportStatusFile("An unexpected error occurred while preparing group assignments for a driver profile.",LogType.Error);
+                WriteToImportStatusFile("An unexpected error occurred while preparing group assignments for a driver profile.", LogType.Warning);
+                WriteToImportStatusFile(ex.Message, LogType.Error);
             }
         }
         public static async Task DeleteDriverProfile(GraphServiceClient graphServiceClient, string profileID)
