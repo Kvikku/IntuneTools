@@ -81,6 +81,7 @@ namespace IntuneTools.Pages
                 ["SettingsCatalog"] = async () => await LoadAllSettingsCatalogPoliciesAsync(),
                 ["DeviceCompliance"] = async () => await LoadAllDeviceCompliancePoliciesAsync(),
                 ["DeviceConfiguration"] = async () => await LoadAllDeviceConfigurationPoliciesAsync(),
+                ["macOSShellScript"] = async () => await LoadAllmacOSShellScriptsAsync(),
             };
 
             AssignmentList.Add(new AssignmentInfo { Name = "App One", Id = "001", Platform = "Windows", Type = "Win32" });
@@ -223,6 +224,10 @@ namespace IntuneTools.Pages
                     if (item.Value.Type == "Device Configuration")
                     {
                         await AssignGroupsToSingleDeviceConfiguration(item.Value.Id, groupList, sourceGraphServiceClient);
+                    }
+                    if (item.Value.Type == "macOS Shell Script")
+                    {
+                        await AssignGroupsToSingleShellScriptmacOS(item.Value.Id, groupList, sourceGraphServiceClient);
                     }
 
 
@@ -400,6 +405,32 @@ namespace IntuneTools.Pages
                 HideLoading();
             }
         }
+
+        private async Task LoadAllmacOSShellScriptsAsync()
+        {
+            ShowLoading("Loading macOS shell scripts from Microsoft Graph...");
+            try
+            {
+                var scripts = await GetAllmacOSShellScripts(sourceGraphServiceClient);
+                foreach (var script in scripts)
+                {
+                    var assignmentInfo = new AssignmentInfo
+                    {
+                        Name = script.DisplayName,
+                        Type = "macOS Shell Script",
+                        Platform = "macOS",
+                        Id = script.Id
+                    };
+                    AssignmentList.Add(assignmentInfo);
+                }
+                AppDataGrid.ItemsSource = AssignmentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
 
         #endregion
 

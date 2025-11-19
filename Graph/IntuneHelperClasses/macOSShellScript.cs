@@ -122,7 +122,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                             if (assignments && groups != null && groups.Any())
                             {
                                 // Shell script assignments use a different structure
-                                await AssignGroupsToSingleShellScriptmacOS(importResult.Id, groups, destinationGraphServiceClient, filter); // Pass filter bool if needed for assignment logic
+                                await AssignGroupsToSingleShellScriptmacOS(importResult.Id, groups, destinationGraphServiceClient); // Pass filter bool if needed for assignment logic
                             }
                         }
                         else
@@ -146,78 +146,150 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
 
         // Note: Assignment structure for Shell Scripts is different from Configuration Policies
-        public static async Task AssignGroupsToSingleShellScriptmacOS(string scriptId, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient, bool applyFilter)
+        public static async Task AssignGroupsToSingleShellScriptmacOS(string scriptId, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
         {
-            if (string.IsNullOrEmpty(scriptId))
-            {
-                throw new ArgumentNullException(nameof(scriptId));
-            }
-            if (groupIDs == null || !groupIDs.Any())
-            {
-                WriteToImportStatusFile($"No group IDs provided for assignment to script {scriptId}. Skipping assignment.");
-                return; // Nothing to assign
-            }
-            if (destinationGraphServiceClient == null)
-            {
-                throw new ArgumentNullException(nameof(destinationGraphServiceClient));
-            }
-
-            WriteToImportStatusFile($"Assigning {groupIDs.Count} groups to macOS shell script {scriptId}. Apply Filter: {applyFilter}");
-
-
-            var assignments = new List<DeviceManagementScriptGroupAssignment>();
-
-            foreach (var groupId in groupIDs)
-            {
-                if (string.IsNullOrEmpty(groupId))
-                {
-                    WriteToImportStatusFile($"Skipping empty or null group ID during assignment to script {scriptId}.");
-                    continue;
-                }
-
-                assignments.Add(new DeviceManagementScriptGroupAssignment
-                {
-                    OdataType = "#microsoft.graph.deviceManagementScriptGroupAssignment",
-                    TargetGroupId = groupId
-                    // Filters are not directly part of the group assignment object for shell scripts.
-                    // They are associated with the assignment target within the policy/script object itself,
-                    // but the Assign action for scripts might not support setting filters directly.
-                    // This might require updating the script object after creation if filters are needed.
-                });
-            }
-
-            if (!assignments.Any())
-            {
-                WriteToImportStatusFile($"No valid group assignments to process for script {scriptId}.");
-                return;
-            }
-
-
-            var requestBody = new Microsoft.Graph.Beta.DeviceManagement.DeviceShellScripts.Item.Assign.AssignPostRequestBody
-            {
-                DeviceManagementScriptGroupAssignments = assignments,
-                // DeviceManagementScriptAssignments = null // Use GroupAssignments for assigning to groups
-            };
-
             try
             {
-                // The Assign action for shell scripts might return void or a different response type. Adjust accordingly.
-                await destinationGraphServiceClient.DeviceManagement.DeviceShellScripts[scriptId].Assign.PostAsync(requestBody);
-                WriteToImportStatusFile($"Successfully submitted assignment request for {assignments.Count} groups to macOS shell script {scriptId}.");
-
-                // If filters need to be applied, it might require a separate PATCH request to update the script's assignments property,
-                // potentially fetching the script again to get assignment IDs if necessary. This is more complex.
-                if (applyFilter && !string.IsNullOrEmpty(SelectedFilterID))
+                if (string.IsNullOrEmpty(scriptId))
                 {
-                    WriteToImportStatusFile($"Filter application requested for script {scriptId}, but direct filter assignment via Assign action might not be supported for shell scripts. Manual verification/update might be needed.");
-                    // TODO: Implement filter application logic if possible/required via script update.
+                    throw new ArgumentNullException(nameof(scriptId));
+                }
+
+                if (groupIDs == null)
+                {
+                    throw new ArgumentNullException(nameof(groupIDs));
+                }
+
+                if (destinationGraphServiceClient == null)
+                {
+                    throw new ArgumentNullException(nameof(destinationGraphServiceClient));
+                }
+
+                var assignments = new List<DeviceManagementScriptGroupAssignment>();
+                var seenGroupIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var hasAllUsers = false;
+                var hasAllDevices = false;
+
+                WriteToImportStatusFile($"Assigning {groupIDs.Count} groups to macOS shell script {scriptId}.");
+
+                // Step 1: Add new assignments to request body
+                foreach (var groupId in groupIDs)
+                {
+                    if (string.IsNullOrWhiteSpace(groupId) || !seenGroupIds.Add(groupId))
+                    {
+                        continue;
+                    }
+
+                    // Check if this is a virtual group (All Users or All Devices)
+                    if (groupId.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                    {
+                        hasAllUsers = true;
+                        assignments.Add(new DeviceManagementScriptGroupAssignment
+                        {
+                            OdataType = "#microsoft.graph.deviceManagementScriptGroupAssignment",
+                            TargetGroupId = allUsersVirtualGroupID
+                        });
+                    }
+                    else if (groupId.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                    {
+                        hasAllDevices = true;
+                        assignments.Add(new DeviceManagementScriptGroupAssignment
+                        {
+                            OdataType = "#microsoft.graph.deviceManagementScriptGroupAssignment",
+                            TargetGroupId = allDevicesVirtualGroupID
+                        });
+                    }
+                    else
+                    {
+                        // Regular group assignment
+                        assignments.Add(new DeviceManagementScriptGroupAssignment
+                        {
+                            OdataType = "#microsoft.graph.deviceManagementScriptGroupAssignment",
+                            TargetGroupId = groupId
+                        });
+                    }
+                }
+
+                // Step 2: Check for existing assignments and add only if not already present
+                var existingAssignments = await destinationGraphServiceClient
+                    .DeviceManagement
+                    .DeviceShellScripts[scriptId]
+                    .GroupAssignments
+                    .GetAsync();
+
+                if (existingAssignments?.Value != null)
+                {
+                    foreach (var existing in existingAssignments.Value)
+                    {
+                        var existingGroupId = existing.TargetGroupId;
+
+                        if (string.IsNullOrWhiteSpace(existingGroupId))
+                        {
+                            continue;
+                        }
+
+                        // Check if this is a virtual group
+                        if (existingGroupId.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                        {
+                            // Skip if we're already adding All Users
+                            if (!hasAllUsers)
+                            {
+                                assignments.Add(existing);
+                            }
+                        }
+                        else if (existingGroupId.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                        {
+                            // Skip if we're already adding All Devices
+                            if (!hasAllDevices)
+                            {
+                                assignments.Add(existing);
+                            }
+                        }
+                        else
+                        {
+                            // Only add if not already in the new assignments
+                            if (seenGroupIds.Add(existingGroupId))
+                            {
+                                assignments.Add(existing);
+                            }
+                        }
+                    }
+                }
+
+                if (!assignments.Any())
+                {
+                    WriteToImportStatusFile($"No valid group assignments to process for script {scriptId}.");
+                    return;
+                }
+
+                // Step 3: Update the script with the assignments
+                var requestBody = new Microsoft.Graph.Beta.DeviceManagement.DeviceShellScripts.Item.Assign.AssignPostRequestBody
+                {
+                    DeviceManagementScriptGroupAssignments = assignments
+                };
+
+                try
+                {
+                    await destinationGraphServiceClient.DeviceManagement.DeviceShellScripts[scriptId].Assign.PostAsync(requestBody);
+                    WriteToImportStatusFile($"Assigned {assignments.Count} assignments to macOS shell script {scriptId}.");
+
+                    // Note: Filters are not directly supported in the Assign action for shell scripts
+                    // They would need to be applied via a separate PATCH operation if supported
+                    if (!string.IsNullOrEmpty(SelectedFilterID))
+                    {
+                        WriteToImportStatusFile($"Filter application requested for script {scriptId}, but direct filter assignment via Assign action is not supported for shell scripts. Manual verification/update might be needed.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    WriteToImportStatusFile("An error occurred while assigning groups to macOS shell script", LogType.Warning);
+                    WriteToImportStatusFile(ex.Message, LogType.Error);
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile($"Error assigning groups to macOS shell script {scriptId}: {ex.Message}", LogType.Error);
-                // Rethrow or handle as appropriate for the application flow
-                // throw;
+                WriteToImportStatusFile("An error occurred while assigning groups to macOS shell script", LogType.Warning);
+                WriteToImportStatusFile(ex.Message, LogType.Error);
             }
         }
         public static async Task DeleteMacosShellScript(GraphServiceClient graphServiceClient, string profileID)
