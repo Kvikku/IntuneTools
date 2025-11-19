@@ -141,7 +141,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         if (assignments && groups != null && groups.Any())
                         {
-                            await AssignGroupsToSingleAppleBYODEnrollmentProfile(importedProfile.Id, groups, destinationGraphServiceClient, filter);
+                            await AssignGroupsToSingleAppleBYODEnrollmentProfile(importedProfile.Id, groups, destinationGraphServiceClient);
                         }
 
                         // TODO - delete this code block if not needed
@@ -178,52 +178,174 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task AssignGroupsToSingleAppleBYODEnrollmentProfile(string profileId, List<string> groupIds, GraphServiceClient destinationGraphServiceClient, bool applyFilter)
+        /// <summary>
+        /// Assigns groups to a single Apple BYOD Enrollment Profile.
+        /// Apple BYOD Enrollment profiles support All Users and regular user groups, but NOT All Devices.
+        /// </summary>
+        /// <param name="profileId">The ID of the profile to assign groups to.</param>
+        /// <param name="groupIds">List of group IDs to assign.</param>
+        /// <param name="destinationGraphServiceClient">GraphServiceClient for the destination tenant.</param>
+        /// <param name="applyFilter">Whether to apply assignment filters.</param>
+        /// <returns>A Task representing the asynchronous assignment operation.</returns>
+        public static async Task AssignGroupsToSingleAppleBYODEnrollmentProfile(string profileId, List<string> groupIds, GraphServiceClient destinationGraphServiceClient)
         {
             try
             {
-                if (groupIds == null || !groupIds.Any())
+                if (profileId == null)
                 {
-                    WriteToImportStatusFile($"No group IDs provided for assignment to profile {profileId}. Skipping assignment.");
-                    return;
+                    throw new ArgumentNullException(nameof(profileId));
                 }
+
+                if (groupIds == null)
+                {
+                    throw new ArgumentNullException(nameof(groupIds));
+                }
+
                 if (destinationGraphServiceClient == null)
                 {
                     throw new ArgumentNullException(nameof(destinationGraphServiceClient));
                 }
 
-                WriteToImportStatusFile($"Assigning {groupIds.Count} groups to profile ID: {profileId}. Apply filter: {applyFilter}");
+                var assignments = new List<AppleEnrollmentProfileAssignment>();
+                var seenGroupIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var hasAllUsers = false;
 
+                // Step 1: Add new assignments to request body
                 foreach (var groupId in groupIds)
                 {
-                    var assignment = new AppleEnrollmentProfileAssignment
+                    if (string.IsNullOrWhiteSpace(groupId) || !seenGroupIds.Add(groupId))
                     {
-                        OdataType = "#microsoft.graph.appleEnrollmentProfileAssignment",
-                        Target = new GroupAssignmentTarget
+                        continue;
+                    }
+
+                    // Check if this is All Devices - Apple BYOD Enrollment profiles cannot be assigned to All Devices
+                    if (groupId.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                    {
+                        WriteToImportStatusFile($"Warning: Apple BYOD Enrollment profiles cannot be assigned to 'All Devices'. Only All Users and user groups are supported. Skipping this assignment.", LogType.Warning);
+                        continue;
+                    }
+
+                    AppleEnrollmentProfileAssignment assignment;
+
+                    // Check if this is All Users - this IS supported
+                    if (groupId.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                    {
+                        hasAllUsers = true;
+                        assignment = new AppleEnrollmentProfileAssignment
                         {
-                            OdataType = "#microsoft.graph.groupAssignmentTarget",
-                            GroupId = groupId,
-                            DeviceAndAppManagementAssignmentFilterId = applyFilter ? SelectedFilterID : null,
-                            DeviceAndAppManagementAssignmentFilterType = applyFilter ? deviceAndAppManagementAssignmentFilterType : DeviceAndAppManagementAssignmentFilterType.None
+                            OdataType = "#microsoft.graph.appleEnrollmentProfileAssignment",
+                            Target = new AllLicensedUsersAssignmentTarget
+                            {
+                                OdataType = "#microsoft.graph.allLicensedUsersAssignmentTarget",
+                                DeviceAndAppManagementAssignmentFilterId =  SelectedFilterID,
+                                DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
+                            }
+                        };
+                    }
+                    else
+                    {
+                        // Regular group assignment
+                        assignment = new AppleEnrollmentProfileAssignment
+                        {
+                            OdataType = "#microsoft.graph.appleEnrollmentProfileAssignment",
+                            Target = new GroupAssignmentTarget
+                            {
+                                OdataType = "#microsoft.graph.groupAssignmentTarget",
+                                GroupId = groupId,
+                                DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
+                                DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
+                            }
+                        };
+                    }
+
+                    assignments.Add(assignment);
+                }
+
+                // Step 2: Check for existing assignments and add only if not already present
+                var existingAssignments = await destinationGraphServiceClient
+                    .DeviceManagement
+                    .AppleUserInitiatedEnrollmentProfiles[profileId]
+                    .Assignments
+                    .GetAsync();
+
+                if (existingAssignments?.Value != null)
+                {
+                    foreach (var existing in existingAssignments.Value)
+                    {
+                        // Check the type of assignment target
+                        if (existing.Target is AllLicensedUsersAssignmentTarget)
+                        {
+                            // Skip if we're already adding All Users
+                            if (!hasAllUsers)
+                            {
+                                assignments.Add(existing);
+                            }
                         }
-                    };
+                        else if (existing.Target is AllDevicesAssignmentTarget)
+                        {
+                            // Skip All Devices assignments - they shouldn't exist but handle gracefully
+                            WriteToImportStatusFile($"Warning: Found existing 'All Devices' assignment on Apple BYOD Enrollment profile {profileId}. This should not exist and will be skipped.", LogType.Warning);
+                            continue;
+                        }
+                        else if (existing.Target is GroupAssignmentTarget groupTarget)
+                        {
+                            var existingGroupId = groupTarget.GroupId;
+
+                            // Only add if not already in the new assignments
+                            if (!string.IsNullOrWhiteSpace(existingGroupId) && seenGroupIds.Add(existingGroupId))
+                            {
+                                assignments.Add(existing);
+                            }
+                        }
+                        else
+                        {
+                            // Include any other assignment types (e.g., exclusions, all users with exclusions, etc.)
+                            assignments.Add(existing);
+                        }
+                    }
+                }
+
+                // Step 3: Post assignments individually (Apple enrollment profiles don't support batch assign)
+                foreach (var assignment in assignments)
+                {
+                    // Skip existing assignments that were already posted
+                    if (!string.IsNullOrEmpty(assignment.Id))
+                    {
+                        continue;
+                    }
 
                     try
                     {
-                        await destinationGraphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileId].Assignments.PostAsync(assignment);
+                        await destinationGraphServiceClient
+                            .DeviceManagement
+                            .AppleUserInitiatedEnrollmentProfiles[profileId]
+                            .Assignments
+                            .PostAsync(assignment);
 
-                        string filterInfo = applyFilter && !string.IsNullOrEmpty(SelectedFilterID) ? $" with filter ID {SelectedFilterID} (Type: {deviceAndAppManagementAssignmentFilterType})" : "";
-                        WriteToImportStatusFile($"Assigned group {groupId} to profile {profileId}{filterInfo}.");
+                        string targetType = assignment.Target switch
+                        {
+                            AllLicensedUsersAssignmentTarget => "All Users",
+                            GroupAssignmentTarget gt => $"group {gt.GroupId}",
+                            _ => "unknown target"
+                        };
+
+                        string filterInfo = !string.IsNullOrEmpty(SelectedFilterID) 
+                            ? $" with filter ID {SelectedFilterID} (Type: {deviceAndAppManagementAssignmentFilterType})" 
+                            : "";
+
+                        WriteToImportStatusFile($"Assigned {targetType} to profile {profileId}{filterInfo}.");
                     }
                     catch (ODataError odataError)
                     {
-                        WriteToImportStatusFile($"Graph API error assigning group {groupId} to profile {profileId}: {odataError.Error?.Message}",LogType.Error);
+                        WriteToImportStatusFile($"Graph API error assigning to profile {profileId}: {odataError.Error?.Message}", LogType.Error);
                     }
                     catch (Exception ex)
                     {
-                        WriteToImportStatusFile($"Error assigning group {groupId} to profile {profileId}: {ex.Message}",LogType.Error);
+                        WriteToImportStatusFile($"Error assigning to profile {profileId}: {ex.Message}", LogType.Error);
                     }
                 }
+
+                WriteToImportStatusFile($"Completed assignment process for profile {profileId}. Total assignments processed: {assignments.Count}");
             }
             catch (Exception ex)
             {

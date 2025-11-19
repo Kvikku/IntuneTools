@@ -89,6 +89,7 @@ namespace IntuneTools.Pages
                 ["WindowsFeatureUpdate"] = async () => await LoadAllWindowsFeatureUpdateProfilesAsync(),
                 ["WindowsQualityUpdatePolicy"] = async () => await LoadAllWindowsQualityUpdatePoliciesAsync(),
                 ["WindowsQualityUpdateProfile"] = async () => await LoadAllWindowsQualityUpdateProfilesAsync(),
+                ["AppleBYODEnrollmentProfile"] = async () => await LoadAllAppleBYODEnrollmentProfilesAsync()
             };
 
             AssignmentList.Add(new AssignmentInfo { Name = "App One", Id = "001", Platform = "Windows", Type = "Win32" });
@@ -263,6 +264,10 @@ namespace IntuneTools.Pages
                     if (item.Value.Type == "Windows Quality Update Profile")
                     {
                         await AssignGroupsToSingleWindowsQualityUpdateProfile(item.Value.Id, groupList, sourceGraphServiceClient);
+                    }
+                    if (item.Value.Type == "Apple BYOD Enrollment Profile")
+                    {
+                        await AssignGroupsToSingleAppleBYODEnrollmentProfile(item.Value.Id, groupList, sourceGraphServiceClient);
                     }
 
 
@@ -630,6 +635,31 @@ namespace IntuneTools.Pages
                         Name = profile.DisplayName,
                         Type = "Windows Quality Update Profile",
                         Platform = "Windows",
+                        Id = profile.Id
+                    };
+                    AssignmentList.Add(assignmentInfo);
+                }
+                AppDataGrid.ItemsSource = AssignmentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
+        private async Task LoadAllAppleBYODEnrollmentProfilesAsync()
+        {
+            ShowLoading("Loading Apple BYOD enrollment profiles from Microsoft Graph...");
+            try
+            {
+                var profiles = await GetAllAppleBYODEnrollmentProfiles(sourceGraphServiceClient);
+                foreach (var profile in profiles)
+                {
+                    var assignmentInfo = new AssignmentInfo
+                    {
+                        Name = profile.DisplayName,
+                        Type = "Apple BYOD Enrollment Profile",
+                        Platform = "iOS",
                         Id = profile.Id
                     };
                     AssignmentList.Add(assignmentInfo);
