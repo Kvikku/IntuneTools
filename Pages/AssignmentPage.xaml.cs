@@ -83,6 +83,7 @@ namespace IntuneTools.Pages
                 ["DeviceConfiguration"] = async () => await LoadAllDeviceConfigurationPoliciesAsync(),
                 ["macOSShellScript"] = async () => await LoadAllmacOSShellScriptsAsync(),
                 ["PowerShellScript"] = async () => await LoadAllPowershellScriptsAsync(),
+                ["ProactiveRemediation"] = async () => await LoadAllProactiveRemediationScriptsAsync(),
             };
 
             AssignmentList.Add(new AssignmentInfo { Name = "App One", Id = "001", Platform = "Windows", Type = "Win32" });
@@ -233,6 +234,10 @@ namespace IntuneTools.Pages
                     if (item.Value.Type == "PowerShell Script")
                     {
                         await AssignGroupsToSinglePowerShellScript(item.Value.Id, groupList, sourceGraphServiceClient);
+                    }
+                    if (item.Value.Type == "Proactive Remediation Script")
+                    {
+                        await AssignGroupsToSingleProactiveRemediation(item.Value.Id, groupList, sourceGraphServiceClient);
                     }
 
 
@@ -460,6 +465,32 @@ namespace IntuneTools.Pages
                 HideLoading();
             }
         }
+
+        private async Task LoadAllProactiveRemediationScriptsAsync()
+        {
+            ShowLoading("Loading proactive remediation scripts from Microsoft Graph...");
+            try
+            {
+                var scripts = await GetAllProactiveRemediations(sourceGraphServiceClient);
+                foreach (var script in scripts)
+                {
+                    var assignmentInfo = new AssignmentInfo
+                    {
+                        Name = script.DisplayName,
+                        Type = "Proactive Remediation Script",
+                        Platform = "Windows",
+                        Id = script.Id
+                    };
+                    AssignmentList.Add(assignmentInfo);
+                }
+                AppDataGrid.ItemsSource = AssignmentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
 
 
         #endregion
