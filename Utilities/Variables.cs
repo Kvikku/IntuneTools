@@ -51,6 +51,8 @@ namespace IntuneTools.Utilities
         public static string SelectedGroupName = null;
         public static Dictionary<string, string> groupNameAndID = new Dictionary<string, string>();
         public static Dictionary<string, string> selectedGroupNameAndID = new Dictionary<string, string>();
+        public static string allUsersVirtualGroupID = "acacacac-9df4-4c7d-9d50-4ef0226f57a9"; // Virtual Group ID for "All Users"
+        public static string allDevicesVirtualGroupID = "adadadad-808e-44e2-905a-0b7873a8a531"; // Virtual Group ID for "All Devices"
 
         // Graph authentication variables
         public static string sourceTenantName = string.Empty;

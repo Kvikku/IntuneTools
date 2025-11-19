@@ -147,6 +147,8 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 var assignments = new List<DeviceManagementConfigurationPolicyAssignment>();
                 var seenGroupIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var hasAllUsers = false;
+                var hasAllDevices = false;
 
                 // Step 1: Add new assignments to request body
                 foreach (var group in groupID)
@@ -156,20 +158,58 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         continue;
                     }
 
-                    var assignment = new DeviceManagementConfigurationPolicyAssignment
+                    DeviceManagementConfigurationPolicyAssignment assignment;
+
+                    // Check if this is a virtual group (All Users or All Devices)
+                    if (group.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
                     {
-                        OdataType = "#microsoft.graph.deviceManagementConfigurationPolicyAssignment",
-                        Id = group,
-                        Target = new GroupAssignmentTarget
+                        hasAllUsers = true;
+                        assignment = new DeviceManagementConfigurationPolicyAssignment
                         {
-                            OdataType = "#microsoft.graph.groupAssignmentTarget",
-                            DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
-                            DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType,
-                            GroupId = group
-                        },
-                        Source = DeviceAndAppManagementAssignmentSource.Direct,
-                        SourceId = group
-                    };
+                            OdataType = "#microsoft.graph.deviceManagementConfigurationPolicyAssignment",
+                            Target = new AllLicensedUsersAssignmentTarget
+                            {
+                                OdataType = "#microsoft.graph.allLicensedUsersAssignmentTarget",
+                                DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
+                                DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
+                            },
+                            Source = DeviceAndAppManagementAssignmentSource.Direct
+                        };
+                    }
+                    else if (group.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                    {
+                        hasAllDevices = true;
+                        assignment = new DeviceManagementConfigurationPolicyAssignment
+                        {
+                            OdataType = "#microsoft.graph.deviceManagementConfigurationPolicyAssignment",
+                            Target = new AllDevicesAssignmentTarget
+                            {
+                                OdataType = "#microsoft.graph.allDevicesAssignmentTarget",
+                                DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
+                                DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
+                            },
+                            Source = DeviceAndAppManagementAssignmentSource.Direct
+                        };
+                    }
+                    else
+                    {
+                        // Regular group assignment
+                        assignment = new DeviceManagementConfigurationPolicyAssignment
+                        {
+                            OdataType = "#microsoft.graph.deviceManagementConfigurationPolicyAssignment",
+                            Id = group,
+                            Target = new GroupAssignmentTarget
+                            {
+                                OdataType = "#microsoft.graph.groupAssignmentTarget",
+                                DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
+                                DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType,
+                                GroupId = group
+                            },
+                            Source = DeviceAndAppManagementAssignmentSource.Direct,
+                            SourceId = group
+                        };
+                    }
+                    
                     assignments.Add(assignment);
                 }
 
@@ -184,18 +224,36 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 {
                     foreach (var existing in existingAssignments.Value)
                     {
-                        var existingGroupId = (existing.Target as GroupAssignmentTarget)?.GroupId;
-
-                        // Always include non-group assignments
-                        if (string.IsNullOrWhiteSpace(existingGroupId))
+                        // Check the type of assignment target
+                        if (existing.Target is AllLicensedUsersAssignmentTarget)
                         {
-                            assignments.Add(existing);
-                            continue;
+                            // Skip if we're already adding All Users
+                            if (!hasAllUsers)
+                            {
+                                assignments.Add(existing);
+                            }
                         }
-
-                        // Only add if not already in the new assignments
-                        if (seenGroupIds.Add(existingGroupId))
+                        else if (existing.Target is AllDevicesAssignmentTarget)
                         {
+                            // Skip if we're already adding All Devices
+                            if (!hasAllDevices)
+                            {
+                                assignments.Add(existing);
+                            }
+                        }
+                        else if (existing.Target is GroupAssignmentTarget groupTarget)
+                        {
+                            var existingGroupId = groupTarget.GroupId;
+
+                            // Only add if not already in the new assignments
+                            if (!string.IsNullOrWhiteSpace(existingGroupId) && seenGroupIds.Add(existingGroupId))
+                            {
+                                assignments.Add(existing);
+                            }
+                        }
+                        else
+                        {
+                            // Include any other assignment types (e.g., exclusions, all users with exclusions, etc.)
                             assignments.Add(existing);
                         }
                     }
