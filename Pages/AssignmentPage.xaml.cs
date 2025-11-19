@@ -158,10 +158,18 @@ namespace IntuneTools.Pages
             AppendToDetailsRichTextBlock("Filter: " + _selectedFilterName);
 
 
-            deviceAndAppManagementAssignmentFilterType =
-                string.Equals(_selectedFilterMode, "Include", StringComparison.OrdinalIgnoreCase)
-                    ? DeviceAndAppManagementAssignmentFilterType.Include
-                    : DeviceAndAppManagementAssignmentFilterType.Exclude;
+            // Check if FilterToggle is enabled, otherwise set filter type to None
+            if (FilterToggle.IsOn)
+            {
+                deviceAndAppManagementAssignmentFilterType =
+                    string.Equals(_selectedFilterMode, "Include", StringComparison.OrdinalIgnoreCase)
+                        ? DeviceAndAppManagementAssignmentFilterType.Include
+                        : DeviceAndAppManagementAssignmentFilterType.Exclude;
+            }
+            else
+            {
+                deviceAndAppManagementAssignmentFilterType = DeviceAndAppManagementAssignmentFilterType.None;
+            }
 
             // Get and log install intent
             UpdateSelectedInstallIntent();
