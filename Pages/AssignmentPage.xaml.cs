@@ -82,6 +82,7 @@ namespace IntuneTools.Pages
                 ["DeviceCompliance"] = async () => await LoadAllDeviceCompliancePoliciesAsync(),
                 ["DeviceConfiguration"] = async () => await LoadAllDeviceConfigurationPoliciesAsync(),
                 ["macOSShellScript"] = async () => await LoadAllmacOSShellScriptsAsync(),
+                ["PowerShellScript"] = async () => await LoadAllPowershellScriptsAsync(),
             };
 
             AssignmentList.Add(new AssignmentInfo { Name = "App One", Id = "001", Platform = "Windows", Type = "Win32" });
@@ -228,6 +229,10 @@ namespace IntuneTools.Pages
                     if (item.Value.Type == "macOS Shell Script")
                     {
                         await AssignGroupsToSingleShellScriptmacOS(item.Value.Id, groupList, sourceGraphServiceClient);
+                    }
+                    if (item.Value.Type == "PowerShell Script")
+                    {
+                        await AssignGroupsToSinglePowerShellScript(item.Value.Id, groupList, sourceGraphServiceClient);
                     }
 
 
@@ -419,6 +424,31 @@ namespace IntuneTools.Pages
                         Name = script.DisplayName,
                         Type = "macOS Shell Script",
                         Platform = "macOS",
+                        Id = script.Id
+                    };
+                    AssignmentList.Add(assignmentInfo);
+                }
+                AppDataGrid.ItemsSource = AssignmentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
+        private async Task LoadAllPowershellScriptsAsync()
+        {
+            ShowLoading("Loading PowerShell scripts from Microsoft Graph...");
+            try
+            {
+                var scripts = await GetAllPowerShellScripts(sourceGraphServiceClient);
+                foreach (var script in scripts)
+                {
+                    var assignmentInfo = new AssignmentInfo
+                    {
+                        Name = script.DisplayName,
+                        Type = "PowerShell Script",
+                        Platform = "Windows",
                         Id = script.Id
                     };
                     AssignmentList.Add(assignmentInfo);
