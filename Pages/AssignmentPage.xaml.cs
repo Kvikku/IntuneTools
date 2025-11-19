@@ -79,6 +79,7 @@ namespace IntuneTools.Pages
             _assignmentLoaders = new Dictionary<string, Func<Task>>(StringComparer.OrdinalIgnoreCase)
             {
                 ["SettingsCatalog"] = async () => await LoadAllSettingsCatalogPoliciesAsync(),
+                ["DeviceCompliance"] = async () => await LoadAllDeviceCompliancePoliciesAsync(),
             };
 
             AssignmentList.Add(new AssignmentInfo { Name = "App One", Id = "001", Platform = "Windows", Type = "Win32" });
@@ -209,8 +210,19 @@ namespace IntuneTools.Pages
 
                 foreach (var item in content)
                 {
-                    // item.Key = Id, item.Value = AssignmentInfo
-                    await AssignGroupsToSingleSettingsCatalog(item.Value.Id, groupList, sourceGraphServiceClient);
+                    if (item.Value.Type == "Device Compliance")
+                    {
+                        await AssignGroupsToSingleDeviceCompliance(item.Value.Id, groupList, sourceGraphServiceClient);
+                    }
+
+                    if (item.Value.Type == "Settings Catalog")
+                    {
+                        await AssignGroupsToSingleSettingsCatalog(item.Value.Id, groupList, sourceGraphServiceClient);
+                    }
+
+
+                    
+
 
                     foreach (var group in selectedGroups)
                     {
@@ -329,6 +341,34 @@ namespace IntuneTools.Pages
                 HideLoading();
             }
         }
+
+        private async Task LoadAllDeviceCompliancePoliciesAsync()
+        {
+            ShowLoading("Loading device compliance policies from Microsoft Graph...");
+            try
+            {
+                var policies = await GetAllDeviceCompliancePolicies(sourceGraphServiceClient);
+                foreach (var policy in policies)
+                {
+                    var platform = TranslatePolicyPlatformName(policy.OdataType);
+
+                    var assignmentInfo = new AssignmentInfo
+                    {
+                        Name = policy.DisplayName,
+                        Type = "Device Compliance",
+                        Platform = platform,
+                        Id = policy.Id
+                    };
+                    AssignmentList.Add(assignmentInfo);
+                }
+                AppDataGrid.ItemsSource = AssignmentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
         #endregion
 
         #region Group / Filter retrieval
