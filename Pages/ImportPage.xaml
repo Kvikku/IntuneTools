@@ -12,223 +12,243 @@
 
     <Grid Margin="20">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/> <!-- Row 0 for Page Title -->
-            <RowDefinition Height="Auto"/> <!-- Row 1 for Action Buttons and Search Controls -->
-            <RowDefinition Height="*"/>    <!-- Row 2 for Data Grid Area -->
-            <RowDefinition Height="Auto"/> <!-- Row 3 for Import Button -->
+            <RowDefinition Height="Auto"/>
+            <!-- Header -->
+            <RowDefinition Height="Auto"/>
+            <!-- CommandBar -->
+            <RowDefinition Height="*"/>
+            <!-- Data grid + Side panel -->
         </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto"/> <!-- Column 0 for main content -->
-            <ColumnDefinition Width="*"/>    <!-- Column 1 for import button and related controls -->
-            <ColumnDefinition Width="Auto"/> <!-- Column 2 for LogPanel -->
-        </Grid.ColumnDefinitions>
 
-        <!-- Page Title -->
-        <TextBlock Grid.Row="0" Grid.Column="0" Text="Intune Import" 
-                   HorizontalAlignment="Left" 
-                   FontSize="38" 
-                   FontWeight="Bold"
-                   Margin="0,0,0,20"/>
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+            <TextBlock Text="Intune Import"
+                       HorizontalAlignment="Left"
+                       FontSize="38"
+                       FontWeight="Bold"/>
+        </StackPanel>
 
-        <!-- Action Buttons and Search Controls + LogPanel side by side -->
-        <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,0,20">
-            <!-- Left: Action/Search/Options/Checkboxes -->
-            <StackPanel Orientation="Vertical">
-                <!-- Action Buttons Row -->
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                    <Button x:Name="Search" 
-                            Content="Search" 
-                            Width="120" 
-                            Margin="0,0,10,0"
-                            Click="SearchButton_Click"/>
-                    <Button x:Name="ListAll" 
-                            Content="List all" 
-                            Width="120" 
-                            Margin="0,0,10,0"
-                            Click="ListAllButton_Click"/>
-                    <Button x:Name="ClearAll" 
-                            Content="Clear All" 
-                            Width="120" 
-                            Margin="0,0,10,0"
-                            Click="ClearAllButton_Click"/>
-                    <Button x:Name="ClearSelected" 
-                            Content="Clear Selected" 
-                            Width="120" 
-                            Click="ClearSelectedButton_Click"/>
-                </StackPanel>
-                <!-- Search Query TextBox, Options Expander -->
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Top">
+        <!-- CommandBar -->
+        <CommandBar Grid.Row="1"
+                    DefaultLabelPosition="Right"
+                    Background="Transparent"
+                    Margin="0,0,0,12">
+            <CommandBar.Content>
+                <StackPanel Orientation="Horizontal" Spacing="8">
                     <TextBox x:Name="SearchQueryTextBox"
-                             Width="300"
                              PlaceholderText="Enter search query..."
-                             HorizontalAlignment="Left"
-                             TextWrapping="NoWrap"
-                             Height="30"
-                             AcceptsReturn="False"/>
-                    <Expander x:Name="OptionsExpander" Header="Options" IsExpanded="False" Margin="20,0,0,0" VerticalAlignment="Top">
-                        <StackPanel x:Name="OptionsPanel" Orientation="Vertical" VerticalAlignment="Center">
-                            <CheckBox x:Name="OptionsAllCheckBox" 
-                                      Content="Select all" 
-                                      IsThreeState="False" 
-                                      Checked="SelectAll_Checked" 
-                                      Unchecked="SelectAll_Unchecked" 
-                                      Indeterminate="SelectAll_Indeterminate" />
-                            <CheckBox x:Name="SettingsCatalog" Content="Settings Catalog" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
-                            <CheckBox x:Name="DeviceCompliance" Content="Device Compliance" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
-                            <CheckBox x:Name="EntraGroups" Content="Entra Groups" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
-                            <CheckBox x:Name="DeviceConfiguration" Content="Device Configuration" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
-                            <CheckBox x:Name="AppleBYODEnrollmentProfile" Content="Apple BYOD enrollment profile" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
-                            <CheckBox x:Name="Filters" Content="Filters" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
-                            <CheckBox x:Name="PowerShellScript" Content="PowerShell Scripts" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
-                            <CheckBox x:Name="ProactiveRemediation" Content="Remediation Scripts" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
-                            <CheckBox x:Name="macOSShellScript" Content="macOS Shell Scripts" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
-                            <CheckBox x:Name="WindowsAutopilot" Content="Windows Autopilot" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
-                            <CheckBox x:Name="WindowsDriverUpdate" Content="Windows Driver Update" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
-                            <CheckBox x:Name="WindowsFeatureUpdate" Content="Windows Feature Update" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
-                            <CheckBox x:Name="WindowsQualityUpdatePolicy" Content="Windows Quality Update Policy" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
-                            <CheckBox x:Name="WindowsQualityUpdateProfile" Content="Windows Quality Update Profile" Margin="24,0,0,0" IsThreeState="False" Checked="Option_Checked" Unchecked="Option_Unchecked" />
-                        </StackPanel>
-                    </Expander>
-                </StackPanel>
-                <!-- Groups and Filters checkboxes below Search/Options -->
-                <StackPanel Orientation="Horizontal" Margin="0,5,0,0"> 
-                    <CheckBox x:Name="GroupsCheckBox" 
-                              Content="Groups" 
-                              IsThreeState="False" 
-                              Checked="GroupsCheckBox_Checked" 
-                              Unchecked="GroupsCheckBox_Unchecked" 
-                              IsChecked="False" 
-                              Margin="0,0,0,0" />
-                    <CheckBox x:Name="FiltersCheckBox" 
-                              Content="Filters" 
-                              Margin="20,0,0,0" 
-                              IsThreeState="False" 
-                              Checked="FiltersCheckBox_Checked" 
-                              Unchecked="FiltersCheckBox_Unchecked" 
+                             Width="300"
+                             VerticalAlignment="Bottom"/>
+                    <AppBarButton x:Name="Search" Icon="Find" Label="Search" Click="SearchButton_Click" ToolTipService.ToolTip="Search for specific items."/>
+                    <AppBarButton x:Name="ListAll" Icon="ViewAll" Label="List All" Click="ListAllButton_Click" ToolTipService.ToolTip="List all items."/>
+                    <AppBarSeparator/>
+                    <AppBarButton x:Name="ClearSelected" Icon="Remove" Label="Clear Selected" Click="ClearSelectedButton_Click" ToolTipService.ToolTip="Remove selected items from staging area."/>
+                    <AppBarButton x:Name="ClearAll" Icon="Clear" Label="Clear All" Click="ClearAllButton_Click" ToolTipService.ToolTip="Clear all items from staging area."/>
+                    <AppBarSeparator/>
+                    <AppBarButton Icon="ViewAll" Label="Content Types">
+                        <AppBarButton.Flyout>
+                            <Flyout Placement="BottomEdgeAlignedLeft">
+                                <StackPanel x:Name="OptionsPanel" Orientation="Vertical" MinWidth="300">
+                                    <TextBlock Text="Content Types" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                    <CheckBox x:Name="OptionsAllCheckBox"
+                                              Content="Select all"
+                                              IsThreeState="False"
+                                              Checked="SelectAll_Checked"
+                                              Unchecked="SelectAll_Unchecked"
+                                              Indeterminate="SelectAll_Indeterminate"/>
+                                    <CheckBox x:Name="SettingsCatalog" Content="Settings Catalog" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                    <CheckBox x:Name="DeviceCompliance" Content="Device Compliance" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                    <CheckBox x:Name="EntraGroups" Content="Entra Groups" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                    <CheckBox x:Name="DeviceConfiguration" Content="Device Configuration" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                    <CheckBox x:Name="AppleBYODEnrollmentProfile" Content="Apple BYOD enrollment profile" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                    <CheckBox x:Name="Filters" Content="Filters" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                    <CheckBox x:Name="PowerShellScript" Content="PowerShell Scripts" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                    <CheckBox x:Name="ProactiveRemediation" Content="Remediation Scripts" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                    <CheckBox x:Name="macOSShellScript" Content="macOS Shell Scripts" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                    <CheckBox x:Name="WindowsAutopilot" Content="Windows Autopilot" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                    <CheckBox x:Name="WindowsDriverUpdate" Content="Windows Driver Update" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                    <CheckBox x:Name="WindowsFeatureUpdate" Content="Windows Feature Update" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                    <CheckBox x:Name="WindowsQualityUpdatePolicy" Content="Windows Quality Update Policy" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                    <CheckBox x:Name="WindowsQualityUpdateProfile" Content="Windows Quality Update Profile" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                </StackPanel>
+                            </Flyout>
+                        </AppBarButton.Flyout>
+                    </AppBarButton>
+                    <AppBarSeparator/>
+                    <CheckBox x:Name="GroupsCheckBox"
+                              Content="Include Groups"
+                              VerticalAlignment="Bottom"
+                              Margin="0,0,0,8"
+                              Checked="GroupsCheckBox_Checked"
+                              Unchecked="GroupsCheckBox_Unchecked"
+                              IsChecked="False"/>
+                    <CheckBox x:Name="FiltersCheckBox"
+                              Content="Include Filters"
+                              VerticalAlignment="Bottom"
+                              Margin="0,0,0,8"
+                              Checked="FiltersCheckBox_Checked"
+                              Unchecked="FiltersCheckBox_Unchecked"
                               IsChecked="False"
                               Click="FilterCheckBoxClick"/>
                 </StackPanel>
-            </StackPanel>
-            <!-- Right: LogPanel -->
-            
-        </StackPanel>
+            </CommandBar.Content>
+            <CommandBar.PrimaryCommands>
+                <AppBarButton x:Name="ClearLogButton" Icon="Delete" Label="Clear Log" Click="ClearLogButton_Click" ToolTipService.ToolTip="Clear the log console."/>
+            </CommandBar.PrimaryCommands>
+        </CommandBar>
 
-        <!-- Data Grid Area with Loading Overlay -->
-        <Grid Grid.Row="2" Grid.Column="0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-            
-            <!-- InfoBar -->
-            <InfoBar Grid.Row="0"
-                     IsOpen="True"
-                     Severity="Informational"
-                     Title="Staging Area"
-                     Message="This grid acts as a staging area. All items listed below will be imported from the source tenant. Use the 'Clear' buttons to exclude items you do not wish to import."
-                     IsClosable="True"
-                     Margin="0,0,0,12"/>
-            
-            <!-- Data Grid -->
-            <controls:DataGrid Grid.Row="1"
-                       x:Name="ContentDataGrid" 
-                       AutoGenerateColumns="False" 
-                       Margin="0,0,0,20"
-                       CanUserReorderColumns="False"
-                       HeadersVisibility="Column"
-                       ColumnWidth="Auto"
-                       Width="800"
-                       HorizontalAlignment="Left">
-                <controls:DataGrid.Columns>
-                    <controls:DataGridTextColumn Header="Name" Binding="{Binding ContentName}" Width="200"/>
-                    <controls:DataGridTextColumn Header="Type" Binding="{Binding ContentType}" Width="200"/>
-                    <controls:DataGridTextColumn Header="Platform" Binding="{Binding ContentPlatform}" Width="150"/>
-                    <controls:DataGridTextColumn Header="ID" Binding="{Binding ContentId}" Width="*"/>
-                </controls:DataGrid.Columns>
-            </controls:DataGrid>
+        <!-- Main Content Row -->
+        <Grid Grid.Row="2" Margin="0,0,0,20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <!-- DataGrid -->
+                <ColumnDefinition Width="280"/>
+                <!-- Import side panel -->
+                <ColumnDefinition Width="340"/>
+                <!-- Log panel -->
+            </Grid.ColumnDefinitions>
 
-            <!-- Loading Overlay -->
-            <Border Grid.RowSpan="2"
-                    x:Name="LoadingOverlay" 
-                    Background="{ThemeResource SystemControlAcrylicWindowBrush}"
-                    Visibility="Collapsed"
-                    Width="800"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Stretch">
-                <StackPanel Orientation="Vertical" 
-                           HorizontalAlignment="Center" 
-                           VerticalAlignment="Center">
-                    <ProgressRing x:Name="LoadingProgressRing" 
-                                  IsActive="True" 
-                                  Width="50" 
-                                  Height="50"
-                                  Margin="0,0,0,15"/>
-                    <TextBlock x:Name="LoadingStatusText" 
-                               Text="Loading data from Microsoft Graph..." 
-                               HorizontalAlignment="Center"
-                               FontSize="14"
-                               Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
-                </StackPanel>
-            </Border>
-        </Grid>
-
-        <!-- Controls in the second column (Grid.Column="1"), aligned with DataGrid -->
-        <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Vertical" Margin="20,0,0,0" VerticalAlignment="Top">
-            <Button x:Name="Import" 
-                    Content="Import" 
-                    Width="150" 
-                    Height="50"
-                    HorizontalAlignment="Left" 
-                    Margin="0,0,0,10"
-                    Click="ImportButton_Click"
-                    Background="DarkOrange"/>
-            <ComboBox x:Name="FilterSelectionComboBox"
-                      Margin="0,0,0,10" 
-                      Width="200"
-                      PlaceholderText="Select a filter..."
-                      Visibility="Collapsed"
-                      SelectionChanged="FilterSelectionComboBox_SelectionChanged"
-                      HorizontalAlignment="Left"/>
-            <StackPanel x:Name="NewControlsPanel" Orientation="Vertical" VerticalAlignment="Top" HorizontalAlignment="Left" Visibility="Collapsed">
-                <!-- Two Buttons -->
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                    <Button x:Name="NewButton1" Content="Search" Width="120" Margin="0,0,10,0" Click="GroupSearchClick"/>
-                    <Button x:Name="NewButton2" Content="List all" Width="120" Click="GroupListAllClick"/>
-                </StackPanel>
-                <!-- TextBox -->
-                <TextBox x:Name="GroupSearchTextBox" PlaceholderText="" Width="250" Margin="0,0,0,10"/>
-                <!-- DataGrid with 1 column -->
-                <controls:DataGrid x:Name="GroupDataGrid" 
-                               AutoGenerateColumns="False"
-                               HeadersVisibility="Column"
-                               ColumnWidth="*"
-                               Width="250"
-                               Height="250"
-                               HorizontalAlignment="Left">
+            <!-- DataGrid with InfoBar and loading overlay -->
+            <Grid Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                
+                <!-- InfoBar -->
+                <InfoBar Grid.Row="0"
+                         IsOpen="True"
+                         Severity="Informational"
+                         Title="Staging Area"
+                         Message="This grid acts as a staging area. All items listed below will be imported from the source tenant. Use the 'Clear' buttons to exclude items you do not wish to import."
+                         IsClosable="True"
+                         Margin="0,0,12,12"/>
+                
+                <!-- DataGrid -->
+                <controls:DataGrid Grid.Row="1"
+                                   x:Name="ContentDataGrid" 
+                                   AutoGenerateColumns="False"
+                                   SelectionMode="Extended"
+                                   Margin="0,0,12,0">
                     <controls:DataGrid.Columns>
-                        <controls:DataGridTextColumn Header="Group Name" Binding="{Binding GroupName}" Width="*"/>
+                        <controls:DataGridTextColumn Header="Name" Binding="{Binding ContentName}" Width="2*"/>
+                        <controls:DataGridTextColumn Header="Type" Binding="{Binding ContentType}" Width="*"/>
+                        <controls:DataGridTextColumn Header="Platform" Binding="{Binding ContentPlatform}" Width="*"/>
+                        <controls:DataGridTextColumn Header="ID" Binding="{Binding ContentId}" Width="2*"/>
                     </controls:DataGrid.Columns>
                 </controls:DataGrid>
-            </StackPanel>
-        </StackPanel>
 
-        <!-- LogPanel moved to the third column (Grid.Column="2") -->
-        <StackPanel x:Name="LogPanel" Grid.Row="2" Grid.Column="2" Orientation="Horizontal" Margin="20,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Right">
-            <ScrollViewer Width="400" MaxHeight="400"
-                  HorizontalScrollBarVisibility="Disabled"
-                  VerticalScrollBarVisibility="Auto"
-                  HorizontalScrollMode="Disabled"
-                  VerticalScrollMode="Enabled">
-                <RichTextBlock x:Name="LogConsole"
-                       Width="300"
-                       HorizontalAlignment="Stretch"
-                       IsTextSelectionEnabled="True"
-                       TextWrapping="Wrap"/>
-            </ScrollViewer>
-            <Button x:Name="ClearLogButton" Width="50" Height="50" ToolTipService.ToolTip="Clear Log" Click="ClearLogButton_Click" 
-            VerticalAlignment="Top" Margin="16,0,0,0">
-                <FontIcon Glyph="&#xE74D;" FontFamily="Segoe MDL2 Assets"/>
-            </Button>
-        </StackPanel>
+                <!-- Loading Overlay -->
+                <Border Grid.RowSpan="2"
+                        x:Name="LoadingOverlay"
+                        Background="{ThemeResource SystemControlAcrylicWindowBrush}"
+                        Visibility="Collapsed"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch">
+                    <StackPanel Orientation="Vertical"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Spacing="15">
+                        <ProgressRing x:Name="LoadingProgressRing"
+                                      IsActive="True"
+                                      Width="50"
+                                      Height="50"/>
+                        <TextBlock x:Name="LoadingStatusText"
+                                   Text="Loading data from Microsoft Graph..."
+                                   HorizontalAlignment="Center"
+                                   FontSize="14"
+                                   Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Import Side Panel -->
+            <StackPanel Grid.Column="1"
+                        Orientation="Vertical"
+                        Margin="0,-20,12,0">
+                <TextBlock Text="Import Options"
+                           FontSize="20"
+                           FontWeight="SemiBold"
+                           Margin="0,0,0,12"/>
+
+                <!-- IMPORT BUTTON - Primary action -->
+                <Button x:Name="Import"
+                        Click="ImportButton_Click"
+                        HorizontalAlignment="Stretch"
+                        Style="{StaticResource AccentButtonStyle}"
+                        Height="40"
+                        FontWeight="SemiBold"
+                        Margin="0,0,0,16">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE8B5;" FontSize="16"/>
+                        <TextBlock Text="Import" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
+                <!-- Filter Selection (conditionally visible) -->
+                <ComboBox x:Name="FilterSelectionComboBox"
+                          PlaceholderText="Select a filter..."
+                          Visibility="Collapsed"
+                          SelectionChanged="FilterSelectionComboBox_SelectionChanged"
+                          HorizontalAlignment="Stretch"
+                          Margin="0,0,0,16"/>
+
+                <!-- Groups Panel (conditionally visible) -->
+                <StackPanel x:Name="NewControlsPanel"
+                            Orientation="Vertical"
+                            Visibility="Collapsed"
+                            Spacing="8">
+                    <TextBlock Text="Groups"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,4"/>
+                    
+                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+                        <TextBox x:Name="GroupSearchTextBox"
+                                 PlaceholderText="Search groups..."
+                                 Width="130"/>
+                        <Button x:Name="NewButton1"
+                                Click="GroupSearchClick"
+                                ToolTipService.ToolTip="Search for a specific group.">
+                            <FontIcon Glyph="&#xE721;" FontSize="14"/>
+                        </Button>
+                    </StackPanel>
+
+                    <Button x:Name="NewButton2"
+                            Content="List all groups"
+                            Click="GroupListAllClick"
+                            HorizontalAlignment="Left"
+                            Margin="0,0,0,8"/>
+
+                    <controls:DataGrid x:Name="GroupDataGrid"
+                                       AutoGenerateColumns="False"
+                                       HeadersVisibility="Column"
+                                       SelectionMode="Extended"
+                                       Height="200"
+                                       Margin="0,0,0,0">
+                        <controls:DataGrid.Columns>
+                            <controls:DataGridTextColumn Header="Group Name" Binding="{Binding GroupName}" Width="*"/>
+                        </controls:DataGrid.Columns>
+                    </controls:DataGrid>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Log Console Panel -->
+            <StackPanel Grid.Column="2"
+                        Orientation="Vertical"
+                        Margin="0,-20,0,0">
+                <TextBlock Text="Log Console"
+                           FontSize="20"
+                           FontWeight="SemiBold"
+                           Margin="0,0,0,12"/>
+
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                              VerticalScrollBarVisibility="Auto"
+                              VerticalAlignment="Stretch">
+                    <RichTextBlock x:Name="LogConsole"
+                                   IsTextSelectionEnabled="True"
+                                   TextWrapping="Wrap"/>
+                </ScrollViewer>
+            </StackPanel>
+        </Grid>
     </Grid>
 </Page>
