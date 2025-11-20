@@ -92,11 +92,6 @@ namespace IntuneTools.Pages
                 ["AppleBYODEnrollmentProfile"] = async () => await LoadAllAppleBYODEnrollmentProfilesAsync()
             };
 
-            AssignmentList.Add(new AssignmentInfo { Name = "App One", Id = "001", Platform = "Windows", Type = "Win32" });
-            AssignmentList.Add(new AssignmentInfo { Name = "App Two", Id = "002", Platform = "Windows", Type = "Win32" });
-            AssignmentList.Add(new AssignmentInfo { Name = "App Three", Id = "003", Platform = "Windows", Type = "Win32" });
-            AssignmentList.Add(new AssignmentInfo { Name = "App Four", Id = "004", Platform = "Windows", Type = "Win32" });
-
             _allAssignments.AddRange(AssignmentList);
             AppDataGrid.ItemsSource = AssignmentList;
 
