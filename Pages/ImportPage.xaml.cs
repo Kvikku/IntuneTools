@@ -1427,6 +1427,7 @@ namespace IntuneTools.Pages
 
         private void LogGroupsToBeAssigned()
         {
+            selectedGroupNameAndID.Clear(); // Clear previous selections
             IsGroupSelected = false; // Reset group selection status
 
             LogToImportStatusFile("Assigning to the following groups:", LogLevels.Info);
