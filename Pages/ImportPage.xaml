@@ -115,8 +115,23 @@
 
         <!-- Data Grid Area with Loading Overlay -->
         <Grid Grid.Row="2" Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            
+            <!-- InfoBar -->
+            <InfoBar Grid.Row="0"
+                     IsOpen="True"
+                     Severity="Informational"
+                     Title="Staging Area"
+                     Message="This grid acts as a staging area. All items listed below will be imported from the source tenant. Use the 'Clear' buttons to exclude items you do not wish to import."
+                     IsClosable="True"
+                     Margin="0,0,0,12"/>
+            
             <!-- Data Grid -->
-            <controls:DataGrid x:Name="ContentDataGrid" 
+            <controls:DataGrid Grid.Row="1"
+                       x:Name="ContentDataGrid" 
                        AutoGenerateColumns="False" 
                        Margin="0,0,0,20"
                        CanUserReorderColumns="False"
@@ -133,13 +148,13 @@
             </controls:DataGrid>
 
             <!-- Loading Overlay -->
-            <Border x:Name="LoadingOverlay" 
+            <Border Grid.RowSpan="2"
+                    x:Name="LoadingOverlay" 
                     Background="{ThemeResource SystemControlAcrylicWindowBrush}"
                     Visibility="Collapsed"
                     Width="800"
-                    Height="300"
                     HorizontalAlignment="Left"
-                    VerticalAlignment="Top">
+                    VerticalAlignment="Stretch">
                 <StackPanel Orientation="Vertical" 
                            HorizontalAlignment="Center" 
                            VerticalAlignment="Center">
