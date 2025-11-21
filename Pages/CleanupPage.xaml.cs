@@ -1344,6 +1344,8 @@ namespace IntuneTools.Pages
             if (result == ContentDialogResult.Primary)
             {
                 await DeleteContent();
+                ContentList.Clear();
+                AppendToDetailsRichTextBlock("Cleared the data grid.");
             }
         }
 
