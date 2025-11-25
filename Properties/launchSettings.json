@@ -5,6 +5,9 @@
     },
     "IntuneTools (Unpackaged)": {
       "commandName": "Project"
+    },
+    "IntuneTools (Debug)": {
+      "commandName": "Project"
     }
   }
 }

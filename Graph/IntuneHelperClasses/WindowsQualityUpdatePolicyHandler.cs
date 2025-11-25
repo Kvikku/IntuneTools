@@ -139,7 +139,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         // Handle assignments if requested
                         if (assignments && groups != null && groups.Any() && importedPolicy?.Id != null)
                         {
-                            await AssignGroupsToSingleWindowsQualityUpdatePolicy(importedPolicy.Id, groups, destinationGraphServiceClient, filter);
+                            await AssignGroupsToSingleWindowsQualityUpdatePolicy(importedPolicy.Id, groups, destinationGraphServiceClient);
                         }
                     }
                     catch (Exception ex)
@@ -157,7 +157,16 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task AssignGroupsToSingleWindowsQualityUpdatePolicy(string policyID, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient, bool applyFilter)
+        /// <summary>
+        /// Assigns groups to a single Windows Quality Update Policy.
+        /// Windows Quality Update policies can ONLY be assigned to device groups - not All Users or All Devices.
+        /// </summary>
+        /// <param name="policyID">The ID of the policy to assign groups to.</param>
+        /// <param name="groupIDs">List of group IDs to assign.</param>
+        /// <param name="destinationGraphServiceClient">GraphServiceClient for the destination tenant.</param>
+        /// <param name="applyFilter">Whether to apply assignment filters.</param>
+        /// <returns>A Task representing the asynchronous assignment operation.</returns>
+        public static async Task AssignGroupsToSingleWindowsQualityUpdatePolicy(string policyID, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
         {
             try
             {
@@ -166,10 +175,9 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     throw new ArgumentNullException(nameof(policyID));
                 }
 
-                if (groupIDs == null || !groupIDs.Any())
+                if (groupIDs == null)
                 {
-                    WriteToImportStatusFile($"No groups provided for assignment to policy {policyID}. Skipping assignment.");
-                    return; // Nothing to assign
+                    throw new ArgumentNullException(nameof(groupIDs));
                 }
 
                 if (destinationGraphServiceClient == null)
@@ -177,56 +185,116 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     throw new ArgumentNullException(nameof(destinationGraphServiceClient));
                 }
 
-                WriteToImportStatusFile($"Assigning {groupIDs.Count} groups to Windows Quality Update policy {policyID}. Apply filter: {applyFilter}");
+                var assignments = new List<WindowsQualityUpdatePolicyAssignment>();
+                var seenGroupIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-                List<WindowsQualityUpdatePolicyAssignment> assignments = new List<WindowsQualityUpdatePolicyAssignment>();
+                WriteToImportStatusFile($"Assigning {groupIDs.Count} groups to Windows Quality Update policy {policyID}.");
 
+                // Step 1: Add new assignments to request body
                 foreach (var groupId in groupIDs)
                 {
+                    if (string.IsNullOrWhiteSpace(groupId) || !seenGroupIds.Add(groupId))
+                    {
+                        continue;
+                    }
+
+                    // Check if this is All Users - Quality Update policies cannot be assigned to All Users
+                    if (groupId.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                    {
+                        WriteToImportStatusFile($"Warning: Windows Quality Update policies cannot be assigned to 'All Users'. Only device groups are supported. Skipping this assignment.", LogType.Warning);
+                        continue;
+                    }
+
+                    // Check if this is All Devices - Quality Update policies cannot be assigned to All Devices
+                    if (groupId.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                    {
+                        WriteToImportStatusFile($"Warning: Windows Quality Update policies cannot be assigned to 'All Devices'. Only device groups are supported. Skipping this assignment.", LogType.Warning);
+                        continue;
+                    }
+
+                    // Regular group assignment (device groups only)
                     var assignmentTarget = new GroupAssignmentTarget
                     {
                         OdataType = "#microsoft.graph.groupAssignmentTarget",
                         GroupId = groupId,
-                        // Apply filters if applicable and supported for Quality Update Policy assignments
-                        DeviceAndAppManagementAssignmentFilterId = applyFilter ? SelectedFilterID : null,
-                        DeviceAndAppManagementAssignmentFilterType = applyFilter ? deviceAndAppManagementAssignmentFilterType : Microsoft.Graph.Beta.Models.DeviceAndAppManagementAssignmentFilterType.None,
+                        DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
+                        DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
                     };
 
                     var assignment = new WindowsQualityUpdatePolicyAssignment
                     {
                         OdataType = "#microsoft.graph.windowsQualityUpdatePolicyAssignment",
-                        Target = assignmentTarget,
-                        // Source and SourceId might not be applicable/required here. Check documentation.
+                        Target = assignmentTarget
                     };
+
                     assignments.Add(assignment);
                 }
 
-                // The request body structure for assigning Quality Update Policies might differ.
-                // Check the Graph API documentation for the correct structure.
-                // Assuming it's similar to Feature Updates for now.
+                // Step 2: Check for existing assignments and add only if not already present
+                var existingAssignments = await destinationGraphServiceClient
+                    .DeviceManagement
+                    .WindowsQualityUpdatePolicies[policyID]
+                    .Assignments
+                    .GetAsync();
+
+                if (existingAssignments?.Value != null)
+                {
+                    foreach (var existing in existingAssignments.Value)
+                    {
+                        // Check the type of assignment target
+                        if (existing.Target is AllLicensedUsersAssignmentTarget)
+                        {
+                            // Skip All Users assignments - they shouldn't exist but handle gracefully
+                            WriteToImportStatusFile($"Warning: Found existing 'All Users' assignment on Quality Update policy {policyID}. This should not exist and will be skipped.", LogType.Warning);
+                            continue;
+                        }
+                        else if (existing.Target is AllDevicesAssignmentTarget)
+                        {
+                            // Skip All Devices assignments - they shouldn't exist but handle gracefully
+                            WriteToImportStatusFile($"Warning: Found existing 'All Devices' assignment on Quality Update policy {policyID}. This should not exist and will be skipped.", LogType.Warning);
+                            continue;
+                        }
+                        else if (existing.Target is GroupAssignmentTarget groupTarget)
+                        {
+                            var existingGroupId = groupTarget.GroupId;
+
+                            // Only add if not already in the new assignments
+                            if (!string.IsNullOrWhiteSpace(existingGroupId) && seenGroupIds.Add(existingGroupId))
+                            {
+                                assignments.Add(existing);
+                            }
+                        }
+                        else
+                        {
+                            // Include any other assignment types (e.g., exclusions, etc.)
+                            assignments.Add(existing);
+                        }
+                    }
+                }
+
+                // Step 3: Update the policy with the assignments
                 var requestBody = new Microsoft.Graph.Beta.DeviceManagement.WindowsQualityUpdatePolicies.Item.Assign.AssignPostRequestBody
                 {
                     Assignments = assignments
-                    // Other properties specific to Quality Update Policy assignment might be needed here.
                 };
 
                 try
                 {
-                    // The Assign action might return void or a specific response type. Adjust accordingly.
                     await destinationGraphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].Assign.PostAsync(requestBody);
-                    WriteToImportStatusFile($"Successfully assigned {groupIDs.Count} groups to policy {policyID}. Filter applied: {applyFilter}");
+                    WriteToImportStatusFile($"Assigned {assignments.Count} assignments to Quality Update policy {policyID}.");
                 }
                 catch (Exception ex)
                 {
-                    // Log specific error for this assignment attempt
                     WriteToImportStatusFile($"Error assigning groups to policy {policyID}: {ex.Message}", LogType.Error);
-                    // Decide if you want to re-throw or just log
                 }
+            }
+            catch (ArgumentNullException argEx)
+            {
+                WriteToImportStatusFile($"Argument null exception during group assignment setup: {argEx.Message}", LogType.Error);
             }
             catch (Exception ex)
             {
-                // Catch argument null exceptions or other setup errors
-                WriteToImportStatusFile($"An error occurred while preparing assignment for policy {policyID}: {ex.Message}", LogType.Error);
+                WriteToImportStatusFile($"An error occurred while preparing assignment for policy {policyID}: {ex.Message}", LogType.Warning);
             }
         }
         public static async Task DeleteWindowsQualityUpdatePolicy(GraphServiceClient graphServiceClient, string policyID)

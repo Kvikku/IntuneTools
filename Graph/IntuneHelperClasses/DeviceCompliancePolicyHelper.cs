@@ -226,51 +226,150 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         public static async Task AssignGroupsToSingleDeviceCompliance(string policyID, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
         {
-            if (policyID == null)
-            {
-                throw new ArgumentNullException(nameof(policyID));
-            }
-
-            if (groupIDs == null)
-            {
-                throw new ArgumentNullException(nameof(groupIDs));
-            }
-
-            if (destinationGraphServiceClient == null)
-            {
-                throw new ArgumentNullException(nameof(destinationGraphServiceClient));
-            }
-
-            List<DeviceCompliancePolicyAssignment> assignments = new List<DeviceCompliancePolicyAssignment>();
-
-            foreach (var group in groupIDs)
-            {
-                var assignment = new DeviceCompliancePolicyAssignment
-                {
-                    Target = new GroupAssignmentTarget
-                    {
-                        GroupId = group,
-                        DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
-                        DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
-                    }
-                };
-
-                assignments.Add(assignment);
-            }
-
-            var requestBody = new Microsoft.Graph.Beta.DeviceManagement.DeviceCompliancePolicies.Item.Assign.AssignPostRequestBody
-            {
-                Assignments = assignments
-            };
-
             try
             {
-                await destinationGraphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyID].Assign.PostAsync(requestBody);
-                WriteToImportStatusFile($"Assigned groups to policy {policyID}",LogType.Error);
+                if (policyID == null)
+                {
+                    throw new ArgumentNullException(nameof(policyID));
+                }
+
+                if (groupIDs == null)
+                {
+                    throw new ArgumentNullException(nameof(groupIDs));
+                }
+
+                if (destinationGraphServiceClient == null)
+                {
+                    throw new ArgumentNullException(nameof(destinationGraphServiceClient));
+                }
+
+                var assignments = new List<DeviceCompliancePolicyAssignment>();
+                var seenGroupIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var hasAllUsers = false;
+                var hasAllDevices = false;
+
+                // Step 1: Add new assignments to request body
+                foreach (var group in groupIDs)
+                {
+                    if (string.IsNullOrWhiteSpace(group) || !seenGroupIds.Add(group))
+                    {
+                        continue;
+                    }
+
+                    DeviceCompliancePolicyAssignment assignment;
+
+                    // Check if this is a virtual group (All Users or All Devices)
+                    if (group.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                    {
+                        hasAllUsers = true;
+                        assignment = new DeviceCompliancePolicyAssignment
+                        {
+                            Target = new AllLicensedUsersAssignmentTarget
+                            {
+                                OdataType = "#microsoft.graph.allLicensedUsersAssignmentTarget",
+                                DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
+                                DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
+                            }
+                        };
+                    }
+                    else if (group.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                    {
+                        hasAllDevices = true;
+                        assignment = new DeviceCompliancePolicyAssignment
+                        {
+                            Target = new AllDevicesAssignmentTarget
+                            {
+                                OdataType = "#microsoft.graph.allDevicesAssignmentTarget",
+                                DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
+                                DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
+                            }
+                        };
+                    }
+                    else
+                    {
+                        // Regular group assignment
+                        assignment = new DeviceCompliancePolicyAssignment
+                        {
+                            Target = new GroupAssignmentTarget
+                            {
+                                OdataType = "#microsoft.graph.groupAssignmentTarget",
+                                DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
+                                DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType,
+                                GroupId = group
+                            }
+                        };
+                    }
+
+                    assignments.Add(assignment);
+                }
+
+                // Step 2: Check for existing assignments and add only if not already present
+                var existingAssignments = await destinationGraphServiceClient
+                    .DeviceManagement
+                    .DeviceCompliancePolicies[policyID]
+                    .Assignments
+                    .GetAsync();
+
+                if (existingAssignments?.Value != null)
+                {
+                    foreach (var existing in existingAssignments.Value)
+                    {
+                        // Check the type of assignment target
+                        if (existing.Target is AllLicensedUsersAssignmentTarget)
+                        {
+                            // Skip if we're already adding All Users
+                            if (!hasAllUsers)
+                            {
+                                assignments.Add(existing);
+                            }
+                        }
+                        else if (existing.Target is AllDevicesAssignmentTarget)
+                        {
+                            // Skip if we're already adding All Devices
+                            if (!hasAllDevices)
+                            {
+                                assignments.Add(existing);
+                            }
+                        }
+                        else if (existing.Target is GroupAssignmentTarget groupTarget)
+                        {
+                            var existingGroupId = groupTarget.GroupId;
+
+                            // Only add if not already in the new assignments
+                            if (!string.IsNullOrWhiteSpace(existingGroupId) && seenGroupIds.Add(existingGroupId))
+                            {
+                                assignments.Add(existing);
+                            }
+                        }
+                        else
+                        {
+                            // Include any other assignment types (e.g., exclusions, all users with exclusions, etc.)
+                            assignments.Add(existing);
+                        }
+                    }
+                }
+
+                // Step 3: Update the policy with the request body
+                var requestBody = new Microsoft.Graph.Beta.DeviceManagement.DeviceCompliancePolicies.Item.Assign.AssignPostRequestBody
+                {
+                    Assignments = assignments
+                };
+
+                try
+                {
+                    await destinationGraphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyID].Assign.PostAsync(requestBody);
+                    WriteToImportStatusFile($"Assigned {assignments.Count} assignments to policy {policyID} with filter type {deviceAndAppManagementAssignmentFilterType}.");
+                }
+                catch (Exception ex)
+                {
+                    LogToImportStatusFile("An error occurred while assigning groups to device compliance policy", Utilities.Variables.LogLevels.Warning);
+                    LogToImportStatusFile(ex.Message, Utilities.Variables.LogLevels.Error);
+                }
             }
             catch (Exception ex)
             {
-                LogToImportStatusFile(ex.Message.ToString(), LogLevels.Error);
+                LogToImportStatusFile("An error occurred while assigning groups to device compliance policy", Utilities.Variables.LogLevels.Warning);
+                LogToImportStatusFile(ex.Message, Utilities.Variables.LogLevels.Error);
             }
         }
 

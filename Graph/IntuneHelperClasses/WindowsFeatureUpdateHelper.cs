@@ -141,7 +141,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         // Handle assignments if requested
                         if (assignments && groups != null && groups.Any() && importedProfile?.Id != null)
                         {
-                            await AssignGroupsToSingleWindowsFeatureUpdateProfile(importedProfile.Id, groups, destinationGraphServiceClient, filter); // Pass filter flag if needed for assignment logic
+                            await AssignGroupsToSingleWindowsFeatureUpdateProfile(importedProfile.Id, groups, destinationGraphServiceClient); // Pass filter flag if needed for assignment logic
                         }
                     }
                     catch (Exception ex)
@@ -158,7 +158,16 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task AssignGroupsToSingleWindowsFeatureUpdateProfile(string profileID, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient, bool applyFilter)
+        /// <summary>
+        /// Assigns groups to a single Windows Feature Update Profile.
+        /// Windows Feature Update profiles can ONLY be assigned to device groups - not All Users or All Devices.
+        /// </summary>
+        /// <param name="profileID">The ID of the profile to assign groups to.</param>
+        /// <param name="groupIDs">List of group IDs to assign.</param>
+        /// <param name="destinationGraphServiceClient">GraphServiceClient for the destination tenant.</param>
+        /// <param name="applyFilter">Whether to apply assignment filters.</param>
+        /// <returns>A Task representing the asynchronous assignment operation.</returns>
+        public static async Task AssignGroupsToSingleWindowsFeatureUpdateProfile(string profileID, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
         {
             try
             {
@@ -167,10 +176,9 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     throw new ArgumentNullException(nameof(profileID));
                 }
 
-                if (groupIDs == null || !groupIDs.Any())
+                if (groupIDs == null)
                 {
-                    WriteToImportStatusFile($"No groups provided for assignment to profile {profileID}. Skipping assignment.");
-                    return; // Nothing to assign
+                    throw new ArgumentNullException(nameof(groupIDs));
                 }
 
                 if (destinationGraphServiceClient == null)
@@ -178,56 +186,116 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     throw new ArgumentNullException(nameof(destinationGraphServiceClient));
                 }
 
-                WriteToImportStatusFile($"Assigning {groupIDs.Count} groups to Windows Feature Update profile {profileID}. Apply filter: {applyFilter}");
+                var assignments = new List<WindowsFeatureUpdateProfileAssignment>();
+                var seenGroupIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-                List<WindowsFeatureUpdateProfileAssignment> assignments = new List<WindowsFeatureUpdateProfileAssignment>();
+                WriteToImportStatusFile($"Assigning {groupIDs.Count} groups to Windows Feature Update profile {profileID}.");
 
+                // Step 1: Add new assignments to request body
                 foreach (var groupId in groupIDs)
                 {
+                    if (string.IsNullOrWhiteSpace(groupId) || !seenGroupIds.Add(groupId))
+                    {
+                        continue;
+                    }
+
+                    // Check if this is All Users - Feature Update profiles cannot be assigned to All Users
+                    if (groupId.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                    {
+                        WriteToImportStatusFile($"Warning: Windows Feature Update profiles cannot be assigned to 'All Users'. Only device groups are supported. Skipping this assignment.", LogType.Warning);
+                        continue;
+                    }
+
+                    // Check if this is All Devices - Feature Update profiles cannot be assigned to All Devices
+                    if (groupId.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                    {
+                        WriteToImportStatusFile($"Warning: Windows Feature Update profiles cannot be assigned to 'All Devices'. Only device groups are supported. Skipping this assignment.", LogType.Warning);
+                        continue;
+                    }
+
+                    // Regular group assignment (device groups only)
                     var assignmentTarget = new GroupAssignmentTarget
                     {
                         OdataType = "#microsoft.graph.groupAssignmentTarget",
                         GroupId = groupId,
-                        // Filters might be applied differently or not at all for Feature Update profiles compared to Settings Catalog.
-                        // Check Graph API documentation for WindowsFeatureUpdateProfileAssignment specifics.
-                        // If filters are supported via DeviceAndAppManagementAssignmentFilterId:
-                        DeviceAndAppManagementAssignmentFilterId = applyFilter ? SelectedFilterID : null, // Use SelectedFilterID if applyFilter is true
-                        DeviceAndAppManagementAssignmentFilterType = applyFilter ? deviceAndAppManagementAssignmentFilterType : Microsoft.Graph.Beta.Models.DeviceAndAppManagementAssignmentFilterType.None, // Use selected filter type or None
+                        DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
+                        DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
                     };
 
                     var assignment = new WindowsFeatureUpdateProfileAssignment
                     {
                         OdataType = "#microsoft.graph.windowsFeatureUpdateProfileAssignment",
-                        Target = assignmentTarget,
-                        // Source and SourceId might not be applicable/required here as they were in Settings Catalog assignment.
-                        // Check the WindowsFeatureUpdateProfileAssignment documentation.
+                        Target = assignmentTarget
                     };
+
                     assignments.Add(assignment);
                 }
 
+                // Step 2: Check for existing assignments and add only if not already present
+                var existingAssignments = await destinationGraphServiceClient
+                    .DeviceManagement
+                    .WindowsFeatureUpdateProfiles[profileID]
+                    .Assignments
+                    .GetAsync();
+
+                if (existingAssignments?.Value != null)
+                {
+                    foreach (var existing in existingAssignments.Value)
+                    {
+                        // Check the type of assignment target
+                        if (existing.Target is AllLicensedUsersAssignmentTarget)
+                        {
+                            // Skip All Users assignments - they shouldn't exist but handle gracefully
+                            WriteToImportStatusFile($"Warning: Found existing 'All Users' assignment on Feature Update profile {profileID}. This should not exist and will be skipped.", LogType.Warning);
+                            continue;
+                        }
+                        else if (existing.Target is AllDevicesAssignmentTarget)
+                        {
+                            // Skip All Devices assignments - they shouldn't exist but handle gracefully
+                            WriteToImportStatusFile($"Warning: Found existing 'All Devices' assignment on Feature Update profile {profileID}. This should not exist and will be skipped.", LogType.Warning);
+                            continue;
+                        }
+                        else if (existing.Target is GroupAssignmentTarget groupTarget)
+                        {
+                            var existingGroupId = groupTarget.GroupId;
+
+                            // Only add if not already in the new assignments
+                            if (!string.IsNullOrWhiteSpace(existingGroupId) && seenGroupIds.Add(existingGroupId))
+                            {
+                                assignments.Add(existing);
+                            }
+                        }
+                        else
+                        {
+                            // Include any other assignment types (e.g., exclusions, etc.)
+                            assignments.Add(existing);
+                        }
+                    }
+                }
+
+                // Step 3: Update the profile with the assignments
                 var requestBody = new Microsoft.Graph.Beta.DeviceManagement.WindowsFeatureUpdateProfiles.Item.Assign.AssignPostRequestBody
                 {
                     Assignments = assignments
-                    // Other properties like 'windowsUpdateForBusinessUpdateWeeks' or 'windowsUpdateForBusinessUpdateDays' might be needed here
-                    // depending on the specific assignment requirements for Feature Update profiles.
                 };
 
                 try
                 {
-                    // The Assign action might return void or a specific response type. Adjust accordingly.
                     await destinationGraphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileID].Assign.PostAsync(requestBody);
-                    WriteToImportStatusFile($"Successfully assigned {groupIDs.Count} groups to profile {profileID}. Filter applied: {applyFilter}");
+                    WriteToImportStatusFile($"Assigned {assignments.Count} assignments to Feature Update profile {profileID}");
                 }
                 catch (Exception ex)
                 {
-                    // Log specific error for this assignment attempt
-                    WriteToImportStatusFile($"Error assigning groups to profile {profileID}: {ex.Message}",LogType.Warning);
+                    WriteToImportStatusFile($"Error assigning groups to profile {profileID}: {ex.Message}", LogType.Error);
                 }
+            }
+            catch (ArgumentNullException argEx)
+            {
+                WriteToImportStatusFile($"Argument null exception during group assignment setup: {argEx.Message}", LogType.Error);
             }
             catch (Exception ex)
             {
-                // Catch argument null exceptions or other setup errors
-                WriteToImportStatusFile($"An error occurred while preparing assignment for profile {profileID}: {ex.Message}",LogType.Warning);
+                WriteToImportStatusFile($"An error occurred while preparing assignment for profile {profileID}: {ex.Message}", LogType.Warning);
             }
         }
         public static async Task DeleteWindowsFeatureUpdateProfile(GraphServiceClient graphServiceClient, string profileID)

@@ -139,43 +139,136 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     throw new ArgumentNullException(nameof(destinationGraphServiceClient));
                 }
 
-                List<DeviceManagementScriptAssignment> assignments = new List<DeviceManagementScriptAssignment>();
+                var assignments = new List<DeviceManagementScriptAssignment>();
+                var seenGroupIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var hasAllUsers = false;
+                var hasAllDevices = false;
 
+                // Step 1: Add new assignments to request body
                 foreach (var group in groupID)
                 {
-                    var assignment = new DeviceManagementScriptAssignment
+                    if (string.IsNullOrWhiteSpace(group) || !seenGroupIds.Add(group))
                     {
-                        OdataType = "#microsoft.graph.deviceManagementScriptAssignment",
-                        Id = group,
-                        Target = new GroupAssignmentTarget
+                        continue;
+                    }
+
+                    DeviceManagementScriptAssignment assignment;
+
+                    // Check if this is a virtual group (All Users or All Devices)
+                    if (group.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                    {
+                        hasAllUsers = true;
+                        assignment = new DeviceManagementScriptAssignment
                         {
-                            OdataType = "#microsoft.graph.groupAssignmentTarget",
-                            DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
-                            DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType,
-                            GroupId = group,
-                        },
-                    };
+                            OdataType = "#microsoft.graph.deviceManagementScriptAssignment",
+                            Target = new AllLicensedUsersAssignmentTarget
+                            {
+                                OdataType = "#microsoft.graph.allLicensedUsersAssignmentTarget",
+                                DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
+                                DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
+                            }
+                        };
+                    }
+                    else if (group.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                    {
+                        hasAllDevices = true;
+                        assignment = new DeviceManagementScriptAssignment
+                        {
+                            OdataType = "#microsoft.graph.deviceManagementScriptAssignment",
+                            Target = new AllDevicesAssignmentTarget
+                            {
+                                OdataType = "#microsoft.graph.allDevicesAssignmentTarget",
+                                DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
+                                DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
+                            }
+                        };
+                    }
+                    else
+                    {
+                        // Regular group assignment
+                        assignment = new DeviceManagementScriptAssignment
+                        {
+                            OdataType = "#microsoft.graph.deviceManagementScriptAssignment",
+                            Target = new GroupAssignmentTarget
+                            {
+                                OdataType = "#microsoft.graph.groupAssignmentTarget",
+                                DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
+                                DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType,
+                                GroupId = group
+                            }
+                        };
+                    }
+
                     assignments.Add(assignment);
                 }
 
+                // Step 2: Check for existing assignments and add only if not already present
+                var existingAssignments = await destinationGraphServiceClient
+                    .DeviceManagement
+                    .DeviceManagementScripts[scriptID]
+                    .Assignments
+                    .GetAsync();
+
+                if (existingAssignments?.Value != null)
+                {
+                    foreach (var existing in existingAssignments.Value)
+                    {
+                        // Check the type of assignment target
+                        if (existing.Target is AllLicensedUsersAssignmentTarget)
+                        {
+                            // Skip if we're already adding All Users
+                            if (!hasAllUsers)
+                            {
+                                assignments.Add(existing);
+                            }
+                        }
+                        else if (existing.Target is AllDevicesAssignmentTarget)
+                        {
+                            // Skip if we're already adding All Devices
+                            if (!hasAllDevices)
+                            {
+                                assignments.Add(existing);
+                            }
+                        }
+                        else if (existing.Target is GroupAssignmentTarget groupTarget)
+                        {
+                            var existingGroupId = groupTarget.GroupId;
+
+                            // Only add if not already in the new assignments
+                            if (!string.IsNullOrWhiteSpace(existingGroupId) && seenGroupIds.Add(existingGroupId))
+                            {
+                                assignments.Add(existing);
+                            }
+                        }
+                        else
+                        {
+                            // Include any other assignment types (e.g., exclusions, all users with exclusions, etc.)
+                            assignments.Add(existing);
+                        }
+                    }
+                }
+
+                // Step 3: Update the script with the assignments
                 var requestBody = new Microsoft.Graph.Beta.DeviceManagement.DeviceManagementScripts.Item.Assign.AssignPostRequestBody
                 {
-                    DeviceManagementScriptAssignments = assignments,
+                    DeviceManagementScriptAssignments = assignments
                 };
 
                 try
                 {
                     await destinationGraphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].Assign.PostAsync(requestBody);
-                    WriteToImportStatusFile("Assigned groups to script " + scriptID + " with filter type" + deviceAndAppManagementAssignmentFilterType.ToString());
+                    WriteToImportStatusFile($"Assigned {assignments.Count} assignments to script {scriptID} with filter type {deviceAndAppManagementAssignmentFilterType}.");
                 }
                 catch (Exception ex)
                 {
-                    WriteToImportStatusFile($"Error assigning groups to script {scriptID}",LogType.Error);
+                    WriteToImportStatusFile("An error occurred while assigning groups to PowerShell script", LogType.Warning);
+                    WriteToImportStatusFile(ex.Message, LogType.Error);
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while assigning groups to a single PowerShell script",LogType.Error);
+                WriteToImportStatusFile("An error occurred while assigning groups to a single PowerShell script", LogType.Warning);
+                WriteToImportStatusFile(ex.Message, LogType.Error);
             }
         }
         public static async Task DeletePowerShellScript(GraphServiceClient graphServiceClient, string scriptID)

@@ -203,26 +203,115 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }
 
                 var assignments = new List<DeviceConfigurationAssignment>();
+                var seenGroupIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var hasAllUsers = false;
+                var hasAllDevices = false;
 
+                // Step 1: Add new assignments to request body
                 foreach (var group in groupIds)
                 {
-                    // Adjust filter or assignment definitions as needed
-                    assignments.Add(new DeviceConfigurationAssignment
+                    if (string.IsNullOrWhiteSpace(group) || !seenGroupIds.Add(group))
                     {
-                        OdataType = "#microsoft.graph.deviceConfigurationAssignment",
-                        Target = new DeviceAndAppManagementAssignmentTarget
+                        continue;
+                    }
+
+                    DeviceConfigurationAssignment assignment;
+
+                    // Check if this is a virtual group (All Users or All Devices)
+                    if (group.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                    {
+                        hasAllUsers = true;
+                        assignment = new DeviceConfigurationAssignment
                         {
-                            OdataType = "#microsoft.graph.groupAssignmentTarget",
-                            AdditionalData = new Dictionary<string, object>
+                            OdataType = "#microsoft.graph.deviceConfigurationAssignment",
+                            Target = new AllLicensedUsersAssignmentTarget
                             {
-                                { "groupId", group }
-                            },
-                            DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType,
-                            DeviceAndAppManagementAssignmentFilterId = SelectedFilterID
-                        }
-                    });
+                                OdataType = "#microsoft.graph.allLicensedUsersAssignmentTarget",
+                                DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
+                                DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
+                            }
+                        };
+                    }
+                    else if (group.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                    {
+                        hasAllDevices = true;
+                        assignment = new DeviceConfigurationAssignment
+                        {
+                            OdataType = "#microsoft.graph.deviceConfigurationAssignment",
+                            Target = new AllDevicesAssignmentTarget
+                            {
+                                OdataType = "#microsoft.graph.allDevicesAssignmentTarget",
+                                DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
+                                DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
+                            }
+                        };
+                    }
+                    else
+                    {
+                        // Regular group assignment
+                        assignment = new DeviceConfigurationAssignment
+                        {
+                            OdataType = "#microsoft.graph.deviceConfigurationAssignment",
+                            Target = new GroupAssignmentTarget
+                            {
+                                OdataType = "#microsoft.graph.groupAssignmentTarget",
+                                GroupId = group,
+                                DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
+                                DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
+                            }
+                        };
+                    }
+
+                    assignments.Add(assignment);
                 }
 
+                // Step 2: Check for existing assignments and add only if not already present
+                var existingAssignments = await destinationGraphServiceClient
+                    .DeviceManagement
+                    .DeviceConfigurations[configId]
+                    .Assignments
+                    .GetAsync();
+
+                if (existingAssignments?.Value != null)
+                {
+                    foreach (var existing in existingAssignments.Value)
+                    {
+                        // Check the type of assignment target
+                        if (existing.Target is AllLicensedUsersAssignmentTarget)
+                        {
+                            // Skip if we're already adding All Users
+                            if (!hasAllUsers)
+                            {
+                                assignments.Add(existing);
+                            }
+                        }
+                        else if (existing.Target is AllDevicesAssignmentTarget)
+                        {
+                            // Skip if we're already adding All Devices
+                            if (!hasAllDevices)
+                            {
+                                assignments.Add(existing);
+                            }
+                        }
+                        else if (existing.Target is GroupAssignmentTarget groupTarget)
+                        {
+                            var existingGroupId = groupTarget.GroupId;
+
+                            // Only add if not already in the new assignments
+                            if (!string.IsNullOrWhiteSpace(existingGroupId) && seenGroupIds.Add(existingGroupId))
+                            {
+                                assignments.Add(existing);
+                            }
+                        }
+                        else
+                        {
+                            // Include any other assignment types (e.g., exclusions, all users with exclusions, etc.)
+                            assignments.Add(existing);
+                        }
+                    }
+                }
+
+                // Step 3: Update the policy with the request body
                 var requestBody = new Microsoft.Graph.Beta.DeviceManagement.DeviceConfigurations.Item.Assign.AssignPostRequestBody
                 {
                     Assignments = assignments
@@ -232,16 +321,18 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 {
                     var result = await destinationGraphServiceClient.DeviceManagement.DeviceConfigurations[configId].Assign.PostAsAssignPostResponseAsync(requestBody);
 
-                    WriteToImportStatusFile("Assigned groups to device configuration " + configId);
+                    WriteToImportStatusFile($"Assigned {assignments.Count} assignments to device configuration {configId} with filter type {deviceAndAppManagementAssignmentFilterType}.");
                 }
                 catch (Exception ex)
                 {
-                    WriteToImportStatusFile($"Error assigning groups to device configuration {configId}", LogType.Error);
+                    WriteToImportStatusFile("An error occurred while assigning groups to device configuration policy", LogType.Warning);
+                    WriteToImportStatusFile(ex.Message, LogType.Error);
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while assigning groups to a single device configuration policy",LogType.Error);
+                WriteToImportStatusFile("An error occurred while assigning groups to a single device configuration policy", LogType.Warning);
+                WriteToImportStatusFile(ex.Message, LogType.Error);
             }
         }
         public static async Task DeleteDeviceConfigurationPolicy(GraphServiceClient graphServiceClient, string policyID)

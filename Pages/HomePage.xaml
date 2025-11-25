@@ -13,7 +13,7 @@
                 <TextBlock Text="Welcome to IntuneTools" FontSize="48" FontWeight="Bold" HorizontalAlignment="Left"/>
                 <TextBlock TextWrapping="WrapWholeWords" FontSize="18" Margin="0,20,0,0" MaxWidth="1200" HorizontalAlignment="Left">
                     IntuneTools is a powerful application designed to help you manage and migrate your Microsoft Intune environment with ease.
-                    Whether you are looking to backup, restore, or clean up your Intune environment, this tool provides the necessary features to streamline your workflow.
+                    This tool simplifies bulk management tasks, such as assignment, renaming, cleaning up and migrating Intune configurations between tenants.
                 </TextBlock>
                 <TextBlock Text="Connection Info" FontSize="28" FontWeight="SemiBold" Margin="0,30,0,10"/>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,10">
@@ -22,15 +22,10 @@
                     <Image x:Name="LoginStatusImage" Width="32" Height="32" VerticalAlignment="Center" Margin="10,0,0,0"/>
                 </StackPanel>
                 <TextBlock Text="Key Features" FontSize="28" FontWeight="SemiBold" Margin="0,30,0,10"/>
-                <TextBlock Text="-  Export and Import various Intune configurations." FontSize="16"/>
+                <TextBlock Text="-  Export and Import of Intune content between tenants." FontSize="16"/>
                 <TextBlock Text="-  Manage assignment of Intune content in bulk." FontSize="16"/>
-                <TextBlock Text="-  Clean up obsolete policies, scripts, and profiles." FontSize="16"/>
-                <TextBlock Text="-  Supports a wide range of configurations including:" FontSize="16"/>
-                <TextBlock Text="   - Device Compliance &amp; Configuration Policies" FontSize="14"/>
-                <TextBlock Text="   - Settings Catalog Policies" FontSize="14"/>
-                <TextBlock Text="   - PowerShell &amp; macOS Shell Scripts" FontSize="14"/>
-                <TextBlock Text="   - Windows Autopilot Profiles" FontSize="14"/>
-                <TextBlock Text="   - And many more..." FontSize="14"/>
+                <TextBlock Text="-  Clean up policies, scripts, and profiles in bulk." FontSize="16"/>
+                <TextBlock Text="-  Rename Intune objects with customizable prefixes." FontSize="16"/>
                 <TextBlock Text="Documentation" FontSize="28" FontWeight="SemiBold" Margin="0,30,0,10"/>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,10">
                     <TextBlock Text="For more details on how to use the application, please refer to our documentation on GitHub." TextWrapping="Wrap" VerticalAlignment="Center"/>

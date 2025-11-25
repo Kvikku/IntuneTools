@@ -93,8 +93,8 @@ namespace IntuneTools
                 case "Home":
                     ContentFrame.Navigate(typeof(HomePage));
                     break;
-                case "Application":
-                    ContentFrame.Navigate(typeof(ApplicationPage));
+                case "Application": // rename tag to "Assignment" if you change the NavigationViewItem
+                    ContentFrame.Navigate(typeof(AssignmentPage));
                     break;
                 case "Settings":
                     ContentFrame.Navigate(typeof(SettingsPage));

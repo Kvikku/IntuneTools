@@ -42,6 +42,29 @@ namespace IntuneTools.Graph.EntraHelperClasses
                 await pageIterator.IterateAsync();
                 LogToImportStatusFile($"Found {groups.Count} groups in the tenant");
 
+                // Add virtual groups for All Users and All Devices
+                var allUsersGroup = new Group
+                {
+                    Id = allUsersVirtualGroupID,
+                    DisplayName = "All Users",
+                    Description = "Virtual group representing all licensed users",
+                    OdataType = "#microsoft.graph.allLicensedUsersAssignmentTarget"
+                };
+
+                var allDevicesGroup = new Group
+                {
+                    Id = allDevicesVirtualGroupID,
+                    DisplayName = "All Devices",
+                    Description = "Virtual group representing all devices",
+                    OdataType = "#microsoft.graph.allDevicesAssignmentTarget"
+                };
+
+                // Insert virtual groups at the beginning of the list for easier access
+                groups.Insert(0, allUsersGroup);
+                groups.Insert(1, allDevicesGroup);
+
+                LogToImportStatusFile($"Added virtual groups. Total groups: {groups.Count}");
+
                 // Populate the groupNameAndID dictionary with group names and IDs
                 foreach (var group in groups)
                 {

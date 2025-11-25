@@ -1283,10 +1283,10 @@ namespace IntuneTools.Pages
         }
         private async void RenameButton_Click(object sender, RoutedEventArgs e)
         {   
-            var selectedItems = RenamingDataGrid.SelectedItems?.Cast<ContentInfo>().ToList();
-            if (selectedItems == null || selectedItems.Count == 0)
+            var itemsToRename = ContentList.ToList();
+            if (itemsToRename == null || itemsToRename.Count == 0)
             {
-                AppendToDetailsRichTextBlock("No items selected for renaming.");
+                AppendToDetailsRichTextBlock("No items in the grid to rename.");
                 return;
             }
             string newName = NewNameTextBox.Text.Trim();
@@ -1295,7 +1295,7 @@ namespace IntuneTools.Pages
                 AppendToDetailsRichTextBlock("Please enter a new name.");
                 return;
             }
-            await RenameContent(selectedItems.Select(i => i.ContentId).Where(id => !string.IsNullOrEmpty(id)).ToList(), newName);
+            await RenameContent(itemsToRename.Select(i => i.ContentId).Where(id => !string.IsNullOrEmpty(id)).ToList(), newName);
         }
     }
 
