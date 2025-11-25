@@ -11,10 +11,22 @@
     <UseWinUI>true</UseWinUI>
     <EnableMsixTooling>false</EnableMsixTooling>
     <Nullable>enable</Nullable>
-	<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+	<!--<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>-->
 	<EnableDefaultPriGen>true</EnableDefaultPriGen>
 	<EnableDefaultResourceCopying>true</EnableDefaultResourceCopying>
   </PropertyGroup>
+	
+		<!-- Default for MSIX -->
+<PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
+</PropertyGroup>
+
+<!-- Self-contained only for unpackaged debug builds -->
+<PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+</PropertyGroup>
+
+		
   <ItemGroup>
     <Content Remove="Assets\BadgeLogo.scale-100.png" />
     <Content Remove="Assets\BadgeLogo.scale-125.png" />
@@ -99,8 +111,8 @@
     <PackageReference Include="CommunityToolkit.WinUI.UI.Controls.DataGrid" Version="7.1.2" />
     <PackageReference Include="Microsoft.Graph.Beta" Version="5.114.0-preview" />
     <PackageReference Include="Microsoft.Identity.Client" Version="4.73.1" />
-	<PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.4654" />
-	<PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.251003001" />
+	<PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.1-RTM" />
+	<PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.251106002" />
   </ItemGroup>
   <ItemGroup>
     <Page Update="Pages\RenamingPage.xaml">
