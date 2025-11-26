@@ -34,6 +34,7 @@ using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdatePolicyHan
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHelper;
 using static IntuneTools.Utilities.HelperClass;
 using static IntuneTools.Utilities.Variables;
+using IntuneTools.Utilities;
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
 
@@ -62,6 +63,51 @@ namespace IntuneTools.Pages
         /// <summary>
         ///  Local helper methods
         /// </summary>
+
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+
+            if (string.Equals(Variables.sourceTenantName, string.Empty))
+            {
+                TenantInfoBar.Title = "Authentication Required";
+                TenantInfoBar.Message = "You must authenticate with a tenant before using renaming features.";
+                TenantInfoBar.Severity = InfoBarSeverity.Warning;
+                TenantInfoBar.IsOpen = true;
+
+                // Disable controls until authenticated
+                SearchQueryTextBox.IsEnabled = false;
+                SearchButton.IsEnabled = false;
+                ListAllButton.IsEnabled = false;
+                ClearSelectedButton.IsEnabled = false;
+                ClearAllButton.IsEnabled = false;
+                NewNameTextBox.IsEnabled = false;
+                PrefixButton.IsEnabled = false;
+                RenameButton.IsEnabled = false;
+                RenamingDataGrid.IsEnabled = false;
+                ClearLogButton.IsEnabled = false;
+            }
+            else
+            {
+                TenantInfoBar.Title = "Authenticated Tenant";
+                TenantInfoBar.Message = Variables.sourceTenantName;
+                TenantInfoBar.Severity = InfoBarSeverity.Informational;
+                TenantInfoBar.IsOpen = true;
+
+                // Enable controls
+                SearchQueryTextBox.IsEnabled = true;
+                SearchButton.IsEnabled = true;
+                ListAllButton.IsEnabled = true;
+                ClearSelectedButton.IsEnabled = true;
+                ClearAllButton.IsEnabled = true;
+                NewNameTextBox.IsEnabled = true;
+                PrefixButton.IsEnabled = true;
+                RenameButton.IsEnabled = true;
+                RenamingDataGrid.IsEnabled = true;
+                ClearLogButton.IsEnabled = true;
+            }
+        }
+
 
         private void ShowLoading(string message = "Loading data from Microsoft Graph...")
         {
@@ -1297,6 +1343,8 @@ namespace IntuneTools.Pages
             }
             await RenameContent(itemsToRename.Select(i => i.ContentId).Where(id => !string.IsNullOrEmpty(id)).ToList(), newName);
         }
+
+        
     }
 
 }

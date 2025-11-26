@@ -12,11 +12,8 @@
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <!-- Header -->
             <RowDefinition Height="Auto"/>
-            <!-- CommandBar -->
             <RowDefinition Height="*"/>
-            <!-- Data grid + Side panel -->
         </Grid.RowDefinitions>
 
         <!-- Header -->
@@ -25,6 +22,11 @@
                        HorizontalAlignment="Left"
                        FontSize="38"
                        FontWeight="Bold"/>
+            <InfoBar x:Name="TenantInfoBar"
+                     Severity="Informational"
+                     IsClosable="False"
+                     IsOpen="False"
+                     Margin="0,8,0,0"/>
         </StackPanel>
 
         <!-- CommandBar -->
@@ -48,7 +50,7 @@
                              PlaceholderText="Enter new Prefix"
                              Width="200"
                              VerticalAlignment="Bottom"/>
-                    <AppBarButton Icon="ViewAll" Label="Prefix">
+                    <AppBarButton x:Name="PrefixButton" Icon="ViewAll" Label="Prefix">
                         <AppBarButton.Flyout>
                             <Flyout Placement="BottomEdgeAlignedLeft">
                                 <StackPanel x:Name="OptionsPanel" Orientation="Vertical" MinWidth="200">
