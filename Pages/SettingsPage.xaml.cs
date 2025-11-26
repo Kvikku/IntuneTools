@@ -207,5 +207,15 @@ namespace IntuneTools.Pages
                 Log($"Invalid log file folder path: {Variables.logFileFolder}");
             }
         }
+
+        private void SourceClearTokenButton_Click(object sender, RoutedEventArgs e)
+        {
+            // TODO: Clear source tenant token and update UI state/icon
+        }
+
+        private void DestinationClearTokenButton_Click(object sender, RoutedEventArgs e)
+        {
+            // TODO: Clear destination tenant token and update UI state/icon
+        }
     }
 }

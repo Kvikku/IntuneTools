@@ -60,6 +60,10 @@
                             Content="Login"
                             Width="120"
                             Click="SourceLoginButton_Click"/>
+                    <Button x:Name="SourceClearTokenButton"
+                            Content="Clear Token"
+                            Width="120"
+                            Click="SourceClearTokenButton_Click"/>
                     <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                         <Image x:Name="SourceLoginStatusImage"
                                Width="20"
@@ -95,6 +99,10 @@
                             Content="Login"
                             Width="120"
                             Click="DestinationLoginButton_Click"/>
+                    <Button x:Name="DestinationClearTokenButton"
+                            Content="Clear Token"
+                            Width="120"
+                            Click="DestinationClearTokenButton_Click"/>
                     <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                         <Image x:Name="DestinationLoginStatusImage"
                                Width="20"
