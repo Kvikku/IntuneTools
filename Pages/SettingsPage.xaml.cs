@@ -13,6 +13,7 @@ using static IntuneTools.Graph.DestinationUserAuthentication;
 using static IntuneTools.Utilities.HelperClass;
 using static IntuneTools.Utilities.Variables;
 using static IntuneTools.Graph.SourceUserAuthentication;
+using System;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -35,7 +36,29 @@ namespace IntuneTools.Pages
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            //LoadTenantSettings();
+
+            // Reflect persisted variables in UI when arriving on the page.
+            // If you keep Graph clients alive elsewhere, you can also check those to decide the icon.
+            var sourceSignedIn = !string.IsNullOrWhiteSpace(Variables.sourceTenantName);
+            var destinationSignedIn = !string.IsNullOrWhiteSpace(Variables.destinationTenantName);
+
+            // Source
+            if (SourceLoginStatusText != null)
+            {
+                SourceLoginStatusText.Text = sourceSignedIn
+                    ? $"Signed in: {Variables.sourceTenantName}"
+                    : "Not signed in";
+            }
+            UpdateImage(SourceLoginStatusImage, sourceSignedIn ? "GreenCheck.png" : "RedCross.png");
+
+            // Destination
+            if (DestinationLoginStatusText != null)
+            {
+                DestinationLoginStatusText.Text = destinationSignedIn
+                    ? $"Signed in: {Variables.destinationTenantName}"
+                    : "Not signed in";
+            }
+            UpdateImage(DestinationLoginStatusImage, destinationSignedIn ? "GreenCheck.png" : "RedCross.png");
         }
 
         //private void LoadTenantSettings()
@@ -131,28 +154,23 @@ namespace IntuneTools.Pages
 
         private async Task AuthenticateToSourceTenant()
         {
-            //SourceTenantGraphClient.sourceClientID = SourceClientIdTextBox.Text;
-            //SourceTenantGraphClient.sourceTenantID = SourceTenantIdTextBox.Text;
-            //SourceTenantGraphClient.sourceAccessToken = null;
-            //SourceTenantGraphClient.sourceAuthority = $"https://login.microsoftonline.com/{SourceTenantGraphClient.sourceTenantID}";
-
             var Client = await SourceUserAuthentication.GetGraphClientAsync();
-
-            //var client = await SourceTenantGraphClient.GetSourceGraphClient();
-
             if (Client != null)
             {
                 sourceGraphServiceClient = Client;
                 sourceTenantName = await GetAzureTenantName(Client);
+                Variables.sourceTenantName = sourceTenantName ?? string.Empty;
+
                 Log($"Source Tenant Name: {sourceTenantName}");
                 UpdateImage(SourceLoginStatusImage, "GreenCheck.png");
-                //Variables.sourceClientID = SourceClientIdTextBox.Text;
-                //Variables.sourceTenantID = SourceTenantIdTextBox.Text;
+                SourceLoginStatusText.Text = $"Signed in: {sourceTenantName}";
             }
             else
             {
                 Log("Failed to authenticate to source tenant.");
                 UpdateImage(SourceLoginStatusImage, "RedCross.png");
+                SourceLoginStatusText.Text = "Not signed in";
+                Variables.sourceTenantName = string.Empty;
             }
         }
 
@@ -165,28 +183,23 @@ namespace IntuneTools.Pages
 
         private async Task AuthenticateToDestinationTenant()
         {
-            //DestinationTenantGraphClient.destinationClientID = DestinationClientIdTextBox.Text;
-            //DestinationTenantGraphClient.destinationTenantID = DestinationTenantIdTextBox.Text;
-            //DestinationTenantGraphClient.destinationAccessToken = null;
-            //DestinationTenantGraphClient.destinationAuthority = $"https://login.microsoftonline.com/{DestinationTenantGraphClient.destinationTenantID}";
-            //var client = await DestinationTenantGraphClient.GetDestinationGraphClient();
-
             var client = await DestinationUserAuthentication.GetGraphClientAsync();
-
             if (client != null)
             {
                 destinationGraphServiceClient = client;
                 destinationTenantName = await GetAzureTenantName(client);
+                Variables.destinationTenantName = destinationTenantName ?? string.Empty;
+
                 Log($"Destination Tenant Name: {destinationTenantName}");
                 UpdateImage(DestinationLoginStatusImage, "GreenCheck.png");
-                //Variables.destinationClientID = DestinationClientIdTextBox.Text;
-                //Variables.destinationTenantID = DestinationTenantIdTextBox.Text;
-
+                DestinationLoginStatusText.Text = $"Signed in: {destinationTenantName}";
             }
             else
             {
                 Log("Failed to authenticate to destination tenant.");
                 UpdateImage(DestinationLoginStatusImage, "RedCross.png");
+                DestinationLoginStatusText.Text = "Not signed in";
+                Variables.destinationTenantName = string.Empty;
             }
         }
 
@@ -208,14 +221,48 @@ namespace IntuneTools.Pages
             }
         }
 
-        private void SourceClearTokenButton_Click(object sender, RoutedEventArgs e)
+        private async void SourceClearTokenButton_Click(object sender, RoutedEventArgs e)
         {
-            // TODO: Clear source tenant token and update UI state/icon
+            try
+            {
+                var cleared = await SourceUserAuthentication.ClearSessionAsync();
+                if (cleared)
+                {
+                    sourceGraphServiceClient = null;
+                    sourceTenantName = null;
+                    Variables.sourceTenantName = string.Empty;
+
+                    UpdateImage(SourceLoginStatusImage, "RedCross.png");
+                    SourceLoginStatusText.Text = "Not signed in";
+                    Log("Source token/session cleared.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log($"Failed to clear source token: {ex.Message}");
+            }
         }
 
-        private void DestinationClearTokenButton_Click(object sender, RoutedEventArgs e)
+        private async void DestinationClearTokenButton_Click(object sender, RoutedEventArgs e)
         {
-            // TODO: Clear destination tenant token and update UI state/icon
+            try
+            {
+                var cleared = await DestinationUserAuthentication.ClearSessionAsync();
+                if (cleared)
+                {
+                    destinationGraphServiceClient = null;
+                    destinationTenantName = null;
+                    Variables.destinationTenantName = string.Empty;
+
+                    UpdateImage(DestinationLoginStatusImage, "RedCross.png");
+                    DestinationLoginStatusText.Text = "Not signed in";
+                    Log("Destination token/session cleared.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log($"Failed to clear destination token: {ex.Message}");
+            }
         }
     }
 }

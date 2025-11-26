@@ -99,6 +99,34 @@ public static class SourceUserAuthentication
         return await _tokenProvider.GetAuthorizationTokenAsync(new Uri("https://graph.microsoft.com"));
     }
 
+    public static async Task<bool> ClearSessionAsync()
+    {
+        // Ensure PCA exists
+        if (_pca == null)
+        {
+            _pca = PublicClientApplicationBuilder
+                .Create(PublicClientId)
+                .WithAuthority(AuthorityOrganizations)
+                .WithRedirectUri("http://localhost")
+                .Build();
+        }
+
+        var accounts = await _pca.GetAccountsAsync().ConfigureAwait(false);
+        foreach (var acc in accounts)
+        {
+            await _pca.RemoveAsync(acc).ConfigureAwait(false);
+        }
+
+        // Reset cached state
+        SignedInAccount = null;
+        TenantId = null;
+        _tokenProvider = null;
+        _authProvider = null;
+        sourceGraphServiceClient = null;
+
+        return true;
+    }
+
     private sealed class MsalAccessTokenProvider : IAccessTokenProvider
     {
         private readonly IPublicClientApplication _pca;

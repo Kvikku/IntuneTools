@@ -69,7 +69,10 @@
                                Width="20"
                                Height="20"
                                Source="/Assets/RedCross.png"/>
-                        <TextBlock Text="Not signed in" VerticalAlignment="Center" Opacity="0.8"/>
+                        <TextBlock x:Name="SourceLoginStatusText"
+                                   Text="Not signed in"
+                                   VerticalAlignment="Center"
+                                   Opacity="0.8"/>
                     </StackPanel>
                 </StackPanel>
             </StackPanel>
@@ -108,7 +111,10 @@
                                Width="20"
                                Height="20"
                                Source="/Assets/RedCross.png"/>
-                        <TextBlock Text="Not signed in" VerticalAlignment="Center" Opacity="0.8"/>
+                        <TextBlock x:Name="DestinationLoginStatusText"
+                                   Text="Not signed in"
+                                   VerticalAlignment="Center"
+                                   Opacity="0.8"/>
                     </StackPanel>
                 </StackPanel>
             </StackPanel>
