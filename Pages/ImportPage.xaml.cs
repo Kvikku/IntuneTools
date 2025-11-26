@@ -1,8 +1,10 @@
 using IntuneTools.Graph;
+using IntuneTools.Utilities;
 using Microsoft.Graph.Beta;
 using Microsoft.UI.Xaml; // Added for RoutedEventArgs
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Documents; // Added for Paragraph and Run
+using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel; // Add this for ObservableCollection
@@ -73,6 +75,76 @@ namespace IntuneTools.Pages
             //LoadFilterOptions();
             AppendToDetailsRichTextBlock("Console output");
             
+        }
+
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+
+            var sourceReady = !string.Equals(Variables.sourceTenantName, string.Empty, StringComparison.Ordinal);
+            var destReady = !string.Equals(Variables.destinationTenantName, string.Empty, StringComparison.Ordinal);
+
+            if (!sourceReady || !destReady)
+            {
+                TenantInfoBar.Title = "Authentication Required";
+                if (!sourceReady && !destReady)
+                {
+                    TenantInfoBar.Message = "You must authenticate to both Source and Destination tenants before using import features.";
+                }
+                else if (!sourceReady)
+                {
+                    TenantInfoBar.Message = "You must authenticate to the Source tenant before using import features.";
+                }
+                else
+                {
+                    TenantInfoBar.Message = "You must authenticate to the Destination tenant before using import features.";
+                }
+                TenantInfoBar.Severity = InfoBarSeverity.Warning;
+                TenantInfoBar.IsOpen = true;
+
+                // Disable controls until both tenants are authenticated
+                SearchQueryTextBox.IsEnabled = false;
+                Search.IsEnabled = false;
+                ListAll.IsEnabled = false;
+                ClearSelected.IsEnabled = false;
+                ClearAll.IsEnabled = false;
+                ContentTypesButton.IsEnabled = false;
+                GroupsCheckBox.IsEnabled = false;
+                FiltersCheckBox.IsEnabled = false;
+                ContentDataGrid.IsEnabled = false;
+                Import.IsEnabled = false;
+                FilterSelectionComboBox.IsEnabled = false;
+                GroupSearchTextBox.IsEnabled = false;
+                NewButton1.IsEnabled = false;
+                NewButton2.IsEnabled = false;
+                GroupDataGrid.IsEnabled = false;
+                ClearLogButton.IsEnabled = false;
+            }
+            else
+            {
+                TenantInfoBar.Title = "Authenticated Tenants";
+                TenantInfoBar.Message = $"Source: {Variables.sourceTenantName} | Destination: {Variables.destinationTenantName}";
+                TenantInfoBar.Severity = InfoBarSeverity.Informational;
+                TenantInfoBar.IsOpen = true;
+
+                // Enable controls
+                SearchQueryTextBox.IsEnabled = true;
+                Search.IsEnabled = true;
+                ListAll.IsEnabled = true;
+                ClearSelected.IsEnabled = true;
+                ClearAll.IsEnabled = true;
+                ContentTypesButton.IsEnabled = true;
+                GroupsCheckBox.IsEnabled = true;
+                FiltersCheckBox.IsEnabled = true;
+                ContentDataGrid.IsEnabled = true;
+                Import.IsEnabled = true;
+                FilterSelectionComboBox.IsEnabled = true;
+                GroupSearchTextBox.IsEnabled = true;
+                NewButton1.IsEnabled = true;
+                NewButton2.IsEnabled = true;
+                GroupDataGrid.IsEnabled = true;
+                ClearLogButton.IsEnabled = true;
+            }
         }
 
         private void AppendToDetailsRichTextBlock(string text)
@@ -1664,7 +1736,6 @@ namespace IntuneTools.Pages
 
 
 
-
         /// BUTTON HANDLERS ///
         /// Buttons should be defined in the XAML file and linked to these methods.
         /// Buttons should call other methods to perform specific actions.
@@ -1854,5 +1925,7 @@ namespace IntuneTools.Pages
                 LogConsole.Blocks.Clear();
             }
         }
+
+        
     }
 }
