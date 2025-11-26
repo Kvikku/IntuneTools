@@ -25,6 +25,11 @@
                        HorizontalAlignment="Left"
                        FontSize="38"
                        FontWeight="Bold"/>
+            <InfoBar x:Name="TenantInfoBar"
+                     Severity="Informational"
+                     IsClosable="False"
+                     IsOpen="False"
+                     Margin="0,8,0,0"/>
         </StackPanel>
 
         <!-- Action Row -->
@@ -74,7 +79,7 @@
                         <ComboBoxItem Content="Available"/>
                         <ComboBoxItem Content="Uninstall"/>
                     </ComboBox>
-                    <AppBarButton Icon="ViewAll" Label="Content Types">
+                    <AppBarButton x:Name="ContentTypesButton" Icon="ViewAll" Label="Content Types">
                         <AppBarButton.Flyout>
                             <Flyout Placement="BottomEdgeAlignedLeft">
                                 <StackPanel x:Name="OptionsPanel" Orientation="Vertical" Margin="0,12,0,0" MinWidth="300">

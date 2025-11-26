@@ -1,7 +1,11 @@
-﻿using Microsoft.UI.Xaml;
+﻿using IntuneTools.Graph.IntuneHelperClasses;
+using IntuneTools.Utilities;
+using Microsoft.Graph.Beta;
+using Microsoft.Graph.Beta.Models;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Documents;
-using Microsoft.Graph.Beta;
+using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -12,20 +16,18 @@ using static IntuneTools.Graph.IntuneHelperClasses.AppleBYODEnrollmentProfileHel
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceCompliancePolicyHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceConfigurationHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.FilterHelperClass;
-using static IntuneTools.Graph.IntuneHelperClasses.SettingsCatalogHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.FilterHelperClass;
+using static IntuneTools.Graph.IntuneHelperClasses.macOSShellScript;
 using static IntuneTools.Graph.IntuneHelperClasses.PowerShellScriptsHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.ProactiveRemediationsHelper;
-using static IntuneTools.Graph.IntuneHelperClasses.macOSShellScript;
+using static IntuneTools.Graph.IntuneHelperClasses.SettingsCatalogHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsAutoPilotHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsDriverUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsFeatureUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdatePolicyHandler;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHelper;
-using static IntuneTools.Graph.IntuneHelperClasses.FilterHelperClass;
 using static IntuneTools.Utilities.HelperClass;
 using static IntuneTools.Utilities.Variables;
-using IntuneTools.Graph.IntuneHelperClasses;
-using Microsoft.Graph.Beta.Models;
 
 namespace IntuneTools.Pages
 {
@@ -97,6 +99,68 @@ namespace IntuneTools.Pages
 
             this.Loaded += AssignmentPage_Loaded;
             // Removed direct logging call here to avoid NullReference due to control construction order.
+        }
+
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+
+            if (string.Equals(Variables.sourceTenantName, string.Empty))
+            {
+                TenantInfoBar.Title = "Authentication Required";
+                TenantInfoBar.Message = "You must authenticate with a tenant before using assignment features.";
+                TenantInfoBar.Severity = InfoBarSeverity.Warning;
+                TenantInfoBar.IsOpen = true;
+
+                // Disable main controls
+                ContentSearchBox.IsEnabled = false;
+                ListAllButton.IsEnabled = false;
+                RemoveSelectedButton.IsEnabled = false;
+                RemoveAllButton.IsEnabled = false;
+                AssignButton.IsEnabled = false;
+                GroupSearchTextBox.IsEnabled = false;
+                GroupSearchButton.IsEnabled = false;
+                GroupListAllButton.IsEnabled = false;
+                AppDataGrid.IsEnabled = false;
+                GroupDataGrid.IsEnabled = false;
+                FilterToggle.IsEnabled = false;
+                FilterSelectionComboBox.IsEnabled = false;
+                FilterModeToggle.IsEnabled = false;
+                AssignmentIntentComboBox.IsEnabled = false;
+                //OptionsPanel.IsEnabled = false;
+                OptionsAllCheckBox.IsEnabled = false;
+                ClearLogButton.IsEnabled = false;
+                OptionsAllCheckBox.IsEnabled = false;
+                ContentTypesButton.IsEnabled = false;
+            }
+            else
+            {
+                TenantInfoBar.Title = "Authenticated Tenant";
+                TenantInfoBar.Message = Variables.sourceTenantName;
+                TenantInfoBar.Severity = InfoBarSeverity.Informational;
+                TenantInfoBar.IsOpen = true;
+
+                // Enable main controls
+                ContentSearchBox.IsEnabled = true;
+                ListAllButton.IsEnabled = true;
+                RemoveSelectedButton.IsEnabled = true;
+                RemoveAllButton.IsEnabled = true;
+                AssignButton.IsEnabled = true;
+                GroupSearchTextBox.IsEnabled = true;
+                GroupSearchButton.IsEnabled = true;
+                GroupListAllButton.IsEnabled = true;
+                AppDataGrid.IsEnabled = true;
+                GroupDataGrid.IsEnabled = true;
+                FilterToggle.IsEnabled = true;
+                FilterSelectionComboBox.IsEnabled = true;
+                FilterModeToggle.IsEnabled = true;
+                AssignmentIntentComboBox.IsEnabled = true;
+                //OptionsPanel.IsEnabled = true;
+                OptionsAllCheckBox.IsEnabled = true;
+                ClearLogButton.IsEnabled = true;
+                OptionsAllCheckBox.IsEnabled = true;
+                ContentTypesButton.IsEnabled = true;
+            }
         }
 
         #region Loading Overlay
