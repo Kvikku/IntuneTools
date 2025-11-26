@@ -1,4 +1,4 @@
-# Intoolz
+# InToolz
 
 This is a WinUI 3 version of this application - https://github.com/Kvikku/IntuneAssignments.
 
