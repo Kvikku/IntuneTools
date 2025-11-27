@@ -10,9 +10,9 @@
     <Grid>
         <ScrollViewer>
             <StackPanel Padding="40">
-                <TextBlock Text="Welcome to IntuneTools" FontSize="48" FontWeight="Bold" HorizontalAlignment="Left"/>
+                <TextBlock Text="Welcome to InToolz" FontSize="48" FontWeight="Bold" HorizontalAlignment="Left"/>
                 <TextBlock TextWrapping="WrapWholeWords" FontSize="18" Margin="0,20,0,0" MaxWidth="1200" HorizontalAlignment="Left">
-                    IntuneTools is a powerful application designed to help you manage and migrate your Microsoft Intune environment with ease.
+                    InToolz is a powerful application designed to help you manage and migrate your Microsoft Intune environment with ease.
                     This tool simplifies bulk management tasks, such as assignment, renaming, cleaning up and migrating Intune configurations between tenants.
                 </TextBlock>
                 <TextBlock Text="Connection Info" FontSize="28" FontWeight="SemiBold" Margin="0,30,0,10"/>
