@@ -36,6 +36,6 @@ __NOTE - This application is a work in progress. Errors, crashes and unexpected 
 
 # Kudos and creds
 
-I would like to highlight the following users for help with the project
+I would like to highlight the following users for help with the project:
 
 [Emifo](https://github.com/emifo) for help with the user authentication part.
