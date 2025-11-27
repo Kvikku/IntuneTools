@@ -1,10 +1,15 @@
 # InToolz
 
-This is a WinUI 3 version of this application - https://github.com/Kvikku/IntuneAssignments.
+InToolz is a powerful application designed to help you manage and migrate your Microsoft Intune environment with ease.
+This tool simplifies bulk management tasks, such as assignment, renaming, cleaning up and migrating Intune configurations between tenant
+
+
+
+_This is a WinUI 3 version of this application - https://github.com/Kvikku/IntuneAssignments._
 
 Content is being migrated and this version will eventually replace the older Winforms based application.
 
-This version will soon be available on the Microsoft Store!
+This version is now available on [Microsoft Store](https://apps.microsoft.com/detail/9phqrcx3gkxd?hl=neutral&gl=NO&ocid=pdpshare)
 
 
 # Overview
