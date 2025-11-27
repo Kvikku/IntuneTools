@@ -11,13 +11,17 @@ With this app you can:
 3. Delete assignment for a large amount of groups to a large amount of profiles and applications effectively
 4. Update the description property of a large amount of profiles and applications effectively
 
-## Download and run
+## Download
 
 This version is now available on [Microsoft Store](https://apps.microsoft.com/detail/9phqrcx3gkxd?hl=neutral&gl=NO&ocid=pdpshare)
 
 
 __NOTE - This application is a work in progress. Errors, crashes and unexpected behaviour can occur__
 
+
+## How to use
+
+Check out [the wiki](https://github.com/Kvikku/IntuneTools/wiki) for how to use the different functions in the app.
 
 
 # Features in development
