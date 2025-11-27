@@ -35,7 +35,6 @@ __NOTE - This application is a work in progress. Errors, crashes and unexpected 
 
 # Features in development
 
-- Bulk assignments
 - Delete duplicate policies/apps
 - Bulk add objects to groups (community request :D )
 
