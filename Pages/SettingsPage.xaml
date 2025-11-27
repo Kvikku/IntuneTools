@@ -5,28 +5,128 @@
     xmlns:local="using:IntuneTools.Pages"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:controls="using:Microsoft.UI.Xaml.Controls"
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <Grid>
-        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10">
-            <TextBlock Text="Settings Page" HorizontalAlignment="Center" FontSize="48" Margin="0,0,0,20"/>
-            
-            <TextBlock Text="Source Tenant" HorizontalAlignment="Left" FontSize="18"/>
-            <TextBlock Text="Will be used for Import, Cleanup, Renaming and Assignment" HorizontalAlignment="Left" FontSize="16"/>
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,20" Spacing="10">
-                <Button x:Name="SourceLoginButton" Content="Login" Width="100" HorizontalAlignment="Center" Click="SourceLoginButton_Click"/>
-                <Image x:Name="SourceLoginStatusImage" Width="24" Height="24" Source="/Assets/RedCross.png"/>
-            </StackPanel>
+    <Grid Padding="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="32"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="32"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
 
-            <TextBlock Text="Destination Tenant" HorizontalAlignment="Left" FontSize="18"/>
-            <TextBlock Text="Only used for importing content" HorizontalAlignment="Left" FontSize="16"/>
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10">
-                <Button x:Name="DestinationLoginButton" Content="Login" Width="100" HorizontalAlignment="Center" Click="DestinationLoginButton_Click"/>
-                <Image x:Name="DestinationLoginStatusImage" Width="24" Height="24" Source="/Assets/RedCross.png"/>
-            </StackPanel>
+        <!-- Page title -->
+        <TextBlock Grid.Row="0" Grid.ColumnSpan="3"
+                   Text="Settings"
+                   HorizontalAlignment="Center"
+                   FontSize="36"
+                   FontWeight="SemiBold"
+                   Margin="0,0,0,8"/>
 
-            <Button Content="Open Log File Location" HorizontalAlignment="Center" Margin="0,20,0,0" Click="OpenLogFileLocation_Click"/>
+        <!-- Optional subtitle -->
+        <TextBlock Grid.Row="1" Grid.ColumnSpan="3"
+                   Text="Configure tenants and access"
+                   HorizontalAlignment="Center"
+                   Opacity="0.8"/>
+
+        <!-- Source Tenant card -->
+        <Border Grid.Row="2" Grid.Column="0"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="16">
+            <StackPanel Spacing="12">
+                <TextBlock Text="Source Tenant"
+                           FontSize="20"
+                           FontWeight="SemiBold"/>
+
+                <controls:InfoBar
+                    IsOpen="True"
+                    IsClosable="False"
+                    Severity="Informational"
+                    Title="Usage"
+                    Message="Used for Cleanup, Renaming, Assignment, and as the source when exporting content." />
+
+                <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                    <Button x:Name="SourceLoginButton"
+                            Content="Login"
+                            Width="120"
+                            Click="SourceLoginButton_Click"/>
+                    <Button x:Name="SourceClearTokenButton"
+                            Content="Clear Token"
+                            Width="120"
+                            Click="SourceClearTokenButton_Click"/>
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <Image x:Name="SourceLoginStatusImage"
+                               Width="20"
+                               Height="20"
+                               Source="/Assets/RedCross.png"/>
+                        <TextBlock x:Name="SourceLoginStatusText"
+                                   Text="Not signed in"
+                                   VerticalAlignment="Center"
+                                   Opacity="0.8"/>
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Destination Tenant card -->
+        <Border Grid.Row="2" Grid.Column="2"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="16">
+            <StackPanel Spacing="12">
+                <TextBlock Text="Destination Tenant"
+                           FontSize="20"
+                           FontWeight="SemiBold"/>
+
+                <controls:InfoBar
+                    IsOpen="True"
+                    IsClosable="False"
+                    Severity="Informational"
+                    Title="Usage"
+                    Message="Used only as the destination when importing content." />
+
+                <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                    <Button x:Name="DestinationLoginButton"
+                            Content="Login"
+                            Width="120"
+                            Click="DestinationLoginButton_Click"/>
+                    <Button x:Name="DestinationClearTokenButton"
+                            Content="Clear Token"
+                            Width="120"
+                            Click="DestinationClearTokenButton_Click"/>
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <Image x:Name="DestinationLoginStatusImage"
+                               Width="20"
+                               Height="20"
+                               Source="/Assets/RedCross.png"/>
+                        <TextBlock x:Name="DestinationLoginStatusText"
+                                   Text="Not signed in"
+                                   VerticalAlignment="Center"
+                                   Opacity="0.8"/>
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Footer action -->
+        <StackPanel Grid.Row="3" Grid.ColumnSpan="3"
+                    HorizontalAlignment="Center"
+                    Margin="0,24,0,0">
+            <Button Content="Open Log File Location"
+                    Click="OpenLogFileLocation_Click"
+                    Width="220"/>
         </StackPanel>
     </Grid>
 </Page>

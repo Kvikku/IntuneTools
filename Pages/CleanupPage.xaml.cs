@@ -1,3 +1,4 @@
+using IntuneTools.Utilities;
 using Microsoft.Graph.Beta;
 using Microsoft.Graph.Beta.Models.Security;
 using Microsoft.UI.Xaml;
@@ -52,6 +53,45 @@ namespace IntuneTools.Pages
             InitializeComponent();
         }
 
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+
+            if (string.Equals(Variables.sourceTenantName, string.Empty, StringComparison.Ordinal))
+            {
+                TenantInfoBar.Title = "Authentication Required";
+                TenantInfoBar.Message = "You must authenticate with a tenant before using cleanup features.";
+                TenantInfoBar.Severity = InfoBarSeverity.Warning;
+                TenantInfoBar.IsOpen = true;
+
+                // Disable controls until authenticated
+                InputTextBox.IsEnabled = false;
+                SearchButton.IsEnabled = false;
+                ListAllButton.IsEnabled = false;
+                ClearSelectedButton.IsEnabled = false;
+                ClearAllButton.IsEnabled = false;
+                DeleteButton.IsEnabled = false;
+                CleanupDataGrid.IsEnabled = false;
+                ClearLogButton.IsEnabled = false;
+            }
+            else
+            {
+                TenantInfoBar.Title = "Authenticated Tenant";
+                TenantInfoBar.Message = Variables.sourceTenantName;
+                TenantInfoBar.Severity = InfoBarSeverity.Informational;
+                TenantInfoBar.IsOpen = true;
+
+                // Enable controls
+                InputTextBox.IsEnabled = true;
+                SearchButton.IsEnabled = true;
+                ListAllButton.IsEnabled = true;
+                ClearSelectedButton.IsEnabled = true;
+                ClearAllButton.IsEnabled = true;
+                DeleteButton.IsEnabled = true;
+                CleanupDataGrid.IsEnabled = true;
+                ClearLogButton.IsEnabled = true;
+            }
+        }
         public class ContentInfo
         {
             public string? ContentName { get; set; }
@@ -1375,5 +1415,7 @@ namespace IntuneTools.Pages
             CleanupDataGrid.ItemsSource = ContentList;
             AppendToDetailsRichTextBlock($"Cleared {selectedItems.Count} selected item(s) from the list.");
         }
+
+        
     }
 }

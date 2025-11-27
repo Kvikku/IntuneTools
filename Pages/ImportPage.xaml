@@ -26,6 +26,11 @@
                        HorizontalAlignment="Left"
                        FontSize="38"
                        FontWeight="Bold"/>
+            <InfoBar x:Name="TenantInfoBar"
+                     Severity="Informational"
+                     IsClosable="False"
+                     IsOpen="False"
+                     Margin="0,8,0,0"/>
         </StackPanel>
 
         <!-- CommandBar -->
@@ -45,7 +50,7 @@
                     <AppBarButton x:Name="ClearSelected" Icon="Remove" Label="Clear Selected" Click="ClearSelectedButton_Click" ToolTipService.ToolTip="Remove selected items from staging area."/>
                     <AppBarButton x:Name="ClearAll" Icon="Clear" Label="Clear All" Click="ClearAllButton_Click" ToolTipService.ToolTip="Clear all items from staging area."/>
                     <AppBarSeparator/>
-                    <AppBarButton Icon="ViewAll" Label="Content Types">
+                    <AppBarButton x:Name="ContentTypesButton" Icon="ViewAll" Label="Content Types">
                         <AppBarButton.Flyout>
                             <Flyout Placement="BottomEdgeAlignedLeft">
                                 <StackPanel x:Name="OptionsPanel" Orientation="Vertical" MinWidth="300">

@@ -26,6 +26,11 @@
                        HorizontalAlignment="Left"
                        FontSize="38"
                        FontWeight="Bold"/>
+            <InfoBar x:Name="TenantInfoBar"
+                     Severity="Informational"
+                     IsClosable="False"
+                     IsOpen="False"
+                     Margin="0,8,0,0"/>
         </StackPanel>
 
         <!-- CommandBar -->
