@@ -15,6 +15,7 @@ With this app you can:
 
 This version is now available on [Microsoft Store](https://apps.microsoft.com/detail/9phqrcx3gkxd?hl=neutral&gl=NO&ocid=pdpshare)
 
+If you prefer to download and install manually, you can check out the [release section](https://github.com/Kvikku/IntuneTools/releases) where I attach the sources files.
 
 __NOTE - This application is a work in progress. Errors, crashes and unexpected behaviour can occur__
 
