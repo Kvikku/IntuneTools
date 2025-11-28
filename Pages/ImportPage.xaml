@@ -131,13 +131,14 @@
                 
                 <!-- DataGrid -->
                 <controls:DataGrid Grid.Row="1"
-                                   x:Name="ContentDataGrid" 
-                                   AutoGenerateColumns="False"
-                                   SelectionMode="Extended"
-                                   Margin="0,0,12,0"
-                                   IsReadOnly="True"
-                                   CanUserSortColumns="True"
-                                   CanUserReorderColumns="False">
+                   x:Name="ContentDataGrid" 
+                   AutoGenerateColumns="False"
+                   SelectionMode="Extended"
+                   Margin="0,0,12,0"
+                   IsReadOnly="True"
+                   CanUserSortColumns="True"
+                   CanUserReorderColumns="False"
+                   Sorting="ContentDataGrid_Sorting">
                     <controls:DataGrid.Columns>
                         <controls:DataGridTextColumn Header="Name" Binding="{Binding ContentName}" Width="2*"/>
                         <controls:DataGridTextColumn Header="Type" Binding="{Binding ContentType}" Width="*"/>
@@ -235,7 +236,8 @@
                                        Margin="0,0,0,0"
                                        IsReadOnly="True"
                                        CanUserSortColumns="True"
-                                       CanUserReorderColumns="False">
+                                       CanUserReorderColumns="False"
+                                       Sorting="GroupDataGrid_Sorting">
                         <controls:DataGrid.Columns>
                             <controls:DataGridTextColumn Header="Group Name" Binding="{Binding GroupName}" Width="*"/>
                         </controls:DataGrid.Columns>
