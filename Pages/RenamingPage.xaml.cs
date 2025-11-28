@@ -57,6 +57,14 @@ namespace IntuneTools.Pages
 
         public ObservableCollection<ContentInfo> ContentList { get; set; } = new ObservableCollection<ContentInfo>();
 
+        // Use an enum for clarity and keep integer mapping stable with ComboBox order.
+        public enum RenameMode
+        {
+            Prefix = 0,
+            Suffix = 1,
+            Description = 2
+        }
+
         public RenamingPage()
         {
             this.InitializeComponent();
@@ -88,6 +96,7 @@ namespace IntuneTools.Pages
                 RenameButton.IsEnabled = false;
                 RenamingDataGrid.IsEnabled = false;
                 ClearLogButton.IsEnabled = false;
+                RenameModeComboBox.IsEnabled = false;
             }
             else
             {
@@ -107,6 +116,7 @@ namespace IntuneTools.Pages
                 RenameButton.IsEnabled = true;
                 RenamingDataGrid.IsEnabled = true;
                 ClearLogButton.IsEnabled = true;
+                RenameModeComboBox.IsEnabled = true;
             }
         }
 
@@ -1414,10 +1424,44 @@ namespace IntuneTools.Pages
                 AppendToDetailsRichTextBlock("Please enter a new name.");
                 return;
             }
+
+
+            // get the option selected
+
+            var renameMode = GetSelectedRenameMode();
+
+            if (renameMode == RenameMode.Prefix)
+            {
+                await RenameContent(itemsToRename.Select(i => i.ContentId).Where(id => !string.IsNullOrEmpty(id)).ToList(), newName);
+            }
+            else if (renameMode == RenameMode.Suffix)
+            {
+                // TODO
+            }
+            else if (renameMode == RenameMode.Description)
+            {
+                // TODO
+            }
+
             await RenameContent(itemsToRename.Select(i => i.ContentId).Where(id => !string.IsNullOrEmpty(id)).ToList(), newName);
         }
 
-        
+        private RenameMode GetSelectedRenameMode()
+        {
+            // Defaults to Prefix if the ComboBox is not available yet.
+            var index = RenameModeComboBox?.SelectedIndex ?? 0;
+
+            // Clamp to valid range [0..2].
+            if (index < 0 || index > 2) index = 0;
+
+            return (RenameMode)index;
+        }
+
+        private int GetSelectedRenameModeIndex()
+        {
+            return (int)GetSelectedRenameMode();
+        }
+
     }
 
 }
