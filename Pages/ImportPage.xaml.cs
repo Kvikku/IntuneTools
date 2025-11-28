@@ -1780,6 +1780,8 @@ namespace IntuneTools.Pages
         {
             // This method is called when the "List All Assignment Filters" button is clicked
             await LoadAllAssignmentFiltersAsync();
+            NewControlsPanel.Visibility = Visibility.Visible;
+            GroupsCheckBox.IsChecked = true;
         }
 
         private void ClearAllButton_Click(object sender, RoutedEventArgs e)
@@ -1892,6 +1894,7 @@ namespace IntuneTools.Pages
         private void FiltersCheckBox_Checked(object sender, RoutedEventArgs e)
         {
             FilterSelectionComboBox.Visibility = Visibility.Visible;
+            
         }
 
         private void FiltersCheckBox_Unchecked(object sender, RoutedEventArgs e)
