@@ -1,7 +1,11 @@
+using System;
+using System.Threading.Tasks;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
+using Windows.UI;
+using IntuneTools.Utilities;
 using Microsoft.UI.Xaml.Navigation;
-using System;
 using System.Linq;
 using Windows.System;
 using static IntuneTools.Utilities.HelperClass;
@@ -19,7 +23,49 @@ namespace IntuneTools.Pages
     {
         public HomePage()
         {
-            this.InitializeComponent();
+            InitializeComponent();
+            Loaded += HomePage_Loaded;
+        }
+
+        private async void HomePage_Loaded(object sender, RoutedEventArgs e)
+        {
+            // Perform version check on page load (app launch shows HomePage)
+            await UpdateVersionStatusAsync();
+        }
+
+        private async Task UpdateVersionStatusAsync()
+        {
+            try
+            {
+                var status = await VersionCheck.CheckAsync();
+
+                if (status.IsUpdateAvailable)
+                {
+                    VersionStatusText.Text = $"Newer version available: {status.LatestVersion} (current {status.CurrentVersion})";
+                    SetIndicatorColor(Windows.UI.Color.FromArgb(255, 255, 165, 0)); // OrangeRed
+                    VersionStatusText.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 165, 0));
+                }
+                else
+                {
+                    VersionStatusText.Text = $"You are up to date ({status.CurrentVersion}).";
+                    SetIndicatorColor(Windows.UI.Color.FromArgb(255, 46, 139, 87)); // SeaGreen
+                    VersionStatusText.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 46, 139, 87));
+                }
+            }
+            catch (Exception)
+            {
+                VersionStatusText.Text = "Version check failed.";
+                SetIndicatorColor(Windows.UI.Color.FromArgb(255, 128, 128, 128)); // Gray
+                VersionStatusText.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 128, 128, 128));
+            }
+        }
+
+        private void SetIndicatorColor(Windows.UI.Color color)
+        {
+            if (VersionStatusBrush != null)
+            {
+                VersionStatusBrush.Color = color;
+            }
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)

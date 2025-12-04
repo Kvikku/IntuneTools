@@ -15,6 +15,21 @@
                     InToolz is a powerful application designed to help you manage and migrate your Microsoft Intune environment with ease.
                     This tool simplifies bulk management tasks, such as assignment, renaming, cleaning up and migrating Intune configurations between tenants.
                 </TextBlock>
+
+                <!-- Version status indicator -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,20,0,0">
+                    <Ellipse x:Name="VersionStatusIndicator" Width="12" Height="12" VerticalAlignment="Center">
+                        <Ellipse.Fill>
+                            <SolidColorBrush x:Name="VersionStatusBrush" Color="Gray"/>
+                        </Ellipse.Fill>
+                    </Ellipse>
+                    <TextBlock x:Name="VersionStatusText"
+                               Text="Checking version..."
+                               FontSize="16"
+                               Margin="8,0,0,0"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+
                 <TextBlock Text="Connection Info" FontSize="28" FontWeight="SemiBold" Margin="0,30,0,10"/>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,10">
                     <TextBlock Text="Tenant Name:" FontSize="18" VerticalAlignment="Center"/>
