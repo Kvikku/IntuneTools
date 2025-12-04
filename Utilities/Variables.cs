@@ -11,7 +11,7 @@ namespace IntuneTools.Utilities
 {
     public class Variables
     {
-        public static string appVersion = "1.0.10.0";
+        public static string appVersion = "1.0.9.0";
         // Log file
         public static string appDataPath = @"C:\ProgramData\";
         public static string appFolderName = "IntuneTools";

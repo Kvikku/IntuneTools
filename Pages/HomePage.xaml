@@ -16,8 +16,8 @@
                     This tool simplifies bulk management tasks, such as assignment, renaming, cleaning up and migrating Intune configurations between tenants.
                 </TextBlock>
 
-                <!-- Version status indicator -->
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,20,0,0">
+                <!-- Version status indicator with action buttons -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,20,0,0" Spacing="8">
                     <Ellipse x:Name="VersionStatusIndicator" Width="12" Height="12" VerticalAlignment="Center">
                         <Ellipse.Fill>
                             <SolidColorBrush x:Name="VersionStatusBrush" Color="Gray"/>
@@ -26,8 +26,19 @@
                     <TextBlock x:Name="VersionStatusText"
                                Text="Checking version..."
                                FontSize="16"
-                               Margin="8,0,0,0"
                                VerticalAlignment="Center"/>
+
+                    <!-- Buttons shown only when update is available -->
+                    <StackPanel Orientation="Horizontal" x:Name="UpdateButtonsPanel" Visibility="Collapsed" Spacing="6">
+                        <Button x:Name="OpenGitHubButton"
+                                Content="Open GitHub"
+                                Click="OpenGitHubButton_Click"
+                                VerticalAlignment="Center"/>
+                        <Button x:Name="OpenStoreButton"
+                                Content="Open in Store"
+                                Click="OpenStoreButton_Click"
+                                VerticalAlignment="Center"/>
+                    </StackPanel>
                 </StackPanel>
 
                 <TextBlock Text="Connection Info" FontSize="28" FontWeight="SemiBold" Margin="0,30,0,10"/>
