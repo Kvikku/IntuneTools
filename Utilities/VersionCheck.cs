@@ -111,6 +111,11 @@ namespace IntuneTools.Utilities
 
         private static string GetCurrentVersionString()
         {
+
+            return appVersion;
+
+            // TODO : The code below is the more robust way to get the version from assembly attributes,
+
             // Prefer informational version if present, otherwise assembly version.
             var asm = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
             var info = asm.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
