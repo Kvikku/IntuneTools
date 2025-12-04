@@ -36,6 +36,7 @@ namespace IntuneTools
         public App()
         {
             this.InitializeComponent();
+            // Ensure HomePage is shown on launch so the version check runs immediately.
         }
 
         /// <summary>
