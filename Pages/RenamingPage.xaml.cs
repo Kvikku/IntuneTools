@@ -1,7 +1,9 @@
-using Microsoft.UI.Xaml.Controls;
+using CommunityToolkit.WinUI.UI.Controls;
+using IntuneTools.Utilities;
 using Microsoft.Graph.Beta;
 using Microsoft.Graph.Beta.Models.Security;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Documents;
@@ -11,6 +13,7 @@ using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
@@ -34,7 +37,6 @@ using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdatePolicyHan
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHelper;
 using static IntuneTools.Utilities.HelperClass;
 using static IntuneTools.Utilities.Variables;
-using IntuneTools.Utilities;
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
 
@@ -54,6 +56,14 @@ namespace IntuneTools.Pages
         }
 
         public ObservableCollection<ContentInfo> ContentList { get; set; } = new ObservableCollection<ContentInfo>();
+
+        // Use an enum for clarity and keep integer mapping stable with ComboBox order.
+        public enum RenameMode
+        {
+            Prefix = 0,
+            Suffix = 1,
+            Description = 2
+        }
 
         public RenamingPage()
         {
@@ -86,6 +96,7 @@ namespace IntuneTools.Pages
                 RenameButton.IsEnabled = false;
                 RenamingDataGrid.IsEnabled = false;
                 ClearLogButton.IsEnabled = false;
+                RenameModeComboBox.IsEnabled = false;
             }
             else
             {
@@ -105,9 +116,81 @@ namespace IntuneTools.Pages
                 RenameButton.IsEnabled = true;
                 RenamingDataGrid.IsEnabled = true;
                 ClearLogButton.IsEnabled = true;
+                RenameModeComboBox.IsEnabled = true;
             }
         }
 
+        // Add this event handler to your RenamingPage class
+        private void RenamingDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
+        {
+            var dataGrid = sender as DataGrid;
+            if (ContentList == null || ContentList.Count == 0)
+                return;
+
+            // Get the property name from the column binding
+            var textColumn = e.Column as DataGridTextColumn;
+            var binding = textColumn?.Binding as Binding;
+            string sortProperty = binding?.Path?.Path;
+            if (string.IsNullOrEmpty(sortProperty))
+            {
+                AppendToDetailsRichTextBlock("Sorting error: Unable to determine property name from column binding.");
+                return;
+            }
+
+            // Check if property exists on ContentInfo
+            var propInfo = typeof(ContentInfo).GetProperty(sortProperty);
+            if (propInfo == null)
+            {
+                AppendToDetailsRichTextBlock($"Sorting error: Property '{sortProperty}' not found on ContentInfo.");
+                return;
+            }
+
+            // Toggle sort direction
+            ListSortDirection direction;
+            if (e.Column.SortDirection.HasValue && e.Column.SortDirection.Value == DataGridSortDirection.Ascending)
+            {
+                direction = ListSortDirection.Descending;
+            }
+            else
+            {
+                direction = ListSortDirection.Ascending;
+            }
+
+            // Sort the ContentList in place
+            List<ContentInfo> sorted;
+            try
+            {
+                if (direction == ListSortDirection.Ascending)
+                {
+                    sorted = ContentList.OrderBy(x => propInfo.GetValue(x, null) ?? string.Empty).ToList();
+                }
+                else
+                {
+                    sorted = ContentList.OrderByDescending(x => propInfo.GetValue(x, null) ?? string.Empty).ToList();
+                }
+            }
+            catch (Exception ex)
+            {
+                AppendToDetailsRichTextBlock($"Sorting error: {ex.Message}");
+                return;
+            }
+
+            // Update ContentList
+            ContentList.Clear();
+            foreach (var item in sorted)
+                ContentList.Add(item);
+
+            // Update sort direction indicator
+            foreach (var col in dataGrid.Columns)
+                col.SortDirection = null;
+            e.Column.SortDirection = direction == ListSortDirection.Ascending
+                ? DataGridSortDirection.Ascending
+                : DataGridSortDirection.Descending;
+
+            // Prevent default sort
+            // e.Handled = true; // Removed as per workaround
+
+        }
 
         private void ShowLoading(string message = "Loading data from Microsoft Graph...")
         {
@@ -1341,10 +1424,44 @@ namespace IntuneTools.Pages
                 AppendToDetailsRichTextBlock("Please enter a new name.");
                 return;
             }
+
+
+            // get the option selected
+
+            var renameMode = GetSelectedRenameMode();
+
+            if (renameMode == RenameMode.Prefix)
+            {
+                await RenameContent(itemsToRename.Select(i => i.ContentId).Where(id => !string.IsNullOrEmpty(id)).ToList(), newName);
+            }
+            else if (renameMode == RenameMode.Suffix)
+            {
+                // TODO
+            }
+            else if (renameMode == RenameMode.Description)
+            {
+                // TODO
+            }
+
             await RenameContent(itemsToRename.Select(i => i.ContentId).Where(id => !string.IsNullOrEmpty(id)).ToList(), newName);
         }
 
-        
+        private RenameMode GetSelectedRenameMode()
+        {
+            // Defaults to Prefix if the ComboBox is not available yet.
+            var index = RenameModeComboBox?.SelectedIndex ?? 0;
+
+            // Clamp to valid range [0..2].
+            if (index < 0 || index > 2) index = 0;
+
+            return (RenameMode)index;
+        }
+
+        private int GetSelectedRenameModeIndex()
+        {
+            return (int)GetSelectedRenameMode();
+        }
+
     }
 
 }

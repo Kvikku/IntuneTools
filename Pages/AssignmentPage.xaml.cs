@@ -1,14 +1,17 @@
-﻿using IntuneTools.Graph.IntuneHelperClasses;
+﻿using CommunityToolkit.WinUI.UI.Controls;
+using IntuneTools.Graph.IntuneHelperClasses;
 using IntuneTools.Utilities;
 using Microsoft.Graph.Beta;
 using Microsoft.Graph.Beta.Models;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using static IntuneTools.Graph.EntraHelperClasses.GroupHelperClass;
@@ -1196,6 +1199,141 @@ namespace IntuneTools.Pages
                 OptionsAllCheckBox.IsChecked = null;
             _suppressSelectAllEvents = false;
         }
+
+        private void AppDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
+        {
+            var dataGrid = sender as DataGrid;
+            if (AssignmentList == null || AssignmentList.Count == 0)
+                return;
+
+            // Get the property name from the column binding
+            var textColumn = e.Column as DataGridTextColumn;
+            var binding = textColumn?.Binding as Binding;
+            string sortProperty = binding?.Path?.Path;
+            if (string.IsNullOrEmpty(sortProperty))
+            {
+                AppendToDetailsRichTextBlock("Sorting error: Unable to determine property name from column binding.");
+                return;
+            }
+
+            // Check if property exists on AssignmentInfo
+            var propInfo = typeof(AssignmentInfo).GetProperty(sortProperty);
+            if (propInfo == null)
+            {
+                AppendToDetailsRichTextBlock($"Sorting error: Property '{sortProperty}' not found on AssignmentInfo.");
+                return;
+            }
+
+            // Toggle sort direction
+            DataGridSortDirection? currentDirection = e.Column.SortDirection;
+            ListSortDirection direction;
+            if (currentDirection.HasValue && currentDirection.Value == DataGridSortDirection.Ascending)
+                direction = ListSortDirection.Descending;
+            else
+                direction = ListSortDirection.Ascending;
+
+            // Sort the AssignmentList in place
+            List<AssignmentInfo> sorted;
+            try
+            {
+                if (direction == ListSortDirection.Ascending)
+                {
+                    sorted = AssignmentList.OrderBy(x => propInfo.GetValue(x, null) ?? string.Empty).ToList();
+                }
+                else
+                {
+                    sorted = AssignmentList.OrderByDescending(x => propInfo.GetValue(x, null) ?? string.Empty).ToList();
+                }
+            }
+            catch (Exception ex)
+            {
+                AppendToDetailsRichTextBlock($"Sorting error: {ex.Message}");
+                return;
+            }
+
+            // Update AssignmentList
+            AssignmentList.Clear();
+            foreach (var item in sorted)
+                AssignmentList.Add(item);
+
+            // Update sort direction indicator
+            foreach (var col in dataGrid.Columns)
+                col.SortDirection = null;
+            e.Column.SortDirection = direction == ListSortDirection.Ascending
+                ? DataGridSortDirection.Ascending
+                : DataGridSortDirection.Descending;
+
+            // Prevent default sort
+            // e.Handled = true; // Removed as per workaround
+        }
+
+        private void GroupDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
+        {
+            var dataGrid = sender as DataGrid;
+            if (GroupList == null || GroupList.Count == 0)
+                return;
+
+            // Get the property name from the column binding
+            var textColumn = e.Column as DataGridTextColumn;
+            var binding = textColumn?.Binding as Binding;
+            string sortProperty = binding?.Path?.Path;
+            if (string.IsNullOrEmpty(sortProperty))
+            {
+                AppendToDetailsRichTextBlock("Sorting error: Unable to determine property name from column binding.");
+                return;
+            }
+
+            // Check if property exists on AssignmentGroupInfo
+            var propInfo = typeof(AssignmentGroupInfo).GetProperty(sortProperty);
+            if (propInfo == null)
+            {
+                AppendToDetailsRichTextBlock($"Sorting error: Property '{sortProperty}' not found on AssignmentGroupInfo.");
+                return;
+            }
+
+            // Toggle sort direction
+            DataGridSortDirection? currentDirection = e.Column.SortDirection;
+            ListSortDirection direction;
+            if (currentDirection.HasValue && currentDirection.Value == DataGridSortDirection.Ascending)
+                direction = ListSortDirection.Descending;
+            else
+                direction = ListSortDirection.Ascending;
+
+            // Sort the GroupList in place
+            List<AssignmentGroupInfo> sorted;
+            try
+            {
+                if (direction == ListSortDirection.Ascending)
+                {
+                    sorted = GroupList.OrderBy(x => propInfo.GetValue(x, null) ?? string.Empty).ToList();
+                }
+                else
+                {
+                    sorted = GroupList.OrderByDescending(x => propInfo.GetValue(x, null) ?? string.Empty).ToList();
+                }
+            }
+            catch (Exception ex)
+            {
+                AppendToDetailsRichTextBlock($"Sorting error: {ex.Message}");
+                return;
+            }
+
+            // Update GroupList
+            GroupList.Clear();
+            foreach (var item in sorted)
+                GroupList.Add(item);
+
+            // Update sort direction indicator
+            foreach (var col in dataGrid.Columns)
+                col.SortDirection = null;
+            e.Column.SortDirection = direction == ListSortDirection.Ascending
+                ? DataGridSortDirection.Ascending
+                : DataGridSortDirection.Descending;
+
+            // Prevent default sort
+            // e.Handled = true; // Uncomment if needed for your toolkit version
+        }
+
         #endregion
     }
 }

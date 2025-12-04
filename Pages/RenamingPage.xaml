@@ -46,6 +46,15 @@
                     <AppBarButton x:Name="ClearSelectedButton" Icon="Remove" Label="Clear Selected" Click="ClearSelectedButton_Click" ToolTipService.ToolTip="Remove selected items from staging area."/>
                     <AppBarButton x:Name="ClearAllButton" Icon="Clear" Label="Clear All" Click="ClearAllButton_Click" ToolTipService.ToolTip="Clear all items from staging area."/>
                     <AppBarSeparator/>
+                    <ComboBox x:Name="RenameModeComboBox"
+                              Width="150"
+                              VerticalAlignment="Bottom"
+                              SelectedIndex="0"
+                              ToolTipService.ToolTip="Choose the rename mode.">
+                        <ComboBoxItem Content="Prefix"/>
+                        <ComboBoxItem Content="Suffix"/>
+                        <ComboBoxItem Content="Description"/>
+                    </ComboBox>
                     <TextBox x:Name="NewNameTextBox"
                              PlaceholderText="Enter new Prefix"
                              Width="200"
@@ -109,10 +118,14 @@
                 
                 <!-- DataGrid -->
                 <controls:DataGrid Grid.Row="1"
-                                   x:Name="RenamingDataGrid" 
-                                   AutoGenerateColumns="False"
-                                   SelectionMode="Extended"
-                                   Margin="0,0,12,0">
+                    x:Name="RenamingDataGrid" 
+                    AutoGenerateColumns="False"
+                    SelectionMode="Extended"
+                    Margin="0,0,12,0"
+                    IsReadOnly="True"
+                    CanUserSortColumns="True"
+                    CanUserReorderColumns="False"
+                    Sorting="RenamingDataGrid_Sorting">
                     <controls:DataGrid.Columns>
                         <controls:DataGridTextColumn Header="Name" Binding="{Binding ContentName}" Width="2*"/>
                         <controls:DataGridTextColumn Header="Type" Binding="{Binding ContentType}" Width="*"/>

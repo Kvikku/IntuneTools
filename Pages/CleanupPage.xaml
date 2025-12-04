@@ -88,7 +88,11 @@
                                    x:Name="CleanupDataGrid" 
                                    AutoGenerateColumns="False"
                                    SelectionMode="Extended"
-                                   Margin="0,0,12,0">
+                                   Margin="0,0,12,0"
+                                   IsReadOnly="True"
+                                   CanUserSortColumns="True"
+                                   CanUserReorderColumns="False"
+                                   Sorting="CleanupDataGrid_Sorting">
                     <controls:DataGrid.Columns>
                         <controls:DataGridTextColumn Header="Name" Binding="{Binding ContentName}" Width="2*"/>
                         <controls:DataGridTextColumn Header="Type" Binding="{Binding ContentType}" Width="*"/>
