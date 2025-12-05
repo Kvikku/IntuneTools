@@ -45,6 +45,14 @@ namespace IntuneTools.Utilities
             Error
         };
 
+        // Use an enum for clarity and keep integer mapping stable with ComboBox order.
+        public enum RenameMode
+        {
+            Prefix = 0,
+            Suffix = 1,
+            Description = 2
+        }
+
         // Group variables
         public static bool IsGroupSelected = false;
         public static string SelectedGroupID = null;

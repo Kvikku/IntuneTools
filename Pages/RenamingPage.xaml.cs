@@ -57,13 +57,7 @@ namespace IntuneTools.Pages
 
         public ObservableCollection<ContentInfo> ContentList { get; set; } = new ObservableCollection<ContentInfo>();
 
-        // Use an enum for clarity and keep integer mapping stable with ComboBox order.
-        public enum RenameMode
-        {
-            Prefix = 0,
-            Suffix = 1,
-            Description = 2
-        }
+        
 
         public RenamingPage()
         {
@@ -310,7 +304,7 @@ namespace IntuneTools.Pages
                 HideLoading();
             }
         }
-        private async Task RenameContent(List<string> contentIDs, string newName)
+        private async Task RenameContent(List<string> contentIDs, string newName, RenameMode renameMode)
         {
             if (contentIDs == null || contentIDs.Count == 0)
             {
@@ -1432,7 +1426,7 @@ namespace IntuneTools.Pages
 
             if (renameMode == RenameMode.Prefix)
             {
-                await RenameContent(itemsToRename.Select(i => i.ContentId).Where(id => !string.IsNullOrEmpty(id)).ToList(), newName);
+                await RenameContent(itemsToRename.Select(i => i.ContentId).Where(id => !string.IsNullOrEmpty(id)).ToList(), newName, renameMode);
             }
             else if (renameMode == RenameMode.Suffix)
             {

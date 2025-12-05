@@ -52,7 +52,7 @@
                               SelectedIndex="0"
                               ToolTipService.ToolTip="Choose the rename mode.">
                         <ComboBoxItem Content="Prefix"/>
-                        <ComboBoxItem Content="Suffix"/>
+                        <!--<ComboBoxItem Content="Suffix"/>-->
                         <ComboBoxItem Content="Description"/>
                     </ComboBox>
                     <TextBox x:Name="NewNameTextBox"
