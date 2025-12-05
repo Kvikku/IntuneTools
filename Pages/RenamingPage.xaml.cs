@@ -304,8 +304,11 @@ namespace IntuneTools.Pages
                 HideLoading();
             }
         }
-        private async Task RenameContent(List<string> contentIDs, string newName, RenameMode renameMode)
+        private async Task RenameContent(List<string> contentIDs, string newName)
         {
+
+            string prefix = string.Empty;
+
             if (contentIDs == null || contentIDs.Count == 0)
             {
                 AppendToDetailsRichTextBlock("No content IDs provided for renaming.");
@@ -318,13 +321,26 @@ namespace IntuneTools.Pages
             }
 
             var prefixSymbol = GetSelectedPrefixOption();
-            if (prefixSymbol == null)
+            if (prefixSymbol == null && selectedRenameMode == "Prefix")
             {
                 AppendToDetailsRichTextBlock("Please select a prefix option.");
                 return;
             }
 
-            string prefix = $"{prefixSymbol[0]}{newName}{prefixSymbol[1]}";
+            if (selectedRenameMode == "Prefix")
+            {
+                prefix = $"{prefixSymbol[0]}{newName}{prefixSymbol[1]}";
+            }
+            else if (selectedRenameMode == "Suffix")
+            {
+
+            }
+            else if (selectedRenameMode == "Description")
+            {
+
+            }
+
+            
 
             // Find the corresponding names for the content ID
 
@@ -346,21 +362,65 @@ namespace IntuneTools.Pages
                 AppendToDetailsRichTextBlock("No content names found for the provided IDs.");
                 return;
             }
-            string contentNamesList = string.Join("\n", contentNames);
-            ContentDialog renameDialog = new ContentDialog
+
+
+            if (selectedRenameMode == "Prefix")
             {
-                Title = "Confirm Renaming",
-                Content = $"The new policy names will look like this. Proceed?\n\n{contentNamesList}",
-                PrimaryButtonText = "Rename",
-                CloseButtonText = "Cancel",
-                XamlRoot = this.XamlRoot
-};
-            var dialogResult = await renameDialog.ShowAsync();
-            if (dialogResult != ContentDialogResult.Primary)
-            {
-                AppendToDetailsRichTextBlock("Renaming operation cancelled.");
-                return;
+                string contentNamesList = string.Join("\n", contentNames);
+                ContentDialog renameDialog = new ContentDialog
+                {
+                    Title = "Confirm Renaming",
+                    Content = $"The new policy names will look like this. Proceed?\n\n{contentNamesList}",
+                    PrimaryButtonText = "Rename",
+                    CloseButtonText = "Cancel",
+                    XamlRoot = this.XamlRoot
+                };
+                var dialogResult = await renameDialog.ShowAsync();
+                if (dialogResult != ContentDialogResult.Primary)
+                {
+                    AppendToDetailsRichTextBlock("Renaming operation cancelled.");
+                    return;
+                }
             }
+            else if (selectedRenameMode == "Suffix")
+            {
+
+            }
+            else if (selectedRenameMode == "Description")
+            {
+                prefix = newName; // For description, we just use the newName as the description text
+                ContentDialog renameDialog = new ContentDialog
+                {
+                    Title = "Confirm updating description",
+                    Content = $"The new policy descriptions will look like this. Proceed?\n\n{prefix}",
+                    PrimaryButtonText = "Update",
+                    CloseButtonText = "Cancel",
+                    XamlRoot = this.XamlRoot
+                };
+                var dialogResult = await renameDialog.ShowAsync();
+                if (dialogResult != ContentDialogResult.Primary)
+                {
+                    AppendToDetailsRichTextBlock("Renaming operation cancelled.");
+                    return;
+                }
+            }
+
+
+//            string contentNamesList = string.Join("\n", contentNames);
+//            ContentDialog renameDialog = new ContentDialog
+//            {
+//                Title = "Confirm Renaming",
+//                Content = $"The new policy names will look like this. Proceed?\n\n{contentNamesList}",
+//                PrimaryButtonText = "Rename",
+//                CloseButtonText = "Cancel",
+//                XamlRoot = this.XamlRoot
+//};
+//            var dialogResult = await renameDialog.ShowAsync();
+//            if (dialogResult != ContentDialogResult.Primary)
+//            {
+//                AppendToDetailsRichTextBlock("Renaming operation cancelled.");
+//                return;
+//            }
 
             try
             {
@@ -726,7 +786,7 @@ namespace IntuneTools.Pages
                 }
                 catch (Exception ex)
                 {
-                    AppendToDetailsRichTextBlock($"Error renaming Settings Catalog with ID {id}: {ex.Message}");
+                    AppendToDetailsRichTextBlock($"Error updating Settings Catalog with ID {id}: {ex.Message}");
                 }
             }
         }
@@ -1428,7 +1488,7 @@ namespace IntuneTools.Pages
 
             if (renameMode == RenameMode.Prefix)
             {
-                await RenameContent(itemsToRename.Select(i => i.ContentId).Where(id => !string.IsNullOrEmpty(id)).ToList(), newName, renameMode);
+                await RenameContent(itemsToRename.Select(i => i.ContentId).Where(id => !string.IsNullOrEmpty(id)).ToList(), newName);
             }
             else if (renameMode == RenameMode.Suffix)
             {
@@ -1436,7 +1496,7 @@ namespace IntuneTools.Pages
             }
             else if (renameMode == RenameMode.Description)
             {
-                // TODO
+                await RenameContent(itemsToRename.Select(i => i.ContentId).Where(id => !string.IsNullOrEmpty(id)).ToList(), newName);
             }
         }
 

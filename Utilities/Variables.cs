@@ -49,8 +49,8 @@ namespace IntuneTools.Utilities
         public enum RenameMode
         {
             Prefix = 0,
-            Suffix = 1,
-            Description = 2
+            Suffix = 2,
+            Description = 1
         }
 
         public static string selectedRenameMode = "Prefix"; // Default rename mode
