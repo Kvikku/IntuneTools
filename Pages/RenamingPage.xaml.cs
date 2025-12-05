@@ -321,51 +321,42 @@ namespace IntuneTools.Pages
             }
 
             var prefixSymbol = GetSelectedPrefixOption();
+
             if (prefixSymbol == null && selectedRenameMode == "Prefix")
             {
                 AppendToDetailsRichTextBlock("Please select a prefix option.");
                 return;
             }
 
+
             if (selectedRenameMode == "Prefix")
             {
+
                 prefix = $"{prefixSymbol[0]}{newName}{prefixSymbol[1]}";
-            }
-            else if (selectedRenameMode == "Suffix")
-            {
 
-            }
-            else if (selectedRenameMode == "Description")
-            {
+                // Find the corresponding names for the content ID
 
-            }
-
+                List<string> contentNames = new List<string>();
+                foreach (var id in contentIDs)
+                {
+                    var name = string.Empty;
+                    var content = ContentList.FirstOrDefault(c => c.ContentId == id);
+                    if (content != null)
+                    {
+                        name = FindPreFixInPolicyName(content.ContentName, prefix);
+                    }
+                    contentNames.Add(name);
+                }
             
 
-            // Find the corresponding names for the content ID
-
-            List<string> contentNames = new List<string>();
-            foreach (var id in contentIDs)
-            {
-                var name = string.Empty;
-                var content = ContentList.FirstOrDefault(c => c.ContentId == id);
-                if (content != null)
+                // display a dialog box with the new names and confirm renaming
+                if (contentNames.Count == 0)
                 {
-                    name = FindPreFixInPolicyName(content.ContentName,prefix);
+                    AppendToDetailsRichTextBlock("No content names found for the provided IDs.");
+                    return;
                 }
-                contentNames.Add(name);
-            };
-
-            // display a dialog box with the new names and confirm renaming
-            if (contentNames.Count == 0)
-            {
-                AppendToDetailsRichTextBlock("No content names found for the provided IDs.");
-                return;
-            }
 
 
-            if (selectedRenameMode == "Prefix")
-            {
                 string contentNamesList = string.Join("\n", contentNames);
                 ContentDialog renameDialog = new ContentDialog
                 {
@@ -376,6 +367,7 @@ namespace IntuneTools.Pages
                     XamlRoot = this.XamlRoot
                 };
                 var dialogResult = await renameDialog.ShowAsync();
+
                 if (dialogResult != ContentDialogResult.Primary)
                 {
                     AppendToDetailsRichTextBlock("Renaming operation cancelled.");
@@ -405,22 +397,6 @@ namespace IntuneTools.Pages
                 }
             }
 
-
-//            string contentNamesList = string.Join("\n", contentNames);
-//            ContentDialog renameDialog = new ContentDialog
-//            {
-//                Title = "Confirm Renaming",
-//                Content = $"The new policy names will look like this. Proceed?\n\n{contentNamesList}",
-//                PrimaryButtonText = "Rename",
-//                CloseButtonText = "Cancel",
-//                XamlRoot = this.XamlRoot
-//};
-//            var dialogResult = await renameDialog.ShowAsync();
-//            if (dialogResult != ContentDialogResult.Primary)
-//            {
-//                AppendToDetailsRichTextBlock("Renaming operation cancelled.");
-//                return;
-//            }
 
             try
             {
@@ -1467,18 +1443,28 @@ namespace IntuneTools.Pages
         private async void RenameButton_Click(object sender, RoutedEventArgs e)
         {   
             var itemsToRename = ContentList.ToList();
+
             if (itemsToRename == null || itemsToRename.Count == 0)
             {
                 AppendToDetailsRichTextBlock("No items in the grid to rename.");
                 return;
             }
+
             string newName = NewNameTextBox.Text.Trim();
+
             if (string.IsNullOrEmpty(newName))
             {
                 AppendToDetailsRichTextBlock("Please enter a new name.");
                 return;
             }
 
+            var prefixSymbol = GetSelectedPrefixOption();
+
+            if (prefixSymbol == null && selectedRenameMode == "Prefix")
+            {
+                AppendToDetailsRichTextBlock("Please select a prefix option.");
+                return;
+            }
 
             // get the option selected
 
@@ -1486,18 +1472,8 @@ namespace IntuneTools.Pages
 
             selectedRenameMode = renameMode.ToString();
 
-            if (renameMode == RenameMode.Prefix)
-            {
-                await RenameContent(itemsToRename.Select(i => i.ContentId).Where(id => !string.IsNullOrEmpty(id)).ToList(), newName);
-            }
-            else if (renameMode == RenameMode.Suffix)
-            {
-                // TODO
-            }
-            else if (renameMode == RenameMode.Description)
-            {
-                await RenameContent(itemsToRename.Select(i => i.ContentId).Where(id => !string.IsNullOrEmpty(id)).ToList(), newName);
-            }
+            await RenameContent(itemsToRename.Select(i => i.ContentId).Where(id => !string.IsNullOrEmpty(id)).ToList(), newName);
+
         }
 
         private RenameMode GetSelectedRenameMode()
