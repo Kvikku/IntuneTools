@@ -1424,6 +1424,8 @@ namespace IntuneTools.Pages
 
             var renameMode = GetSelectedRenameMode();
 
+            selectedRenameMode = renameMode.ToString();
+
             if (renameMode == RenameMode.Prefix)
             {
                 await RenameContent(itemsToRename.Select(i => i.ContentId).Where(id => !string.IsNullOrEmpty(id)).ToList(), newName, renameMode);

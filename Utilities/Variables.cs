@@ -53,6 +53,8 @@ namespace IntuneTools.Utilities
             Description = 2
         }
 
+        public static string selectedRenameMode = "Prefix"; // Default rename mode
+
         // Group variables
         public static bool IsGroupSelected = false;
         public static string SelectedGroupID = null;
