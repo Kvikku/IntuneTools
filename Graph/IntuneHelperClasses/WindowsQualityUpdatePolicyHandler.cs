@@ -338,23 +338,48 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     throw new InvalidOperationException("New name cannot be null or empty.");
                 }
 
-                // Look up the existing policy
-                var existingPolicy = await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].GetAsync();
-
-                if (existingPolicy == null)
+                if (selectedRenameMode == "Prefix")
                 {
-                    throw new InvalidOperationException($"Policy with ID '{policyID}' not found.");
+                    // Look up the existing policy
+                    var existingPolicy = await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].GetAsync();
+
+                    if (existingPolicy == null)
+                    {
+                        throw new InvalidOperationException($"Policy with ID '{policyID}' not found.");
+                    }
+
+                    var name = FindPreFixInPolicyName(existingPolicy.DisplayName ?? string.Empty, newName);
+
+                    var policy = new WindowsQualityUpdatePolicy
+                    {
+                        DisplayName = name,
+                    };
+
+                    await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].PatchAsync(policy);
+                    WriteToImportStatusFile($"Successfully renamed Windows Quality Update policy {policyID} to '{name}'");
                 }
-
-                var name = FindPreFixInPolicyName(existingPolicy.DisplayName, newName);
-
-                var policy = new WindowsQualityUpdatePolicy
+                else if (selectedRenameMode == "Suffix")
                 {
-                    DisplayName = name,
-                };
 
-                await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].PatchAsync(policy);
-                WriteToImportStatusFile($"Successfully renamed Windows Quality Update policy {policyID} to '{name}'");
+                }
+                else if (selectedRenameMode == "Description")
+                {
+                    // Look up the existing policy
+                    var existingPolicy = await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].GetAsync();
+
+                    if (existingPolicy == null)
+                    {
+                        throw new InvalidOperationException($"Policy with ID '{policyID}' not found.");
+                    }
+
+                    var policy = new WindowsQualityUpdatePolicy
+                    {
+                        Description = newName,
+                    };
+
+                    await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].PatchAsync(policy);
+                    WriteToImportStatusFile($"Updated description for Windows Quality Update policy {policyID} to '{newName}'");
+                }
             }
             catch (Exception ex)
             {
