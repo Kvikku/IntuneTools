@@ -262,15 +262,50 @@ namespace IntuneTools.Utilities
         public static string TranslatePolicyPlatformName(string platformName)
         {
             // This method translates the platform name to a user-friendly format
-            // Add more translations as needed
+
+            if (string.IsNullOrEmpty(platformName))
+            {
+                return platformName;
+            }
+
+            // Check for substrings to handle variations
+
+            if (platformName.Contains("Windows", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Windows";
+            }
+            if (platformName.Contains("macOS", StringComparison.OrdinalIgnoreCase))
+            {
+                return "macOS";
+            }
+            if (platformName.Contains("iOS", StringComparison.OrdinalIgnoreCase))
+            {
+                return "iOS";
+            }
+            if (platformName.Contains("Android", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Android";
+            }
+
+            // Fallback to exact matches if no substrings matched
             return platformName switch
             {
+                // Windows
                 "Windows10" => "Windows",
                 "#microsoft.graph.windows10CompliancePolicy" => "Windows",
+                
+                
+                // macOS
                 "MacOS" => "macOS",
                 "#microsoft.graph.macOSCompliancePolicy" => "macOS",
+
+
+                // iOS and iPadOS
                 "#microsoft.graph.iosCompliancePolicy" => "iOS",
                 "iOS" => "iOS",
+
+
+                // Android
                 "Android" => "Android",
                 "#microsoft.graph.androidWorkProfileCompliancePolicy" => "Android",
                 "#microsoft.graph.androidDeviceOwnerCompliancePolicy" => "Android",
