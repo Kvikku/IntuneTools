@@ -721,7 +721,7 @@ namespace IntuneTools.Pages
                 {
                     ContentName = policy.Name,
                     ContentType = "Settings Catalog",
-                    ContentPlatform = policy.Platforms?.ToString() ?? string.Empty,
+                    ContentPlatform = TranslatePolicyPlatformName(policy.Platforms.ToString()),
                     ContentId = policy.Id
                 });
             }
@@ -736,7 +736,7 @@ namespace IntuneTools.Pages
                 {
                     ContentName = policy.Name,
                     ContentType = "Settings Catalog",
-                    ContentPlatform = policy.Platforms?.ToString() ?? string.Empty,
+                    ContentPlatform = TranslatePolicyPlatformName(policy.Platforms.ToString()),
                     ContentId = policy.Id
                 });
             }
@@ -778,7 +778,7 @@ namespace IntuneTools.Pages
                 {
                     ContentName = policy.DisplayName,
                     ContentType = "Device Compliance Policy",
-                    ContentPlatform = policy.OdataType?.ToString() ?? string.Empty,
+                    ContentPlatform = TranslatePolicyPlatformName(policy.OdataType.ToString()),
                     ContentId = policy.Id
                 });
             }
@@ -793,7 +793,7 @@ namespace IntuneTools.Pages
                 {
                     ContentName = policy.DisplayName,
                     ContentType = "Device Compliance Policy",
-                    ContentPlatform = policy.OdataType?.ToString() ?? string.Empty,
+                    ContentPlatform = TranslatePolicyPlatformName(policy.OdataType.ToString()),
                     ContentId = policy.Id
                 });
             }
