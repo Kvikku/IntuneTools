@@ -327,23 +327,48 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     throw new InvalidOperationException("New name cannot be null or empty.");
                 }
 
-                // Look up the existing profile
-                var existingProfile = await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileID].GetAsync();
-
-                if (existingProfile == null)
+                if (selectedRenameMode == "Prefix")
                 {
-                    throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
+                    // Look up the existing profile
+                    var existingProfile = await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileID].GetAsync();
+
+                    if (existingProfile == null)
+                    {
+                        throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
+                    }
+
+                    var name = FindPreFixInPolicyName(existingProfile.DisplayName ?? string.Empty, newName);
+
+                    var profile = new WindowsQualityUpdateProfile
+                    {
+                        DisplayName = name,
+                    };
+
+                    await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileID].PatchAsync(profile);
+                    WriteToImportStatusFile($"Successfully renamed Windows Quality Update profile {profileID} to '{name}'");
                 }
-
-                var name = FindPreFixInPolicyName(existingProfile.DisplayName, newName);
-
-                var profile = new WindowsQualityUpdateProfile
+                else if (selectedRenameMode == "Suffix")
                 {
-                    DisplayName = name,
-                };
 
-                await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileID].PatchAsync(profile);
-                WriteToImportStatusFile($"Successfully renamed Windows Quality Update profile {profileID} to '{name}'");
+                }
+                else if (selectedRenameMode == "Description")
+                {
+                    // Look up the existing profile
+                    var existingProfile = await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileID].GetAsync();
+
+                    if (existingProfile == null)
+                    {
+                        throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
+                    }
+
+                    var profile = new WindowsQualityUpdateProfile
+                    {
+                        Description = newName,
+                    };
+
+                    await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileID].PatchAsync(profile);
+                    WriteToImportStatusFile($"Updated description for Windows Quality Update profile {profileID} to '{newName}'");
+                }
             }
             catch (Exception ex)
             {
