@@ -392,25 +392,61 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     throw new InvalidOperationException("New name cannot be null or empty.");
                 }
 
-                // Look up the existing profile
-                var existingProfile = await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileID].GetAsync();
-
-                if (existingProfile == null)
+                if (selectedRenameMode == "Prefix")
                 {
-                    throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
+                    // Look up the existing profile
+                    var existingProfile = await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileID].GetAsync();
+
+                    if (existingProfile == null)
+                    {
+                        throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
+                    }
+
+                    var name = FindPreFixInPolicyName(existingProfile.DisplayName ?? string.Empty, newName);
+
+                    // Create an instance of the specific profile type using reflection
+                    var profileType = existingProfile.GetType();
+                    var profile = (AppleUserInitiatedEnrollmentProfile?)Activator.CreateInstance(profileType);
+
+                    if (profile == null)
+                    {
+                        throw new InvalidOperationException($"Failed to create instance of type {profileType.Name}");
+                    }
+
+                    // Set the DisplayName on the new instance
+                    profile.DisplayName = name;
+
+                    await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileID].PatchAsync(profile);
+                    WriteToImportStatusFile($"Successfully renamed Apple BYOD Enrollment profile with ID {profileID} to '{name}'.");
                 }
+                else if (selectedRenameMode == "Suffix")
+                {
 
-                var name = FindPreFixInPolicyName(existingProfile.DisplayName, newName);
+                }
+                else if (selectedRenameMode == "Description")
+                {
+                    // Look up the existing profile
+                    var existingProfile = await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileID].GetAsync();
 
-                // Create an instance of the specific profile type using reflection
-                var profileType = existingProfile.GetType();
-                var profile = (AppleUserInitiatedEnrollmentProfile)Activator.CreateInstance(profileType);
+                    if (existingProfile == null)
+                    {
+                        throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
+                    }
 
-                // Set the DisplayName on the new instance
-                profile.DisplayName = name;
+                    // Create an instance of the specific profile type using reflection
+                    var profileType = existingProfile.GetType();
+                    var profile = (AppleUserInitiatedEnrollmentProfile?)Activator.CreateInstance(profileType);
 
-                await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileID].PatchAsync(profile);
-                WriteToImportStatusFile($"Successfully renamed Apple BYOD Enrollment profile with ID {profileID} to '{name}'.");
+                    if (profile == null)
+                    {
+                        throw new InvalidOperationException($"Failed to create instance of type {profileType.Name}");
+                    }
+
+                    profile.Description = newName;
+
+                    await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileID].PatchAsync(profile);
+                    WriteToImportStatusFile($"Updated description for Apple BYOD Enrollment profile {profileID} to '{newName}'.");
+                }
             }
             catch (Exception ex)
             {
