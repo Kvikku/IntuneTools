@@ -447,25 +447,61 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     throw new InvalidOperationException("New name cannot be null or empty.");
                 }
 
-                // Look up the existing policy to determine its specific type
-                var existingPolicy = await graphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyID].GetAsync();
-
-                if (existingPolicy == null)
+                if (selectedRenameMode == "Prefix")
                 {
-                    throw new InvalidOperationException($"Policy with ID '{policyID}' not found.");
+                    // Look up the existing policy to determine its specific type
+                    var existingPolicy = await graphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyID].GetAsync();
+
+                    if (existingPolicy == null)
+                    {
+                        throw new InvalidOperationException($"Policy with ID '{policyID}' not found.");
+                    }
+
+                    var name = FindPreFixInPolicyName(existingPolicy.DisplayName ?? string.Empty, newName);
+
+                    // Create an instance of the specific policy type using reflection
+                    var policyType = existingPolicy.GetType();
+                    var policy = (DeviceCompliancePolicy?)Activator.CreateInstance(policyType);
+
+                    if (policy == null)
+                    {
+                        throw new InvalidOperationException($"Failed to create instance of type {policyType.Name}");
+                    }
+
+                    // Set the DisplayName on the new instance
+                    policy.DisplayName = name;
+
+                    await graphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyID].PatchAsync(policy);
+                    LogToImportStatusFile($"Successfully renamed device compliance policy to '{name}'", Utilities.Variables.LogLevels.Info);
                 }
+                else if (selectedRenameMode == "Suffix")
+                {
 
-                var name = FindPreFixInPolicyName(existingPolicy.DisplayName, newName);
+                }
+                else if (selectedRenameMode == "Description")
+                {
+                    // Look up the existing policy to determine its specific type
+                    var existingPolicy = await graphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyID].GetAsync();
 
-                // Create an instance of the specific policy type using reflection
-                var policyType = existingPolicy.GetType();
-                var policy = (DeviceCompliancePolicy)Activator.CreateInstance(policyType);
-                
-                // Set the DisplayName on the new instance
-                policy.DisplayName = name;
+                    if (existingPolicy == null)
+                    {
+                        throw new InvalidOperationException($"Policy with ID '{policyID}' not found.");
+                    }
 
-                await graphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyID].PatchAsync(policy);
-                LogToImportStatusFile($"Successfully renamed device compliance policy to '{name}'", Utilities.Variables.LogLevels.Info);
+                    // Create an instance of the specific policy type using reflection
+                    var policyType = existingPolicy.GetType();
+                    var policy = (DeviceCompliancePolicy?)Activator.CreateInstance(policyType);
+
+                    if (policy == null)
+                    {
+                        throw new InvalidOperationException($"Failed to create instance of type {policyType.Name}");
+                    }
+
+                    policy.Description = newName;
+
+                    await graphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyID].PatchAsync(policy);
+                    LogToImportStatusFile($"Updated description for {policyID} to {newName}");
+                }
             }
             catch (Exception ex)
             {
