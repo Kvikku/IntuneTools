@@ -1,6 +1,7 @@
 using CommunityToolkit.WinUI.UI.Controls;
 using IntuneTools.Utilities;
 using Microsoft.Graph.Beta;
+using Microsoft.Graph.Beta.Models.Networkaccess;
 using Microsoft.Graph.Beta.Models.Security;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -837,7 +838,7 @@ namespace IntuneTools.Pages
                 {
                     ContentName = policy.DisplayName,
                     ContentType = "Device Configuration Policy",
-                    ContentPlatform = policy.OdataType?.ToString() ?? string.Empty,
+                    ContentPlatform = TranslatePolicyPlatformName(policy.OdataType.ToString()),
                     ContentId = policy.Id
                 });
             }
@@ -852,7 +853,7 @@ namespace IntuneTools.Pages
                 {
                     ContentName = policy.DisplayName,
                     ContentType = "Device Configuration Policy",
-                    ContentPlatform = policy.OdataType?.ToString() ?? string.Empty,
+                    ContentPlatform = TranslatePolicyPlatformName(policy.OdataType.ToString()),
                     ContentId = policy.Id
                 });
             }
@@ -896,7 +897,7 @@ namespace IntuneTools.Pages
                 {
                     ContentName = profile.DisplayName,
                     ContentType = "Apple BYOD Enrollment Profile",
-                    ContentPlatform = "iOS/iPadOS",
+                    ContentPlatform = TranslatePolicyPlatformName(profile.Platform.ToString()),
                     ContentId = profile.Id
                 });
             }
@@ -911,7 +912,7 @@ namespace IntuneTools.Pages
                 {
                     ContentName = profile.DisplayName,
                     ContentType = "Apple BYOD Enrollment Profile",
-                    ContentPlatform = "iOS/iPadOS",
+                    ContentPlatform = TranslatePolicyPlatformName(profile.Platform.ToString()),
                     ContentId = profile.Id
                 });
             }
@@ -939,7 +940,7 @@ namespace IntuneTools.Pages
                 {
                     ContentName = filter.DisplayName,
                     ContentType = "Assignment Filter",
-                    ContentPlatform = filter.OdataType?.ToString() ?? string.Empty,
+                    ContentPlatform = TranslatePolicyPlatformName(filter.Platform.ToString()),
                     ContentId = filter.Id
                 });
             }
@@ -954,7 +955,7 @@ namespace IntuneTools.Pages
                 {
                     ContentName = filter.DisplayName,
                     ContentType = "Assignment Filter",
-                    ContentPlatform = filter.OdataType?.ToString() ?? string.Empty,
+                    ContentPlatform = TranslatePolicyPlatformName(filter.Platform.ToString()),
                     ContentId = filter.Id
                 });
             }
@@ -982,7 +983,7 @@ namespace IntuneTools.Pages
                 {
                     ContentName = group.DisplayName,
                     ContentType = "Entra Group",
-                    ContentPlatform = "Entra ID",
+                    ContentPlatform = "Entra group",
                     ContentId = group.Id
                 });
             }
@@ -997,7 +998,7 @@ namespace IntuneTools.Pages
                 {
                     ContentName = group.DisplayName,
                     ContentType = "Entra Group",
-                    ContentPlatform = "Entra ID",
+                    ContentPlatform = "Entra group",
                     ContentId = group.Id
                 });
             }
