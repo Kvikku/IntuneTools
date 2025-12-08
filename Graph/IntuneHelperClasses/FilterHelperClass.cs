@@ -224,23 +224,48 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     throw new InvalidOperationException("New name cannot be null or empty.");
                 }
 
-                // Look up the existing filter
-                var existingFilter = await graphServiceClient.DeviceManagement.AssignmentFilters[filterID].GetAsync();
-
-                if (existingFilter == null)
+                if (selectedRenameMode == "Prefix")
                 {
-                    throw new InvalidOperationException($"Filter with ID '{filterID}' not found.");
+                    // Look up the existing filter
+                    var existingFilter = await graphServiceClient.DeviceManagement.AssignmentFilters[filterID].GetAsync();
+
+                    if (existingFilter == null)
+                    {
+                        throw new InvalidOperationException($"Filter with ID '{filterID}' not found.");
+                    }
+
+                    var name = FindPreFixInPolicyName(existingFilter.DisplayName ?? string.Empty, newName);
+
+                    var filter = new DeviceAndAppManagementAssignmentFilter
+                    {
+                        DisplayName = name,
+                    };
+
+                    await graphServiceClient.DeviceManagement.AssignmentFilters[filterID].PatchAsync(filter);
+                    WriteToImportStatusFile($"Successfully renamed filter with ID '{filterID}' to '{name}'.", LogType.Info);
                 }
-
-                var name = FindPreFixInPolicyName(existingFilter.DisplayName, newName);
-
-                var filter = new DeviceAndAppManagementAssignmentFilter
+                else if (selectedRenameMode == "Suffix")
                 {
-                    DisplayName = name,
-                };
 
-                await graphServiceClient.DeviceManagement.AssignmentFilters[filterID].PatchAsync(filter);
-                WriteToImportStatusFile($"Successfully renamed filter with ID '{filterID}' to '{name}'.", LogType.Info);
+                }
+                else if (selectedRenameMode == "Description")
+                {
+                    // Look up the existing filter
+                    var existingFilter = await graphServiceClient.DeviceManagement.AssignmentFilters[filterID].GetAsync();
+
+                    if (existingFilter == null)
+                    {
+                        throw new InvalidOperationException($"Filter with ID '{filterID}' not found.");
+                    }
+
+                    var filter = new DeviceAndAppManagementAssignmentFilter
+                    {
+                        Description = newName,
+                    };
+
+                    await graphServiceClient.DeviceManagement.AssignmentFilters[filterID].PatchAsync(filter);
+                    WriteToImportStatusFile($"Updated description for filter {filterID} to '{newName}'.", LogType.Info);
+                }
             }
             catch (Exception ex)
             {
