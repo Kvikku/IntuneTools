@@ -47,7 +47,7 @@
                     <AppBarButton x:Name="ClearAllButton" Icon="Clear" Label="Clear All" Click="ClearAllButton_Click" ToolTipService.ToolTip="Clear all items from staging area."/>
                     <AppBarSeparator/>
                     <ComboBox x:Name="RenameModeComboBox"
-                              Width="150"
+                              Width="120"
                               VerticalAlignment="Bottom"
                               SelectedIndex="0"
                               ToolTipService.ToolTip="Choose the rename mode.">
@@ -56,7 +56,7 @@
                         <ComboBoxItem Content="Description"/>
                     </ComboBox>
                     <TextBox x:Name="NewNameTextBox"
-                             PlaceholderText="Enter new Prefix"
+                             PlaceholderText="Enter text"
                              Width="200"
                              VerticalAlignment="Bottom"/>
                     <AppBarButton x:Name="PrefixButton" Icon="ViewAll" Label="Prefix">
@@ -74,14 +74,14 @@
                     <AppBarSeparator/>
                     <Button x:Name="RenameButton"
                             Click="RenameButton_Click"
-                            ToolTipService.ToolTip="Rename all staged items with the specified prefix."
+                            ToolTipService.ToolTip="Update all staged items."
                             Style="{StaticResource AccentButtonStyle}"
                             Height="36"
                             Padding="16,0"
                             VerticalAlignment="Bottom">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <FontIcon Glyph="&#xE8AC;" FontSize="16"/>
-                            <TextBlock Text="Rename" VerticalAlignment="Center"/>
+                            <TextBlock Text="Update" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                 </StackPanel>
@@ -112,7 +112,7 @@
                          IsOpen="True"
                          Severity="Informational"
                          Title="Staging Area"
-                         Message="This grid acts as a staging area. All items listed below will be renamed with the specified prefix. Use the 'Clear' buttons to exclude items you do not wish to rename."
+                         Message="This grid acts as a staging area. All items listed below will be updated. Use the 'Clear' buttons to exclude items you do not wish to update."
                          IsClosable="True"
                          Margin="0,0,12,12"/>
                 
