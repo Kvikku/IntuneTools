@@ -50,7 +50,8 @@
                               Width="120"
                               VerticalAlignment="Bottom"
                               SelectedIndex="0"
-                              ToolTipService.ToolTip="Choose the rename mode.">
+                              ToolTipService.ToolTip="Choose the rename mode."
+                              SelectionChanged="RenameModeComboBox_SelectionChanged">
                         <ComboBoxItem Content="Prefix"/>
                         <!--<ComboBoxItem Content="Suffix"/>-->
                         <ComboBoxItem Content="Description"/>

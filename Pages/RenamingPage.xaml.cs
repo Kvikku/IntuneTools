@@ -1506,6 +1506,24 @@ namespace IntuneTools.Pages
             LogScrollViewer.ChangeView(null, LogScrollViewer.ScrollableHeight, null, true);
         }
 
+        private void RenameModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var selectionMode = GetSelectedRenameMode();
+
+            if (PrefixButton is null) return;
+
+            PrefixButton.IsEnabled = selectionMode != RenameMode.Description;
+
+
+            if (selectionMode == RenameMode.Description)
+            {
+                PrefixButton.IsEnabled = false;
+            }
+            else
+            {
+                PrefixButton.IsEnabled = true;
+            }
+        }
     }
 
 }
