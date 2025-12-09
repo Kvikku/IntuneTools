@@ -823,8 +823,12 @@ namespace IntuneTools.Pages
             {
                 try
                 {
+                    var policyName = await sourceGraphServiceClient.DeviceManagement.ConfigurationPolicies[id].GetAsync((requestConfiguration) =>
+                    {
+                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
+                    });
                     await RenameDeviceCompliancePolicy(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Renamed Device Compliance Policy with ID {id} with prefix '{prefix}'.");
+                    AppendToDetailsRichTextBlock($"Updated Device Compliance Policy '{policyName.Name}' with '{prefix}'.");
                 }
                 catch (Exception ex)
                 {
