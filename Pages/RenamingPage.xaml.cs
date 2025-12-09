@@ -542,8 +542,12 @@ namespace IntuneTools.Pages
             {
                 try
                 {
+                    var profile = await sourceGraphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[id].GetAsync((requestConfiguration) =>
+                    {
+                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
+                    });
                     await RenameAppleBYODEnrollmentProfile(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Renamed Apple BYOD Enrollment Profile with ID {id} with prefix '{prefix}'.");
+                    AppendToDetailsRichTextBlock($"Updated Apple BYOD Enrollment Profile '{profile.DisplayName}' with '{prefix}'.");
                 }
                 catch (Exception ex)
                 {
@@ -558,8 +562,12 @@ namespace IntuneTools.Pages
             {
                 try
                 {
+                    var script = await sourceGraphServiceClient.DeviceManagement.DeviceShellScripts[id].GetAsync((requestConfiguration) =>
+                    {
+                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
+                    });
                     await RenameMacOSShellScript(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Renamed MacOS Shell Script with ID {id} with prefix '{prefix}'.");
+                    AppendToDetailsRichTextBlock($"Updated MacOS Shell Script '{script.DisplayName}' with '{prefix}'.");
                 }
                 catch (Exception ex)
                 {
@@ -823,12 +831,12 @@ namespace IntuneTools.Pages
             {
                 try
                 {
-                    var policyName = await sourceGraphServiceClient.DeviceManagement.ConfigurationPolicies[id].GetAsync((requestConfiguration) =>
+                    var policyName = await sourceGraphServiceClient.DeviceManagement.DeviceCompliancePolicies[id].GetAsync((requestConfiguration) =>
                     {
                         requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
                     });
                     await RenameDeviceCompliancePolicy(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Updated Device Compliance Policy '{policyName.Name}' with '{prefix}'.");
+                    AppendToDetailsRichTextBlock($"Updated Device Compliance Policy '{policyName.DisplayName}' with '{prefix}'.");
                 }
                 catch (Exception ex)
                 {
@@ -886,8 +894,12 @@ namespace IntuneTools.Pages
             {
                 try
                 {
+                    var policy = await sourceGraphServiceClient.DeviceManagement.DeviceConfigurations[id].GetAsync((requestConfiguration) =>
+                    {
+                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
+                    });
                     await RenameDeviceConfigurationPolicy(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Renamed Device Configuration Policy with ID {id} with prefix '{prefix}'.");
+                    AppendToDetailsRichTextBlock($"Renamed Device Configuration Policy '{policy.DisplayName}' with '{prefix}'.");
                 }
                 catch (Exception ex)
                 {
