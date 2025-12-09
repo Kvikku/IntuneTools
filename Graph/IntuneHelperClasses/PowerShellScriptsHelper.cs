@@ -310,23 +310,48 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     throw new InvalidOperationException("New name cannot be null or empty.");
                 }
 
-                // Look up the existing script
-                var existingScript = await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].GetAsync();
-
-                if (existingScript == null)
+                if (selectedRenameMode == "Prefix")
                 {
-                    throw new InvalidOperationException($"Script with ID '{scriptID}' not found.");
+                    // Look up the existing script
+                    var existingScript = await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].GetAsync();
+
+                    if (existingScript == null)
+                    {
+                        throw new InvalidOperationException($"Script with ID '{scriptID}' not found.");
+                    }
+
+                    var name = FindPreFixInPolicyName(existingScript.DisplayName ?? string.Empty, newName);
+
+                    var script = new DeviceManagementScript
+                    {
+                        DisplayName = name,
+                    };
+
+                    await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].PatchAsync(script);
+                    WriteToImportStatusFile($"Renamed Powershell script {scriptID} to {name}");
                 }
-
-                var name = FindPreFixInPolicyName(existingScript.DisplayName, newName);
-
-                var script = new DeviceManagementScript
+                else if (selectedRenameMode == "Suffix")
                 {
-                    DisplayName = name,
-                };
 
-                await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].PatchAsync(script);
-                WriteToImportStatusFile($"Renamed Powershell script {scriptID} to {name}");
+                }
+                else if (selectedRenameMode == "Description")
+                {
+                    // Look up the existing script
+                    var existingScript = await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].GetAsync();
+
+                    if (existingScript == null)
+                    {
+                        throw new InvalidOperationException($"Script with ID '{scriptID}' not found.");
+                    }
+
+                    var script = new DeviceManagementScript
+                    {
+                        Description = newName,
+                    };
+
+                    await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].PatchAsync(script);
+                    WriteToImportStatusFile($"Updated description for Powershell script {scriptID} to {newName}");
+                }
             }
             catch (Exception ex)
             {

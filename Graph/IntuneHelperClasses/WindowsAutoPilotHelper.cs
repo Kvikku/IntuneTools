@@ -441,23 +441,48 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     throw new InvalidOperationException("New name cannot be null or empty.");
                 }
 
-                // Look up the existing profile
-                var existingProfile = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].GetAsync();
-
-                if (existingProfile == null)
+                if (selectedRenameMode == "Prefix")
                 {
-                    throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
+                    // Look up the existing profile
+                    var existingProfile = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].GetAsync();
+
+                    if (existingProfile == null)
+                    {
+                        throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
+                    }
+
+                    var name = FindPreFixInPolicyName(existingProfile.DisplayName ?? string.Empty, newName);
+
+                    var profile = new WindowsAutopilotDeploymentProfile
+                    {
+                        DisplayName = name,
+                    };
+
+                    await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].PatchAsync(profile);
+                    WriteToImportStatusFile($"Renamed Windows Autopilot profile '{existingProfile.DisplayName}' to '{name}'", LogType.Info);
                 }
-
-                var name = FindPreFixInPolicyName(existingProfile.DisplayName, newName);
-
-                var profile = new WindowsAutopilotDeploymentProfile
+                else if (selectedRenameMode == "Suffix")
                 {
-                    DisplayName = name,
-                };
 
-                await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].PatchAsync(profile);
-                WriteToImportStatusFile($"Renamed Windows Autopilot profile '{existingProfile.DisplayName}' to '{name}'", LogType.Info);
+                }
+                else if (selectedRenameMode == "Description")
+                {
+                    // Look up the existing profile
+                    var existingProfile = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].GetAsync();
+
+                    if (existingProfile == null)
+                    {
+                        throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
+                    }
+
+                    var profile = new WindowsAutopilotDeploymentProfile
+                    {
+                        Description = newName,
+                    };
+
+                    await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].PatchAsync(profile);
+                    WriteToImportStatusFile($"Updated description for Windows Autopilot profile {profileID} to '{newName}'", LogType.Info);
+                }
             }
             catch (Exception ex)
             {
