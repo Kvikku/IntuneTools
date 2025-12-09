@@ -1,6 +1,7 @@
 using CommunityToolkit.WinUI.UI.Controls;
 using IntuneTools.Utilities;
 using Microsoft.Graph.Beta;
+using Microsoft.Graph.Beta.Models.Networkaccess;
 using Microsoft.Graph.Beta.Models.Security;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -53,17 +54,12 @@ namespace IntuneTools.Pages
             public string? ContentPlatform { get; set; }
             public string? ContentType { get; set; }
             public string? ContentId { get; set; }
+            public string? ContentDescription { get; set; }
         }
 
         public ObservableCollection<ContentInfo> ContentList { get; set; } = new ObservableCollection<ContentInfo>();
 
-        // Use an enum for clarity and keep integer mapping stable with ComboBox order.
-        public enum RenameMode
-        {
-            Prefix = 0,
-            Suffix = 1,
-            Description = 2
-        }
+        
 
         public RenamingPage()
         {
@@ -234,6 +230,8 @@ namespace IntuneTools.Pages
                 paragraph.Inlines.Add(new LineBreak());
             }
             paragraph.Inlines.Add(new Run { Text = text });
+
+            ScrollLogToEnd();
         }
         private async Task ListAllOrchestrator(GraphServiceClient graphServiceClient)
         {
@@ -244,20 +242,20 @@ namespace IntuneTools.Pages
                 // Clear the ContentList before loading new data
                 ContentList.Clear();
 
-                await LoadAllDeviceCompliancePoliciesAsync();
                 await LoadAllSettingsCatalogPoliciesAsync();
+                await LoadAllDeviceCompliancePoliciesAsync();
                 await LoadAllDeviceConfigurationPoliciesAsync();
-                await LoadAllAppleBYODEnrollmentProfilesAsync();
-                await LoadAllAssignmentFiltersAsync();
-                await LoadAllEntraGroupsAsync();
-                await LoadAllPowerShellScriptsAsync();
-                await LoadAllProactiveRemediationsAsync();
-                await LoadAllMacOSShellScriptsAsync();
                 await LoadAllWindowsAutoPilotProfilesAsync();
                 await LoadAllWindowsDriverUpdatesAsync();
                 await LoadAllWindowsFeatureUpdatesAsync();
                 await LoadAllWindowsQualityUpdatePoliciesAsync();
                 await LoadAllWindowsQualityUpdateProfilesAsync();
+                await LoadAllPowerShellScriptsAsync();
+                await LoadAllProactiveRemediationsAsync();
+                await LoadAllMacOSShellScriptsAsync();
+                await LoadAllAppleBYODEnrollmentProfilesAsync();
+                await LoadAllAssignmentFiltersAsync();
+                await LoadAllEntraGroupsAsync();
 
                 // Bind the combined list to the grid once
                 RenamingDataGrid.ItemsSource = ContentList;
@@ -312,6 +310,9 @@ namespace IntuneTools.Pages
         }
         private async Task RenameContent(List<string> contentIDs, string newName)
         {
+
+            string prefix = string.Empty;
+
             if (contentIDs == null || contentIDs.Count == 0)
             {
                 AppendToDetailsRichTextBlock("No content IDs provided for renaming.");
@@ -324,49 +325,82 @@ namespace IntuneTools.Pages
             }
 
             var prefixSymbol = GetSelectedPrefixOption();
-            if (prefixSymbol == null)
+
+            if (prefixSymbol == null && selectedRenameMode == "Prefix")
             {
                 AppendToDetailsRichTextBlock("Please select a prefix option.");
                 return;
             }
 
-            string prefix = $"{prefixSymbol[0]}{newName}{prefixSymbol[1]}";
 
-            // Find the corresponding names for the content ID
-
-            List<string> contentNames = new List<string>();
-            foreach (var id in contentIDs)
+            if (selectedRenameMode == "Prefix")
             {
-                var name = string.Empty;
-                var content = ContentList.FirstOrDefault(c => c.ContentId == id);
-                if (content != null)
+
+                prefix = $"{prefixSymbol[0]}{newName}{prefixSymbol[1]}";
+
+                // Find the corresponding names for the content ID
+
+                List<string> contentNames = new List<string>();
+                foreach (var id in contentIDs)
                 {
-                    name = FindPreFixInPolicyName(content.ContentName,prefix);
+                    var name = string.Empty;
+                    var content = ContentList.FirstOrDefault(c => c.ContentId == id);
+                    if (content != null)
+                    {
+                        name = FindPreFixInPolicyName(content.ContentName, prefix);
+                    }
+                    contentNames.Add(name);
                 }
-                contentNames.Add(name);
-            };
+            
 
-            // display a dialog box with the new names and confirm renaming
-            if (contentNames.Count == 0)
-            {
-                AppendToDetailsRichTextBlock("No content names found for the provided IDs.");
-                return;
+                // display a dialog box with the new names and confirm renaming
+                if (contentNames.Count == 0)
+                {
+                    AppendToDetailsRichTextBlock("No content names found for the provided IDs.");
+                    return;
+                }
+
+
+                string contentNamesList = string.Join("\n", contentNames);
+                ContentDialog renameDialog = new ContentDialog
+                {
+                    Title = "Confirm Renaming",
+                    Content = $"The new policy names will look like this. Proceed?\n\n{contentNamesList}",
+                    PrimaryButtonText = "Rename",
+                    CloseButtonText = "Cancel",
+                    XamlRoot = this.XamlRoot
+                };
+                var dialogResult = await renameDialog.ShowAsync();
+
+                if (dialogResult != ContentDialogResult.Primary)
+                {
+                    AppendToDetailsRichTextBlock("Renaming operation cancelled.");
+                    return;
+                }
             }
-            string contentNamesList = string.Join("\n", contentNames);
-            ContentDialog renameDialog = new ContentDialog
+            else if (selectedRenameMode == "Suffix")
             {
-                Title = "Confirm Renaming",
-                Content = $"The new policy names will look like this. Proceed?\n\n{contentNamesList}",
-                PrimaryButtonText = "Rename",
-                CloseButtonText = "Cancel",
-                XamlRoot = this.XamlRoot
-};
-            var dialogResult = await renameDialog.ShowAsync();
-            if (dialogResult != ContentDialogResult.Primary)
-            {
-                AppendToDetailsRichTextBlock("Renaming operation cancelled.");
-                return;
+
             }
+            else if (selectedRenameMode == "Description")
+            {
+                prefix = newName; // For description, we just use the newName as the description text
+                ContentDialog renameDialog = new ContentDialog
+                {
+                    Title = "Confirm updating description",
+                    Content = $"The new policy descriptions will look like this. Proceed?\n\n{prefix}",
+                    PrimaryButtonText = "Update",
+                    CloseButtonText = "Cancel",
+                    XamlRoot = this.XamlRoot
+                };
+                var dialogResult = await renameDialog.ShowAsync();
+                if (dialogResult != ContentDialogResult.Primary)
+                {
+                    AppendToDetailsRichTextBlock("Renaming operation cancelled.");
+                    return;
+                }
+            }
+
 
             try
             {
@@ -509,8 +543,12 @@ namespace IntuneTools.Pages
             {
                 try
                 {
+                    var profile = await sourceGraphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[id].GetAsync((requestConfiguration) =>
+                    {
+                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
+                    });
                     await RenameAppleBYODEnrollmentProfile(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Renamed Apple BYOD Enrollment Profile with ID {id} with prefix '{prefix}'.");
+                    AppendToDetailsRichTextBlock($"Updated Apple BYOD Enrollment Profile '{profile.DisplayName}' with '{prefix}'.");
                 }
                 catch (Exception ex)
                 {
@@ -525,8 +563,12 @@ namespace IntuneTools.Pages
             {
                 try
                 {
+                    var script = await sourceGraphServiceClient.DeviceManagement.DeviceShellScripts[id].GetAsync((requestConfiguration) =>
+                    {
+                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
+                    });
                     await RenameMacOSShellScript(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Renamed MacOS Shell Script with ID {id} with prefix '{prefix}'.");
+                    AppendToDetailsRichTextBlock($"Updated MacOS Shell Script '{script.DisplayName}' with '{prefix}'.");
                 }
                 catch (Exception ex)
                 {
@@ -541,8 +583,12 @@ namespace IntuneTools.Pages
             {
                 try
                 {
+                    var script = await sourceGraphServiceClient.DeviceManagement.DeviceManagementScripts[id].GetAsync((requestConfiguration) =>
+                    {
+                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
+                    });
                     await RenamePowerShellScript(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Renamed PowerShell Script with ID {id} with prefix '{prefix}'.");
+                    AppendToDetailsRichTextBlock($"Updated PowerShell Script '{script.DisplayName}' with '{prefix}'.");
                 }
                 catch (Exception ex)
                 {
@@ -557,8 +603,12 @@ namespace IntuneTools.Pages
             {
                 try
                 {
+                    var remediation = await sourceGraphServiceClient.DeviceManagement.DeviceHealthScripts[id].GetAsync((requestConfiguration) =>
+                    {
+                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
+                    });
                     await RenameProactiveRemediation(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Renamed Proactive Remediation with ID {id} with prefix '{prefix}'.");
+                    AppendToDetailsRichTextBlock($"Updated Proactive Remediation '{remediation.DisplayName}' with '{prefix}'.");
                 }
                 catch (Exception ex)
                 {
@@ -573,8 +623,12 @@ namespace IntuneTools.Pages
             {
                 try
                 {
+                    var profile = await sourceGraphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[id].GetAsync((requestConfiguration) =>
+                    {
+                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
+                    });
                     await RenameWindowsAutoPilotProfile(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Renamed Windows AutoPilot Profile with ID {id} with prefix '{prefix}'.");
+                    AppendToDetailsRichTextBlock($"Updated Windows AutoPilot Profile '{profile.DisplayName}' with '{prefix}'.");
                 }
                 catch (Exception ex)
                 {
@@ -589,8 +643,12 @@ namespace IntuneTools.Pages
             {
                 try
                 {
+                    var update = await sourceGraphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[id].GetAsync((requestConfiguration) =>
+                    {
+                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
+                    });
                     await RenameDriverProfile(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Renamed Windows Driver Update with ID {id} with prefix '{prefix}'.");
+                    AppendToDetailsRichTextBlock($"Updated Windows Driver Update '{update.DisplayName}' with '{prefix}'.");
                 }
                 catch (Exception ex)
                 {
@@ -605,8 +663,12 @@ namespace IntuneTools.Pages
             {
                 try
                 {
+                    var update = await sourceGraphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[id].GetAsync((requestConfiguration) =>
+                    {
+                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
+                    });
                     await RenameWindowsFeatureUpdateProfile(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Renamed Windows Feature Update with ID {id} with prefix '{prefix}'.");
+                    AppendToDetailsRichTextBlock($"Updated Windows Feature Update '{update.DisplayName}' with '{prefix}'.");
                 }
                 catch (Exception ex)
                 {
@@ -621,8 +683,12 @@ namespace IntuneTools.Pages
             {
                 try
                 {
+                    var policy = await sourceGraphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[id].GetAsync((requestConfiguration) =>
+                    {
+                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
+                    });
                     await RenameWindowsQualityUpdatePolicy(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Renamed Windows Quality Update Policy with ID {id} with prefix '{prefix}'.");
+                    AppendToDetailsRichTextBlock($"Updated Windows Quality Update Policy '{policy.DisplayName}' with '{prefix}'.");
                 }
                 catch (Exception ex)
                 {
@@ -637,8 +703,12 @@ namespace IntuneTools.Pages
             {
                 try
                 {
+                    var profile = await sourceGraphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[id].GetAsync((requestConfiguration) =>
+                    {
+                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
+                    });
                     await RenameWindowsQualityUpdateProfile(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Renamed Windows Quality Update Profile with ID {id} with prefix '{prefix}'.");
+                    AppendToDetailsRichTextBlock($"Updated Windows Quality Update Profile '{profile.DisplayName}' with '{prefix}'.");
                 }
                 catch (Exception ex)
                 {
@@ -653,8 +723,12 @@ namespace IntuneTools.Pages
             {
                 try
                 {
+                    var filter = await sourceGraphServiceClient.DeviceManagement.AssignmentFilters[id].GetAsync((requestConfiguration) =>
+                    {
+                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
+                    });
                     await RenameAssignmentFilter(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Renamed Assignment Filter with ID {id} with prefix '{prefix}'.");
+                    AppendToDetailsRichTextBlock($"Updated Assignment Filter '{filter.DisplayName}' with '{prefix}'.");
                 }
                 catch (Exception ex)
                 {
@@ -669,8 +743,12 @@ namespace IntuneTools.Pages
             {
                 try
                 {
+                    var group = await sourceGraphServiceClient.Groups[id].GetAsync((requestConfiguration) =>
+                    {
+                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
+                    }); 
                     await RenameGroup(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Renamed Entra Group with ID {id} with prefix '{prefix}'.");
+                    AppendToDetailsRichTextBlock($"Updated Entra Group '{group.DisplayName}' with '{prefix}'.");
                 }
                 catch (Exception ex)
                 {
@@ -691,8 +769,9 @@ namespace IntuneTools.Pages
                 {
                     ContentName = policy.Name,
                     ContentType = "Settings Catalog",
-                    ContentPlatform = policy.Platforms?.ToString() ?? string.Empty,
-                    ContentId = policy.Id
+                    ContentPlatform = TranslatePolicyPlatformName(policy.Platforms.ToString()),
+                    ContentId = policy.Id,
+                    ContentDescription = policy.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Loaded {policies.Count()} settings catalog policies.");
@@ -706,8 +785,9 @@ namespace IntuneTools.Pages
                 {
                     ContentName = policy.Name,
                     ContentType = "Settings Catalog",
-                    ContentPlatform = policy.Platforms?.ToString() ?? string.Empty,
-                    ContentId = policy.Id
+                    ContentPlatform = TranslatePolicyPlatformName(policy.Platforms.ToString()),
+                    ContentId = policy.Id,
+                    ContentDescription = policy.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Found {policies.Count()} settings catalog policies matching '{searchQuery}'.");
@@ -727,12 +807,18 @@ namespace IntuneTools.Pages
             {
                 try
                 {
+                    var policy = await sourceGraphServiceClient.DeviceManagement.ConfigurationPolicies[id].GetAsync((requestConfiguration) =>
+                    {
+                        requestConfiguration.QueryParameters.Select = new string[] { "name" };
+                    });
+
                     await RenameSettingsCatalogPolicy(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Renamed Settings Catalog with ID {id} with prefix '{prefix}'.");
+                    
+                    AppendToDetailsRichTextBlock($"Updated Settings Catalog '{policy.Name}' with '{prefix}'.");
                 }
                 catch (Exception ex)
                 {
-                    AppendToDetailsRichTextBlock($"Error renaming Settings Catalog with ID {id}: {ex.Message}");
+                    AppendToDetailsRichTextBlock($"Error updating Settings Catalog with ID {id}: {ex.Message}");
                 }
             }
         }
@@ -748,8 +834,9 @@ namespace IntuneTools.Pages
                 {
                     ContentName = policy.DisplayName,
                     ContentType = "Device Compliance Policy",
-                    ContentPlatform = policy.OdataType?.ToString() ?? string.Empty,
-                    ContentId = policy.Id
+                    ContentPlatform = TranslatePolicyPlatformName(policy.OdataType.ToString()),
+                    ContentId = policy.Id,
+                    ContentDescription = policy.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Loaded {policies.Count()} device compliance policies.");
@@ -763,8 +850,9 @@ namespace IntuneTools.Pages
                 {
                     ContentName = policy.DisplayName,
                     ContentType = "Device Compliance Policy",
-                    ContentPlatform = policy.OdataType?.ToString() ?? string.Empty,
-                    ContentId = policy.Id
+                    ContentPlatform = TranslatePolicyPlatformName(policy.OdataType.ToString()),
+                    ContentId = policy.Id,
+                    ContentDescription = policy.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Found {policies.Count()} device compliance policies matching '{searchQuery}'.");
@@ -784,8 +872,12 @@ namespace IntuneTools.Pages
             {
                 try
                 {
+                    var policyName = await sourceGraphServiceClient.DeviceManagement.DeviceCompliancePolicies[id].GetAsync((requestConfiguration) =>
+                    {
+                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
+                    });
                     await RenameDeviceCompliancePolicy(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Renamed Device Compliance Policy with ID {id} with prefix '{prefix}'.");
+                    AppendToDetailsRichTextBlock($"Updated Device Compliance Policy '{policyName.DisplayName}' with '{prefix}'.");
                 }
                 catch (Exception ex)
                 {
@@ -807,8 +899,9 @@ namespace IntuneTools.Pages
                 {
                     ContentName = policy.DisplayName,
                     ContentType = "Device Configuration Policy",
-                    ContentPlatform = policy.OdataType?.ToString() ?? string.Empty,
-                    ContentId = policy.Id
+                    ContentPlatform = TranslatePolicyPlatformName(policy.OdataType.ToString()),
+                    ContentId = policy.Id,
+                    ContentDescription = policy.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Loaded {policies.Count()} device configuration policies.");
@@ -822,8 +915,9 @@ namespace IntuneTools.Pages
                 {
                     ContentName = policy.DisplayName,
                     ContentType = "Device Configuration Policy",
-                    ContentPlatform = policy.OdataType?.ToString() ?? string.Empty,
-                    ContentId = policy.Id
+                    ContentPlatform = TranslatePolicyPlatformName(policy.OdataType.ToString()),
+                    ContentId = policy.Id,
+                    ContentDescription = policy.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Found {policies.Count()} device configuration policies matching '{searchQuery}'.");
@@ -843,8 +937,12 @@ namespace IntuneTools.Pages
             {
                 try
                 {
+                    var policy = await sourceGraphServiceClient.DeviceManagement.DeviceConfigurations[id].GetAsync((requestConfiguration) =>
+                    {
+                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
+                    });
                     await RenameDeviceConfigurationPolicy(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Renamed Device Configuration Policy with ID {id} with prefix '{prefix}'.");
+                    AppendToDetailsRichTextBlock($"Renamed Device Configuration Policy '{policy.DisplayName}' with '{prefix}'.");
                 }
                 catch (Exception ex)
                 {
@@ -866,8 +964,9 @@ namespace IntuneTools.Pages
                 {
                     ContentName = profile.DisplayName,
                     ContentType = "Apple BYOD Enrollment Profile",
-                    ContentPlatform = "iOS/iPadOS",
-                    ContentId = profile.Id
+                    ContentPlatform = TranslatePolicyPlatformName(profile.Platform.ToString()),
+                    ContentId = profile.Id,
+                    ContentDescription = profile.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Loaded {profiles.Count()} Apple BYOD enrollment profiles.");
@@ -881,8 +980,9 @@ namespace IntuneTools.Pages
                 {
                     ContentName = profile.DisplayName,
                     ContentType = "Apple BYOD Enrollment Profile",
-                    ContentPlatform = "iOS/iPadOS",
-                    ContentId = profile.Id
+                    ContentPlatform = TranslatePolicyPlatformName(profile.Platform.ToString()),
+                    ContentId = profile.Id,
+                    ContentDescription = profile.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Found {profiles.Count()} Apple BYOD enrollment profiles matching '{searchQuery}'.");
@@ -909,8 +1009,9 @@ namespace IntuneTools.Pages
                 {
                     ContentName = filter.DisplayName,
                     ContentType = "Assignment Filter",
-                    ContentPlatform = filter.OdataType?.ToString() ?? string.Empty,
-                    ContentId = filter.Id
+                    ContentPlatform = TranslatePolicyPlatformName(filter.Platform.ToString()),
+                    ContentId = filter.Id,
+                    ContentDescription = filter.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Loaded {filters.Count()} assignment filters.");
@@ -924,8 +1025,9 @@ namespace IntuneTools.Pages
                 {
                     ContentName = filter.DisplayName,
                     ContentType = "Assignment Filter",
-                    ContentPlatform = filter.OdataType?.ToString() ?? string.Empty,
-                    ContentId = filter.Id
+                    ContentPlatform = TranslatePolicyPlatformName(filter.Platform.ToString()),
+                    ContentId = filter.Id,
+                    ContentDescription = filter.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Found {filters.Count()} assignment filters matching '{searchQuery}'.");
@@ -952,8 +1054,9 @@ namespace IntuneTools.Pages
                 {
                     ContentName = group.DisplayName,
                     ContentType = "Entra Group",
-                    ContentPlatform = "Entra ID",
-                    ContentId = group.Id
+                    ContentPlatform = "Entra group",
+                    ContentId = group.Id,
+                    ContentDescription = group.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Loaded {groups.Count()} Entra groups.");
@@ -967,8 +1070,9 @@ namespace IntuneTools.Pages
                 {
                     ContentName = group.DisplayName,
                     ContentType = "Entra Group",
-                    ContentPlatform = "Entra ID",
-                    ContentId = group.Id
+                    ContentPlatform = "Entra group",
+                    ContentId = group.Id,
+                    ContentDescription = group.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Found {groups.Count()} Entra groups matching '{searchQuery}'.");
@@ -996,7 +1100,8 @@ namespace IntuneTools.Pages
                     ContentName = script.DisplayName,
                     ContentType = "PowerShell Script",
                     ContentPlatform = "Windows",
-                    ContentId = script.Id
+                    ContentId = script.Id,
+                    ContentDescription = script.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Loaded {scripts.Count()} PowerShell scripts.");
@@ -1011,7 +1116,8 @@ namespace IntuneTools.Pages
                     ContentName = script.DisplayName,
                     ContentType = "PowerShell Script",
                     ContentPlatform = "Windows",
-                    ContentId = script.Id
+                    ContentId = script.Id,
+                    ContentDescription = script.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Found {scripts.Count()} PowerShell scripts matching '{searchQuery}'.");
@@ -1039,7 +1145,8 @@ namespace IntuneTools.Pages
                     ContentName = script.DisplayName,
                     ContentType = "Proactive Remediation",
                     ContentPlatform = "Windows",
-                    ContentId = script.Id
+                    ContentId = script.Id,
+                    ContentDescription = script.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Loaded {scripts.Count()} proactive remediations.");
@@ -1054,7 +1161,8 @@ namespace IntuneTools.Pages
                     ContentName = script.DisplayName,
                     ContentType = "Proactive Remediation",
                     ContentPlatform = "Windows",
-                    ContentId = script.Id
+                    ContentId = script.Id,
+                    ContentDescription = script.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Found {scripts.Count()} proactive remediations matching '{searchQuery}'.");
@@ -1082,7 +1190,8 @@ namespace IntuneTools.Pages
                     ContentName = script.DisplayName,
                     ContentType = "MacOS Shell Script",
                     ContentPlatform = "macOS",
-                    ContentId = script.Id
+                    ContentId = script.Id,
+                    ContentDescription = script.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Loaded {scripts.Count()} MacOS shell scripts.");
@@ -1097,7 +1206,8 @@ namespace IntuneTools.Pages
                     ContentName = script.DisplayName,
                     ContentType = "MacOS Shell Script",
                     ContentPlatform = "macOS",
-                    ContentId = script.Id
+                    ContentId = script.Id,
+                    ContentDescription = script.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Found {scripts.Count()} MacOS shell scripts matching '{searchQuery}'.");
@@ -1125,7 +1235,8 @@ namespace IntuneTools.Pages
                     ContentName = profile.DisplayName,
                     ContentType = "Windows AutoPilot Profile",
                     ContentPlatform = "Windows",
-                    ContentId = profile.Id
+                    ContentId = profile.Id,
+                    ContentDescription = profile.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Loaded {profiles.Count()} Windows AutoPilot profiles.");
@@ -1140,7 +1251,8 @@ namespace IntuneTools.Pages
                     ContentName = profile.DisplayName,
                     ContentType = "Windows AutoPilot Profile",
                     ContentPlatform = "Windows",
-                    ContentId = profile.Id
+                    ContentId = profile.Id,
+                    ContentDescription = profile.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Found {profiles.Count()} Windows AutoPilot profiles matching '{searchQuery}'.");
@@ -1167,7 +1279,8 @@ namespace IntuneTools.Pages
                     ContentName = update.DisplayName,
                     ContentType = "Windows Driver Update",
                     ContentPlatform = "Windows",
-                    ContentId = update.Id
+                    ContentId = update.Id,
+                    ContentDescription = update.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Loaded {updates.Count()} Windows driver updates.");
@@ -1182,7 +1295,8 @@ namespace IntuneTools.Pages
                     ContentName = update.DisplayName,
                     ContentType = "Windows Driver Update",
                     ContentPlatform = "Windows",
-                    ContentId = update.Id
+                    ContentId = update.Id,
+                    ContentDescription = update.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Found {updates.Count()} Windows driver updates matching '{searchQuery}'.");
@@ -1210,7 +1324,8 @@ namespace IntuneTools.Pages
                     ContentName = update.DisplayName,
                     ContentType = "Windows Feature Update",
                     ContentPlatform = "Windows",
-                    ContentId = update.Id
+                    ContentId = update.Id,
+                    ContentDescription = update.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Loaded {updates.Count()} Windows feature updates.");
@@ -1225,7 +1340,8 @@ namespace IntuneTools.Pages
                     ContentName = update.DisplayName,
                     ContentType = "Windows Feature Update",
                     ContentPlatform = "Windows",
-                    ContentId = update.Id
+                    ContentId = update.Id,
+                    ContentDescription = update.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Found {updates.Count()} Windows feature updates matching '{searchQuery}'.");
@@ -1253,7 +1369,8 @@ namespace IntuneTools.Pages
                     ContentName = policy.DisplayName,
                     ContentType = "Windows Quality Update Policy",
                     ContentPlatform = "Windows",
-                    ContentId = policy.Id
+                    ContentId = policy.Id,
+                    ContentDescription = policy.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Loaded {policies.Count()} Windows quality update policies.");
@@ -1268,7 +1385,8 @@ namespace IntuneTools.Pages
                     ContentName = policy.DisplayName,
                     ContentType = "Windows Quality Update Policy",
                     ContentPlatform = "Windows",
-                    ContentId = policy.Id
+                    ContentId = policy.Id,
+                    ContentDescription = policy.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Found {policies.Count()} Windows quality update policies matching '{searchQuery}'.");
@@ -1296,7 +1414,8 @@ namespace IntuneTools.Pages
                     ContentName = profile.DisplayName,
                     ContentType = "Windows Quality Update Profile",
                     ContentPlatform = "Windows",
-                    ContentId = profile.Id
+                    ContentId = profile.Id,
+                    ContentDescription = profile.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Loaded {profiles.Count()} Windows quality update profiles.");
@@ -1311,7 +1430,8 @@ namespace IntuneTools.Pages
                     ContentName = profile.DisplayName,
                     ContentType = "Windows Quality Update Profile",
                     ContentPlatform = "Windows",
-                    ContentId = profile.Id
+                    ContentId = profile.Id,
+                    ContentDescription = profile.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Found {profiles.Count()} Windows quality update profiles matching '{searchQuery}'.");
@@ -1413,35 +1533,36 @@ namespace IntuneTools.Pages
         private async void RenameButton_Click(object sender, RoutedEventArgs e)
         {   
             var itemsToRename = ContentList.ToList();
+            var renameMode = GetSelectedRenameMode();
+
             if (itemsToRename == null || itemsToRename.Count == 0)
             {
                 AppendToDetailsRichTextBlock("No items in the grid to rename.");
                 return;
             }
+
             string newName = NewNameTextBox.Text.Trim();
+
             if (string.IsNullOrEmpty(newName))
             {
                 AppendToDetailsRichTextBlock("Please enter a new name.");
                 return;
             }
 
+            var prefixSymbol = GetSelectedPrefixOption();
 
-            // get the option selected
+            if (prefixSymbol == null && renameMode != RenameMode.Description)
+            {
+                AppendToDetailsRichTextBlock("Please select a prefix option.");
+                return;
+            }
 
-            var renameMode = GetSelectedRenameMode();
+            
 
-            if (renameMode == RenameMode.Prefix)
-            {
-                await RenameContent(itemsToRename.Select(i => i.ContentId).Where(id => !string.IsNullOrEmpty(id)).ToList(), newName);
-            }
-            else if (renameMode == RenameMode.Suffix)
-            {
-                // TODO
-            }
-            else if (renameMode == RenameMode.Description)
-            {
-                // TODO
-            }
+            selectedRenameMode = renameMode.ToString();
+
+            await RenameContent(itemsToRename.Select(i => i.ContentId).Where(id => !string.IsNullOrEmpty(id)).ToList(), newName);
+
         }
 
         private RenameMode GetSelectedRenameMode()
@@ -1460,6 +1581,35 @@ namespace IntuneTools.Pages
             return (int)GetSelectedRenameMode();
         }
 
+        // Call this after appending to LogConsole
+        private void ScrollLogToEnd()
+        {
+            // Ensure measure is up-to-date before scrolling
+            LogConsole.UpdateLayout();
+            LogScrollViewer.UpdateLayout();
+
+            // Scroll to the bottom
+            LogScrollViewer.ChangeView(null, LogScrollViewer.ScrollableHeight, null, true);
+        }
+
+        private void RenameModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var selectionMode = GetSelectedRenameMode();
+
+            if (PrefixButton is null) return;
+
+            PrefixButton.IsEnabled = selectionMode != RenameMode.Description;
+
+
+            if (selectionMode == RenameMode.Description)
+            {
+                PrefixButton.IsEnabled = false;
+            }
+            else
+            {
+                PrefixButton.IsEnabled = true;
+            }
+        }
     }
 
 }

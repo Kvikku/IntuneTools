@@ -329,17 +329,41 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     throw new InvalidOperationException("New name cannot be null or empty.");
                 }
 
-                var existingPolicy = await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].GetAsync();
 
-                var name = FindPreFixInPolicyName(existingPolicy.Name,newName);
-
-                var policy = new DeviceManagementConfigurationPolicy
+                if (selectedRenameMode == "Prefix")
                 {
-                    Name = name
-                };
+                    var existingPolicy = await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].GetAsync();
 
-                await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].PatchAsync(policy);
-                LogToImportStatusFile($"Renamed policy {policyID} to {name}");
+                    var name = FindPreFixInPolicyName(existingPolicy.Name, newName);
+
+                    var policy = new DeviceManagementConfigurationPolicy
+                    {
+                        Name = name
+                    };
+
+                    await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].PatchAsync(policy);
+                    LogToImportStatusFile($"Renamed policy {policyID} to {name}");
+                }
+                else if (selectedRenameMode == "Suffix")
+                {
+
+                }
+                else if (selectedRenameMode == "Description")
+                {
+                    //var existingPolicy = await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].GetAsync();
+
+
+                    var policy = new DeviceManagementConfigurationPolicy
+                    {
+                        Description = newName
+                    };
+
+                    await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].PatchAsync(policy);
+                    LogToImportStatusFile($"Updated description for {policyID} to {newName}");
+                }
+
+
+
             }
             catch (Exception ex)
             {

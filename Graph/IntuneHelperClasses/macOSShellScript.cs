@@ -331,25 +331,61 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     throw new InvalidOperationException("New name cannot be null or empty.");
                 }
 
-                // Look up the existing script
-                var existingScript = await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptID].GetAsync();
-
-                if (existingScript == null)
+                if (selectedRenameMode == "Prefix")
                 {
-                    throw new InvalidOperationException($"Script with ID '{scriptID}' not found.");
+                    // Look up the existing script
+                    var existingScript = await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptID].GetAsync();
+
+                    if (existingScript == null)
+                    {
+                        throw new InvalidOperationException($"Script with ID '{scriptID}' not found.");
+                    }
+
+                    var name = FindPreFixInPolicyName(existingScript.DisplayName ?? string.Empty, newName);
+
+                    // Create an instance of the specific script type using reflection
+                    var scriptType = existingScript.GetType();
+                    var script = (DeviceShellScript?)Activator.CreateInstance(scriptType);
+
+                    if (script == null)
+                    {
+                        throw new InvalidOperationException($"Failed to create instance of type {scriptType.Name}");
+                    }
+
+                    // Set the DisplayName on the new instance
+                    script.DisplayName = name;
+
+                    await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptID].PatchAsync(script);
+                    WriteToImportStatusFile($"Renamed macOS shell script '{existingScript.DisplayName}' to '{name}' (ID: {scriptID})");
                 }
+                else if (selectedRenameMode == "Suffix")
+                {
 
-                var name = FindPreFixInPolicyName(existingScript.DisplayName, newName);
+                }
+                else if (selectedRenameMode == "Description")
+                {
+                    // Look up the existing script
+                    var existingScript = await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptID].GetAsync();
 
-                // Create an instance of the specific script type using reflection
-                var scriptType = existingScript.GetType();
-                var script = (DeviceShellScript)Activator.CreateInstance(scriptType);
+                    if (existingScript == null)
+                    {
+                        throw new InvalidOperationException($"Script with ID '{scriptID}' not found.");
+                    }
 
-                // Set the DisplayName on the new instance
-                script.DisplayName = name;
+                    // Create an instance of the specific script type using reflection
+                    var scriptType = existingScript.GetType();
+                    var script = (DeviceShellScript?)Activator.CreateInstance(scriptType);
 
-                await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptID].PatchAsync(script);
-                WriteToImportStatusFile($"Renamed macOS shell script '{existingScript.DisplayName}' to '{name}' (ID: {scriptID})");
+                    if (script == null)
+                    {
+                        throw new InvalidOperationException($"Failed to create instance of type {scriptType.Name}");
+                    }
+
+                    script.Description = newName;
+
+                    await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptID].PatchAsync(script);
+                    WriteToImportStatusFile($"Updated description for macOS shell script {scriptID} to '{newName}'");
+                }
             }
             catch (Exception ex)
             {

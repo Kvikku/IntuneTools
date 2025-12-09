@@ -289,22 +289,48 @@ namespace IntuneTools.Graph.EntraHelperClasses
                     throw new InvalidOperationException("New name cannot be null or empty.");
                 }
 
-                // Look up the existing group
-                var existingGroup = await graphServiceClient.Groups[groupID].GetAsync();
-
-                if (existingGroup == null)
+                if (selectedRenameMode == "Prefix")
                 {
-                    throw new InvalidOperationException($"Group with ID '{groupID}' not found.");
+                    // Look up the existing group
+                    var existingGroup = await graphServiceClient.Groups[groupID].GetAsync();
+
+                    if (existingGroup == null)
+                    {
+                        throw new InvalidOperationException($"Group with ID '{groupID}' not found.");
+                    }
+
+                    var name = FindPreFixInPolicyName(existingGroup.DisplayName ?? string.Empty, newName);
+
+                    var group = new Group
+                    {
+                        DisplayName = name,
+                    };
+
+                    await graphServiceClient.Groups[groupID].PatchAsync(group);
+                    WriteToImportStatusFile($"Successfully renamed group {groupID} to '{name}'");
                 }
-
-                var name = FindPreFixInPolicyName(existingGroup.DisplayName, newName);
-
-                var group = new Group
+                else if (selectedRenameMode == "Suffix")
                 {
-                    DisplayName = name,
-                };
 
-                await graphServiceClient.Groups[groupID].PatchAsync(group);
+                }
+                else if (selectedRenameMode == "Description")
+                {
+                    // Look up the existing group
+                    var existingGroup = await graphServiceClient.Groups[groupID].GetAsync();
+
+                    if (existingGroup == null)
+                    {
+                        throw new InvalidOperationException($"Group with ID '{groupID}' not found.");
+                    }
+
+                    var group = new Group
+                    {
+                        Description = newName,
+                    };
+
+                    await graphServiceClient.Groups[groupID].PatchAsync(group);
+                    WriteToImportStatusFile($"Updated description for group {groupID} to '{newName}'");
+                }
             }
             catch (Exception ex)
             {
