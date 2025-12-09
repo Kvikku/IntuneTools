@@ -32,7 +32,7 @@ namespace IntuneTools.Utilities
                 
             }
 
-            CreateAppSettingsFile(); // Ensure app settings file is created
+            //CreateAppSettingsFile(); // Ensure app settings file is created
 
 
             // Create a new log file with date and time appended to the name

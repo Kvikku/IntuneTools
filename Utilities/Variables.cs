@@ -14,7 +14,7 @@ namespace IntuneTools.Utilities
         public static string appVersion = "1.0.10.0";
         // Log file
         public static string appDataPath = @"C:\ProgramData\";
-        public static string appFolderName = "IntuneTools";
+        public static string appFolderName = "InToolz";
         public static string logFileDirectoryName = "Logs";
         public static string appSettingsDirectoryName = "Settings";
 
@@ -23,7 +23,7 @@ namespace IntuneTools.Utilities
         public static string appSettingsFolder = Path.Combine(appDataPath, appFolderName, appSettingsDirectoryName);
 
         public static string timestamp = DateTime.Now.ToString("HH-mm-ss_dd-MM-yyyy");
-        public static string logFileName = "IntuneTools.log";
+        public static string logFileName = "InToolz.log";
         
         // Specific settings files - now using full paths
         public static string sourceTenantSettingsFileFullPath = Path.Combine(appSettingsFolder, "SourceTenantSettings.json");
