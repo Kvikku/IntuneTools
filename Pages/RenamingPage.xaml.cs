@@ -582,8 +582,12 @@ namespace IntuneTools.Pages
             {
                 try
                 {
+                    var script = await sourceGraphServiceClient.DeviceManagement.DeviceManagementScripts[id].GetAsync((requestConfiguration) =>
+                    {
+                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
+                    });
                     await RenamePowerShellScript(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Renamed PowerShell Script with ID {id} with prefix '{prefix}'.");
+                    AppendToDetailsRichTextBlock($"Updated PowerShell Script '{script.DisplayName}' with '{prefix}'.");
                 }
                 catch (Exception ex)
                 {
@@ -598,8 +602,12 @@ namespace IntuneTools.Pages
             {
                 try
                 {
+                    var remediation = await sourceGraphServiceClient.DeviceManagement.DeviceHealthScripts[id].GetAsync((requestConfiguration) =>
+                    {
+                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
+                    });
                     await RenameProactiveRemediation(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Renamed Proactive Remediation with ID {id} with prefix '{prefix}'.");
+                    AppendToDetailsRichTextBlock($"Updated Proactive Remediation '{remediation.DisplayName}' with '{prefix}'.");
                 }
                 catch (Exception ex)
                 {
@@ -614,8 +622,12 @@ namespace IntuneTools.Pages
             {
                 try
                 {
+                    var profile = await sourceGraphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[id].GetAsync((requestConfiguration) =>
+                    {
+                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
+                    });
                     await RenameWindowsAutoPilotProfile(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Renamed Windows AutoPilot Profile with ID {id} with prefix '{prefix}'.");
+                    AppendToDetailsRichTextBlock($"Updated Windows AutoPilot Profile '{profile.DisplayName}' with '{prefix}'.");
                 }
                 catch (Exception ex)
                 {
@@ -630,8 +642,12 @@ namespace IntuneTools.Pages
             {
                 try
                 {
+                    var update = await sourceGraphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[id].GetAsync((requestConfiguration) =>
+                    {
+                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
+                    });
                     await RenameDriverProfile(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Renamed Windows Driver Update with ID {id} with prefix '{prefix}'.");
+                    AppendToDetailsRichTextBlock($"Updated Windows Driver Update '{update.DisplayName}' with '{prefix}'.");
                 }
                 catch (Exception ex)
                 {
@@ -646,8 +662,12 @@ namespace IntuneTools.Pages
             {
                 try
                 {
+                    var update = await sourceGraphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[id].GetAsync((requestConfiguration) =>
+                    {
+                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
+                    });
                     await RenameWindowsFeatureUpdateProfile(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Renamed Windows Feature Update with ID {id} with prefix '{prefix}'.");
+                    AppendToDetailsRichTextBlock($"Updated Windows Feature Update '{update.DisplayName}' with '{prefix}'.");
                 }
                 catch (Exception ex)
                 {
@@ -662,8 +682,12 @@ namespace IntuneTools.Pages
             {
                 try
                 {
+                    var policy = await sourceGraphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[id].GetAsync((requestConfiguration) =>
+                    {
+                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
+                    });
                     await RenameWindowsQualityUpdatePolicy(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Renamed Windows Quality Update Policy with ID {id} with prefix '{prefix}'.");
+                    AppendToDetailsRichTextBlock($"Updated Windows Quality Update Policy '{policy.DisplayName}' with '{prefix}'.");
                 }
                 catch (Exception ex)
                 {
@@ -678,8 +702,12 @@ namespace IntuneTools.Pages
             {
                 try
                 {
+                    var profile = await sourceGraphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[id].GetAsync((requestConfiguration) =>
+                    {
+                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
+                    });
                     await RenameWindowsQualityUpdateProfile(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Renamed Windows Quality Update Profile with ID {id} with prefix '{prefix}'.");
+                    AppendToDetailsRichTextBlock($"Updated Windows Quality Update Profile '{profile.DisplayName}' with '{prefix}'.");
                 }
                 catch (Exception ex)
                 {
@@ -694,8 +722,12 @@ namespace IntuneTools.Pages
             {
                 try
                 {
+                    var filter = await sourceGraphServiceClient.DeviceManagement.AssignmentFilters[id].GetAsync((requestConfiguration) =>
+                    {
+                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
+                    });
                     await RenameAssignmentFilter(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Renamed Assignment Filter with ID {id} with prefix '{prefix}'.");
+                    AppendToDetailsRichTextBlock($"Updated Assignment Filter '{filter.DisplayName}' with '{prefix}'.");
                 }
                 catch (Exception ex)
                 {
@@ -710,8 +742,12 @@ namespace IntuneTools.Pages
             {
                 try
                 {
+                    var group = await sourceGraphServiceClient.Groups[id].GetAsync((requestConfiguration) =>
+                    {
+                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
+                    }); 
                     await RenameGroup(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Renamed Entra Group with ID {id} with prefix '{prefix}'.");
+                    AppendToDetailsRichTextBlock($"Updated Entra Group '{group.DisplayName}' with '{prefix}'.");
                 }
                 catch (Exception ex)
                 {
