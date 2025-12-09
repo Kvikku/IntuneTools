@@ -307,7 +307,7 @@ namespace IntuneTools.Pages
                 HideLoading();
             }
         }
-        private async Task RenameContent(List<string> contentIDs, string newName)
+        private async Task RenameContent(List<string> contentIDs, string newName, Dictionary<string, string> keyValuePairs)
         {
 
             string prefix = string.Empty;
@@ -1444,7 +1444,7 @@ namespace IntuneTools.Pages
             }
         }
         private async void RenameButton_Click(object sender, RoutedEventArgs e)
-        {   
+        {
             var itemsToRename = ContentList.ToList();
 
             if (itemsToRename == null || itemsToRename.Count == 0)
@@ -1470,13 +1470,28 @@ namespace IntuneTools.Pages
             }
 
             // get the option selected
-
             var renameMode = GetSelectedRenameMode();
-
             selectedRenameMode = renameMode.ToString();
 
-            await RenameContent(itemsToRename.Select(i => i.ContentId).Where(id => !string.IsNullOrEmpty(id)).ToList(), newName);
+            // Collect IDs and Names
+            var ids = itemsToRename
+                .Select(i => i.ContentId)
+                .Where(id => !string.IsNullOrEmpty(id))
+                .ToList();
 
+            var names = itemsToRename
+                .Select(i => i.ContentName)
+                .Where(name => !string.IsNullOrEmpty(name))
+                .ToList();
+
+            // Build key/value pairs as strings
+            Dictionary<string, string> renameOptions = new()
+            {
+                { "ID", string.Join(",", ids) },
+                { "Name", string.Join(",", names) }
+            };
+
+            await RenameContent(ids, newName, renameOptions);
         }
 
         private RenameMode GetSelectedRenameMode()
