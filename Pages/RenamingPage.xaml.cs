@@ -760,8 +760,14 @@ namespace IntuneTools.Pages
             {
                 try
                 {
+                    var policy = await sourceGraphServiceClient.DeviceManagement.ConfigurationPolicies[id].GetAsync((requestConfiguration) =>
+                    {
+                        requestConfiguration.QueryParameters.Select = new string[] { "name" };
+                    });
+
                     await RenameSettingsCatalogPolicy(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Renamed Settings Catalog with ID {id} with prefix '{prefix}'.");
+                    
+                    AppendToDetailsRichTextBlock($"Updated Settings Catalog '{policy.Name}' with '{prefix}'.");
                 }
                 catch (Exception ex)
                 {
