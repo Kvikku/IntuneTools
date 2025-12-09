@@ -1533,6 +1533,7 @@ namespace IntuneTools.Pages
         private async void RenameButton_Click(object sender, RoutedEventArgs e)
         {   
             var itemsToRename = ContentList.ToList();
+            var renameMode = GetSelectedRenameMode();
 
             if (itemsToRename == null || itemsToRename.Count == 0)
             {
@@ -1550,15 +1551,13 @@ namespace IntuneTools.Pages
 
             var prefixSymbol = GetSelectedPrefixOption();
 
-            if (prefixSymbol == null && selectedRenameMode == "Prefix")
+            if (prefixSymbol == null && renameMode != RenameMode.Description)
             {
                 AppendToDetailsRichTextBlock("Please select a prefix option.");
                 return;
             }
 
-            // get the option selected
-
-            var renameMode = GetSelectedRenameMode();
+            
 
             selectedRenameMode = renameMode.ToString();
 
