@@ -229,6 +229,8 @@ namespace IntuneTools.Pages
                 paragraph.Inlines.Add(new LineBreak());
             }
             paragraph.Inlines.Add(new Run { Text = text });
+
+            ScrollLogToEnd();
         }
         private async Task ListAllOrchestrator(GraphServiceClient graphServiceClient)
         {
@@ -1491,6 +1493,17 @@ namespace IntuneTools.Pages
         private int GetSelectedRenameModeIndex()
         {
             return (int)GetSelectedRenameMode();
+        }
+
+        // Call this after appending to LogConsole
+        private void ScrollLogToEnd()
+        {
+            // Ensure measure is up-to-date before scrolling
+            LogConsole.UpdateLayout();
+            LogScrollViewer.UpdateLayout();
+
+            // Scroll to the bottom
+            LogScrollViewer.ChangeView(null, LogScrollViewer.ScrollableHeight, null, true);
         }
 
     }
