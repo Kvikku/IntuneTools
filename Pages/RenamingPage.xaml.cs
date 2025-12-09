@@ -54,6 +54,7 @@ namespace IntuneTools.Pages
             public string? ContentPlatform { get; set; }
             public string? ContentType { get; set; }
             public string? ContentId { get; set; }
+            public string? ContentDescription { get; set; }
         }
 
         public ObservableCollection<ContentInfo> ContentList { get; set; } = new ObservableCollection<ContentInfo>();
@@ -241,20 +242,20 @@ namespace IntuneTools.Pages
                 // Clear the ContentList before loading new data
                 ContentList.Clear();
 
-                await LoadAllDeviceCompliancePoliciesAsync();
                 await LoadAllSettingsCatalogPoliciesAsync();
+                await LoadAllDeviceCompliancePoliciesAsync();
                 await LoadAllDeviceConfigurationPoliciesAsync();
-                await LoadAllAppleBYODEnrollmentProfilesAsync();
-                await LoadAllAssignmentFiltersAsync();
-                await LoadAllEntraGroupsAsync();
-                await LoadAllPowerShellScriptsAsync();
-                await LoadAllProactiveRemediationsAsync();
-                await LoadAllMacOSShellScriptsAsync();
                 await LoadAllWindowsAutoPilotProfilesAsync();
                 await LoadAllWindowsDriverUpdatesAsync();
                 await LoadAllWindowsFeatureUpdatesAsync();
                 await LoadAllWindowsQualityUpdatePoliciesAsync();
                 await LoadAllWindowsQualityUpdateProfilesAsync();
+                await LoadAllPowerShellScriptsAsync();
+                await LoadAllProactiveRemediationsAsync();
+                await LoadAllMacOSShellScriptsAsync();
+                await LoadAllAppleBYODEnrollmentProfilesAsync();
+                await LoadAllAssignmentFiltersAsync();
+                await LoadAllEntraGroupsAsync();
 
                 // Bind the combined list to the grid once
                 RenamingDataGrid.ItemsSource = ContentList;
@@ -769,7 +770,8 @@ namespace IntuneTools.Pages
                     ContentName = policy.Name,
                     ContentType = "Settings Catalog",
                     ContentPlatform = TranslatePolicyPlatformName(policy.Platforms.ToString()),
-                    ContentId = policy.Id
+                    ContentId = policy.Id,
+                    ContentDescription = policy.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Loaded {policies.Count()} settings catalog policies.");
@@ -784,7 +786,8 @@ namespace IntuneTools.Pages
                     ContentName = policy.Name,
                     ContentType = "Settings Catalog",
                     ContentPlatform = TranslatePolicyPlatformName(policy.Platforms.ToString()),
-                    ContentId = policy.Id
+                    ContentId = policy.Id,
+                    ContentDescription = policy.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Found {policies.Count()} settings catalog policies matching '{searchQuery}'.");
@@ -832,7 +835,8 @@ namespace IntuneTools.Pages
                     ContentName = policy.DisplayName,
                     ContentType = "Device Compliance Policy",
                     ContentPlatform = TranslatePolicyPlatformName(policy.OdataType.ToString()),
-                    ContentId = policy.Id
+                    ContentId = policy.Id,
+                    ContentDescription = policy.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Loaded {policies.Count()} device compliance policies.");
@@ -847,7 +851,8 @@ namespace IntuneTools.Pages
                     ContentName = policy.DisplayName,
                     ContentType = "Device Compliance Policy",
                     ContentPlatform = TranslatePolicyPlatformName(policy.OdataType.ToString()),
-                    ContentId = policy.Id
+                    ContentId = policy.Id,
+                    ContentDescription = policy.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Found {policies.Count()} device compliance policies matching '{searchQuery}'.");
@@ -895,7 +900,8 @@ namespace IntuneTools.Pages
                     ContentName = policy.DisplayName,
                     ContentType = "Device Configuration Policy",
                     ContentPlatform = TranslatePolicyPlatformName(policy.OdataType.ToString()),
-                    ContentId = policy.Id
+                    ContentId = policy.Id,
+                    ContentDescription = policy.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Loaded {policies.Count()} device configuration policies.");
@@ -910,7 +916,8 @@ namespace IntuneTools.Pages
                     ContentName = policy.DisplayName,
                     ContentType = "Device Configuration Policy",
                     ContentPlatform = TranslatePolicyPlatformName(policy.OdataType.ToString()),
-                    ContentId = policy.Id
+                    ContentId = policy.Id,
+                    ContentDescription = policy.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Found {policies.Count()} device configuration policies matching '{searchQuery}'.");
@@ -958,7 +965,8 @@ namespace IntuneTools.Pages
                     ContentName = profile.DisplayName,
                     ContentType = "Apple BYOD Enrollment Profile",
                     ContentPlatform = TranslatePolicyPlatformName(profile.Platform.ToString()),
-                    ContentId = profile.Id
+                    ContentId = profile.Id,
+                    ContentDescription = profile.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Loaded {profiles.Count()} Apple BYOD enrollment profiles.");
@@ -973,7 +981,8 @@ namespace IntuneTools.Pages
                     ContentName = profile.DisplayName,
                     ContentType = "Apple BYOD Enrollment Profile",
                     ContentPlatform = TranslatePolicyPlatformName(profile.Platform.ToString()),
-                    ContentId = profile.Id
+                    ContentId = profile.Id,
+                    ContentDescription = profile.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Found {profiles.Count()} Apple BYOD enrollment profiles matching '{searchQuery}'.");
@@ -1001,7 +1010,8 @@ namespace IntuneTools.Pages
                     ContentName = filter.DisplayName,
                     ContentType = "Assignment Filter",
                     ContentPlatform = TranslatePolicyPlatformName(filter.Platform.ToString()),
-                    ContentId = filter.Id
+                    ContentId = filter.Id,
+                    ContentDescription = filter.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Loaded {filters.Count()} assignment filters.");
@@ -1016,7 +1026,8 @@ namespace IntuneTools.Pages
                     ContentName = filter.DisplayName,
                     ContentType = "Assignment Filter",
                     ContentPlatform = TranslatePolicyPlatformName(filter.Platform.ToString()),
-                    ContentId = filter.Id
+                    ContentId = filter.Id,
+                    ContentDescription = filter.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Found {filters.Count()} assignment filters matching '{searchQuery}'.");
@@ -1044,7 +1055,8 @@ namespace IntuneTools.Pages
                     ContentName = group.DisplayName,
                     ContentType = "Entra Group",
                     ContentPlatform = "Entra group",
-                    ContentId = group.Id
+                    ContentId = group.Id,
+                    ContentDescription = group.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Loaded {groups.Count()} Entra groups.");
@@ -1059,7 +1071,8 @@ namespace IntuneTools.Pages
                     ContentName = group.DisplayName,
                     ContentType = "Entra Group",
                     ContentPlatform = "Entra group",
-                    ContentId = group.Id
+                    ContentId = group.Id,
+                    ContentDescription = group.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Found {groups.Count()} Entra groups matching '{searchQuery}'.");
@@ -1087,7 +1100,8 @@ namespace IntuneTools.Pages
                     ContentName = script.DisplayName,
                     ContentType = "PowerShell Script",
                     ContentPlatform = "Windows",
-                    ContentId = script.Id
+                    ContentId = script.Id,
+                    ContentDescription = script.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Loaded {scripts.Count()} PowerShell scripts.");
@@ -1102,7 +1116,8 @@ namespace IntuneTools.Pages
                     ContentName = script.DisplayName,
                     ContentType = "PowerShell Script",
                     ContentPlatform = "Windows",
-                    ContentId = script.Id
+                    ContentId = script.Id,
+                    ContentDescription = script.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Found {scripts.Count()} PowerShell scripts matching '{searchQuery}'.");
@@ -1130,7 +1145,8 @@ namespace IntuneTools.Pages
                     ContentName = script.DisplayName,
                     ContentType = "Proactive Remediation",
                     ContentPlatform = "Windows",
-                    ContentId = script.Id
+                    ContentId = script.Id,
+                    ContentDescription = script.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Loaded {scripts.Count()} proactive remediations.");
@@ -1145,7 +1161,8 @@ namespace IntuneTools.Pages
                     ContentName = script.DisplayName,
                     ContentType = "Proactive Remediation",
                     ContentPlatform = "Windows",
-                    ContentId = script.Id
+                    ContentId = script.Id,
+                    ContentDescription = script.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Found {scripts.Count()} proactive remediations matching '{searchQuery}'.");
@@ -1173,7 +1190,8 @@ namespace IntuneTools.Pages
                     ContentName = script.DisplayName,
                     ContentType = "MacOS Shell Script",
                     ContentPlatform = "macOS",
-                    ContentId = script.Id
+                    ContentId = script.Id,
+                    ContentDescription = script.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Loaded {scripts.Count()} MacOS shell scripts.");
@@ -1188,7 +1206,8 @@ namespace IntuneTools.Pages
                     ContentName = script.DisplayName,
                     ContentType = "MacOS Shell Script",
                     ContentPlatform = "macOS",
-                    ContentId = script.Id
+                    ContentId = script.Id,
+                    ContentDescription = script.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Found {scripts.Count()} MacOS shell scripts matching '{searchQuery}'.");
@@ -1216,7 +1235,8 @@ namespace IntuneTools.Pages
                     ContentName = profile.DisplayName,
                     ContentType = "Windows AutoPilot Profile",
                     ContentPlatform = "Windows",
-                    ContentId = profile.Id
+                    ContentId = profile.Id,
+                    ContentDescription = profile.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Loaded {profiles.Count()} Windows AutoPilot profiles.");
@@ -1231,7 +1251,8 @@ namespace IntuneTools.Pages
                     ContentName = profile.DisplayName,
                     ContentType = "Windows AutoPilot Profile",
                     ContentPlatform = "Windows",
-                    ContentId = profile.Id
+                    ContentId = profile.Id,
+                    ContentDescription = profile.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Found {profiles.Count()} Windows AutoPilot profiles matching '{searchQuery}'.");
@@ -1258,7 +1279,8 @@ namespace IntuneTools.Pages
                     ContentName = update.DisplayName,
                     ContentType = "Windows Driver Update",
                     ContentPlatform = "Windows",
-                    ContentId = update.Id
+                    ContentId = update.Id,
+                    ContentDescription = update.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Loaded {updates.Count()} Windows driver updates.");
@@ -1273,7 +1295,8 @@ namespace IntuneTools.Pages
                     ContentName = update.DisplayName,
                     ContentType = "Windows Driver Update",
                     ContentPlatform = "Windows",
-                    ContentId = update.Id
+                    ContentId = update.Id,
+                    ContentDescription = update.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Found {updates.Count()} Windows driver updates matching '{searchQuery}'.");
@@ -1301,7 +1324,8 @@ namespace IntuneTools.Pages
                     ContentName = update.DisplayName,
                     ContentType = "Windows Feature Update",
                     ContentPlatform = "Windows",
-                    ContentId = update.Id
+                    ContentId = update.Id,
+                    ContentDescription = update.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Loaded {updates.Count()} Windows feature updates.");
@@ -1316,7 +1340,8 @@ namespace IntuneTools.Pages
                     ContentName = update.DisplayName,
                     ContentType = "Windows Feature Update",
                     ContentPlatform = "Windows",
-                    ContentId = update.Id
+                    ContentId = update.Id,
+                    ContentDescription = update.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Found {updates.Count()} Windows feature updates matching '{searchQuery}'.");
@@ -1344,7 +1369,8 @@ namespace IntuneTools.Pages
                     ContentName = policy.DisplayName,
                     ContentType = "Windows Quality Update Policy",
                     ContentPlatform = "Windows",
-                    ContentId = policy.Id
+                    ContentId = policy.Id,
+                    ContentDescription = policy.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Loaded {policies.Count()} Windows quality update policies.");
@@ -1359,7 +1385,8 @@ namespace IntuneTools.Pages
                     ContentName = policy.DisplayName,
                     ContentType = "Windows Quality Update Policy",
                     ContentPlatform = "Windows",
-                    ContentId = policy.Id
+                    ContentId = policy.Id,
+                    ContentDescription = policy.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Found {policies.Count()} Windows quality update policies matching '{searchQuery}'.");
@@ -1387,7 +1414,8 @@ namespace IntuneTools.Pages
                     ContentName = profile.DisplayName,
                     ContentType = "Windows Quality Update Profile",
                     ContentPlatform = "Windows",
-                    ContentId = profile.Id
+                    ContentId = profile.Id,
+                    ContentDescription = profile.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Loaded {profiles.Count()} Windows quality update profiles.");
@@ -1402,7 +1430,8 @@ namespace IntuneTools.Pages
                     ContentName = profile.DisplayName,
                     ContentType = "Windows Quality Update Profile",
                     ContentPlatform = "Windows",
-                    ContentId = profile.Id
+                    ContentId = profile.Id,
+                    ContentDescription = profile.Description
                 });
             }
             AppendToDetailsRichTextBlock($"Found {profiles.Count()} Windows quality update profiles matching '{searchQuery}'.");

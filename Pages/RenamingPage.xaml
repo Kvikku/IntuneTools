@@ -132,6 +132,7 @@
                         <controls:DataGridTextColumn Header="Type" Binding="{Binding ContentType}" Width="*"/>
                         <controls:DataGridTextColumn Header="Platform" Binding="{Binding ContentPlatform}" Width="*"/>
                         <controls:DataGridTextColumn Header="ID" Binding="{Binding ContentId}" Width="2*"/>
+                        <controls:DataGridTextColumn Header="Description" Binding="{Binding ContentDescription}" Width="3*"/>
                     </controls:DataGrid.Columns>
                 </controls:DataGrid>
 
