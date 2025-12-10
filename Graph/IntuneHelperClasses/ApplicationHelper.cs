@@ -1,4 +1,5 @@
-﻿using Microsoft.Graph;
+﻿using IntuneTools.Pages;
+using Microsoft.Graph;
 using Microsoft.Graph.Beta;
 using Microsoft.Graph.Beta.Models;
 using System;
@@ -84,18 +85,16 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task PrepareApplicationForAssignment(string appType, GraphServiceClient graphServiceClient)
+        public static async Task PrepareApplicationForAssignment(KeyValuePair<string, AssignmentInfo> appInfo, GraphServiceClient graphServiceClient)
         {
+            // This method can be expanded based on specific preparation steps needed for different app types
             try
             {
-                LogToImportStatusFile($"Preparing application of type '{appType}' for assignment.");
-                // Placeholder for any preparation logic needed based on app type
-                await Task.CompletedTask;
-                LogToImportStatusFile($"Application of type '{appType}' is prepared for assignment.");
+
             }
             catch (Exception)
             {
-                LogToImportStatusFile($"An error occurred while preparing application of type '{appType}' for assignment", LogLevels.Error);
+                LogToImportStatusFile($"An error occurred while preparing application of type '{appInfo.Value.Platform}' for assignment", LogLevels.Error);
             }
         }
 

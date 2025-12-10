@@ -329,7 +329,7 @@ namespace IntuneTools.Utilities
             return odataType switch
             {
                 "#microsoft.graph.win32LobApp" => "App - Windows app (Win32)",
-                "#microsoft.graph.iosVppApp" => "App - App - iOS VPP app",
+                "#microsoft.graph.iosVppApp" => "App - iOS VPP app",
                 "#microsoft.graph.winGetApp" => "App - Windows app (WinGet)",
                 "#microsoft.graph.iosiPadOSWebClip" => "App - iOS/iPadOS web clip",
                 "#microsoft.graph.androidManagedStoreApp" => "App - Android Managed store app",

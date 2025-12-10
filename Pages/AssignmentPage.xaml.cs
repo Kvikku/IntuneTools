@@ -19,7 +19,6 @@ using static IntuneTools.Graph.IntuneHelperClasses.AppleBYODEnrollmentProfileHel
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceCompliancePolicyHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceConfigurationHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.FilterHelperClass;
-using static IntuneTools.Graph.IntuneHelperClasses.FilterHelperClass;
 using static IntuneTools.Graph.IntuneHelperClasses.macOSShellScript;
 using static IntuneTools.Graph.IntuneHelperClasses.PowerShellScriptsHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.ProactiveRemediationsHelper;
@@ -29,6 +28,7 @@ using static IntuneTools.Graph.IntuneHelperClasses.WindowsDriverUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsFeatureUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdatePolicyHandler;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.ApplicationHelper;
 using static IntuneTools.Utilities.HelperClass;
 using static IntuneTools.Utilities.Variables;
 
@@ -335,8 +335,8 @@ namespace IntuneTools.Pages
                     if (item.Value.Type.StartsWith("App - "))
                     {
                         // Must first handle the app type
-                        
-                        
+                        await PrepareApplicationForAssignment(item, sourceGraphServiceClient);
+
                         //await AssignGroupsToSingleApplication(item.Value.Id, groupList, sourceGraphServiceClient, _selectedInstallIntent);
 
                     }
