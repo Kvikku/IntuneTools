@@ -371,6 +371,48 @@ namespace IntuneTools.Utilities
             };
         }
 
+        public static void GetWin32AppNotificationValue(string input, out Win32LobAppNotification? notificationValue)
+        {
+            // Method to get the Win32LobAppNotification enum value based on input string
+            switch (input)
+            {
+                case "Show all toast notifications":
+                    notificationValue = Win32LobAppNotification.ShowAll;
+                    break;
+                case "Hide toast notifications and show only reboot":
+                    notificationValue = Win32LobAppNotification.ShowReboot;
+                    break;
+                case "Hide all toast notifications":
+                    notificationValue = Win32LobAppNotification.HideAll;
+                    break;
+                default:
+                    notificationValue = null; // Return null if no match is found
+                    break;
+            }
+        }
+
+        public static void GetInstallIntent(string input, out InstallIntent intentValue)
+        {
+            switch (input)
+            {
+                case "Available":
+                    intentValue = InstallIntent.Available;
+                    break;
+                case "Required":
+                    intentValue = InstallIntent.Required;
+                    break;
+                case "Uninstall":
+                    intentValue = InstallIntent.Uninstall;
+                    break;
+                case "AvailableWithoutEnrollment":
+                    intentValue = InstallIntent.AvailableWithoutEnrollment;
+                    break;
+                default:
+                    intentValue = InstallIntent.Required;
+                    break;
+            }
+        }
+
         public static async Task<string?> GetAzureTenantName(GraphServiceClient graphServiceClient)
         {
             // Method to get the Azure tenant name

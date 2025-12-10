@@ -253,14 +253,14 @@
                          IsOpen="True" 
                          Severity="Informational" 
                          IsClosable="False" 
-                         Message="Please configure the specific settings for this application deployment."
+                         Message="Please configure the specific settings for the application deployment."
                          Margin="0,0,0,12"/>
 
                 <Pivot Grid.Row="1">
                     <PivotItem Header="General">
                         <StackPanel Spacing="16" Margin="0,12,0,0">
-                            <ComboBox x:Name="GroupModeCombo"
-                                      Header="Group mode"
+                            <ComboBox x:Name="DeploymentModeCombo"
+                                      Header="Deploy mode"
                                       HorizontalAlignment="Stretch"
                                       SelectedIndex="0">
                                 <ComboBoxItem Content="Include" />
@@ -286,7 +286,7 @@
                                       SelectedIndex="0">
                                 <ComboBoxItem Content="Show all toast notifications" />
                                 <ComboBoxItem Content="Hide all toast notifications" />
-                                <ComboBoxItem Content="Hide toast notifications and reboot" />
+                                <ComboBoxItem Content="Hide toast notifications and show only reboot" />
                             </ComboBox>
 
                             <ComboBox x:Name="RestartSettingsCombo"

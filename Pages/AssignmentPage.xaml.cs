@@ -68,16 +68,23 @@ namespace IntuneTools.Pages
 
         private DeviceAndAppManagementAssignmentFilter? _selectedFilterID;
         private string _selectedFilterName;
-        private InstallIntent _selectedInstallIntent;
+
 
         // New: Include / Exclude filter mode (default Include)
         private string _selectedFilterMode = "Include";
 
         // App Deployment Options
-        private string _selectedAppGroupMode;
+        private string _selectedDeploymentMode;
+        private string _selectedIntent;
         private string _selectedNotificationSetting;
         private string _selectedRestartSetting;
         private string _selectedDeliveryOptimizationPriority;
+
+        private InstallIntent _selectedInstallIntent;
+        private InstallIntent _selectedAppDeploymentIntent;
+        private Win32LobAppNotification win32LobAppNotification;
+
+        
 
         // UI initialization flag to prevent early event handlers from using null controls (e.g., LogConsole)
         private bool _uiInitialized = false;
@@ -251,10 +258,6 @@ namespace IntuneTools.Pages
 
 
 
-            // Get selected items and groups
-            //var selectedItems = AppDataGrid.SelectedItems.Cast<AssignmentInfo>().ToList();
-
-
             // Confirmation dialog
             var confirmDialog = new ContentDialog
             {
@@ -273,6 +276,8 @@ namespace IntuneTools.Pages
                 AppendToDetailsRichTextBlock("Assignment cancelled by user.");
                 return;
             }
+
+            await ShowAppDeploymentOptionsDialog();
 
             // Perform assignment
             ShowLoading("Assigning content to groups...");
@@ -1321,32 +1326,27 @@ namespace IntuneTools.Pages
                 if (result == ContentDialogResult.Primary)
                 {
                     // User clicked Confirm - Store values in class-level variables
-                    _selectedAppGroupMode = (GroupModeCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
+                    _selectedDeploymentMode = (DeploymentModeCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
+                    _selectedIntent = (AssignmentIntentComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString();
                     _selectedNotificationSetting = (NotificationSettingsCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
                     _selectedRestartSetting = (RestartSettingsCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
                     _selectedDeliveryOptimizationPriority = (DeliveryOptimizationCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
 
-                    // Store Assignment Intent
-                    if (AssignmentIntentComboBox.SelectedItem is ComboBoxItem selectedItem && selectedItem.Content is string intent)
-                    {
-                        if (Enum.TryParse(intent, out InstallIntent parsedIntent))
-                        {
-                            _selectedInstallIntent = parsedIntent;
-                        }
-                        else
-                        {
-                            _selectedInstallIntent = InstallIntent.Required;
-                        }
-                    }
-                    else
-                    {
-                        _selectedInstallIntent = InstallIntent.Required;
-                    }
 
+                    // Store Assignment Intent (Available, Required, Uninstall)
+                    GetInstallIntent(_selectedIntent, out _selectedInstallIntent);
+
+
+                    // Store the notifications mode
+                    GetWin32AppNotificationValue(_selectedNotificationSetting, out Win32LobAppNotification? notificationValue);
+                    win32LobAppNotification = notificationValue ?? Win32LobAppNotification.ShowAll;
+
+
+                    // Log the selected options
                     AppendToDetailsRichTextBlock("Application Deployment Options Configured:");
                     AppendToDetailsRichTextBlock($" • Intent: {_selectedInstallIntent}");
-                    AppendToDetailsRichTextBlock($" • Group Mode: {_selectedAppGroupMode}");
-                    AppendToDetailsRichTextBlock($" • Notifications: {_selectedNotificationSetting}");
+                    AppendToDetailsRichTextBlock($" • Group Mode: {_selectedDeploymentMode}");
+                    AppendToDetailsRichTextBlock($" • Notifications: {win32LobAppNotification}");
                     AppendToDetailsRichTextBlock($" • Restart: {_selectedRestartSetting}");
                     AppendToDetailsRichTextBlock($" • Delivery Opt: {_selectedDeliveryOptimizationPriority}");
 
@@ -1364,6 +1364,9 @@ namespace IntuneTools.Pages
                 return false;
             }
         }
+
+        
+
 
 
         private void GroupDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
