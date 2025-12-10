@@ -7,7 +7,7 @@ InToolz is a powerful application designed to help you manage and migrate your M
 With this app you can:
 
 1. Tenant to Tenant migration (copy) of Intune content.
-2. Deploy a large amount of groups to a large amount of profiles and applications (coming soon TM) effectively
+2. Deploy a large amount of groups to a large amount of profiles and applications (_coming soon TM_) effectively
 3. Delete assignment for a large amount of groups to a large amount of profiles and applications effectively
 4. Update the description property of a large amount of profiles and applications effectively
 
