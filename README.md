@@ -27,6 +27,8 @@ Check out [the wiki](https://github.com/Kvikku/IntuneTools/wiki) for how to use 
 
 # Features in development
 
+- Assign applications
+- Import applications
 - Delete duplicate policies/apps
 - Bulk add objects to groups (community request :D )
 
