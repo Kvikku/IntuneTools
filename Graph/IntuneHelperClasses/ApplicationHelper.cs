@@ -83,5 +83,163 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 return new List<MobileApp>();
             }
         }
+
+        public static async Task AssignGroupsToApplication(string appId, List<string> groupIds, GraphServiceClient graphServiceClient)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(appId))
+                {
+                    throw new ArgumentNullException(nameof(appId));
+                }
+                if (groupIds == null)
+                {
+                    throw new ArgumentNullException(nameof(groupIds));
+                }
+                if (graphServiceClient == null)
+                {
+                    throw new ArgumentNullException(nameof(graphServiceClient));
+                }
+
+                var assignments = new List<MobileAppAssignment>();
+                var seenGroupIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var hasAllUsers = false;
+                var hasAllDevices = false;
+
+                // Step 1: Add new assignments to request body
+                foreach (var group in groupIds)
+                {
+                    if (string.IsNullOrWhiteSpace(group) || !seenGroupIds.Add(group))
+                    {
+                        continue;
+                    }
+
+                    MobileAppAssignment assignment;
+
+                    // Check if this is a virtual group (All Users or All Devices)
+                    if (group.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                    {
+                        hasAllUsers = true;
+                        assignment = new MobileAppAssignment
+                        {
+                            OdataType = "#microsoft.graph.mobileAppAssignment",
+                            Target = new AllLicensedUsersAssignmentTarget
+                            {
+                                OdataType = "#microsoft.graph.allLicensedUsersAssignmentTarget",
+                                DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
+                                DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
+                            },
+                            Intent = InstallIntent.Required
+                        };
+                    }
+                    else if (group.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                    {
+                        hasAllDevices = true;
+                        assignment = new MobileAppAssignment
+                        {
+                            OdataType = "#microsoft.graph.mobileAppAssignment",
+                            Target = new AllDevicesAssignmentTarget
+                            {
+                                OdataType = "#microsoft.graph.allDevicesAssignmentTarget",
+                                DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
+                                DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
+                            },
+                            Intent = InstallIntent.Required
+                        };
+                    }
+                    else
+                    {
+                        // Regular group assignment
+                        assignment = new MobileAppAssignment
+                        {
+                            OdataType = "#microsoft.graph.mobileAppAssignment",
+                            Target = new GroupAssignmentTarget
+                            {
+                                OdataType = "#microsoft.graph.groupAssignmentTarget",
+                                DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
+                                DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType,
+                                GroupId = group
+                            },
+                            Intent = InstallIntent.Required
+                        };
+                    }
+
+                    assignments.Add(assignment);
+                }
+
+                // Step 2: Check for existing assignments and add only if not already present
+                var existingAssignments = await graphServiceClient
+                    .DeviceAppManagement
+                    .MobileApps[appId]
+                    .Assignments
+                    .GetAsync();
+
+                if (existingAssignments?.Value != null)
+                {
+                    foreach (var existing in existingAssignments.Value)
+                    {
+                        // Check the type of assignment target
+                        if (existing.Target is AllLicensedUsersAssignmentTarget)
+                        {
+                            // Skip if we're already adding All Users
+                            if (!hasAllUsers)
+                            {
+                                assignments.Add(existing);
+                            }
+                        }
+                        else if (existing.Target is AllDevicesAssignmentTarget)
+                        {
+                            // Skip if we're already adding All Devices
+                            if (!hasAllDevices)
+                            {
+                                assignments.Add(existing);
+                            }
+                        }
+                        else if (existing.Target is GroupAssignmentTarget groupTarget)
+                        {
+                            var existingGroupId = groupTarget.GroupId;
+
+                            // Only add if not already in the new assignments
+                            if (!string.IsNullOrWhiteSpace(existingGroupId) && seenGroupIds.Add(existingGroupId))
+                            {
+                                assignments.Add(existing);
+                            }
+                        }
+                        else
+                        {
+                            // Include any other assignment types (e.g., exclusions, all users with exclusions, etc.)
+                            assignments.Add(existing);
+                        }
+                    }
+                }
+
+                // Step 3: Update the policy with the request body
+                var requestBody = new Microsoft.Graph.Beta.DeviceAppManagement.MobileApps.Item.Assign.AssignPostRequestBody
+                {
+                    MobileAppAssignments = assignments
+                };
+
+                try
+                {
+                    await graphServiceClient
+                        .DeviceAppManagement
+                        .MobileApps[appId]
+                        .Assign
+                        .PostAsync(requestBody);
+
+                    LogToImportStatusFile($"Assigned {assignments.Count} assignments to application {appId} with filter type {deviceAndAppManagementAssignmentFilterType}.");
+                }
+                catch (Exception ex)
+                {
+                    LogToImportStatusFile("An error occurred while assigning groups to application", LogLevels.Warning);
+                    LogToImportStatusFile(ex.Message, LogLevels.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                LogToImportStatusFile("An error occurred while assigning groups to application", LogLevels.Warning);
+                LogToImportStatusFile(ex.Message, LogLevels.Error);
+            }
+        }
     }
 }
