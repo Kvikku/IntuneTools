@@ -760,6 +760,11 @@ namespace IntuneTools.Pages
             }
         }
 
+        private async Task SearchForApplicationsAsync()
+        {
+            // Implement search logic if needed
+        }
+
         #endregion
 
         #region Group / Filter retrieval

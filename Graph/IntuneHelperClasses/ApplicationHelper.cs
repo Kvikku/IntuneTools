@@ -46,5 +46,42 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 return new List<MobileApp>();
             }
         }
+
+        public static async Task<List<MobileApp>> SearchMobileApps(GraphServiceClient graphServiceClient, string searchQuery)
+        {
+            try
+            {
+                LogToImportStatusFile($"Searching for Mobile Apps containing '{searchQuery}'.");
+
+                var result = await graphServiceClient.DeviceAppManagement.MobileApps.GetAsync((requestConfiguration) =>
+                {
+                    requestConfiguration.QueryParameters.Filter = $"contains(displayName, '{searchQuery}')";
+                });
+
+                List<MobileApp> mobileApps = new List<MobileApp>();
+
+                if (result?.Value != null)
+                {
+                    var pageIterator = PageIterator<MobileApp, MobileAppCollectionResponse>.CreatePageIterator(graphServiceClient, result, (app) =>
+                    {
+                        mobileApps.Add(app);
+                        return true;
+                    });
+                    await pageIterator.IterateAsync();
+                    LogToImportStatusFile($"Found {mobileApps.Count} Mobile Apps matching '{searchQuery}'.");
+                }
+                else
+                {
+                    LogToImportStatusFile($"No Mobile Apps found matching '{searchQuery}' or the result was null.");
+                }
+
+                return mobileApps;
+            }
+            catch (Exception)
+            {
+                LogToImportStatusFile($"An error occurred while searching for Mobile Apps with query '{searchQuery}'", LogLevels.Error);
+                return new List<MobileApp>();
+            }
+        }
     }
 }
