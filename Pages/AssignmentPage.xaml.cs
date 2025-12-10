@@ -73,15 +73,7 @@ namespace IntuneTools.Pages
         // New: Include / Exclude filter mode (default Include)
         private string _selectedFilterMode = "Include";
 
-        // App Deployment Options
-        private string _selectedDeploymentMode;
-        private string _selectedIntent;
-        private string _selectedNotificationSetting;
-        private string _selectedDeliveryOptimizationPriority;
-
-        private InstallIntent _selectedInstallIntent;
-        private InstallIntent _selectedAppDeploymentIntent;
-        private Win32LobAppNotification win32LobAppNotification;
+        
 
         
 
@@ -1325,10 +1317,10 @@ namespace IntuneTools.Pages
                 if (result == ContentDialogResult.Primary)
                 {
                     // User clicked Confirm - Store values in class-level variables
-                    _selectedDeploymentMode = (DeploymentModeCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
-                    _selectedIntent = (AssignmentIntentComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString();
-                    _selectedNotificationSetting = (NotificationSettingsCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
-                    _selectedDeliveryOptimizationPriority = (DeliveryOptimizationCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
+                    Variables._selectedDeploymentMode = (DeploymentModeCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
+                    Variables._selectedIntent = (AssignmentIntentComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString();
+                    Variables._selectedNotificationSetting = (NotificationSettingsCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
+                    Variables._selectedDeliveryOptimizationPriority = (DeliveryOptimizationCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
 
                     // Store Assignment Intent (Available, Required, Uninstall)
                     GetInstallIntent(_selectedIntent, out _selectedInstallIntent);

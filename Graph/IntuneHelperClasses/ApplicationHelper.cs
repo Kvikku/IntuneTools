@@ -149,7 +149,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                                 DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
                                 DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
                             },
-                            Intent = InstallIntent.Required
+                            Intent = _selectedInstallIntent
                         };
                     }
                     else if (group.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
@@ -164,7 +164,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                                 DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
                                 DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
                             },
-                            Intent = InstallIntent.Required
+                            Intent = _selectedInstallIntent
                         };
                     }
                     else
@@ -180,7 +180,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                                 DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType,
                                 GroupId = group
                             },
-                            Intent = InstallIntent.Required
+                            Intent = _selectedInstallIntent
                         };
                     }
 

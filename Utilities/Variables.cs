@@ -82,5 +82,15 @@ namespace IntuneTools.Utilities
 
         //public static Microsoft.Graph.Beta.GraphServiceClient? sourceGraphServiceClient;
         //public static Microsoft.Graph.Beta.GraphServiceClient? destinationGraphServiceClient;
+
+        // App Deployment Options
+        public static string _selectedDeploymentMode;
+        public static string _selectedIntent;
+        public static string _selectedNotificationSetting;
+        public static string _selectedDeliveryOptimizationPriority;
+
+        public static InstallIntent _selectedInstallIntent;
+        public static InstallIntent _selectedAppDeploymentIntent;
+        public static Win32LobAppNotification win32LobAppNotification;
     }
 }
