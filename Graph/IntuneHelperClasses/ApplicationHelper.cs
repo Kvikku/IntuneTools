@@ -84,6 +84,21 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
+        public static async Task PrepareApplicationForAssignment(string appType, GraphServiceClient graphServiceClient)
+        {
+            try
+            {
+                LogToImportStatusFile($"Preparing application of type '{appType}' for assignment.");
+                // Placeholder for any preparation logic needed based on app type
+                await Task.CompletedTask;
+                LogToImportStatusFile($"Application of type '{appType}' is prepared for assignment.");
+            }
+            catch (Exception)
+            {
+                LogToImportStatusFile($"An error occurred while preparing application of type '{appType}' for assignment", LogLevels.Error);
+            }
+        }
+
         public static async Task AssignGroupsToApplication(string appId, List<string> groupIds, GraphServiceClient graphServiceClient)
         {
             try

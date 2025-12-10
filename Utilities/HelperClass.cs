@@ -328,19 +328,19 @@ namespace IntuneTools.Utilities
 
             return odataType switch
             {
-                "#microsoft.graph.win32LobApp" => "Windows app (Win32)",
-                "#microsoft.graph.iosVppApp" => "iOS VPP app",
-                "#microsoft.graph.winGetApp" => "Windows app (WinGet)",
-                "#microsoft.graph.iosiPadOSWebClip" => "iOS/iPadOS web clip",
-                "#microsoft.graph.androidManagedStoreApp" => "Android Managed store app",
-                "#microsoft.graph.macOSOfficeSuiteApp" => "macOS Microsoft 365 Apps",
-                "#microsoft.graph.officeSuiteApp" => "Windows Microsoft 365 Apps",
-                "#microsoft.graph.macOSMicrosoftDefenderApp" => "macOS Microsoft Defender for Endpoint",
-                "#microsoft.graph.macOSMicrosoftEdgeApp" => "macOS Microsoft Edge",
-                "#microsoft.graph.windowsMicrosoftEdgeApp" => "Windows Microsoft Edge",
-                "#microsoft.graph.webApp" => "Web link",
-                "#microsoft.graph.macOSWebClip" => "macOS web clip",
-                "#microsoft.graph.windowsWebApp" => "Windows web link",
+                "#microsoft.graph.win32LobApp" => "App - Windows app (Win32)",
+                "#microsoft.graph.iosVppApp" => "App - App - iOS VPP app",
+                "#microsoft.graph.winGetApp" => "App - Windows app (WinGet)",
+                "#microsoft.graph.iosiPadOSWebClip" => "App - iOS/iPadOS web clip",
+                "#microsoft.graph.androidManagedStoreApp" => "App - Android Managed store app",
+                "#microsoft.graph.macOSOfficeSuiteApp" => "App - macOS Microsoft 365 Apps",
+                "#microsoft.graph.officeSuiteApp" => "App - Windows Microsoft 365 Apps",
+                "#microsoft.graph.macOSMicrosoftDefenderApp" => "App - macOS Microsoft Defender for Endpoint",
+                "#microsoft.graph.macOSMicrosoftEdgeApp" => "App - macOS Microsoft Edge",
+                "#microsoft.graph.windowsMicrosoftEdgeApp" => "App - Windows Microsoft Edge",
+                "#microsoft.graph.webApp" => "App - Web link",
+                "#microsoft.graph.macOSWebClip" => "App - macOS web clip",
+                "#microsoft.graph.windowsWebApp" => "App - Windows web link",
                 _ => odataType
             };
         }

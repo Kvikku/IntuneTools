@@ -332,6 +332,14 @@ namespace IntuneTools.Pages
                     {
                         await AssignGroupsToSingleAppleBYODEnrollmentProfile(item.Value.Id, groupList, sourceGraphServiceClient);
                     }
+                    if (item.Value.Type.StartsWith("App - "))
+                    {
+                        // Must first handle the app type
+                        
+                        
+                        //await AssignGroupsToSingleApplication(item.Value.Id, groupList, sourceGraphServiceClient, _selectedInstallIntent);
+
+                    }
 
 
 
