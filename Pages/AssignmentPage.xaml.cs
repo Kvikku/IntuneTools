@@ -73,6 +73,12 @@ namespace IntuneTools.Pages
         // New: Include / Exclude filter mode (default Include)
         private string _selectedFilterMode = "Include";
 
+        // App Deployment Options
+        private string _selectedAppGroupMode;
+        private string _selectedNotificationSetting;
+        private string _selectedRestartSetting;
+        private string _selectedDeliveryOptimizationPriority;
+
         // UI initialization flag to prevent early event handlers from using null controls (e.g., LogConsole)
         private bool _uiInitialized = false;
         #endregion
@@ -1314,11 +1320,11 @@ namespace IntuneTools.Pages
 
                 if (result == ContentDialogResult.Primary)
                 {
-                    // User clicked Confirm - Log the selected values for testing
-                    var groupMode = (GroupModeCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
-                    var notification = (NotificationSettingsCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
-                    var restart = (RestartSettingsCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
-                    var delivery = (DeliveryOptimizationCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
+                    // User clicked Confirm - Store values in class-level variables
+                    _selectedAppGroupMode = (GroupModeCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
+                    _selectedNotificationSetting = (NotificationSettingsCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
+                    _selectedRestartSetting = (RestartSettingsCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
+                    _selectedDeliveryOptimizationPriority = (DeliveryOptimizationCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
 
                     // Store Assignment Intent
                     if (AssignmentIntentComboBox.SelectedItem is ComboBoxItem selectedItem && selectedItem.Content is string intent)
@@ -1339,12 +1345,10 @@ namespace IntuneTools.Pages
 
                     AppendToDetailsRichTextBlock("Application Deployment Options Configured:");
                     AppendToDetailsRichTextBlock($" • Intent: {_selectedInstallIntent}");
-                    AppendToDetailsRichTextBlock($" • Group Mode: {groupMode}");
-                    AppendToDetailsRichTextBlock($" • Notifications: {notification}");
-                    AppendToDetailsRichTextBlock($" • Restart: {restart}");
-                    AppendToDetailsRichTextBlock($" • Delivery Opt: {delivery}");
-
-                    // TODO: Store these values in class-level variables to use in the assignment loop
+                    AppendToDetailsRichTextBlock($" • Group Mode: {_selectedAppGroupMode}");
+                    AppendToDetailsRichTextBlock($" • Notifications: {_selectedNotificationSetting}");
+                    AppendToDetailsRichTextBlock($" • Restart: {_selectedRestartSetting}");
+                    AppendToDetailsRichTextBlock($" • Delivery Opt: {_selectedDeliveryOptimizationPriority}");
 
                     return true;
                 }
