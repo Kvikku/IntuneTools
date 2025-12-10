@@ -85,7 +85,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task PrepareApplicationForAssignment(KeyValuePair<string, AssignmentInfo> appInfo, GraphServiceClient graphServiceClient)
+        public static async Task PrepareApplicationForAssignment(KeyValuePair<string, AssignmentInfo> appInfo, List<string> groups , GraphServiceClient graphServiceClient)
         {
             // This method can be expanded based on specific preparation steps needed for different app types
 
@@ -94,7 +94,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
             try
             {
-
+                await AssignGroupsToApplication(appInfo.Value.Id, groups, graphServiceClient);
             }
             catch (Exception)
             {

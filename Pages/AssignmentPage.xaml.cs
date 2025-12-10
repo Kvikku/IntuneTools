@@ -341,7 +341,7 @@ namespace IntuneTools.Pages
                     if (item.Value.Type.StartsWith("App - "))
                     {
                         // Must first handle the app type
-                        await PrepareApplicationForAssignment(item, sourceGraphServiceClient);
+                        await PrepareApplicationForAssignment(item,groupList, sourceGraphServiceClient);
 
                         //await AssignGroupsToSingleApplication(item.Value.Id, groupList, sourceGraphServiceClient, _selectedInstallIntent);
 
@@ -1329,9 +1329,6 @@ namespace IntuneTools.Pages
                     _selectedIntent = (AssignmentIntentComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString();
                     _selectedNotificationSetting = (NotificationSettingsCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
                     _selectedDeliveryOptimizationPriority = (DeliveryOptimizationCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
-
-                    // Store the deployment mode
-
 
                     // Store Assignment Intent (Available, Required, Uninstall)
                     GetInstallIntent(_selectedIntent, out _selectedInstallIntent);
