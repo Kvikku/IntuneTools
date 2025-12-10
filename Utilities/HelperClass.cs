@@ -345,6 +345,32 @@ namespace IntuneTools.Utilities
             };
         }
 
+        public static string TranslateODataTypeFromApplicationType(string applicationType)
+        {
+            if (string.IsNullOrEmpty(applicationType))
+            {
+                return applicationType;
+            }
+
+            return applicationType switch
+            {
+                "App - Windows app (Win32)" => "#microsoft.graph.win32LobApp",
+                "App - iOS VPP app" => "#microsoft.graph.iosVppApp",
+                "App - Windows app (WinGet)" => "#microsoft.graph.winGetApp",
+                "App - iOS/iPadOS web clip" => "#microsoft.graph.iosiPadOSWebClip",
+                "App - Android Managed store app" => "#microsoft.graph.androidManagedStoreApp",
+                "App - macOS Microsoft 365 Apps" => "#microsoft.graph.macOSOfficeSuiteApp",
+                "App - Windows Microsoft 365 Apps" => "#microsoft.graph.officeSuiteApp",
+                "App - macOS Microsoft Defender for Endpoint" => "#microsoft.graph.macOSMicrosoftDefenderApp",
+                "App - macOS Microsoft Edge" => "#microsoft.graph.macOSMicrosoftEdgeApp",
+                "App - Windows Microsoft Edge" => "#microsoft.graph.windowsMicrosoftEdgeApp",
+                "App - Web link" => "#microsoft.graph.webApp",
+                "App - macOS web clip" => "#microsoft.graph.macOSWebClip",
+                "App - Windows web link" => "#microsoft.graph.windowsWebApp",
+                _ => applicationType
+            };
+        }
+
         public static async Task<string?> GetAzureTenantName(GraphServiceClient graphServiceClient)
         {
             // Method to get the Azure tenant name

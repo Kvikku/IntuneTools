@@ -88,6 +88,10 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         public static async Task PrepareApplicationForAssignment(KeyValuePair<string, AssignmentInfo> appInfo, GraphServiceClient graphServiceClient)
         {
             // This method can be expanded based on specific preparation steps needed for different app types
+
+            // Get the application type
+            var appType = TranslateODataTypeFromApplicationType(appInfo.Value.Platform);
+
             try
             {
 
@@ -97,6 +101,8 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 LogToImportStatusFile($"An error occurred while preparing application of type '{appInfo.Value.Platform}' for assignment", LogLevels.Error);
             }
         }
+
+
 
         public static async Task AssignGroupsToApplication(string appId, List<string> groupIds, GraphServiceClient graphServiceClient)
         {
