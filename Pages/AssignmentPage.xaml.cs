@@ -1332,6 +1332,8 @@ namespace IntuneTools.Pages
                     _selectedRestartSetting = (RestartSettingsCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
                     _selectedDeliveryOptimizationPriority = (DeliveryOptimizationCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
 
+                    // Store the deployment mode
+
 
                     // Store Assignment Intent (Available, Required, Uninstall)
                     GetInstallIntent(_selectedIntent, out _selectedInstallIntent);

@@ -413,6 +413,8 @@ namespace IntuneTools.Utilities
             }
         }
 
+        
+
         public static async Task<string?> GetAzureTenantName(GraphServiceClient graphServiceClient)
         {
             // Method to get the Azure tenant name
