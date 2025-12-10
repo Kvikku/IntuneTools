@@ -94,7 +94,8 @@ namespace IntuneTools.Pages
                 ["WindowsFeatureUpdate"] = async () => await LoadAllWindowsFeatureUpdateProfilesAsync(),
                 ["WindowsQualityUpdatePolicy"] = async () => await LoadAllWindowsQualityUpdatePoliciesAsync(),
                 ["WindowsQualityUpdateProfile"] = async () => await LoadAllWindowsQualityUpdateProfilesAsync(),
-                ["AppleBYODEnrollmentProfile"] = async () => await LoadAllAppleBYODEnrollmentProfilesAsync()
+                ["AppleBYODEnrollmentProfile"] = async () => await LoadAllAppleBYODEnrollmentProfilesAsync(),
+                ["Application"] = async () => await LoadAllApplicationsAsync()
             };
 
             _allAssignments.AddRange(AssignmentList);
@@ -723,6 +724,31 @@ namespace IntuneTools.Pages
                         Type = "Apple BYOD Enrollment Profile",
                         Platform = "iOS",
                         Id = profile.Id
+                    };
+                    AssignmentList.Add(assignmentInfo);
+                }
+                AppDataGrid.ItemsSource = AssignmentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
+        private async Task LoadAllApplicationsAsync()
+        {
+            ShowLoading("Loading applications from Microsoft Graph...");
+            try
+            {
+                var applications = await ApplicationHelper.GetAllMobileApps(sourceGraphServiceClient);
+                foreach (var app in applications)
+                {
+                    var assignmentInfo = new AssignmentInfo
+                    {
+                        Name = app.DisplayName,
+                        Type = TranslateApplicationType(app.OdataType),
+                        Platform = TranslatePolicyPlatformName(app.OdataType),
+                        Id = app.Id
                     };
                     AssignmentList.Add(assignmentInfo);
                 }

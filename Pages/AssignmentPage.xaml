@@ -104,6 +104,7 @@
                                     <CheckBox x:Name="WindowsFeatureUpdate" Content="Windows Feature Update" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
                                     <CheckBox x:Name="WindowsQualityUpdatePolicy" Content="Windows Quality Update Policy" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
                                     <CheckBox x:Name="WindowsQualityUpdateProfile" Content="Windows Quality Update Profile" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                    <CheckBox x:Name="Application" Content="Applications" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
                                 </StackPanel>
                             </Flyout>
                         </AppBarButton.Flyout>

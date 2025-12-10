@@ -293,6 +293,9 @@ namespace IntuneTools.Utilities
                 // Windows
                 "Windows10" => "Windows",
                 "#microsoft.graph.windows10CompliancePolicy" => "Windows",
+                "#microsoft.graph.win32LobApp" => "Windows",
+                "#microsoft.graph.winGetApp" => "Windows",
+                "#microsoft.graph.officeSuiteApp" => "Windows",
                 
                 
                 // macOS
@@ -309,7 +312,36 @@ namespace IntuneTools.Utilities
                 "Android" => "Android",
                 "#microsoft.graph.androidWorkProfileCompliancePolicy" => "Android",
                 "#microsoft.graph.androidDeviceOwnerCompliancePolicy" => "Android",
+
+                // Universal
+                "#microsoft.graph.webApp" => "Universal",
                 _ => platformName // Return the original name if no translation is found
+            };
+        }
+
+        public static string TranslateApplicationType(string odataType)
+        {
+            if (string.IsNullOrEmpty(odataType))
+            {
+                return odataType;
+            }
+
+            return odataType switch
+            {
+                "#microsoft.graph.win32LobApp" => "Windows app (Win32)",
+                "#microsoft.graph.iosVppApp" => "iOS VPP app",
+                "#microsoft.graph.winGetApp" => "Windows app (WinGet)",
+                "#microsoft.graph.iosiPadOSWebClip" => "iOS/iPadOS web clip",
+                "#microsoft.graph.androidManagedStoreApp" => "Android Managed store app",
+                "#microsoft.graph.macOSOfficeSuiteApp" => "macOS Microsoft 365 Apps",
+                "#microsoft.graph.officeSuiteApp" => "Windows Microsoft 365 Apps",
+                "#microsoft.graph.macOSMicrosoftDefenderApp" => "macOS Microsoft Defender for Endpoint",
+                "#microsoft.graph.macOSMicrosoftEdgeApp" => "macOS Microsoft Edge",
+                "#microsoft.graph.windowsMicrosoftEdgeApp" => "Windows Microsoft Edge",
+                "#microsoft.graph.webApp" => "Web link",
+                "#microsoft.graph.macOSWebClip" => "macOS web clip",
+                "#microsoft.graph.windowsWebApp" => "Windows web link",
+                _ => odataType
             };
         }
 
