@@ -77,7 +77,6 @@ namespace IntuneTools.Pages
         private string _selectedDeploymentMode;
         private string _selectedIntent;
         private string _selectedNotificationSetting;
-        private string _selectedRestartSetting;
         private string _selectedDeliveryOptimizationPriority;
 
         private InstallIntent _selectedInstallIntent;
@@ -1329,7 +1328,6 @@ namespace IntuneTools.Pages
                     _selectedDeploymentMode = (DeploymentModeCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
                     _selectedIntent = (AssignmentIntentComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString();
                     _selectedNotificationSetting = (NotificationSettingsCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
-                    _selectedRestartSetting = (RestartSettingsCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
                     _selectedDeliveryOptimizationPriority = (DeliveryOptimizationCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
 
                     // Store the deployment mode
@@ -1340,8 +1338,7 @@ namespace IntuneTools.Pages
 
 
                     // Store the notifications mode
-                    GetWin32AppNotificationValue(_selectedNotificationSetting, out Win32LobAppNotification? notificationValue);
-                    win32LobAppNotification = notificationValue ?? Win32LobAppNotification.ShowAll;
+                    GetWin32AppNotificationValue(_selectedNotificationSetting, out Win32LobAppNotification? win32LobAppNotification);
 
 
                     // Log the selected options
@@ -1349,7 +1346,6 @@ namespace IntuneTools.Pages
                     AppendToDetailsRichTextBlock($" • Intent: {_selectedInstallIntent}");
                     AppendToDetailsRichTextBlock($" • Group Mode: {_selectedDeploymentMode}");
                     AppendToDetailsRichTextBlock($" • Notifications: {win32LobAppNotification}");
-                    AppendToDetailsRichTextBlock($" • Restart: {_selectedRestartSetting}");
                     AppendToDetailsRichTextBlock($" • Delivery Opt: {_selectedDeliveryOptimizationPriority}");
 
                     return true;

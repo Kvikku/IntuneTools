@@ -289,16 +289,6 @@
                                 <ComboBoxItem Content="Hide toast notifications and show only reboot" />
                             </ComboBox>
 
-                            <ComboBox x:Name="RestartSettingsCombo"
-                                      Header="Device restart behavior"
-                                      HorizontalAlignment="Stretch"
-                                      SelectedIndex="0">
-                                <ComboBoxItem Content="Based on return code" />
-                                <ComboBoxItem Content="No specific action" />
-                                <ComboBoxItem Content="App install may force device restart" />
-                                <ComboBoxItem Content="Intune will force a mandatory device restart" />
-                            </ComboBox>
-
                             <ComboBox x:Name="DeliveryOptimizationCombo"
                                       Header="Delivery Optimization priority"
                                       HorizontalAlignment="Stretch"
