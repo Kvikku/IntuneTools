@@ -130,7 +130,6 @@ namespace IntuneTools.Pages
                 FilterToggle.IsEnabled = false;
                 FilterSelectionComboBox.IsEnabled = false;
                 FilterModeToggle.IsEnabled = false;
-                AssignmentIntentComboBox.IsEnabled = false;
                 //OptionsPanel.IsEnabled = false;
                 OptionsAllCheckBox.IsEnabled = false;
                 ClearLogButton.IsEnabled = false;
@@ -158,7 +157,6 @@ namespace IntuneTools.Pages
                 FilterToggle.IsEnabled = true;
                 FilterSelectionComboBox.IsEnabled = true;
                 FilterModeToggle.IsEnabled = true;
-                AssignmentIntentComboBox.IsEnabled = true;
                 //OptionsPanel.IsEnabled = true;
                 OptionsAllCheckBox.IsEnabled = true;
                 ClearLogButton.IsEnabled = true;
@@ -245,8 +243,6 @@ namespace IntuneTools.Pages
                 deviceAndAppManagementAssignmentFilterType = DeviceAndAppManagementAssignmentFilterType.None;
             }
 
-            // Get and log install intent
-            UpdateSelectedInstallIntent();
 
 
             // Get selected items and groups
@@ -1324,7 +1320,25 @@ namespace IntuneTools.Pages
                     var restart = (RestartSettingsCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
                     var delivery = (DeliveryOptimizationCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
 
+                    // Store Assignment Intent
+                    if (AssignmentIntentComboBox.SelectedItem is ComboBoxItem selectedItem && selectedItem.Content is string intent)
+                    {
+                        if (Enum.TryParse(intent, out InstallIntent parsedIntent))
+                        {
+                            _selectedInstallIntent = parsedIntent;
+                        }
+                        else
+                        {
+                            _selectedInstallIntent = InstallIntent.Required;
+                        }
+                    }
+                    else
+                    {
+                        _selectedInstallIntent = InstallIntent.Required;
+                    }
+
                     AppendToDetailsRichTextBlock("Application Deployment Options Configured:");
+                    AppendToDetailsRichTextBlock($" • Intent: {_selectedInstallIntent}");
                     AppendToDetailsRichTextBlock($" • Group Mode: {groupMode}");
                     AppendToDetailsRichTextBlock($" • Notifications: {notification}");
                     AppendToDetailsRichTextBlock($" • Restart: {restart}");
