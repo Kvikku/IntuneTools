@@ -386,6 +386,9 @@ namespace IntuneTools.Pages
             AssignmentList.Clear();
             _allAssignments.Clear();
 
+
+            await ShowAppDeploymentOptionsDialog();
+
             var selectedContent = GetCheckedOptionNames();
             if (selectedContent.Count == 0)
             {
@@ -1306,6 +1309,45 @@ namespace IntuneTools.Pages
             // e.Handled = true; // Removed as per workaround
         }
 
+        private async Task<bool> ShowAppDeploymentOptionsDialog()
+        {
+            try
+            {
+                // Show the dialog defined in XAML
+                var result = await AppDeployment.ShowAsync();
+
+                if (result == ContentDialogResult.Primary)
+                {
+                    // User clicked Confirm - Log the selected values for testing
+                    var groupMode = (GroupModeCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
+                    var notification = (NotificationSettingsCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
+                    var restart = (RestartSettingsCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
+                    var delivery = (DeliveryOptimizationCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
+
+                    AppendToDetailsRichTextBlock("Application Deployment Options Configured:");
+                    AppendToDetailsRichTextBlock($" • Group Mode: {groupMode}");
+                    AppendToDetailsRichTextBlock($" • Notifications: {notification}");
+                    AppendToDetailsRichTextBlock($" • Restart: {restart}");
+                    AppendToDetailsRichTextBlock($" • Delivery Opt: {delivery}");
+
+                    // TODO: Store these values in class-level variables to use in the assignment loop
+
+                    return true;
+                }
+                else
+                {
+                    // User clicked Cancel
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                AppendToDetailsRichTextBlock($"Error showing app options dialog: {ex.Message}");
+                return false;
+            }
+        }
+
+
         private void GroupDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
         {
             var dataGrid = sender as DataGrid;
@@ -1372,6 +1414,8 @@ namespace IntuneTools.Pages
             // Prevent default sort
             // e.Handled = true; // Uncomment if needed for your toolkit version
         }
+
+
 
         #endregion
     }

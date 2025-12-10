@@ -106,7 +106,7 @@
                                     <CheckBox x:Name="WindowsQualityUpdateProfile" Content="Windows Quality Update Profile" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
                                     <CheckBox x:Name="Application" Content="Applications" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
                                 </StackPanel>
-                            </Flyout>
+                            </Flyout>   
                         </AppBarButton.Flyout>
                     </AppBarButton>
                 </StackPanel>
@@ -246,5 +246,89 @@
                 </ScrollViewer>
             </StackPanel>
         </Grid>
+
+        <!-- Application Deployment Options Dialog -->
+        <ContentDialog x:Name="AppDeployment"
+                       Title="Application Deployment Options"
+                       PrimaryButtonText="Confirm"
+                       SecondaryButtonText="Cancel"
+                       DefaultButton="Primary">
+            <Grid MinWidth="500">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <InfoBar Grid.Row="0"
+                         IsOpen="True" 
+                         Severity="Informational" 
+                         IsClosable="False" 
+                         Message="Please configure the specific settings for this application deployment."
+                         Margin="0,0,0,12"/>
+
+                <Pivot Grid.Row="1">
+                    <PivotItem Header="General">
+                        <StackPanel Spacing="16" Margin="0,12,0,0">
+                            <ComboBox x:Name="GroupModeCombo"
+                                      Header="Group mode"
+                                      HorizontalAlignment="Stretch"
+                                      SelectedIndex="0">
+                                <ComboBoxItem Content="Include" />
+                                <ComboBoxItem Content="Exclude" />
+                            </ComboBox>
+                        </StackPanel>
+                    </PivotItem>
+
+                    <PivotItem Header="Windows">
+                        <StackPanel Spacing="16" Margin="0,12,0,0">
+                            <ComboBox x:Name="NotificationSettingsCombo"
+                                      Header="End user notifications"
+                                      HorizontalAlignment="Stretch"
+                                      SelectedIndex="0">
+                                <ComboBoxItem Content="Show all toast notifications" />
+                                <ComboBoxItem Content="Hide all toast notifications" />
+                                <ComboBoxItem Content="Hide toast notifications and reboot" />
+                            </ComboBox>
+
+                            <ComboBox x:Name="RestartSettingsCombo"
+                                      Header="Device restart behavior"
+                                      HorizontalAlignment="Stretch"
+                                      SelectedIndex="0">
+                                <ComboBoxItem Content="Based on return code" />
+                                <ComboBoxItem Content="No specific action" />
+                                <ComboBoxItem Content="App install may force device restart" />
+                                <ComboBoxItem Content="Intune will force a mandatory device restart" />
+                            </ComboBox>
+
+                            <ComboBox x:Name="DeliveryOptimizationCombo"
+                                      Header="Delivery Optimization priority"
+                                      HorizontalAlignment="Stretch"
+                                      SelectedIndex="0">
+                                <ComboBoxItem Content="Content download in background" />
+                                <ComboBoxItem Content="Content download in foreground" />
+                            </ComboBox>
+                        </StackPanel>
+                    </PivotItem>
+
+                    <PivotItem Header="iOS">
+                        <StackPanel Spacing="16" Margin="0,12,0,0">
+                            <TextBlock Text="No specific settings available for iOS." Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        </StackPanel>
+                    </PivotItem>
+
+                    <PivotItem Header="Android">
+                        <StackPanel Spacing="16" Margin="0,12,0,0">
+                            <TextBlock Text="No specific settings available for Android." Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        </StackPanel>
+                    </PivotItem>
+
+                    <PivotItem Header="macOS">
+                        <StackPanel Spacing="16" Margin="0,12,0,0">
+                            <TextBlock Text="No specific settings available for macOS." Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        </StackPanel>
+                    </PivotItem>
+                </Pivot>
+            </Grid>
+        </ContentDialog>
     </Grid>
 </Page>
