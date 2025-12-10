@@ -69,16 +69,6 @@
                                   VerticalAlignment="Bottom"
                                   Toggled="FilterModeToggle_Toggled"/>
                     <AppBarSeparator/>
-                    <ComboBox x:Name="AssignmentIntentComboBox"
-                              Header="Assignment Intent (Apps only)"
-                              PlaceholderText="Select an intent"
-                              Width="150"
-                              VerticalAlignment="Bottom"
-                              SelectedIndex="0">
-                        <ComboBoxItem Content="Required"/>
-                        <ComboBoxItem Content="Available"/>
-                        <ComboBoxItem Content="Uninstall"/>
-                    </ComboBox>
                     <AppBarButton x:Name="ContentTypesButton" Icon="ViewAll" Label="Content Types">
                         <AppBarButton.Flyout>
                             <Flyout Placement="BottomEdgeAlignedLeft">
@@ -275,6 +265,15 @@
                                       SelectedIndex="0">
                                 <ComboBoxItem Content="Include" />
                                 <ComboBoxItem Content="Exclude" />
+                            </ComboBox>
+                            <ComboBox x:Name="AssignmentIntentComboBox"
+                                      Header="Assignment Intent"
+                                      PlaceholderText="Select an intent"
+                                      HorizontalAlignment="Stretch"
+                                      SelectedIndex="0">
+                                <ComboBoxItem Content="Required"/>
+                                <ComboBoxItem Content="Available"/>
+                                <ComboBoxItem Content="Uninstall"/>
                             </ComboBox>
                         </StackPanel>
                     </PivotItem>
