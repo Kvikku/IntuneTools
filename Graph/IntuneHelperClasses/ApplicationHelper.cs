@@ -179,7 +179,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                                 DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
                                 DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
                             },
-                            Intent = _selectedInstallIntent,
+                            Intent = _selectedAppDeploymentIntent,
                             Settings = assignmentSettings
                         };
                     }
@@ -195,7 +195,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                                 DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
                                 DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
                             },
-                            Intent = _selectedInstallIntent,
+                            Intent = _selectedAppDeploymentIntent,
                             Settings = assignmentSettings
                         };
                     }
@@ -212,7 +212,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                                 DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType,
                                 GroupId = group
                             },
-                            Intent = _selectedInstallIntent,
+                            Intent = _selectedAppDeploymentIntent,
                             Settings = assignmentSettings
                         };
                     }
