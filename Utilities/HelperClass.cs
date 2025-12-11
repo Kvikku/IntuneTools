@@ -374,75 +374,44 @@ namespace IntuneTools.Utilities
         public static void GetWin32AppNotificationValue(string input)
         {
             // Method to get the Win32LobAppNotification enum value based on input string
-            switch (input)
+            win32LobAppNotification = input switch
             {
-                case "Show all toast notifications":
-                    win32LobAppNotification = Win32LobAppNotification.ShowAll;
-                    break;
-                case "Hide toast notifications and show only reboot":
-                    win32LobAppNotification = Win32LobAppNotification.ShowReboot;
-                    break;
-                case "Hide all toast notifications":
-                    win32LobAppNotification = Win32LobAppNotification.HideAll;
-                    break;
-                default:
-                    win32LobAppNotification = Win32LobAppNotification.ShowAll;
-                    break;
-            }
+                "Show all toast notifications" => Win32LobAppNotification.ShowAll,
+                "Hide toast notifications and show only reboot" => Win32LobAppNotification.ShowReboot,
+                "Hide all toast notifications" => Win32LobAppNotification.HideAll,
+                _ => Win32LobAppNotification.ShowAll
+            };
         }
 
         public static void GetInstallIntent(string input)
         {
-            switch (input)
+            _selectedAppDeploymentIntent = input switch
             {
-                case "Available":
-                    _selectedAppDeploymentIntent = InstallIntent.Available;
-                    break;
-                case "Required":
-                    _selectedAppDeploymentIntent = InstallIntent.Required;
-                    break;
-                case "Uninstall":
-                    _selectedAppDeploymentIntent = InstallIntent.Uninstall;
-                    break;
-                default:
-                    _selectedAppDeploymentIntent = InstallIntent.Required;
-                    break;
-            }
+                "Available" => InstallIntent.Available,
+                "Required" => InstallIntent.Required,
+                "Uninstall" => InstallIntent.Uninstall,
+                _ => InstallIntent.Required
+            };
         }
 
         public static void GetDeliveryOptimizationPriority(string input)
         {
-            switch (input)
+            win32LobAppDeliveryOptimizationPriority = input switch
             {
-                case "Content download in foreground":
-                    win32LobAppDeliveryOptimizationPriority = Win32LobAppDeliveryOptimizationPriority.Foreground;
-                    break;
-                case "Content download in background":
-                    win32LobAppDeliveryOptimizationPriority = Win32LobAppDeliveryOptimizationPriority.NotConfigured;
-                    break;
-                default:
-                    win32LobAppDeliveryOptimizationPriority = Win32LobAppDeliveryOptimizationPriority.NotConfigured;
-                    break;
-            }
+                "Content download in foreground" => Win32LobAppDeliveryOptimizationPriority.Foreground,
+                "Content download in background" => Win32LobAppDeliveryOptimizationPriority.NotConfigured,
+                _ => Win32LobAppDeliveryOptimizationPriority.NotConfigured
+            };
         }
 
         public static void GetAndroidManagedStoreAutoUpdateMode(string input)
         {
-            switch(input)
+            _androidManagedStoreAutoUpdateMode = input switch
             {
-                case "Default":
-                    _androidManagedStoreAutoUpdateMode = AndroidManagedStoreAutoUpdateMode.Default;
-                    break;
-                case "High priority":
-                    _androidManagedStoreAutoUpdateMode = AndroidManagedStoreAutoUpdateMode.Priority;
-                    break;
-                case "Postponed":
-                    _androidManagedStoreAutoUpdateMode = AndroidManagedStoreAutoUpdateMode.Postponed;
-                    break;
-                default:
-                    _androidManagedStoreAutoUpdateMode = AndroidManagedStoreAutoUpdateMode.Default;
-                    break;
-            }
+                "High priority" => AndroidManagedStoreAutoUpdateMode.Priority,
+                "Postponed" => AndroidManagedStoreAutoUpdateMode.Postponed,
+                _ => AndroidManagedStoreAutoUpdateMode.Default
+            };
         }
 
         public static async Task<string?> GetAzureTenantName(GraphServiceClient graphServiceClient)
