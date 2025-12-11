@@ -391,24 +391,21 @@ namespace IntuneTools.Utilities
             }
         }
 
-        public static void GetInstallIntent(string input, out InstallIntent intentValue)
+        public static void GetInstallIntent(string input)
         {
             switch (input)
             {
                 case "Available":
-                    intentValue = InstallIntent.Available;
+                    _selectedAppDeploymentIntent = InstallIntent.Available;
                     break;
                 case "Required":
-                    intentValue = InstallIntent.Required;
+                    _selectedAppDeploymentIntent = InstallIntent.Required;
                     break;
                 case "Uninstall":
-                    intentValue = InstallIntent.Uninstall;
-                    break;
-                case "AvailableWithoutEnrollment":
-                    intentValue = InstallIntent.AvailableWithoutEnrollment;
+                    _selectedAppDeploymentIntent = InstallIntent.Uninstall;
                     break;
                 default:
-                    intentValue = InstallIntent.Required;
+                    _selectedAppDeploymentIntent = InstallIntent.Required;
                     break;
             }
         }

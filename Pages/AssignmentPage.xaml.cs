@@ -1321,7 +1321,7 @@ namespace IntuneTools.Pages
                     Variables._selectedDeliveryOptimizationPriority = (DeliveryOptimizationCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
 
                     // Store Assignment Intent (Available, Required, Uninstall)
-                    GetInstallIntent(_selectedIntent, out _selectedInstallIntent);
+                    GetInstallIntent(_selectedIntent);
 
                     // Store the delivery optimization priority
                     GetDeliveryOptimizationPriority(_selectedDeliveryOptimizationPriority);
