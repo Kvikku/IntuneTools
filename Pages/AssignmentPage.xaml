@@ -233,8 +233,11 @@
                 </Button>
 
                 <!-- Log Panel -->
-                <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                <ScrollViewer 
+                              x:Name="LogScrollViewer"                                
+                              HorizontalScrollBarVisibility="Disabled"
                               VerticalScrollBarVisibility="Auto"
+                              VerticalAlignment="Stretch"
                               MaxHeight="200"
                               Margin="0,16,0,0">
                     <RichTextBlock x:Name="LogConsole"

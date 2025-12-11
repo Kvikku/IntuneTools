@@ -1183,6 +1183,8 @@ namespace IntuneTools.Pages
                 paragraph.Inlines.Add(new LineBreak());
             }
             paragraph.Inlines.Add(new Run { Text = text });
+
+            ScrollLogToEnd();
         }
 
         public List<string> GetCheckedOptionNames()
@@ -1249,6 +1251,16 @@ namespace IntuneTools.Pages
             else
                 OptionsAllCheckBox.IsChecked = null;
             _suppressSelectAllEvents = false;
+        }
+
+        private void ScrollLogToEnd()
+        {
+            // Ensure measure is up-to-date before scrolling
+            LogConsole.UpdateLayout();
+            LogScrollViewer.UpdateLayout();
+
+            // Scroll to the bottom
+            LogScrollViewer.ChangeView(null, LogScrollViewer.ScrollableHeight, null, true);
         }
 
         private void AppDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
