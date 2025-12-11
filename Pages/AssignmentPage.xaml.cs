@@ -139,6 +139,7 @@ namespace IntuneTools.Pages
                 ClearLogButton.IsEnabled = false;
                 OptionsAllCheckBox.IsEnabled = false;
                 ContentTypesButton.IsEnabled = false;
+                IntentToggle.IsEnabled = false;
             }
             else
             {
@@ -166,6 +167,7 @@ namespace IntuneTools.Pages
                 ClearLogButton.IsEnabled = true;
                 OptionsAllCheckBox.IsEnabled = true;
                 ContentTypesButton.IsEnabled = true;
+                IntentToggle.IsEnabled = true;
             }
         }
 
@@ -1124,6 +1126,17 @@ namespace IntuneTools.Pages
                 AppendToDetailsRichTextBlock($"Filter mode set to '{_selectedFilterMode}'.");
             }
         }
+
+        private void IntentToggle_Toggled(object sender, RoutedEventArgs e)
+        {
+            if (!_uiInitialized) return;
+            if (sender is ToggleSwitch ts)
+            {
+                _selectedInstallIntent = ts.IsOn ? InstallIntent.Required : InstallIntent.Available;
+                AppendToDetailsRichTextBlock($"Assignment intent set to '{_selectedInstallIntent}'.");
+            }
+        }
+
         #endregion
 
         #region Helpers

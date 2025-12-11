@@ -68,6 +68,13 @@
                                   Visibility="Collapsed"
                                   VerticalAlignment="Bottom"
                                   Toggled="FilterModeToggle_Toggled"/>
+                    <ToggleSwitch x:Name="IntentToggle"
+                                  Header="Intent"
+                                  OnContent="Required"
+                                  OffContent="Available"
+                                  IsOn="True"
+                                  VerticalAlignment="Bottom"
+                                  Toggled="IntentToggle_Toggled"/>
                     <AppBarSeparator/>
                     <AppBarButton x:Name="ContentTypesButton" Icon="ViewAll" Label="Content Types">
                         <AppBarButton.Flyout>
