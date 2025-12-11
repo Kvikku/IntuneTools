@@ -296,6 +296,9 @@
                                 <ComboBoxItem Content="Content download in background" />
                                 <ComboBoxItem Content="Content download in foreground" />
                             </ComboBox>
+                            <TextBlock Text="Availability and Installation deadline will be set to 'As soon as possible'" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                            <TextBlock Text="Restart grace period will be set to 'Disabled'" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                            <TextBlock Text="These settings will be made configurable in a future update." Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                         </StackPanel>
                     </PivotItem>
 
