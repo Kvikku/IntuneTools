@@ -385,8 +385,6 @@ namespace IntuneTools.Pages
             _allAssignments.Clear();
 
 
-            await ShowAppDeploymentOptionsDialog();
-
             var selectedContent = GetCheckedOptionNames();
             if (selectedContent.Count == 0)
             {

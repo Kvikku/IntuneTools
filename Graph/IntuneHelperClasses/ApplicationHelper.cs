@@ -90,7 +90,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             // This method can be expanded based on specific preparation steps needed for different app types
 
             // Get the application type
-            var appType = TranslateODataTypeFromApplicationType(appInfo.Value.Platform);
+            var appType = TranslateODataTypeFromApplicationType(appInfo.Value.Type);
 
             try
             {
@@ -102,7 +102,16 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
+        public static Win32LobAppAssignmentSettings CreateWin32LobAppAssignmentSettings()
+        {
+            return new Win32LobAppAssignmentSettings
+            {
+                OdataType = "#microsoft.graph.win32LobAppAssignmentSettings",
+                Notifications = win32LobAppNotification,
+                DeliveryOptimizationPriority =  win32LobAppDeliveryOptimizationPriority
 
+            };
+        }
 
         public static async Task AssignGroupsToApplication(string appId, List<string> groupIds, GraphServiceClient graphServiceClient)
         {

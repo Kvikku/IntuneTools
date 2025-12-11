@@ -92,5 +92,6 @@ namespace IntuneTools.Utilities
         public static InstallIntent _selectedInstallIntent;
         public static InstallIntent _selectedAppDeploymentIntent;
         public static Win32LobAppNotification win32LobAppNotification;
+        public static Win32LobAppDeliveryOptimizationPriority win32LobAppDeliveryOptimizationPriority;
     }
 }
