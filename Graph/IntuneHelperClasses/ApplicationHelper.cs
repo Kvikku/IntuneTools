@@ -103,15 +103,21 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             {
                 assignmentSettings = CreateAndroidManagedStoreAppAssignmentSettings();
             }
+            else
+            {
+                // App type not supported yet
+                WriteToImportStatusFile("The selected app type is not supported for deployment yet. Skipping");
+                return;   
+            }
 
-            try
-            {
-                await AssignGroupsToApplication(appInfo.Value.Id, groups, graphServiceClient, assignmentSettings);
-            }
-            catch (Exception)
-            {
-                LogToImportStatusFile($"An error occurred while preparing application of type '{appInfo.Value.Platform}' for assignment", LogLevels.Error);
-            }
+                try
+                {
+                    await AssignGroupsToApplication(appInfo.Value.Id, groups, graphServiceClient, assignmentSettings);
+                }
+                catch (Exception)
+                {
+                    LogToImportStatusFile($"An error occurred while preparing application of type '{appInfo.Value.Platform}' for assignment", LogLevels.Error);
+                }
         }
 
         public static Win32LobAppAssignmentSettings CreateWin32LobAppAssignmentSettings()
