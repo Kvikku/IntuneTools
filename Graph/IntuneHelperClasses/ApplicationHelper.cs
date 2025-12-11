@@ -92,9 +92,21 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             // Get the application type
             var appType = TranslateODataTypeFromApplicationType(appInfo.Value.Type);
 
+            // Prepare the app options based on the application type
+            MobileAppAssignmentSettings? assignmentSettings = null;
+
+            if (appType == "#microsoft.graph.win32LobApp")
+            {
+                assignmentSettings = CreateWin32LobAppAssignmentSettings();
+            }
+            else if (appType == "#microsoft.graph.androidManagedStoreApp")
+            {
+                assignmentSettings = CreateAndroidManagedStoreAppAssignmentSettings();
+            }
+
             try
             {
-                await AssignGroupsToApplication(appInfo.Value.Id, groups, graphServiceClient);
+                await AssignGroupsToApplication(appInfo.Value.Id, groups, graphServiceClient, assignmentSettings);
             }
             catch (Exception)
             {
@@ -113,7 +125,16 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             };
         }
 
-        public static async Task AssignGroupsToApplication(string appId, List<string> groupIds, GraphServiceClient graphServiceClient)
+        public static AndroidManagedStoreAppAssignmentSettings CreateAndroidManagedStoreAppAssignmentSettings()
+        {
+            return new AndroidManagedStoreAppAssignmentSettings
+            {
+                OdataType = "#microsoft.graph.androidManagedStoreAppAssignmentSettings",
+                AutoUpdateMode = AndroidManagedStoreAutoUpdateMode.Default
+            };
+        }
+
+        public static async Task AssignGroupsToApplication(string appId, List<string> groupIds, GraphServiceClient graphServiceClient, MobileAppAssignmentSettings? assignmentSettings = null)
         {
             try
             {
@@ -158,7 +179,8 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                                 DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
                                 DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
                             },
-                            Intent = _selectedInstallIntent
+                            Intent = _selectedInstallIntent,
+                            Settings = assignmentSettings
                         };
                     }
                     else if (group.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
@@ -173,7 +195,8 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                                 DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
                                 DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
                             },
-                            Intent = _selectedInstallIntent
+                            Intent = _selectedInstallIntent,
+                            Settings = assignmentSettings
                         };
                     }
                     else
@@ -189,7 +212,8 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                                 DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType,
                                 GroupId = group
                             },
-                            Intent = _selectedInstallIntent
+                            Intent = _selectedInstallIntent,
+                            Settings = assignmentSettings
                         };
                     }
 

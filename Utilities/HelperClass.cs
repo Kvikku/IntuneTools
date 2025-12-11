@@ -371,22 +371,22 @@ namespace IntuneTools.Utilities
             };
         }
 
-        public static void GetWin32AppNotificationValue(string input, out Win32LobAppNotification? notificationValue)
+        public static void GetWin32AppNotificationValue(string input)
         {
             // Method to get the Win32LobAppNotification enum value based on input string
             switch (input)
             {
                 case "Show all toast notifications":
-                    notificationValue = Win32LobAppNotification.ShowAll;
+                    win32LobAppNotification = Win32LobAppNotification.ShowAll;
                     break;
                 case "Hide toast notifications and show only reboot":
-                    notificationValue = Win32LobAppNotification.ShowReboot;
+                    win32LobAppNotification = Win32LobAppNotification.ShowReboot;
                     break;
                 case "Hide all toast notifications":
-                    notificationValue = Win32LobAppNotification.HideAll;
+                    win32LobAppNotification = Win32LobAppNotification.HideAll;
                     break;
                 default:
-                    notificationValue = null; // Return null if no match is found
+                    win32LobAppNotification = Win32LobAppNotification.ShowAll;
                     break;
             }
         }
@@ -413,8 +413,22 @@ namespace IntuneTools.Utilities
             }
         }
 
+        public static void GetDeliveryOptimizationPriority(string input)
+        {
+            switch (input)
+            {
+                case "Content download in foreground":
+                    win32LobAppDeliveryOptimizationPriority = Win32LobAppDeliveryOptimizationPriority.Foreground;
+                    break;
+                case "Content download in background":
+                    win32LobAppDeliveryOptimizationPriority = Win32LobAppDeliveryOptimizationPriority.NotConfigured;
+                    break;
+                default:
+                    win32LobAppDeliveryOptimizationPriority = Win32LobAppDeliveryOptimizationPriority.NotConfigured;
+                    break;
+            }
+        }
 
-        
 
         public static async Task<string?> GetAzureTenantName(GraphServiceClient graphServiceClient)
         {

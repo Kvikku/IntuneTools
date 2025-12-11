@@ -1323,16 +1323,18 @@ namespace IntuneTools.Pages
                     // Store Assignment Intent (Available, Required, Uninstall)
                     GetInstallIntent(_selectedIntent, out _selectedInstallIntent);
 
+                    // Store the delivery optimization priority
+                    GetDeliveryOptimizationPriority(_selectedDeliveryOptimizationPriority);
 
                     // Store the notifications mode
-                    GetWin32AppNotificationValue(_selectedNotificationSetting, out Win32LobAppNotification? win32LobAppNotification);
+                    GetWin32AppNotificationValue(_selectedNotificationSetting);
 
 
                     // Log the selected options
                     AppendToDetailsRichTextBlock("Application Deployment Options Configured:");
                     AppendToDetailsRichTextBlock($" • Intent: {_selectedInstallIntent}");
                     AppendToDetailsRichTextBlock($" • Group Mode: {_selectedDeploymentMode}");
-                    AppendToDetailsRichTextBlock($" • Notifications: {win32LobAppNotification}");
+                    AppendToDetailsRichTextBlock($" • Notifications: {_selectedNotificationSetting}");
                     AppendToDetailsRichTextBlock($" • Delivery Opt: {_selectedDeliveryOptimizationPriority}");
 
                     return true;
