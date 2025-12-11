@@ -88,10 +88,12 @@ namespace IntuneTools.Utilities
         public static string _selectedIntent;
         public static string _selectedNotificationSetting;
         public static string _selectedDeliveryOptimizationPriority;
+        public static string _selectedAndroidManagedStoreAutoUpdateMode;
 
         public static InstallIntent _selectedInstallIntent;
         public static InstallIntent _selectedAppDeploymentIntent;
         public static Win32LobAppNotification win32LobAppNotification;
         public static Win32LobAppDeliveryOptimizationPriority win32LobAppDeliveryOptimizationPriority;
+        public static AndroidManagedStoreAutoUpdateMode _androidManagedStoreAutoUpdateMode;
     }
 }

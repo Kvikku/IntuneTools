@@ -130,7 +130,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             return new AndroidManagedStoreAppAssignmentSettings
             {
                 OdataType = "#microsoft.graph.androidManagedStoreAppAssignmentSettings",
-                AutoUpdateMode = AndroidManagedStoreAutoUpdateMode.Default
+                AutoUpdateMode = _androidManagedStoreAutoUpdateMode
             };
         }
 

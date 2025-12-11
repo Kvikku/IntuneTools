@@ -1355,6 +1355,8 @@ namespace IntuneTools.Pages
                     // Store the notifications mode
                     GetWin32AppNotificationValue(_selectedNotificationSetting);
 
+                    // Store the Android managed app auto update mode
+                    GetAndroidManagedStoreAutoUpdateMode(_selectedAndroidManagedStoreAutoUpdateMode);
 
                     // Log the selected options
                     AppendToDetailsRichTextBlock("Application Deployment Options Configured:");

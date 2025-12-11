@@ -426,6 +426,24 @@ namespace IntuneTools.Utilities
             }
         }
 
+        public static void GetAndroidManagedStoreAutoUpdateMode(string input)
+        {
+            switch(input)
+            {
+                case "Default":
+                    _androidManagedStoreAutoUpdateMode = AndroidManagedStoreAutoUpdateMode.Default;
+                    break;
+                case "High priority":
+                    _androidManagedStoreAutoUpdateMode = AndroidManagedStoreAutoUpdateMode.Priority;
+                    break;
+                case "Postponed":
+                    _androidManagedStoreAutoUpdateMode = AndroidManagedStoreAutoUpdateMode.Postponed;
+                    break;
+                default:
+                    _androidManagedStoreAutoUpdateMode = AndroidManagedStoreAutoUpdateMode.Default;
+                    break;
+            }
+        }
 
         public static async Task<string?> GetAzureTenantName(GraphServiceClient graphServiceClient)
         {
