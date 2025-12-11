@@ -70,8 +70,8 @@
                                   Toggled="FilterModeToggle_Toggled"/>
                     <ToggleSwitch x:Name="IntentToggle"
                                   Header="Intent"
-                                  OnContent="Required"
-                                  OffContent="Available"
+                                  OnContent="Include"
+                                  OffContent="Exclude"
                                   IsOn="True"
                                   VerticalAlignment="Bottom"
                                   Toggled="IntentToggle_Toggled"/>

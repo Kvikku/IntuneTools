@@ -1098,7 +1098,7 @@ namespace IntuneTools.Pages
                         await LoadAllAssignmentFiltersAsync();
                     }
                     _selectedFilterMode = "Include";
-                    AppendToDetailsRichTextBlock("Assignment filter enabled (Mode=" + _selectedFilterMode + ").");
+                    AppendToDetailsRichTextBlock("Assignment filter enabled.");
                 }
                 else
                 {
@@ -1255,12 +1255,13 @@ namespace IntuneTools.Pages
 
         private void ScrollLogToEnd()
         {
-            // Ensure measure is up-to-date before scrolling
-            LogConsole.UpdateLayout();
-            LogScrollViewer.UpdateLayout();
-
-            // Scroll to the bottom
-            LogScrollViewer.ChangeView(null, LogScrollViewer.ScrollableHeight, null, true);
+            // Use DispatcherQueue to ensure layout updates are processed
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                LogConsole.UpdateLayout();
+                LogScrollViewer.UpdateLayout();
+                LogScrollViewer.ChangeView(null, LogScrollViewer.ScrollableHeight, null, true);
+            });
         }
 
         private void AppDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
