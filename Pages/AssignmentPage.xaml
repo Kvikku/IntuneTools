@@ -314,7 +314,41 @@
 
                     <PivotItem Header="iOS">
                         <StackPanel Spacing="16" Margin="0,12,0,0">
-                            <TextBlock Text="No specific settings available for iOS." Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                            <ComboBox x:Name="UseDeviceLicensingCombo"
+                                      Header="Use device licensing"
+                                      HorizontalAlignment="Stretch"
+                                      SelectedIndex="0">
+                                <ComboBoxItem Content="True" />
+                                <ComboBoxItem Content="False" />
+                            </ComboBox>
+                            <ComboBox x:Name="UninstallOnDeviceRemovalCombo"
+                                      Header="Uninstall on device removal"
+                                      HorizontalAlignment="Stretch"
+                                      SelectedIndex="0">
+                                <ComboBoxItem Content="True" />
+                                <ComboBoxItem Content="False" />
+                            </ComboBox>
+                            <ComboBox x:Name="IsRemovableCombo"
+                                      Header="Is removable"
+                                      HorizontalAlignment="Stretch"
+                                      SelectedIndex="0">
+                                <ComboBoxItem Content="True" />
+                                <ComboBoxItem Content="False" />
+                            </ComboBox>
+                            <ComboBox x:Name="PreventManagedAppBackupCombo"
+                                      Header="Prevent managed app backup"
+                                      HorizontalAlignment="Stretch"
+                                      SelectedIndex="0">
+                                <ComboBoxItem Content="True" />
+                                <ComboBoxItem Content="False" />
+                            </ComboBox>
+                            <ComboBox x:Name="PreventAutoAppUpdateCombo"
+                                      Header="Prevent auto app update"
+                                      HorizontalAlignment="Stretch"
+                                      SelectedIndex="1">
+                                <ComboBoxItem Content="True" />
+                                <ComboBoxItem Content="False" />
+                            </ComboBox>
                         </StackPanel>
                     </PivotItem>
 

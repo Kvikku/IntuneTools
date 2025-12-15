@@ -2,6 +2,7 @@
 using Microsoft.Graph;
 using Microsoft.Graph.Beta;
 using Microsoft.Graph.Beta.Models;
+using Microsoft.UI.Xaml.Documents;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -144,6 +145,18 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             };
         }
 
+        public static IosVppAppAssignmentSettings CreateiOSVppAppAssignmentSettings(bool useDeviceLicensing, bool uninstallOnDeviceRemoval, bool isRemovable, bool preventManagedAppBackup, bool preventAutoAppUpdate)
+        {
+            return new IosVppAppAssignmentSettings
+            {
+                OdataType = "#microsoft.graph.iosVppAppAssignmentSettings",
+                UseDeviceLicensing = useDeviceLicensing,
+                UninstallOnDeviceRemoval = uninstallOnDeviceRemoval,
+                IsRemovable = isRemovable,
+                PreventManagedAppBackup = preventManagedAppBackup,
+                PreventAutoAppUpdate = preventAutoAppUpdate
+            };
+        }
 
         public static async Task AssignGroupsToApplication(string appId, List<string> groupIds, GraphServiceClient graphServiceClient, MobileAppAssignmentSettings? assignmentSettings = null)
         {

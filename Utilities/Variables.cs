@@ -24,7 +24,7 @@ namespace IntuneTools.Utilities
 
         public static string timestamp = DateTime.Now.ToString("HH-mm-ss_dd-MM-yyyy");
         public static string logFileName = "InToolz.log";
-        
+
         // Specific settings files - now using full paths
         public static string sourceTenantSettingsFileFullPath = Path.Combine(appSettingsFolder, "SourceTenantSettings.json");
         public static string destinationTenantSettingsFileFullPath = Path.Combine(appSettingsFolder, "DestinationTenantSettings.json");
@@ -83,17 +83,31 @@ namespace IntuneTools.Utilities
         //public static Microsoft.Graph.Beta.GraphServiceClient? sourceGraphServiceClient;
         //public static Microsoft.Graph.Beta.GraphServiceClient? destinationGraphServiceClient;
 
-        // App Deployment Options
+        // Generic App Deployment Options
         public static string _selectedDeploymentMode;
         public static string _selectedIntent;
-        public static string _selectedNotificationSetting;
-        public static string _selectedDeliveryOptimizationPriority;
-        public static string _selectedAndroidManagedStoreAutoUpdateMode;
-
         public static InstallIntent _selectedInstallIntent;
         public static InstallIntent _selectedAppDeploymentIntent;
+
+        // Windows specific
+
+        public static string _selectedNotificationSetting;
+        public static string _selectedDeliveryOptimizationPriority;
         public static Win32LobAppNotification win32LobAppNotification;
         public static Win32LobAppDeliveryOptimizationPriority win32LobAppDeliveryOptimizationPriority;
+
+        // Android specific
+
+        public static string _selectedAndroidManagedStoreAutoUpdateMode;
         public static AndroidManagedStoreAutoUpdateMode _androidManagedStoreAutoUpdateMode;
+
+        // iOS specific
+        public static string _licensingType;
+        public static string _deviceRemovalAction;
+        public static string _removable;
+        public static string _preventManagedAppBackup;
+        public static string _preventAutoUpdate;
+        public static IosVppAppAssignmentSettings iOSAppDeploymentSettings;
+
     }
 }

@@ -1336,6 +1336,8 @@ namespace IntuneTools.Pages
         {
             try
             {
+                // TODO - reset the variables 
+
                 // Show the dialog defined in XAML
                 var result = await AppDeployment.ShowAsync();
 
@@ -1347,18 +1349,34 @@ namespace IntuneTools.Pages
                     Variables._selectedNotificationSetting = (NotificationSettingsCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
                     Variables._selectedDeliveryOptimizationPriority = (DeliveryOptimizationCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
                     Variables._selectedAndroidManagedStoreAutoUpdateMode = (UpdatePriority.SelectedItem as ComboBoxItem)?.Content.ToString();
+                    Variables._licensingType = (UseDeviceLicensingCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
+                    Variables._deviceRemovalAction = (UninstallOnDeviceRemovalCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
+                    Variables._removable = (IsRemovableCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
+                    Variables._preventAutoUpdate = (PreventAutoAppUpdateCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
+                    Variables._preventManagedAppBackup = (PreventManagedAppBackupCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
+
+                    bool isDeviceLicensing = bool.TryParse(Variables._licensingType, out bool deviceLicensing) && deviceLicensing;
+                    bool uninstallOnDeviceRemoval = bool.TryParse(Variables._deviceRemovalAction, out bool deviceRemoval) && deviceRemoval;
+                    bool isRemovable = bool.TryParse(Variables._removable, out bool removable) && removable;
+                    bool preventAutoUpdate = bool.TryParse(Variables._preventAutoUpdate, out bool autoUpdate) && autoUpdate;
+                    bool preventManagedAppBackup = bool.TryParse(Variables._preventManagedAppBackup, out bool managedAppBackup) && managedAppBackup;
 
                     // Store Assignment Intent (Available, Required, Uninstall)
                     GetInstallIntent(_selectedIntent);
 
-                    // Store the delivery optimization priority
+                    // Store the delivery optimization priority (Windows)
                     GetDeliveryOptimizationPriority(_selectedDeliveryOptimizationPriority);
 
-                    // Store the notifications mode
+                    // Store the notifications mode (Windows)
                     GetWin32AppNotificationValue(_selectedNotificationSetting);
 
-                    // Store the Android managed app auto update mode
+                    // Store the Android managed app auto update mode (Android)
                     GetAndroidManagedStoreAutoUpdateMode(_selectedAndroidManagedStoreAutoUpdateMode);
+
+                    // Store the iOS options
+                    var iOSOptions = CreateiOSVppAppAssignmentSettings(isDeviceLicensing, uninstallOnDeviceRemoval, isRemovable, preventAutoUpdate, preventManagedAppBackup);
+                    iOSAppDeploymentSettings = iOSOptions;
+
 
                     // Log the selected options
                     AppendToDetailsRichTextBlock("Application Deployment Options Configured:");
@@ -1366,6 +1384,17 @@ namespace IntuneTools.Pages
                     AppendToDetailsRichTextBlock($" • Group Mode: {_selectedDeploymentMode}");
                     AppendToDetailsRichTextBlock($" • Notifications: {_selectedNotificationSetting}");
                     AppendToDetailsRichTextBlock($" • Delivery Opt: {_selectedDeliveryOptimizationPriority}");
+
+
+                    var test = new IosVppAppAssignmentSettings
+                    {
+                        UseDeviceLicensing = true,
+                        UninstallOnDeviceRemoval = false,
+                        IsRemovable = true,
+                        PreventAutoAppUpdate = false,
+                        PreventManagedAppBackup = false
+
+                    };
 
                     return true;
                 }
