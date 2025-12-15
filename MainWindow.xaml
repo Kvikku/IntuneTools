@@ -29,7 +29,7 @@
             <Image Source="Assets/Square44x44Logo.png" Width="16" Height="16" Margin="10,0,0,0" VerticalAlignment="Center" Grid.Column="0"/>
 
             <!-- Title -->
-            <TextBlock Text="IntuneTools" VerticalAlignment="Center" Margin="10,0,0,0" FontWeight="Bold" Foreground="White" Grid.Column="1"/>
+            <TextBlock Text="InToolz" VerticalAlignment="Center" Margin="10,0,0,0" FontWeight="Bold" Foreground="White" Grid.Column="1"/>
         </Grid>
 
         <!-- NavigationView -->

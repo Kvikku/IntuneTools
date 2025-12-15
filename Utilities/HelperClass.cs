@@ -341,6 +341,7 @@ namespace IntuneTools.Utilities
                 "#microsoft.graph.webApp" => "App - Web link",
                 "#microsoft.graph.macOSWebClip" => "App - macOS web clip",
                 "#microsoft.graph.windowsWebApp" => "App - Windows web link",
+                "#microsoft.graph.androidManagedStoreWebApp" => "App - Android Managed store web link",
                 _ => odataType
             };
         }
@@ -367,6 +368,7 @@ namespace IntuneTools.Utilities
                 "App - Web link" => "#microsoft.graph.webApp",
                 "App - macOS web clip" => "#microsoft.graph.macOSWebClip",
                 "App - Windows web link" => "#microsoft.graph.windowsWebApp",
+                "App - Android Managed store web link" => "#microsoft.graph.androidManagedStoreWebApp",
                 _ => applicationType
             };
         }

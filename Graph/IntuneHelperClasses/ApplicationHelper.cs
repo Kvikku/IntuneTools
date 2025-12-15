@@ -103,11 +103,15 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             {
                 assignmentSettings = CreateAndroidManagedStoreAppAssignmentSettings();
             }
+            else if (appType == "#microsoft.graph.androidManagedStoreWebApp")
+            {
+                assignmentSettings = null;
+            }
             else
             {
                 // App type not supported yet
                 WriteToImportStatusFile("The selected app type is not supported for deployment yet. Skipping");
-                return;   
+                return;
             }
 
                 try
@@ -139,6 +143,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 AutoUpdateMode = _androidManagedStoreAutoUpdateMode
             };
         }
+
 
         public static async Task AssignGroupsToApplication(string appId, List<string> groupIds, GraphServiceClient graphServiceClient, MobileAppAssignmentSettings? assignmentSettings = null)
         {
