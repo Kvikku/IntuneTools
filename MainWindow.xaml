@@ -18,7 +18,7 @@
         </Grid.RowDefinitions>
 
         <!-- Custom Title Bar -->
-        <Grid x:Name="CustomTitleBar" Background="DarkOrange" Height="32" VerticalAlignment="Top" Grid.Row="0">
+        <Grid x:Name="CustomTitleBar" Background="CornflowerBlue" Height="32" VerticalAlignment="Top" Grid.Row="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />

@@ -48,6 +48,14 @@ namespace IntuneTools
             var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hWnd);
             appWindow = AppWindow.GetFromWindowId(windowId);
 
+            // Set the taskbar icon
+            // Ensure 'WindowIcon.ico' exists in the Assets folder and is set to 'Copy to Output Directory'
+            var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "Square44x44Logo.altform-lightunplated_targetsize-256.ico");
+            if (File.Exists(iconPath))
+            {
+                appWindow.SetIcon(iconPath);
+            }
+
             // Customize the AppWindow title bar
             if (appWindow.TitleBar != null)
             {
