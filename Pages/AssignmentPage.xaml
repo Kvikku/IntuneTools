@@ -47,6 +47,37 @@
                                     TextChanged="ContentSearchBox_TextChanged"/>
                     <AppBarButton x:Name="ListAllButton" Icon="ViewAll" Label="List All" Click="ListAllButton_Click" ToolTipService.ToolTip="List all content for selected types."/>
                     <AppBarSeparator/>
+                    <AppBarButton x:Name="ContentTypesButton" Icon="Filter" Label="Content Types">
+                        <AppBarButton.Flyout>
+                            <Flyout Placement="BottomEdgeAlignedLeft">
+                                <StackPanel x:Name="OptionsPanel" Orientation="Vertical" Margin="0,12,0,0" MinWidth="300">
+                                    <TextBlock Text="Content Types" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                    <CheckBox x:Name="OptionsAllCheckBox"
+                          Content="Select all"
+                          IsThreeState="False"
+                          Checked="SelectAll_Checked"
+                          Unchecked="SelectAll_Unchecked"
+                          Indeterminate="SelectAll_Indeterminate"/>
+                                    <CheckBox x:Name="Application" Content="Applications" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                    <CheckBox x:Name="SettingsCatalog" Content="Settings Catalog" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                    <CheckBox x:Name="DeviceCompliance" Content="Device Compliance" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                    <CheckBox x:Name="EntraGroups" Content="Entra Groups" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                    <CheckBox x:Name="DeviceConfiguration" Content="Device Configuration" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                    <CheckBox x:Name="AppleBYODEnrollmentProfile" Content="Apple BYOD enrollment profile" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                    <CheckBox x:Name="Filters" Content="Filters" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                    <CheckBox x:Name="PowerShellScript" Content="PowerShell Scripts" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                    <CheckBox x:Name="ProactiveRemediation" Content="Remediation Scripts" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                    <CheckBox x:Name="macOSShellScript" Content="macOS Shell Scripts" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                    <CheckBox x:Name="WindowsAutopilot" Content="Windows Autopilot" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                    <CheckBox x:Name="WindowsDriverUpdate" Content="Windows Driver Update" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                    <CheckBox x:Name="WindowsFeatureUpdate" Content="Windows Feature Update" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                    <CheckBox x:Name="WindowsQualityUpdatePolicy" Content="Windows Quality Update Policy" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                    <CheckBox x:Name="WindowsQualityUpdateProfile" Content="Windows Quality Update Profile" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                </StackPanel>
+                            </Flyout>
+                        </AppBarButton.Flyout>
+                    </AppBarButton>
+                    <AppBarSeparator/>
                     <AppBarButton x:Name="RemoveSelectedButton" Icon="Delete" Label="Remove Selected" Click="RemoveSelectedButton_Click" ToolTipService.ToolTip="Remove selected items from the grid."/>
                     <AppBarButton x:Name="RemoveAllButton" Icon="Clear" Label="Remove All" Click="RemoveAllButton_Click" ToolTipService.ToolTip="Clear all items from the grid."/>
                     <AppBarSeparator/>
@@ -76,36 +107,7 @@
                                   VerticalAlignment="Bottom"
                                   Toggled="IntentToggle_Toggled"/>
                     <AppBarSeparator/>
-                    <AppBarButton x:Name="ContentTypesButton" Icon="ViewAll" Label="Content Types">
-                        <AppBarButton.Flyout>
-                            <Flyout Placement="BottomEdgeAlignedLeft">
-                                <StackPanel x:Name="OptionsPanel" Orientation="Vertical" Margin="0,12,0,0" MinWidth="300">
-                                    <TextBlock Text="Content Types" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                                    <CheckBox x:Name="OptionsAllCheckBox"
-                                              Content="Select all"
-                                              IsThreeState="False"
-                                              Checked="SelectAll_Checked"
-                                              Unchecked="SelectAll_Unchecked"
-                                              Indeterminate="SelectAll_Indeterminate"/>
-                                    <CheckBox x:Name="SettingsCatalog" Content="Settings Catalog" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                    <CheckBox x:Name="DeviceCompliance" Content="Device Compliance" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                    <CheckBox x:Name="EntraGroups" Content="Entra Groups" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                    <CheckBox x:Name="DeviceConfiguration" Content="Device Configuration" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                    <CheckBox x:Name="AppleBYODEnrollmentProfile" Content="Apple BYOD enrollment profile" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                    <CheckBox x:Name="Filters" Content="Filters" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                    <CheckBox x:Name="PowerShellScript" Content="PowerShell Scripts" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                    <CheckBox x:Name="ProactiveRemediation" Content="Remediation Scripts" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                    <CheckBox x:Name="macOSShellScript" Content="macOS Shell Scripts" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                    <CheckBox x:Name="WindowsAutopilot" Content="Windows Autopilot" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                    <CheckBox x:Name="WindowsDriverUpdate" Content="Windows Driver Update" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                    <CheckBox x:Name="WindowsFeatureUpdate" Content="Windows Feature Update" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                    <CheckBox x:Name="WindowsQualityUpdatePolicy" Content="Windows Quality Update Policy" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                    <CheckBox x:Name="WindowsQualityUpdateProfile" Content="Windows Quality Update Profile" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                    <CheckBox x:Name="Application" Content="Applications" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                </StackPanel>
-                            </Flyout>   
-                        </AppBarButton.Flyout>
-                    </AppBarButton>
+                    
                 </StackPanel>
             </CommandBar.Content>
             <CommandBar.PrimaryCommands>

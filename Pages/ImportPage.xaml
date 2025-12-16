@@ -47,20 +47,17 @@
                     <AppBarButton x:Name="Search" Icon="Find" Label="Search" Click="SearchButton_Click" ToolTipService.ToolTip="Search for specific items."/>
                     <AppBarButton x:Name="ListAll" Icon="ViewAll" Label="List All" Click="ListAllButton_Click" ToolTipService.ToolTip="List all items."/>
                     <AppBarSeparator/>
-                    <AppBarButton x:Name="ClearSelected" Icon="Remove" Label="Clear Selected" Click="ClearSelectedButton_Click" ToolTipService.ToolTip="Remove selected items from staging area."/>
-                    <AppBarButton x:Name="ClearAll" Icon="Clear" Label="Clear All" Click="ClearAllButton_Click" ToolTipService.ToolTip="Clear all items from staging area."/>
-                    <AppBarSeparator/>
                     <AppBarButton x:Name="ContentTypesButton" Icon="ViewAll" Label="Content Types">
                         <AppBarButton.Flyout>
                             <Flyout Placement="BottomEdgeAlignedLeft">
                                 <StackPanel x:Name="OptionsPanel" Orientation="Vertical" MinWidth="300">
                                     <TextBlock Text="Content Types" FontWeight="SemiBold" Margin="0,0,0,8"/>
                                     <CheckBox x:Name="OptionsAllCheckBox"
-                                              Content="Select all"
-                                              IsThreeState="False"
-                                              Checked="SelectAll_Checked"
-                                              Unchecked="SelectAll_Unchecked"
-                                              Indeterminate="SelectAll_Indeterminate"/>
+                          Content="Select all"
+                          IsThreeState="False"
+                          Checked="SelectAll_Checked"
+                          Unchecked="SelectAll_Unchecked"
+                          Indeterminate="SelectAll_Indeterminate"/>
                                     <CheckBox x:Name="SettingsCatalog" Content="Settings Catalog" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
                                     <CheckBox x:Name="DeviceCompliance" Content="Device Compliance" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
                                     <CheckBox x:Name="EntraGroups" Content="Entra Groups" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
@@ -79,6 +76,11 @@
                             </Flyout>
                         </AppBarButton.Flyout>
                     </AppBarButton>
+                    <AppBarSeparator/>
+                    <AppBarButton x:Name="ClearSelected" Icon="Remove" Label="Clear Selected" Click="ClearSelectedButton_Click" ToolTipService.ToolTip="Remove selected items from staging area."/>
+                    <AppBarButton x:Name="ClearAll" Icon="Clear" Label="Clear All" Click="ClearAllButton_Click" ToolTipService.ToolTip="Clear all items from staging area."/>
+                    <AppBarSeparator/>
+                    
                     <AppBarSeparator/>
                     <CheckBox x:Name="GroupsCheckBox"
                               Content="Include Groups"

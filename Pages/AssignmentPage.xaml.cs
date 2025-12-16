@@ -273,7 +273,7 @@ namespace IntuneTools.Pages
 
             var deploymentOptions = await ShowAppDeploymentOptionsDialog();
 
-            if (deploymentOptions = false)
+            if (deploymentOptions == false)
             {
                 AppendToDetailsRichTextBlock("Assignment cancelled by user during deployment options selection.");
                 return;
@@ -1393,9 +1393,14 @@ namespace IntuneTools.Pages
 
                     return true;
                 }
-                else
+                else if(result == ContentDialogResult.Secondary)
                 {
                     // User clicked Cancel
+                    return false;
+                }
+                else
+                {
+                    // Dialog was dismissed without explicit confirmation or cancellation
                     return false;
                 }
             }
