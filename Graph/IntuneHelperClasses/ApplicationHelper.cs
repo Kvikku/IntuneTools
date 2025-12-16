@@ -40,6 +40,31 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     LogToImportStatusFile("No Mobile Apps found or the result was null.");
                 }
 
+
+
+                // Filter out unwanted ODataTypes
+                var excludedODataTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    // Add the ODataTypes you want to exclude here, for example:
+                    "#microsoft.graph.winGetApp",
+                    "#microsoft.graph.iosiPadOSWebClip",
+                    "#microsoft.graph.macOSOfficeSuiteApp",
+                    "#microsoft.graph.officeSuiteApp",
+                    "#microsoft.graph.macOSMicrosoftDefenderApp",
+                    "#microsoft.graph.macOSMicrosoftEdgeApp",
+                    "#microsoft.graph.windowsMicrosoftEdgeApp",
+                    "#microsoft.graph.webApp",
+                    "#microsoft.graph.macOSWebClip",
+                    "#microsoft.graph.windowsWebApp"
+                };
+
+                if (excludedODataTypes.Count > 0)
+                {
+                    mobileApps = mobileApps
+                        .Where(app => !string.IsNullOrEmpty(app.OdataType) && !excludedODataTypes.Contains(app.OdataType))
+                        .ToList();
+                }
+
                 return mobileApps;
             }
             catch (Exception)
