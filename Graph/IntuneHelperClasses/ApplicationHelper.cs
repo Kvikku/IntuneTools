@@ -301,15 +301,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 };
 
 
+                // Cleanup for iOS VPP apps: IsRemovable must be null for Available and Uninstall intents
                 foreach (var assignment in requestBody.MobileAppAssignments)
                 {
-                    if (true)
+                    if (assignment.Settings is IosVppAppAssignmentSettings vppSettings && 
+                        (assignment.Intent == InstallIntent.Available || assignment.Intent == InstallIntent.Uninstall))
                     {
-
-                    }
-                    if (assignment.Intent == InstallIntent.Available || assignment.Intent == InstallIntent.Uninstall)
-                    {
-
+                        vppSettings.IsRemovable = null;
                     }
                 }
 
