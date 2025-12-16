@@ -108,6 +108,10 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             {
                 assignmentSettings = null;
             }
+            else if (appType == "#microsoft.graph.iosVppApp")
+            {
+                assignmentSettings = iOSAppDeploymentSettings;
+            }
             else
             {
                 // App type not supported yet
@@ -295,6 +299,20 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 {
                     MobileAppAssignments = assignments
                 };
+
+
+                foreach (var assignment in requestBody.MobileAppAssignments)
+                {
+                    if (true)
+                    {
+
+                    }
+                    if (assignment.Intent == InstallIntent.Available || assignment.Intent == InstallIntent.Uninstall)
+                    {
+
+                    }
+                }
+
 
                 try
                 {

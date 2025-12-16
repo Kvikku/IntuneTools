@@ -1374,7 +1374,7 @@ namespace IntuneTools.Pages
                     GetAndroidManagedStoreAutoUpdateMode(_selectedAndroidManagedStoreAutoUpdateMode);
 
                     // Store the iOS options
-                    var iOSOptions = CreateiOSVppAppAssignmentSettings(isDeviceLicensing, uninstallOnDeviceRemoval, isRemovable, preventAutoUpdate, preventManagedAppBackup);
+                    var iOSOptions = CreateiOSVppAppAssignmentSettings(isDeviceLicensing, uninstallOnDeviceRemoval, isRemovable, preventManagedAppBackup, preventAutoUpdate);
                     iOSAppDeploymentSettings = iOSOptions;
 
 
