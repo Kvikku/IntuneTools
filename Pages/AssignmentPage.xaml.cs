@@ -271,7 +271,13 @@ namespace IntuneTools.Pages
                 return;
             }
 
-            await ShowAppDeploymentOptionsDialog();
+            var deploymentOptions = await ShowAppDeploymentOptionsDialog();
+
+            if (deploymentOptions = false)
+            {
+                AppendToDetailsRichTextBlock("Assignment cancelled by user during deployment options selection.");
+                return;
+            }
 
             // Perform assignment
             ShowLoading("Assigning content to groups...");
@@ -1384,17 +1390,6 @@ namespace IntuneTools.Pages
                     AppendToDetailsRichTextBlock($" • Group Mode: {_selectedDeploymentMode}");
                     AppendToDetailsRichTextBlock($" • Notifications: {_selectedNotificationSetting}");
                     AppendToDetailsRichTextBlock($" • Delivery Opt: {_selectedDeliveryOptimizationPriority}");
-
-
-                    var test = new IosVppAppAssignmentSettings
-                    {
-                        UseDeviceLicensing = true,
-                        UninstallOnDeviceRemoval = false,
-                        IsRemovable = true,
-                        PreventAutoAppUpdate = false,
-                        PreventManagedAppBackup = false
-
-                    };
 
                     return true;
                 }

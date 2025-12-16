@@ -274,7 +274,7 @@
                                       HorizontalAlignment="Stretch"
                                       SelectedIndex="0">
                                 <ComboBoxItem Content="Include" />
-                                <ComboBoxItem Content="Exclude" />
+                                <!-- <ComboBoxItem Content="Exclude" /> -->
                             </ComboBox>
                             <ComboBox x:Name="AssignmentIntentComboBox"
                                       Header="Assignment Intent"

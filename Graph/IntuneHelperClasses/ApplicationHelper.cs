@@ -248,6 +248,27 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     assignments.Add(assignment);
                 }
 
+
+                // Cleanup for iOS VPP apps
+                foreach (var assignment in assignments)
+                {
+                    if (assignment.Settings is IosVppAppAssignmentSettings vppSettings)
+                    {
+                        switch (assignment.Intent)
+                        {
+                            case InstallIntent.Available:
+                                vppSettings.IsRemovable = null;
+                                break;
+                            case InstallIntent.Uninstall:
+                                vppSettings.IsRemovable = null;
+                                vppSettings.PreventAutoAppUpdate = null;
+                                vppSettings.PreventManagedAppBackup = null;
+                                vppSettings.UninstallOnDeviceRemoval = null;
+                                break;
+                        }
+                    }
+                }
+
                 // Step 2: Check for existing assignments and add only if not already present
                 var existingAssignments = await graphServiceClient
                     .DeviceAppManagement
@@ -301,15 +322,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 };
 
 
-                // Cleanup for iOS VPP apps: IsRemovable must be null for Available and Uninstall intents
-                foreach (var assignment in requestBody.MobileAppAssignments)
-                {
-                    if (assignment.Settings is IosVppAppAssignmentSettings vppSettings && 
-                        (assignment.Intent == InstallIntent.Available || assignment.Intent == InstallIntent.Uninstall))
-                    {
-                        vppSettings.IsRemovable = null;
-                    }
-                }
+                
 
 
                 try
