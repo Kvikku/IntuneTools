@@ -361,26 +361,45 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     MobileAppAssignments = assignments
                 };
 
-                try
+                await ExecuteWithRetryAsync(async () =>
                 {
                     await graphServiceClient
                         .DeviceAppManagement
                         .MobileApps[appId]
                         .Assign
                         .PostAsync(requestBody);
+                }, maxRetries: 5, baseDelaySeconds: 2);
 
-                    LogToImportStatusFile($"Assigned {assignments.Count} assignments to application {appId} with filter type {deviceAndAppManagementAssignmentFilterType}.");
-                }
-                catch (Exception ex)
-                {
-                    LogToImportStatusFile("An error occurred while assigning groups to application", LogLevels.Warning);
-                    LogToImportStatusFile(ex.Message, LogLevels.Error);
-                }
+                LogToImportStatusFile($"Assigned {assignments.Count} assignments to application {appId} with filter type {deviceAndAppManagementAssignmentFilterType}.");
             }
             catch (Exception ex)
             {
                 LogToImportStatusFile("An error occurred while assigning groups to application", LogLevels.Warning);
                 LogToImportStatusFile(ex.Message, LogLevels.Error);
+            }
+        }
+
+        private static async Task ExecuteWithRetryAsync(Func<Task> action, int maxRetries = 5, int baseDelaySeconds = 2)
+        {
+            for (int attempt = 0; attempt <= maxRetries; attempt++)
+            {
+                try
+                {
+                    await action();
+                    return;
+                }
+                catch (Microsoft.Graph.ServiceException ex) when (ex.ResponseStatusCode == 429)
+                {
+                    if (attempt == maxRetries)
+                    {
+                        throw;
+                    }
+
+                    // Calculate delay with exponential backoff
+                    var delaySeconds = baseDelaySeconds * Math.Pow(2, attempt);
+                    LogToImportStatusFile($"Rate limited (429). Retrying in {delaySeconds} seconds... (Attempt {attempt + 1}/{maxRetries})", LogLevels.Warning);
+                    await Task.Delay(TimeSpan.FromSeconds(delaySeconds));
+                }
             }
         }
     }
