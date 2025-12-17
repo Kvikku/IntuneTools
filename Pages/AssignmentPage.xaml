@@ -282,11 +282,19 @@
                                       Header="Assignment Intent"
                                       PlaceholderText="Select an intent"
                                       HorizontalAlignment="Stretch"
-                                      SelectedIndex="0">
+                                      SelectedIndex="0"
+                                      SelectionChanged="AssignmentIntentComboBox_SelectionChanged">
                                 <ComboBoxItem Content="Required"/>
                                 <ComboBoxItem Content="Available"/>
                                 <ComboBoxItem Content="Uninstall"/>
                             </ComboBox>
+                            <InfoBar x:Name="AvailableIntentInfoBar"
+                                     IsOpen="False"
+                                     IsClosable="False"
+                                     Severity="Informational"
+                                     Title="Available Assignment"
+                                     Message="Please note that the 'All Devices' virtual group is not supported for the 'Available' intent."
+                                     Margin="0,8,0,0"/>
                         </StackPanel>
                     </PivotItem>
 
@@ -363,9 +371,7 @@
                                 <ComboBoxItem Content="Default"/>
                                 <ComboBoxItem Content="High priority"/>
                                 <ComboBoxItem Content="Postponed"/>
-
                             </ComboBox>
-                            <TextBlock Text="No specific settings available for Android." Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                         </StackPanel>
                     </PivotItem>
 

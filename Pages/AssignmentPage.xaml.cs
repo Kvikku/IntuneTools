@@ -1482,6 +1482,21 @@ namespace IntuneTools.Pages
             // e.Handled = true; // Uncomment if needed for your toolkit version
         }
 
+        private void AssignmentIntentComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (AvailableIntentInfoBar == null)
+                return;
+
+            if (AssignmentIntentComboBox.SelectedItem is ComboBoxItem selectedItem &&
+                selectedItem.Content is string intent)
+            {
+                AvailableIntentInfoBar.IsOpen = string.Equals(intent, "Available", StringComparison.OrdinalIgnoreCase);
+            }
+            else
+            {
+                AvailableIntentInfoBar.IsOpen = false;
+            }
+        }
 
 
         #endregion
