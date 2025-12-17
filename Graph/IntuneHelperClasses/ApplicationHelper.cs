@@ -102,88 +102,64 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task PrepareApplicationForAssignment(KeyValuePair<string, AssignmentInfo> appInfo, List<string> groups , GraphServiceClient graphServiceClient)
+        public static async Task PrepareApplicationForAssignment(KeyValuePair<string, AssignmentInfo> appInfo, List<string> groups, GraphServiceClient graphServiceClient)
         {
-            // This method can be expanded based on specific preparation steps needed for different app types
-
             // Get the application type
             var appType = TranslateODataTypeFromApplicationType(appInfo.Value.Type);
 
             // Prepare the app options based on the application type
-            MobileAppAssignmentSettings? assignmentSettings = null;
+            MobileAppAssignmentSettings? assignmentSettings = appType switch
+            {
+                "#microsoft.graph.win32LobApp" => CreateWin32LobAppAssignmentSettings(),
+                "#microsoft.graph.androidManagedStoreApp" => CreateAndroidManagedStoreAppAssignmentSettings(),
+                "#microsoft.graph.iosVppApp" => iOSAppDeploymentSettings,
+                "#microsoft.graph.winGetApp" => CreateWinGetAppAssignmentSettings(),
+                "#microsoft.graph.androidManagedStoreWebApp" or
+                "#microsoft.graph.windowsWebApp" or
+                "#microsoft.graph.webApp" or
+                "#microsoft.graph.windowsMicrosoftEdgeApp" or
+                "#microsoft.graph.officeSuiteApp" or
+                "#microsoft.graph.macOSOfficeSuiteApp" or
+                "#microsoft.graph.macOSWebClip" or
+                "#microsoft.graph.macOSMicrosoftEdgeApp" or
+                "#microsoft.graph.macOSMicrosoftDefenderApp" or
+                "#microsoft.graph.iosiPadOSWebClip" => null,
+                _ => (MobileAppAssignmentSettings?)null // Marker for unsupported
+            };
 
-            if (appType == "#microsoft.graph.win32LobApp")
+            // Check if app type is unsupported (not in the switch cases above)
+            var supportedTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
-                assignmentSettings = CreateWin32LobAppAssignmentSettings();
-            }
-            else if (appType == "#microsoft.graph.androidManagedStoreApp")
-            {
-                assignmentSettings = CreateAndroidManagedStoreAppAssignmentSettings();
-            }
-            else if (appType == "#microsoft.graph.androidManagedStoreWebApp")
-            {
-                assignmentSettings = null;
-            }
-            else if (appType == "#microsoft.graph.iosVppApp")
-            {
-                assignmentSettings = iOSAppDeploymentSettings;
-            }
-            else if(appType == "#microsoft.graph.winGetApp")
-            {
-                assignmentSettings = CreateWinGetAppAssignmentSettings();
-            }
-            else if (appType == "#microsoft.graph.windowsWebApp")
-            {
-                // No specific assignment settings needed for Windows Web App
-            }
-            else if (appType == "#microsoft.graph.webApp")
-            {
-                // No specific assignment settings needed for Web App
-            }
-            else if (appType == "#microsoft.graph.windowsMicrosoftEdgeApp")
-            {
-                // No specific assignment settings needed for Windows Microsoft Edge App
-            }
-            else if (appType == "#microsoft.graph.officeSuiteApp")
-            {
-                // No specific assignment settings needed for Office Suite App
-            }
-            else if (appType == "#microsoft.graph.macOSOfficeSuiteApp")
-            {
-                // No specific assignment settings needed for macOS Microsoft Edge App
-            }
-            else if (appType == "#microsoft.graph.macOSWebClip")
-            {
-                // No specific assignment settings needed for macOS Web Clip
-            }
-            else if (appType == "#microsoft.graph.macOSMicrosoftEdgeApp")
-            {
-                // No specific assignment settings needed for macOS Microsoft Edge App
-            }
-            else if (appType == "#microsoft.graph.macOSMicrosoftDefenderApp")
-            { 
-                // No specific assignment settings needed for macOS Microsoft Defender App
-            }
-            else if (appType == "#microsoft.graph.iosiPadOSWebClip")
-            {
-                // No specific assignment settings needed for iOS and ipadOS web clip
-            }
+                "#microsoft.graph.win32LobApp",
+                "#microsoft.graph.androidManagedStoreApp",
+                "#microsoft.graph.iosVppApp",
+                "#microsoft.graph.winGetApp",
+                "#microsoft.graph.androidManagedStoreWebApp",
+                "#microsoft.graph.windowsWebApp",
+                "#microsoft.graph.webApp",
+                "#microsoft.graph.windowsMicrosoftEdgeApp",
+                "#microsoft.graph.officeSuiteApp",
+                "#microsoft.graph.macOSOfficeSuiteApp",
+                "#microsoft.graph.macOSWebClip",
+                "#microsoft.graph.macOSMicrosoftEdgeApp",
+                "#microsoft.graph.macOSMicrosoftDefenderApp",
+                "#microsoft.graph.iosiPadOSWebClip"
+            };
 
-            else
+            if (!supportedTypes.Contains(appType))
             {
-                // App type not supported yet
                 WriteToImportStatusFile("The selected app type is not supported for deployment yet. Skipping");
                 return;
             }
 
-                try
-                {
-                    await AssignGroupsToApplication(appInfo.Value.Id, groups, graphServiceClient, assignmentSettings);
-                }
-                catch (Exception)
-                {
-                    LogToImportStatusFile($"An error occurred while preparing application of type '{appInfo.Value.Platform}' for assignment", LogLevels.Error);
-                }
+            try
+            {
+                await AssignGroupsToApplication(appInfo.Value.Id, groups, graphServiceClient, assignmentSettings);
+            }
+            catch (Exception)
+            {
+                LogToImportStatusFile($"An error occurred while preparing application of type '{appInfo.Value.Platform}' for assignment", LogLevels.Error);
+            }
         }
 
         public static Win32LobAppAssignmentSettings CreateWin32LobAppAssignmentSettings()
