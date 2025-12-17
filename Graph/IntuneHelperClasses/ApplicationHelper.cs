@@ -310,6 +310,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                                 break;
                         }
                     }
+                    if(assignment.Intent == InstallIntent.Available || assignment.Target.OdataType == "#microsoft.graph.allDevicesAssignmentTarget")
+                    {
+                        // Not supported
+                        WriteToImportStatusFile("Assignment settings for 'Available' intent to 'All Devices virtual group' is not supported.");
+                    }
                 }
 
 
