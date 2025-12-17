@@ -54,7 +54,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     "#microsoft.graph.windowsMicrosoftEdgeApp",
                     "#microsoft.graph.webApp",
                     "#microsoft.graph.macOSWebClip",
-                    "#microsoft.graph.windowsWebApp"
                 };
 
                 if (excludedODataTypes.Count > 0)
@@ -139,6 +138,10 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             else if(appType == "#microsoft.graph.winGetApp")
             {
                 assignmentSettings = CreateWinGetAppAssignmentSettings();
+            }
+            else if (appType == "#microsoft.graph.windowsWebApp")
+            {
+                // No specific assignment settings needed for Windows Web App
             }
             else
             {
