@@ -1,13 +1,7 @@
 ﻿using Microsoft.Graph;
-using Microsoft.Graph.Beta;
-using Microsoft.Graph.Beta.Models;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using static IntuneTools.Utilities.HelperClass;
-using static IntuneTools.Utilities.Variables;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
 {
@@ -38,7 +32,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while searching for PowerShell scripts",LogType.Error);
+                WriteToImportStatusFile("An error occurred while searching for PowerShell scripts", LogType.Error);
                 return new List<DeviceManagementScript>();
             }
         }
@@ -68,7 +62,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while retrieving all PowerShell scripts",LogType.Error);
+                WriteToImportStatusFile("An error occurred while retrieving all PowerShell scripts", LogType.Error);
                 return new List<DeviceManagementScript>();
             }
         }
@@ -116,7 +110,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred during the import process",LogType.Error);
+                WriteToImportStatusFile("An error occurred during the import process", LogType.Error);
             }
         }
 
@@ -288,7 +282,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while deleting PowerShell scripts",LogType.Error);
+                WriteToImportStatusFile("An error occurred while deleting PowerShell scripts", LogType.Error);
             }
         }
         public static async Task RenamePowerShellScript(GraphServiceClient graphServiceClient, string scriptID, string newName)

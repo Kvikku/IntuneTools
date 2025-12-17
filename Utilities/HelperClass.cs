@@ -1,18 +1,12 @@
-﻿using Microsoft.Graph.Beta;
-using Microsoft.Graph.Beta.Models;
-using Microsoft.Identity.Client;
-using Microsoft.UI.Xaml.Controls;
+﻿using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using static IntuneTools.Utilities.HelperClass;
-using static IntuneTools.Utilities.Variables;
 
 namespace IntuneTools.Utilities
 {
@@ -29,7 +23,7 @@ namespace IntuneTools.Utilities
                 Directory.CreateDirectory(appDataFolder);
                 Directory.CreateDirectory(logFileFolder);
                 Directory.CreateDirectory(appSettingsFolder);
-                
+
             }
 
             //CreateAppSettingsFile(); // Ensure app settings file is created
@@ -187,7 +181,7 @@ namespace IntuneTools.Utilities
             catch (IOException ex)
             {
                 // Handle the exception
-                
+
             }
         }
 
@@ -296,8 +290,8 @@ namespace IntuneTools.Utilities
                 "#microsoft.graph.win32LobApp" => "Windows",
                 "#microsoft.graph.winGetApp" => "Windows",
                 "#microsoft.graph.officeSuiteApp" => "Windows",
-                
-                
+
+
                 // macOS
                 "MacOS" => "macOS",
                 "#microsoft.graph.macOSCompliancePolicy" => "macOS",

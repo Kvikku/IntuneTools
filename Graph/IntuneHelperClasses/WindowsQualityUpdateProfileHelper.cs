@@ -1,13 +1,8 @@
 ﻿using Microsoft.Graph;
-using Microsoft.Graph.Beta;
-using Microsoft.Graph.Beta.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using static IntuneTools.Utilities.HelperClass;
-using static IntuneTools.Utilities.Variables;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
 {
@@ -29,7 +24,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while searching for Windows Quality Update profiles",LogType.Error);
+                WriteToImportStatusFile("An error occurred while searching for Windows Quality Update profiles", LogType.Error);
                 return new List<WindowsQualityUpdateProfile>();
             }
         }
@@ -66,11 +61,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while retrieving all Windows Quality Update profiles",LogType.Error);
+                WriteToImportStatusFile("An error occurred while retrieving all Windows Quality Update profiles", LogType.Error);
                 return new List<WindowsQualityUpdateProfile>();
             }
         }
-        public static async Task ImportMultipleWindowsQualityUpdateProfiles(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient,List<string> profileIDs, bool assignments, bool filter, List<string> groups)
+        public static async Task ImportMultipleWindowsQualityUpdateProfiles(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> profileIDs, bool assignments, bool filter, List<string> groups)
         {
             try
             {
@@ -132,7 +127,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     }
                     catch (Exception ex)
                     {
-                        WriteToImportStatusFile($"Error importing profile {profileName}: {ex.Message}",LogType.Error);
+                        WriteToImportStatusFile($"Error importing profile {profileName}: {ex.Message}", LogType.Error);
                         WriteToImportStatusFile("There is currently a known bug with importing Windows Quality Update profiles. " +
                                                 "This will be fixed in a future release. " +
                                                 "For now, please manually assign the groups to the imported profiles.", LogType.Warning);
@@ -142,7 +137,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile($"An error occurred during the import process: {ex.Message}",LogType.Error);
+                WriteToImportStatusFile($"An error occurred during the import process: {ex.Message}", LogType.Error);
             }
         }
 
@@ -305,7 +300,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while deleting a Windows Quality Update profile",LogType.Error);
+                WriteToImportStatusFile("An error occurred while deleting a Windows Quality Update profile", LogType.Error);
             }
         }
         public static async Task RenameWindowsQualityUpdateProfile(GraphServiceClient graphServiceClient, string profileID, string newName)

@@ -1,14 +1,9 @@
 ﻿using Microsoft.Graph;
-using Microsoft.Graph.Beta;
-using Microsoft.Graph.Beta.Models;
 using Microsoft.Graph.Beta.Models.ODataErrors;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using static IntuneTools.Utilities.HelperClass;
-using static IntuneTools.Utilities.Variables;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
 {
@@ -27,7 +22,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 if (result == null || result.Value == null)
                 {
-                    WriteToImportStatusFile($"Search returned null or empty result.",LogType.Warning);
+                    WriteToImportStatusFile($"Search returned null or empty result.", LogType.Warning);
                     return new List<AppleUserInitiatedEnrollmentProfile>();
                 }
 
@@ -63,7 +58,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 if (result == null || result.Value == null)
                 {
-                    WriteToImportStatusFile($"Get all returned null or empty result for policies.",LogType.Warning);
+                    WriteToImportStatusFile($"Get all returned null or empty result for policies.", LogType.Warning);
                     return new List<AppleUserInitiatedEnrollmentProfile>();
                 }
 
@@ -86,7 +81,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task ImportMultipleAppleBYODEnrollmentProfiles(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient,List<string> profileIds, bool assignments, bool filter, List<string> groups)
+        public static async Task ImportMultipleAppleBYODEnrollmentProfiles(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> profileIds, bool assignments, bool filter, List<string> groups)
         {
             try
             {
@@ -237,7 +232,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                             Target = new AllLicensedUsersAssignmentTarget
                             {
                                 OdataType = "#microsoft.graph.allLicensedUsersAssignmentTarget",
-                                DeviceAndAppManagementAssignmentFilterId =  SelectedFilterID,
+                                DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
                                 DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
                             }
                         };
@@ -329,8 +324,8 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                             _ => "unknown target"
                         };
 
-                        string filterInfo = !string.IsNullOrEmpty(SelectedFilterID) 
-                            ? $" with filter ID {SelectedFilterID} (Type: {deviceAndAppManagementAssignmentFilterType})" 
+                        string filterInfo = !string.IsNullOrEmpty(SelectedFilterID)
+                            ? $" with filter ID {SelectedFilterID} (Type: {deviceAndAppManagementAssignmentFilterType})"
                             : "";
 
                         WriteToImportStatusFile($"Assigned {targetType} to profile {profileId}{filterInfo}.");
@@ -370,7 +365,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while deleting Apple BYOD Enrollment profiles",LogType.Error);
+                WriteToImportStatusFile("An error occurred while deleting Apple BYOD Enrollment profiles", LogType.Error);
             }
         }
         public static async Task RenameAppleBYODEnrollmentProfile(GraphServiceClient graphServiceClient, string profileID, string newName)

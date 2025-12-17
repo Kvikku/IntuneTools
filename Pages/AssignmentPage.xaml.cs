@@ -1,8 +1,6 @@
 ﻿using CommunityToolkit.WinUI.UI.Controls;
 using IntuneTools.Graph.IntuneHelperClasses;
 using IntuneTools.Utilities;
-using Microsoft.Graph.Beta;
-using Microsoft.Graph.Beta.Models;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
@@ -16,6 +14,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using static IntuneTools.Graph.EntraHelperClasses.GroupHelperClass;
 using static IntuneTools.Graph.IntuneHelperClasses.AppleBYODEnrollmentProfileHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.ApplicationHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceCompliancePolicyHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceConfigurationHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.FilterHelperClass;
@@ -28,10 +27,6 @@ using static IntuneTools.Graph.IntuneHelperClasses.WindowsDriverUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsFeatureUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdatePolicyHandler;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHelper;
-using static IntuneTools.Graph.IntuneHelperClasses.ApplicationHelper;
-using static IntuneTools.Utilities.HelperClass;
-using static IntuneTools.Utilities.Variables;
-using Microsoft.Graph.Beta.DeviceManagement.DeviceConfigurations.Item.GetOmaSettingPlainTextValueWithSecretReferenceValueId;
 
 namespace IntuneTools.Pages
 {
@@ -74,9 +69,9 @@ namespace IntuneTools.Pages
         // New: Include / Exclude filter mode (default Include)
         private string _selectedFilterMode = "Include";
 
-        
 
-        
+
+
 
         // UI initialization flag to prevent early event handlers from using null controls (e.g., LogConsole)
         private bool _uiInitialized = false;
@@ -342,7 +337,7 @@ namespace IntuneTools.Pages
                     if (item.Value.Type.StartsWith("App - "))
                     {
                         // Must first handle the app type
-                        await PrepareApplicationForAssignment(item,groupList, sourceGraphServiceClient);
+                        await PrepareApplicationForAssignment(item, groupList, sourceGraphServiceClient);
 
                         //await AssignGroupsToSingleApplication(item.Value.Id, groupList, sourceGraphServiceClient, _selectedInstallIntent);
 
@@ -815,8 +810,8 @@ namespace IntuneTools.Pages
                 var groups = await GetAllGroups(sourceGraphServiceClient);
                 foreach (var group in groups)
                 {
-                    GroupList.Add(new AssignmentGroupInfo 
-                    { 
+                    GroupList.Add(new AssignmentGroupInfo
+                    {
                         GroupName = group.DisplayName,
                         GroupId = group.Id
                     });
@@ -838,8 +833,8 @@ namespace IntuneTools.Pages
                 var groups = await SearchForGroups(sourceGraphServiceClient, searchQuery);
                 foreach (var group in groups)
                 {
-                    GroupList.Add(new AssignmentGroupInfo 
-                    { 
+                    GroupList.Add(new AssignmentGroupInfo
+                    {
                         GroupName = group.DisplayName,
                         GroupId = group.Id
                     });
@@ -994,7 +989,7 @@ namespace IntuneTools.Pages
 
         private async void FilterCheckBoxClick(object sender, RoutedEventArgs e)
         {
-            
+
         }
 
         private async void ClearLogButton_Click(object sender, RoutedEventArgs e)
@@ -1395,7 +1390,7 @@ namespace IntuneTools.Pages
 
                     return true;
                 }
-                else if(result == ContentDialogResult.Secondary)
+                else if (result == ContentDialogResult.Secondary)
                 {
                     // User clicked Cancel
                     return false;
@@ -1413,7 +1408,7 @@ namespace IntuneTools.Pages
             }
         }
 
-        
+
 
 
 

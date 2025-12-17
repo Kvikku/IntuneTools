@@ -1,13 +1,7 @@
 ﻿using Microsoft.Graph;
-using Microsoft.Graph.Beta;
-using Microsoft.Graph.Beta.Models;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using static IntuneTools.Utilities.HelperClass;
-using static IntuneTools.Utilities.Variables;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
 {
@@ -78,7 +72,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task ImportMultipleDeviceConfigurations(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient,List<string> configurationIds, bool assignments, bool filter, List<string> groups)
+        public static async Task ImportMultipleDeviceConfigurations(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> configurationIds, bool assignments, bool filter, List<string> groups)
         {
             try
             {

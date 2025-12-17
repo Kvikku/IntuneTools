@@ -1,13 +1,8 @@
 ﻿using Microsoft.Graph;
-using Microsoft.Graph.Beta;
-using Microsoft.Graph.Beta.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using static IntuneTools.Utilities.HelperClass;
-using static IntuneTools.Utilities.Variables;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
 {
@@ -73,7 +68,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while retrieving all macOS shell scripts",LogType.Error);
+                WriteToImportStatusFile("An error occurred while retrieving all macOS shell scripts", LogType.Error);
                 return new List<DeviceShellScript>();
             }
         }
@@ -309,7 +304,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while deleting macOS shell script",LogType.Error);
+                WriteToImportStatusFile("An error occurred while deleting macOS shell script", LogType.Error);
             }
         }
         public static async Task RenameMacOSShellScript(GraphServiceClient graphServiceClient, string scriptID, string newName)

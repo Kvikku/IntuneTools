@@ -1,26 +1,16 @@
 using CommunityToolkit.WinUI.UI.Controls;
 using IntuneTools.Utilities;
-using Microsoft.Graph.Beta;
-using Microsoft.Graph.Beta.Models.Security;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Documents;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
-using Windows.ApplicationModel.Contacts;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
 using static IntuneTools.Graph.EntraHelperClasses.GroupHelperClass;
 using static IntuneTools.Graph.IntuneHelperClasses.AppleBYODEnrollmentProfileHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceCompliancePolicyHelper;
@@ -35,9 +25,7 @@ using static IntuneTools.Graph.IntuneHelperClasses.WindowsDriverUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsFeatureUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdatePolicyHandler;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHelper;
-using static IntuneTools.Utilities.HelperClass;
 //using static IntuneTools.Utilities.SourceTenantGraphClient;
-using static IntuneTools.Utilities.Variables;
 
 
 // To learn more about WinUI, the WinUI project structure,
@@ -305,7 +293,7 @@ namespace IntuneTools.Pages
                     WriteToImportStatusFile("No settings catalog policies found to delete.");
                     return;
                 }
-                
+
                 count = settingsCatalogIDs.Count;
 
                 WriteToImportStatusFile($"Found {count} settings catalog policies to delete.");

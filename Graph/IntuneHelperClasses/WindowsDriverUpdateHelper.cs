@@ -1,13 +1,7 @@
 ﻿using Microsoft.Graph;
-using Microsoft.Graph.Beta;
-using Microsoft.Graph.Beta.Models;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using static IntuneTools.Utilities.HelperClass;
-using static IntuneTools.Utilities.Variables;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
 {
@@ -46,7 +40,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }
                 else
                 {
-                    LogToImportStatusFile("No Windows Driver Update Profiles found matching the search query or the result was null.",LogLevels.Error);
+                    LogToImportStatusFile("No Windows Driver Update Profiles found matching the search query or the result was null.", LogLevels.Error);
                 }
 
 
@@ -54,7 +48,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToImportStatusFile("An error occurred while searching for Windows Driver Update Profiles",LogLevels.Error);
+                LogToImportStatusFile("An error occurred while searching for Windows Driver Update Profiles", LogLevels.Error);
                 return new List<WindowsDriverUpdateProfile>();
             }
         }
@@ -108,7 +102,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         /// <param name="filter">Whether to apply an assignment filter.</param>
         /// <param name="groups">List of group IDs for assignment.</param>
         /// <returns>A Task representing the asynchronous import operation.</returns>
-        public static async Task ImportMultipleDriverProfiles(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> profileIds,bool assignments, bool filter, List<string> groups)
+        public static async Task ImportMultipleDriverProfiles(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> profileIds, bool assignments, bool filter, List<string> groups)
         {
             try
             {
@@ -154,8 +148,8 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     catch (Exception ex)
                     {
                         //rtb.AppendText($"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active\n");
-                        WriteToImportStatusFile($"Failed to import Windows Driver Update policy {profileName}: {ex.Message}",LogType.Error);
-                        WriteToImportStatusFile("This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active",LogType.Warning);
+                        WriteToImportStatusFile($"Failed to import Windows Driver Update policy {profileName}: {ex.Message}", LogType.Error);
+                        WriteToImportStatusFile("This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", LogType.Warning);
                     }
                 }
                 WriteToImportStatusFile("Windows Driver Update policy import process finished.");
@@ -163,7 +157,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
             catch (Exception ex)
             {
-                LogToImportStatusFile("An error occurred during the driver profile import process",LogLevels.Warning);
+                LogToImportStatusFile("An error occurred during the driver profile import process", LogLevels.Warning);
             }
         }
 
@@ -337,7 +331,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile($"An error occurred while deleting Windows Driver Update Profile with ID: {profileID}",LogType.Error);
+                WriteToImportStatusFile($"An error occurred while deleting Windows Driver Update Profile with ID: {profileID}", LogType.Error);
             }
         }
         public static async Task RenameDriverProfile(GraphServiceClient graphServiceClient, string profileID, string newName)

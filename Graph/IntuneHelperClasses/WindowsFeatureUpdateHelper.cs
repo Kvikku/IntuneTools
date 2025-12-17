@@ -1,13 +1,8 @@
 ﻿using Microsoft.Graph;
-using Microsoft.Graph.Beta;
-using Microsoft.Graph.Beta.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using static IntuneTools.Utilities.HelperClass;
-using static IntuneTools.Utilities.Variables;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
 {
@@ -32,7 +27,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while searching for Windows Feature Update profiles",LogType.Error);
+                WriteToImportStatusFile("An error occurred while searching for Windows Feature Update profiles", LogType.Error);
                 return new List<WindowsFeatureUpdateProfile>();
             }
         }
@@ -62,7 +57,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }
                 else
                 {
-                    WriteToImportStatusFile("No Windows Feature Update profiles found or result was null.",LogType.Warning);
+                    WriteToImportStatusFile("No Windows Feature Update profiles found or result was null.", LogType.Warning);
                 }
 
                 WriteToImportStatusFile($"Found {profiles.Count} Windows Feature Update profiles.");
@@ -71,7 +66,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while retrieving all Windows Feature Update profiles",LogType.Error);
+                WriteToImportStatusFile("An error occurred while retrieving all Windows Feature Update profiles", LogType.Error);
                 return new List<WindowsFeatureUpdateProfile>();
             }
         }
@@ -147,14 +142,14 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     catch (Exception ex)
                     {
                         WriteToImportStatusFile($"Failed to import Windows Feature Update profile {profileName}: {ex.Message}", LogType.Error);
-                        WriteToImportStatusFile("This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active",LogType.Warning);
+                        WriteToImportStatusFile("This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", LogType.Warning);
                     }
                 }
                 WriteToImportStatusFile("Windows Feature Update profile import process finished.");
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile($"An error occurred during the import process: {ex.Message}",LogType.Error);
+                WriteToImportStatusFile($"An error occurred during the import process: {ex.Message}", LogType.Error);
             }
         }
 
@@ -316,7 +311,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while deleting a Windows Feature Update profile",LogType.Error);
+                WriteToImportStatusFile("An error occurred while deleting a Windows Feature Update profile", LogType.Error);
             }
         }
         public static async Task RenameWindowsFeatureUpdateProfile(GraphServiceClient graphServiceClient, string profileID, string newName)

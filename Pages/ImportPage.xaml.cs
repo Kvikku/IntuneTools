@@ -1,7 +1,5 @@
 using CommunityToolkit.WinUI.UI.Controls;
-using IntuneTools.Graph;
 using IntuneTools.Utilities;
-using Microsoft.Graph.Beta;
 using Microsoft.UI.Xaml; // Added for RoutedEventArgs
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
@@ -11,12 +9,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel; // Add this for ObservableCollection
 using System.ComponentModel;
-using System.IO;
 using System.Linq;
-using System.Net.Mime;
-using System.Runtime.CompilerServices; // Add this for await support on IAsyncOperation
 using System.Threading.Tasks;
-using Windows.Foundation; // Added for IAsyncOperation
 using static IntuneTools.Graph.EntraHelperClasses.GroupHelperClass;
 using static IntuneTools.Graph.IntuneHelperClasses.AppleBYODEnrollmentProfileHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceCompliancePolicyHelper;
@@ -31,8 +25,6 @@ using static IntuneTools.Graph.IntuneHelperClasses.WindowsDriverUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsFeatureUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdatePolicyHandler;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHelper;
-using static IntuneTools.Utilities.HelperClass;
-using static IntuneTools.Utilities.Variables;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -77,7 +69,7 @@ namespace IntuneTools.Pages
             NewControlsPanel.Visibility = Visibility.Collapsed;
             //LoadFilterOptions();
             AppendToDetailsRichTextBlock("Console output");
-            
+
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -231,7 +223,7 @@ namespace IntuneTools.Pages
 
 
                 // Get the names of checked options
-                var selectedContent = GetCheckedOptionNames(); 
+                var selectedContent = GetCheckedOptionNames();
 
                 if (selectedContent.Count == 0)
                 {
@@ -479,7 +471,7 @@ namespace IntuneTools.Pages
             try
             {
                 // Retrieve all settings catalog policies
-                var policies = await SearchForSettingsCatalog(sourceGraphServiceClient,searchQuery);
+                var policies = await SearchForSettingsCatalog(sourceGraphServiceClient, searchQuery);
                 // Update ContentList for DataGrid
                 foreach (var policy in policies)
                 {
@@ -644,7 +636,7 @@ namespace IntuneTools.Pages
         /// <summary>
         /// Apple BYOD Enrollment Profiles
         /// </summary>
-        
+
         private async Task LoadAllAppleBYODEnrollmentProfilesAsync()
         {
             ShowLoading("Loading Apple BYOD Enrollment Profiles from Microsoft Graph...");
@@ -1331,7 +1323,7 @@ namespace IntuneTools.Pages
             finally
             {
                 HideLoading();
-                
+
             }
         }
         private async Task LoadAllGroupsAsync()
@@ -1456,7 +1448,7 @@ namespace IntuneTools.Pages
                 foreach (var filter in filters)
                 {
                     FilterOptions.Add(filter.DisplayName); // Add filter display name to ComboBox options
-                    
+
                 }
                 // Ensure ComboBox is bound to FilterOptions (though it should be from XAML or initialization)
                 if (FilterSelectionComboBox.ItemsSource != FilterOptions)
@@ -1494,7 +1486,7 @@ namespace IntuneTools.Pages
                     AppendToDetailsRichTextBlock($"- {content.ContentType}\n");
                 }
             }
-            
+
             LogToImportStatusFile("--------------------------------------------------", LogLevels.Info);
             AppendToDetailsRichTextBlock("--------------------------------------------------\n");
             return contentTypes;
@@ -1542,7 +1534,7 @@ namespace IntuneTools.Pages
             if (FilterSelectionComboBox.SelectedItem != null)
             {
                 string selectedFilter = FilterSelectionComboBox.SelectedItem.ToString();
-                
+
                 SelectedFilterID = filterNameAndID.ContainsKey(selectedFilter) ? filterNameAndID[selectedFilter] : null;
                 deviceAndAppManagementAssignmentFilterType = DeviceAndAppManagementAssignmentFilterType.Include;
 
@@ -1622,7 +1614,7 @@ namespace IntuneTools.Pages
                 AppendToDetailsRichTextBlock("Importing Settings Catalog policies...\n");
                 LogToImportStatusFile("Importing Settings Catalog policies...", LogLevels.Info);
                 var policies = GetSettingsCatalogIDs();
-                await ImportMultipleSettingsCatalog(sourceGraphServiceClient, destinationGraphServiceClient, policies, IsGroupSelected, IsFilterSelected,groupIDs);
+                await ImportMultipleSettingsCatalog(sourceGraphServiceClient, destinationGraphServiceClient, policies, IsGroupSelected, IsFilterSelected, groupIDs);
                 AppendToDetailsRichTextBlock("Settings Catalog policies imported successfully.\n");
             }
             if (ContentList.Any(c => c.ContentType == "Device Compliance Policy"))
@@ -1762,7 +1754,7 @@ namespace IntuneTools.Pages
         {
             // This method is called when the "List All" button is clicked
             await ListAllOrchestrator(sourceGraphServiceClient);
-        }  
+        }
 
         private async void GroupListAllClick(object sender, RoutedEventArgs e)
         {
@@ -1789,7 +1781,7 @@ namespace IntuneTools.Pages
             // Clear all items from ContentList, which will update the DataGrid
             ContentList.Clear();
         }
-        
+
         private void ClearSelectedButton_Click(object sender, RoutedEventArgs e)
         {
             // Remove only the selected items from ContentList
@@ -1820,7 +1812,7 @@ namespace IntuneTools.Pages
         }
 
         // Handler for the 'Select all' checkbox Unchecked event
-        private void SelectAll_Unchecked(object sender, RoutedEventArgs e)      
+        private void SelectAll_Unchecked(object sender, RoutedEventArgs e)
         {
             if (_suppressSelectAllEvents) return;
             _suppressOptionEvents = true;
@@ -1866,7 +1858,7 @@ namespace IntuneTools.Pages
                 return;
 
             bool?[] states = optionCheckBoxes.Select(cb => cb.IsChecked).ToArray();
-            
+
             _suppressSelectAllEvents = true;
             if (states.All(x => x == true))
                 OptionsAllCheckBox.IsChecked = true;
@@ -1894,7 +1886,7 @@ namespace IntuneTools.Pages
         private void FiltersCheckBox_Checked(object sender, RoutedEventArgs e)
         {
             FilterSelectionComboBox.Visibility = Visibility.Visible;
-            
+
         }
 
         private void FiltersCheckBox_Unchecked(object sender, RoutedEventArgs e)

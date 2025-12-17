@@ -1,13 +1,8 @@
 ﻿using Microsoft.Graph;
-using Microsoft.Graph.Beta;
-using Microsoft.Graph.Beta.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using static IntuneTools.Utilities.HelperClass;
-using static IntuneTools.Utilities.Variables;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
 {
@@ -32,7 +27,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while searching for Windows Quality Update policies",LogType.Error);
+                WriteToImportStatusFile("An error occurred while searching for Windows Quality Update policies", LogType.Error);
                 return new List<WindowsQualityUpdatePolicy>();
             }
         }
@@ -62,7 +57,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }
                 else
                 {
-                    WriteToImportStatusFile("No Windows Quality Update policies found or result was null.",LogType.Warning);
+                    WriteToImportStatusFile("No Windows Quality Update policies found or result was null.", LogType.Warning);
                 }
 
                 WriteToImportStatusFile($"Found {policies.Count} Windows Quality Update policies.");
@@ -71,11 +66,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while retrieving all Windows Quality Update policies",LogType.Error);
+                WriteToImportStatusFile("An error occurred while retrieving all Windows Quality Update policies", LogType.Error);
                 return new List<WindowsQualityUpdatePolicy>();
             }
         }
-        public static async Task ImportMultipleWindowsQualityUpdatePolicies(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient,List<string> policyIDs, bool assignments, bool filter, List<string> groups)
+        public static async Task ImportMultipleWindowsQualityUpdatePolicies(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> policyIDs, bool assignments, bool filter, List<string> groups)
         {
             try
             {
@@ -145,8 +140,8 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     catch (Exception ex)
                     {
                         //rtb.AppendText($"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active\n");
-                        WriteToImportStatusFile($"Failed to import Windows Quality Update policy {profileName}: {ex.Message}",LogType.Error);
-                        WriteToImportStatusFile("This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active",LogType.Warning);
+                        WriteToImportStatusFile($"Failed to import Windows Quality Update policy {profileName}: {ex.Message}", LogType.Error);
+                        WriteToImportStatusFile("This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", LogType.Warning);
                     }
                 }
                 WriteToImportStatusFile("Windows Quality Update policy import process finished.");
@@ -315,7 +310,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while deleting a Windows Quality Update policy",LogType.Error);
+                WriteToImportStatusFile("An error occurred while deleting a Windows Quality Update policy", LogType.Error);
             }
         }
 

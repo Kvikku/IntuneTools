@@ -3,17 +3,12 @@ using IntuneTools.Utilities;
 using Microsoft.UI.Xaml; // Added for RoutedEventArgs
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation; // Added for NavigationEventArgs
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using static IntuneTools.Graph.DestinationUserAuthentication;
-using static IntuneTools.Utilities.HelperClass;
-using static IntuneTools.Utilities.Variables;
-using static IntuneTools.Graph.SourceUserAuthentication;
-using System;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.

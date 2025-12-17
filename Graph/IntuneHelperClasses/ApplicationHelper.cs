@@ -1,16 +1,9 @@
 ﻿using IntuneTools.Pages;
 using Microsoft.Graph;
-using Microsoft.Graph.Beta;
-using Microsoft.Graph.Beta.Models;
-using Microsoft.UI.Xaml.Documents;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using static IntuneTools.Utilities.HelperClass;
-using static IntuneTools.Utilities.Variables;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
 {
@@ -168,7 +161,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             {
                 OdataType = "#microsoft.graph.win32LobAppAssignmentSettings",
                 Notifications = win32LobAppNotification,
-                DeliveryOptimizationPriority =  win32LobAppDeliveryOptimizationPriority
+                DeliveryOptimizationPriority = win32LobAppDeliveryOptimizationPriority
 
             };
         }
@@ -309,7 +302,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                                 break;
                         }
                     }
-                    if(assignment.Intent == InstallIntent.Available || assignment.Target.OdataType == "#microsoft.graph.allDevicesAssignmentTarget")
+                    if (assignment.Intent == InstallIntent.Available || assignment.Target.OdataType == "#microsoft.graph.allDevicesAssignmentTarget")
                     {
                         // Not supported
                         WriteToImportStatusFile("Assignment settings for 'Available' intent to 'All Devices virtual group' is not supported.");
