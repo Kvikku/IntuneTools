@@ -46,7 +46,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 var excludedODataTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
                 {
                     // Add the ODataTypes you want to exclude here, for example:
-                    "#microsoft.graph.winGetApp",
                     "#microsoft.graph.iosiPadOSWebClip",
                     "#microsoft.graph.macOSOfficeSuiteApp",
                     "#microsoft.graph.officeSuiteApp",
@@ -137,6 +136,10 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             {
                 assignmentSettings = iOSAppDeploymentSettings;
             }
+            else if(appType == "#microsoft.graph.winGetApp")
+            {
+                assignmentSettings = CreateWinGetAppAssignmentSettings();
+            }
             else
             {
                 // App type not supported yet
@@ -184,6 +187,15 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 IsRemovable = isRemovable,
                 PreventManagedAppBackup = preventManagedAppBackup,
                 PreventAutoAppUpdate = preventAutoAppUpdate
+            };
+        }
+
+        public static WinGetAppAssignmentSettings CreateWinGetAppAssignmentSettings()
+        {
+            return new WinGetAppAssignmentSettings
+            {
+                OdataType = "#microsoft.graph.winGetAppAssignmentSettings",
+                Notifications = (WinGetAppNotification)win32LobAppNotification,
             };
         }
 
