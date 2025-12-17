@@ -51,7 +51,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     "#microsoft.graph.officeSuiteApp",
                     "#microsoft.graph.macOSMicrosoftDefenderApp",
                     "#microsoft.graph.macOSMicrosoftEdgeApp",
-                    "#microsoft.graph.windowsMicrosoftEdgeApp",
                     "#microsoft.graph.macOSWebClip",
                 };
 
@@ -145,6 +144,10 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             else if (appType == "#microsoft.graph.webApp")
             {
                 // No specific assignment settings needed for Web App
+            }
+            else if (appType == "#microsoft.graph.windowsMicrosoftEdgeApp")
+            {
+                // No specific assignment settings needed for Windows Microsoft Edge App
             }
 
             else
