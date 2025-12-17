@@ -290,7 +290,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     assignments.Add(assignment);
                 }
 
-
                 // Cleanup for known issues with certain assignment settings
                 foreach (var assignment in assignments)
                 {
@@ -316,8 +315,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         WriteToImportStatusFile("Assignment settings for 'Available' intent to 'All Devices virtual group' is not supported.");
                     }
                 }
-
-
 
                 // Step 2: Check for existing assignments and add only if not already present
                 var existingAssignments = await graphServiceClient
@@ -370,10 +367,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 {
                     MobileAppAssignments = assignments
                 };
-
-
-                
-
 
                 try
                 {
