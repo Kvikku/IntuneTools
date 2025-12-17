@@ -99,14 +99,6 @@
                                   Visibility="Collapsed"
                                   VerticalAlignment="Bottom"
                                   Toggled="FilterModeToggle_Toggled"/>
-                    <InfoBar x:Name="FilterPlatformInfoBar"
-                             IsOpen="False"
-                             IsClosable="False"
-                             Severity="Warning"
-                             Title="Platform Compatibility"
-                             Message="Assignment filters are only supported on Windows, iOS/iPadOS, and Android platforms."
-                             Margin="8,0,0,0"
-                             VerticalAlignment="Center"/>
                     <ToggleSwitch x:Name="IntentToggle"
                                   Header="Intent"
                                   OnContent="Include"
@@ -136,17 +128,26 @@
             <Grid Grid.Column="0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <InfoBar x:Name="StagingAreaInfoBar"
+                <InfoBar x:Name="FilterPlatformInfoBar"
                          Grid.Row="0"
+                         IsOpen="False"
+                         IsClosable="False"
+                         Severity="Warning"
+                         Title="Platform Compatibility"
+                         Message="Filters are platform specific - Please only assign one platform at a time when using filters!"
+                         Margin="0,0,12,12"/>
+                <InfoBar x:Name="StagingAreaInfoBar"
+                         Grid.Row="1"
                          IsOpen="True"
                          Severity="Informational"
                          Title="Staging Area"
                          Message="This grid acts as a staging area. All items listed below will be assigned to the selected groups. Use the 'Remove' buttons to exclude items you do not wish to assign."
                          IsClosable="True"
                          Margin="0,0,12,12"/>
-                <controls:DataGrid Grid.Row="1"
+                <controls:DataGrid Grid.Row="2"
                                    x:Name="AppDataGrid"
                                    AutoGenerateColumns="False"
                                    SelectionMode="Extended"
@@ -163,7 +164,7 @@
                     </controls:DataGrid.Columns>
                 </controls:DataGrid>
 
-                <Border Grid.RowSpan="2"
+                <Border Grid.RowSpan="3"
                         x:Name="LoadingOverlay"
                         Background="{ThemeResource SystemControlAcrylicWindowBrush}"
                         Visibility="Collapsed"
