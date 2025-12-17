@@ -46,11 +46,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 // Filter out unwanted ODataTypes
                 var excludedODataTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
                 {
-                    // Add the ODataTypes you want to exclude here, for example:
-                    "#microsoft.graph.iosiPadOSWebClip",
-                    "#microsoft.graph.macOSMicrosoftDefenderApp",
-                    "#microsoft.graph.macOSMicrosoftEdgeApp",
-
+                    // Add the ODataTypes to be excluded here
                 };
 
                 if (excludedODataTypes.Count > 0)
@@ -159,6 +155,18 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             else if (appType == "#microsoft.graph.macOSWebClip")
             {
                 // No specific assignment settings needed for macOS Web Clip
+            }
+            else if (appType == "#microsoft.graph.macOSMicrosoftEdgeApp")
+            {
+                // No specific assignment settings needed for macOS Microsoft Edge App
+            }
+            else if (appType == "#microsoft.graph.macOSMicrosoftDefenderApp")
+            { 
+                // No specific assignment settings needed for macOS Microsoft Defender App
+            }
+            else if (appType == "#microsoft.graph.iosiPadOSWebClip")
+            {
+                // No specific assignment settings needed for iOS and ipadOS web clip
             }
 
             else
