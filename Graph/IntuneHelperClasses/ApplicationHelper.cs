@@ -291,9 +291,10 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }
 
 
-                // Cleanup for iOS VPP apps
+                // Cleanup for known issues with certain assignment settings
                 foreach (var assignment in assignments)
                 {
+                    // iOS VPP App specific cleanup
                     if (assignment.Settings is IosVppAppAssignmentSettings vppSettings)
                     {
                         switch (assignment.Intent)
@@ -310,6 +311,8 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         }
                     }
                 }
+
+
 
                 // Step 2: Check for existing assignments and add only if not already present
                 var existingAssignments = await graphServiceClient
