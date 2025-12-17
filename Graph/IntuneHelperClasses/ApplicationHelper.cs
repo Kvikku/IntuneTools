@@ -47,7 +47,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 {
                     // Add the ODataTypes you want to exclude here, for example:
                     "#microsoft.graph.iosiPadOSWebClip",
-                    "#microsoft.graph.macOSOfficeSuiteApp",
                     "#microsoft.graph.macOSMicrosoftDefenderApp",
                     "#microsoft.graph.macOSMicrosoftEdgeApp",
                     "#microsoft.graph.macOSWebClip",
@@ -151,6 +150,10 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             else if (appType == "#microsoft.graph.officeSuiteApp")
             {
                 // No specific assignment settings needed for Office Suite App
+            }
+            else if (appType == "#microsoft.graph.macOSOfficeSuiteApp")
+            {
+                // No specific assignment settings needed for macOS Microsoft Edge App
             }
 
             else
