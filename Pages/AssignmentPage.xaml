@@ -99,6 +99,14 @@
                                   Visibility="Collapsed"
                                   VerticalAlignment="Bottom"
                                   Toggled="FilterModeToggle_Toggled"/>
+                    <InfoBar x:Name="FilterPlatformInfoBar"
+                             IsOpen="False"
+                             IsClosable="False"
+                             Severity="Warning"
+                             Title="Platform Compatibility"
+                             Message="Assignment filters are only supported on Windows, iOS/iPadOS, and Android platforms."
+                             Margin="8,0,0,0"
+                             VerticalAlignment="Center"/>
                     <ToggleSwitch x:Name="IntentToggle"
                                   Header="Intent"
                                   OnContent="Include"
@@ -130,7 +138,8 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <InfoBar Grid.Row="0"
+                <InfoBar x:Name="StagingAreaInfoBar"
+                         Grid.Row="0"
                          IsOpen="True"
                          Severity="Informational"
                          Title="Staging Area"

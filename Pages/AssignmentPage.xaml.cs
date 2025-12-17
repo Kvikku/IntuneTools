@@ -1092,6 +1092,7 @@ namespace IntuneTools.Pages
                 if (toggleSwitch.IsOn)
                 {
                     FilterSelectionComboBox.Visibility = Visibility.Visible;
+                    FilterPlatformInfoBar.IsOpen = true;
 
                     if (FilterModeToggle is not null)
                     {
@@ -1111,6 +1112,7 @@ namespace IntuneTools.Pages
                 {
                     FilterSelectionComboBox.Visibility = Visibility.Collapsed;
                     FilterSelectionComboBox.SelectedItem = null;
+                    FilterPlatformInfoBar.IsOpen = false;
 
                     if (FilterModeToggle is not null)
                     {
