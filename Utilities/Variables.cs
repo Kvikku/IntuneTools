@@ -6,7 +6,7 @@ namespace IntuneTools.Utilities
 {
     public class Variables
     {
-        public static string appVersion = "1.1.0.0";
+        public static string appVersion = "1.2.0.0";
         // Log file
         public static string appDataPath = @"C:\ProgramData\";
         public static string appFolderName = "InToolz";
