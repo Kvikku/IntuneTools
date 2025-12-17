@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static IntuneTools.Utilities.HelperClass;
 using static IntuneTools.Utilities.Variables;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
 {
@@ -49,7 +50,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     "#microsoft.graph.iosiPadOSWebClip",
                     "#microsoft.graph.macOSMicrosoftDefenderApp",
                     "#microsoft.graph.macOSMicrosoftEdgeApp",
-                    "#microsoft.graph.macOSWebClip",
+
                 };
 
                 if (excludedODataTypes.Count > 0)
@@ -154,6 +155,10 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             else if (appType == "#microsoft.graph.macOSOfficeSuiteApp")
             {
                 // No specific assignment settings needed for macOS Microsoft Edge App
+            }
+            else if (appType == "#microsoft.graph.macOSWebClip")
+            {
+                // No specific assignment settings needed for macOS Web Clip
             }
 
             else
