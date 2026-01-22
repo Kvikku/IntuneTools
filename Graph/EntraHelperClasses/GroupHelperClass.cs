@@ -1,13 +1,7 @@
 ﻿using Microsoft.Graph;
-using Microsoft.Graph.Beta;
-using Microsoft.Graph.Beta.Models;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using static IntuneTools.Utilities.HelperClass;
-using static IntuneTools.Utilities.Variables;
 
 namespace IntuneTools.Graph.EntraHelperClasses
 {
@@ -233,7 +227,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
                     }
                     catch (Exception ex)
                     {
-                        LogToImportStatusFile($"Failed to import {groupName}\n",LogLevels.Error);
+                        LogToImportStatusFile($"Failed to import {groupName}\n", LogLevels.Error);
                         WriteToImportStatusFile($"Failed to import {groupName}: {ex.Message}", LogType.Error);
                     }
                 }
@@ -267,7 +261,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while deleting a security group",LogType.Error);
+                WriteToImportStatusFile("An error occurred while deleting a security group", LogType.Error);
             }
         }
         public static async Task RenameGroup(GraphServiceClient graphServiceClient, string groupID, string newName)

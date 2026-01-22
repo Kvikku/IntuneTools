@@ -1,8 +1,6 @@
 ﻿using CommunityToolkit.WinUI.UI.Controls;
 using IntuneTools.Graph.IntuneHelperClasses;
 using IntuneTools.Utilities;
-using Microsoft.Graph.Beta;
-using Microsoft.Graph.Beta.Models;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
@@ -16,9 +14,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using static IntuneTools.Graph.EntraHelperClasses.GroupHelperClass;
 using static IntuneTools.Graph.IntuneHelperClasses.AppleBYODEnrollmentProfileHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.ApplicationHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceCompliancePolicyHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceConfigurationHelper;
-using static IntuneTools.Graph.IntuneHelperClasses.FilterHelperClass;
 using static IntuneTools.Graph.IntuneHelperClasses.FilterHelperClass;
 using static IntuneTools.Graph.IntuneHelperClasses.macOSShellScript;
 using static IntuneTools.Graph.IntuneHelperClasses.PowerShellScriptsHelper;
@@ -29,8 +27,6 @@ using static IntuneTools.Graph.IntuneHelperClasses.WindowsDriverUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsFeatureUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdatePolicyHandler;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHelper;
-using static IntuneTools.Utilities.HelperClass;
-using static IntuneTools.Utilities.Variables;
 
 namespace IntuneTools.Pages
 {
@@ -68,10 +64,14 @@ namespace IntuneTools.Pages
 
         private DeviceAndAppManagementAssignmentFilter? _selectedFilterID;
         private string _selectedFilterName;
-        private InstallIntent _selectedInstallIntent;
+
 
         // New: Include / Exclude filter mode (default Include)
         private string _selectedFilterMode = "Include";
+
+
+
+
 
         // UI initialization flag to prevent early event handlers from using null controls (e.g., LogConsole)
         private bool _uiInitialized = false;
@@ -94,7 +94,8 @@ namespace IntuneTools.Pages
                 ["WindowsFeatureUpdate"] = async () => await LoadAllWindowsFeatureUpdateProfilesAsync(),
                 ["WindowsQualityUpdatePolicy"] = async () => await LoadAllWindowsQualityUpdatePoliciesAsync(),
                 ["WindowsQualityUpdateProfile"] = async () => await LoadAllWindowsQualityUpdateProfilesAsync(),
-                ["AppleBYODEnrollmentProfile"] = async () => await LoadAllAppleBYODEnrollmentProfilesAsync()
+                ["AppleBYODEnrollmentProfile"] = async () => await LoadAllAppleBYODEnrollmentProfilesAsync(),
+                ["Application"] = async () => await LoadAllApplicationsAsync()
             };
 
             _allAssignments.AddRange(AssignmentList);
@@ -129,12 +130,12 @@ namespace IntuneTools.Pages
                 FilterToggle.IsEnabled = false;
                 FilterSelectionComboBox.IsEnabled = false;
                 FilterModeToggle.IsEnabled = false;
-                AssignmentIntentComboBox.IsEnabled = false;
                 //OptionsPanel.IsEnabled = false;
                 OptionsAllCheckBox.IsEnabled = false;
                 ClearLogButton.IsEnabled = false;
                 OptionsAllCheckBox.IsEnabled = false;
                 ContentTypesButton.IsEnabled = false;
+                IntentToggle.IsEnabled = false;
             }
             else
             {
@@ -157,12 +158,12 @@ namespace IntuneTools.Pages
                 FilterToggle.IsEnabled = true;
                 FilterSelectionComboBox.IsEnabled = true;
                 FilterModeToggle.IsEnabled = true;
-                AssignmentIntentComboBox.IsEnabled = true;
                 //OptionsPanel.IsEnabled = true;
                 OptionsAllCheckBox.IsEnabled = true;
                 ClearLogButton.IsEnabled = true;
                 OptionsAllCheckBox.IsEnabled = true;
                 ContentTypesButton.IsEnabled = true;
+                IntentToggle.IsEnabled = true;
             }
         }
 
@@ -244,12 +245,6 @@ namespace IntuneTools.Pages
                 deviceAndAppManagementAssignmentFilterType = DeviceAndAppManagementAssignmentFilterType.None;
             }
 
-            // Get and log install intent
-            UpdateSelectedInstallIntent();
-
-
-            // Get selected items and groups
-            //var selectedItems = AppDataGrid.SelectedItems.Cast<AssignmentInfo>().ToList();
 
 
             // Confirmation dialog
@@ -268,6 +263,14 @@ namespace IntuneTools.Pages
             if (result != ContentDialogResult.Primary)
             {
                 AppendToDetailsRichTextBlock("Assignment cancelled by user.");
+                return;
+            }
+
+            var deploymentOptions = await ShowAppDeploymentOptionsDialog();
+
+            if (deploymentOptions == false)
+            {
+                AppendToDetailsRichTextBlock("Assignment cancelled by user during deployment options selection.");
                 return;
             }
 
@@ -331,6 +334,14 @@ namespace IntuneTools.Pages
                     {
                         await AssignGroupsToSingleAppleBYODEnrollmentProfile(item.Value.Id, groupList, sourceGraphServiceClient);
                     }
+                    if (item.Value.Type.StartsWith("App - "))
+                    {
+                        // Must first handle the app type
+                        await PrepareApplicationForAssignment(item, groupList, sourceGraphServiceClient);
+
+                        //await AssignGroupsToSingleApplication(item.Value.Id, groupList, sourceGraphServiceClient, _selectedInstallIntent);
+
+                    }
 
 
 
@@ -376,6 +387,7 @@ namespace IntuneTools.Pages
         {
             AssignmentList.Clear();
             _allAssignments.Clear();
+
 
             var selectedContent = GetCheckedOptionNames();
             if (selectedContent.Count == 0)
@@ -734,6 +746,36 @@ namespace IntuneTools.Pages
             }
         }
 
+        private async Task LoadAllApplicationsAsync()
+        {
+            ShowLoading("Loading applications from Microsoft Graph...");
+            try
+            {
+                var applications = await ApplicationHelper.GetAllMobileApps(sourceGraphServiceClient);
+                foreach (var app in applications)
+                {
+                    var assignmentInfo = new AssignmentInfo
+                    {
+                        Name = app.DisplayName,
+                        Type = TranslateApplicationType(app.OdataType),
+                        Platform = TranslatePolicyPlatformName(app.OdataType),
+                        Id = app.Id
+                    };
+                    AssignmentList.Add(assignmentInfo);
+                }
+                AppDataGrid.ItemsSource = AssignmentList;
+            }
+            finally
+            {
+                HideLoading();
+            }
+        }
+
+        private async Task SearchForApplicationsAsync()
+        {
+            // Implement search logic if needed
+        }
+
         #endregion
 
         #region Group / Filter retrieval
@@ -768,8 +810,8 @@ namespace IntuneTools.Pages
                 var groups = await GetAllGroups(sourceGraphServiceClient);
                 foreach (var group in groups)
                 {
-                    GroupList.Add(new AssignmentGroupInfo 
-                    { 
+                    GroupList.Add(new AssignmentGroupInfo
+                    {
                         GroupName = group.DisplayName,
                         GroupId = group.Id
                     });
@@ -791,8 +833,8 @@ namespace IntuneTools.Pages
                 var groups = await SearchForGroups(sourceGraphServiceClient, searchQuery);
                 foreach (var group in groups)
                 {
-                    GroupList.Add(new AssignmentGroupInfo 
-                    { 
+                    GroupList.Add(new AssignmentGroupInfo
+                    {
                         GroupName = group.DisplayName,
                         GroupId = group.Id
                     });
@@ -947,7 +989,7 @@ namespace IntuneTools.Pages
 
         private async void FilterCheckBoxClick(object sender, RoutedEventArgs e)
         {
-            
+
         }
 
         private async void ClearLogButton_Click(object sender, RoutedEventArgs e)
@@ -1045,6 +1087,7 @@ namespace IntuneTools.Pages
                 if (toggleSwitch.IsOn)
                 {
                     FilterSelectionComboBox.Visibility = Visibility.Visible;
+                    FilterPlatformInfoBar.IsOpen = true;
 
                     if (FilterModeToggle is not null)
                     {
@@ -1058,12 +1101,13 @@ namespace IntuneTools.Pages
                         await LoadAllAssignmentFiltersAsync();
                     }
                     _selectedFilterMode = "Include";
-                    AppendToDetailsRichTextBlock("Assignment filter enabled (Mode=" + _selectedFilterMode + ").");
+                    AppendToDetailsRichTextBlock("Assignment filter enabled.");
                 }
                 else
                 {
                     FilterSelectionComboBox.Visibility = Visibility.Collapsed;
                     FilterSelectionComboBox.SelectedItem = null;
+                    FilterPlatformInfoBar.IsOpen = false;
 
                     if (FilterModeToggle is not null)
                     {
@@ -1086,6 +1130,17 @@ namespace IntuneTools.Pages
                 AppendToDetailsRichTextBlock($"Filter mode set to '{_selectedFilterMode}'.");
             }
         }
+
+        private void IntentToggle_Toggled(object sender, RoutedEventArgs e)
+        {
+            if (!_uiInitialized) return;
+            if (sender is ToggleSwitch ts)
+            {
+                _selectedInstallIntent = ts.IsOn ? InstallIntent.Required : InstallIntent.Available;
+                AppendToDetailsRichTextBlock($"Assignment intent set to '{_selectedInstallIntent}'.");
+            }
+        }
+
         #endregion
 
         #region Helpers
@@ -1132,6 +1187,8 @@ namespace IntuneTools.Pages
                 paragraph.Inlines.Add(new LineBreak());
             }
             paragraph.Inlines.Add(new Run { Text = text });
+
+            ScrollLogToEnd();
         }
 
         public List<string> GetCheckedOptionNames()
@@ -1198,6 +1255,17 @@ namespace IntuneTools.Pages
             else
                 OptionsAllCheckBox.IsChecked = null;
             _suppressSelectAllEvents = false;
+        }
+
+        private void ScrollLogToEnd()
+        {
+            // Use DispatcherQueue to ensure layout updates are processed
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                LogConsole.UpdateLayout();
+                LogScrollViewer.UpdateLayout();
+                LogScrollViewer.ChangeView(null, LogScrollViewer.ScrollableHeight, null, true);
+            });
         }
 
         private void AppDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
@@ -1267,6 +1335,83 @@ namespace IntuneTools.Pages
             // e.Handled = true; // Removed as per workaround
         }
 
+        private async Task<bool> ShowAppDeploymentOptionsDialog()
+        {
+            try
+            {
+                // TODO - reset the variables 
+
+                // Show the dialog defined in XAML
+                var result = await AppDeployment.ShowAsync();
+
+                if (result == ContentDialogResult.Primary)
+                {
+                    // User clicked Confirm - Store values in class-level variables
+                    Variables._selectedDeploymentMode = (DeploymentModeCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
+                    Variables._selectedIntent = (AssignmentIntentComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString();
+                    Variables._selectedNotificationSetting = (NotificationSettingsCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
+                    Variables._selectedDeliveryOptimizationPriority = (DeliveryOptimizationCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
+                    Variables._selectedAndroidManagedStoreAutoUpdateMode = (UpdatePriority.SelectedItem as ComboBoxItem)?.Content.ToString();
+                    Variables._licensingType = (UseDeviceLicensingCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
+                    Variables._deviceRemovalAction = (UninstallOnDeviceRemovalCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
+                    Variables._removable = (IsRemovableCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
+                    Variables._preventAutoUpdate = (PreventAutoAppUpdateCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
+                    Variables._preventManagedAppBackup = (PreventManagedAppBackupCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
+
+                    bool isDeviceLicensing = bool.TryParse(Variables._licensingType, out bool deviceLicensing) && deviceLicensing;
+                    bool uninstallOnDeviceRemoval = bool.TryParse(Variables._deviceRemovalAction, out bool deviceRemoval) && deviceRemoval;
+                    bool isRemovable = bool.TryParse(Variables._removable, out bool removable) && removable;
+                    bool preventAutoUpdate = bool.TryParse(Variables._preventAutoUpdate, out bool autoUpdate) && autoUpdate;
+                    bool preventManagedAppBackup = bool.TryParse(Variables._preventManagedAppBackup, out bool managedAppBackup) && managedAppBackup;
+
+                    // Store Assignment Intent (Available, Required, Uninstall)
+                    GetInstallIntent(_selectedIntent);
+
+                    // Store the delivery optimization priority (Windows)
+                    GetDeliveryOptimizationPriority(_selectedDeliveryOptimizationPriority);
+
+                    // Store the notifications mode (Windows)
+                    GetWin32AppNotificationValue(_selectedNotificationSetting);
+
+                    // Store the Android managed app auto update mode (Android)
+                    GetAndroidManagedStoreAutoUpdateMode(_selectedAndroidManagedStoreAutoUpdateMode);
+
+                    // Store the iOS options
+                    var iOSOptions = CreateiOSVppAppAssignmentSettings(isDeviceLicensing, uninstallOnDeviceRemoval, isRemovable, preventManagedAppBackup, preventAutoUpdate);
+                    iOSAppDeploymentSettings = iOSOptions;
+
+
+                    // Log the selected options
+                    AppendToDetailsRichTextBlock("Application Deployment Options Configured:");
+                    AppendToDetailsRichTextBlock($" • Intent: {_selectedInstallIntent}");
+                    AppendToDetailsRichTextBlock($" • Group Mode: {_selectedDeploymentMode}");
+                    AppendToDetailsRichTextBlock($" • Notifications: {_selectedNotificationSetting}");
+                    AppendToDetailsRichTextBlock($" • Delivery Opt: {_selectedDeliveryOptimizationPriority}");
+
+                    return true;
+                }
+                else if (result == ContentDialogResult.Secondary)
+                {
+                    // User clicked Cancel
+                    return false;
+                }
+                else
+                {
+                    // Dialog was dismissed without explicit confirmation or cancellation
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                AppendToDetailsRichTextBlock($"Error showing app options dialog: {ex.Message}");
+                return false;
+            }
+        }
+
+
+
+
+
         private void GroupDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
         {
             var dataGrid = sender as DataGrid;
@@ -1333,6 +1478,23 @@ namespace IntuneTools.Pages
             // Prevent default sort
             // e.Handled = true; // Uncomment if needed for your toolkit version
         }
+
+        private void AssignmentIntentComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (AvailableIntentInfoBar == null)
+                return;
+
+            if (AssignmentIntentComboBox.SelectedItem is ComboBoxItem selectedItem &&
+                selectedItem.Content is string intent)
+            {
+                AvailableIntentInfoBar.IsOpen = string.Equals(intent, "Available", StringComparison.OrdinalIgnoreCase);
+            }
+            else
+            {
+                AvailableIntentInfoBar.IsOpen = false;
+            }
+        }
+
 
         #endregion
     }

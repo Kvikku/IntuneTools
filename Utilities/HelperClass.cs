@@ -1,18 +1,12 @@
-﻿using Microsoft.Graph.Beta;
-using Microsoft.Graph.Beta.Models;
-using Microsoft.Identity.Client;
-using Microsoft.UI.Xaml.Controls;
+﻿using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using static IntuneTools.Utilities.HelperClass;
-using static IntuneTools.Utilities.Variables;
 
 namespace IntuneTools.Utilities
 {
@@ -29,7 +23,7 @@ namespace IntuneTools.Utilities
                 Directory.CreateDirectory(appDataFolder);
                 Directory.CreateDirectory(logFileFolder);
                 Directory.CreateDirectory(appSettingsFolder);
-                
+
             }
 
             //CreateAppSettingsFile(); // Ensure app settings file is created
@@ -187,7 +181,7 @@ namespace IntuneTools.Utilities
             catch (IOException ex)
             {
                 // Handle the exception
-                
+
             }
         }
 
@@ -293,8 +287,11 @@ namespace IntuneTools.Utilities
                 // Windows
                 "Windows10" => "Windows",
                 "#microsoft.graph.windows10CompliancePolicy" => "Windows",
-                
-                
+                "#microsoft.graph.win32LobApp" => "Windows",
+                "#microsoft.graph.winGetApp" => "Windows",
+                "#microsoft.graph.officeSuiteApp" => "Windows",
+
+
                 // macOS
                 "MacOS" => "macOS",
                 "#microsoft.graph.macOSCompliancePolicy" => "macOS",
@@ -309,7 +306,116 @@ namespace IntuneTools.Utilities
                 "Android" => "Android",
                 "#microsoft.graph.androidWorkProfileCompliancePolicy" => "Android",
                 "#microsoft.graph.androidDeviceOwnerCompliancePolicy" => "Android",
+
+                // Universal
+                "#microsoft.graph.webApp" => "Universal",
                 _ => platformName // Return the original name if no translation is found
+            };
+        }
+
+        public static string TranslateApplicationType(string odataType)
+        {
+            if (string.IsNullOrEmpty(odataType))
+            {
+                return odataType;
+            }
+
+            return odataType switch
+            {
+                "#microsoft.graph.win32LobApp" => "App - Windows app (Win32)",
+                "#microsoft.graph.iosVppApp" => "App - iOS VPP app",
+                "#microsoft.graph.winGetApp" => "App - Windows app (WinGet)",
+                "#microsoft.graph.iosiPadOSWebClip" => "App - iOS/iPadOS web clip",
+                "#microsoft.graph.androidManagedStoreApp" => "App - Android Managed store app",
+                "#microsoft.graph.macOSOfficeSuiteApp" => "App - macOS Microsoft 365 Apps",
+                "#microsoft.graph.officeSuiteApp" => "App - Windows Microsoft 365 Apps",
+                "#microsoft.graph.macOSMicrosoftDefenderApp" => "App - macOS Microsoft Defender for Endpoint",
+                "#microsoft.graph.macOSMicrosoftEdgeApp" => "App - macOS Microsoft Edge",
+                "#microsoft.graph.windowsMicrosoftEdgeApp" => "App - Windows Microsoft Edge",
+                "#microsoft.graph.webApp" => "App - Web link",
+                "#microsoft.graph.macOSWebClip" => "App - macOS web clip",
+                "#microsoft.graph.windowsWebApp" => "App - Windows web link",
+                "#microsoft.graph.androidManagedStoreWebApp" => "App - Android Managed store web link",
+                _ => odataType
+            };
+        }
+
+        public static string TranslateODataTypeFromApplicationType(string applicationType)
+        {
+            if (string.IsNullOrEmpty(applicationType))
+            {
+                return applicationType;
+            }
+
+            return applicationType switch
+            {
+                "App - Windows app (Win32)" => "#microsoft.graph.win32LobApp",
+                "App - iOS VPP app" => "#microsoft.graph.iosVppApp",
+                "App - Windows app (WinGet)" => "#microsoft.graph.winGetApp",
+                "App - iOS/iPadOS web clip" => "#microsoft.graph.iosiPadOSWebClip",
+                "App - Android Managed store app" => "#microsoft.graph.androidManagedStoreApp",
+                "App - macOS Microsoft 365 Apps" => "#microsoft.graph.macOSOfficeSuiteApp",
+                "App - Windows Microsoft 365 Apps" => "#microsoft.graph.officeSuiteApp",
+                "App - macOS Microsoft Defender for Endpoint" => "#microsoft.graph.macOSMicrosoftDefenderApp",
+                "App - macOS Microsoft Edge" => "#microsoft.graph.macOSMicrosoftEdgeApp",
+                "App - Windows Microsoft Edge" => "#microsoft.graph.windowsMicrosoftEdgeApp",
+                "App - Web link" => "#microsoft.graph.webApp",
+                "App - macOS web clip" => "#microsoft.graph.macOSWebClip",
+                "App - Windows web link" => "#microsoft.graph.windowsWebApp",
+                "App - Android Managed store web link" => "#microsoft.graph.androidManagedStoreWebApp",
+                _ => applicationType
+            };
+        }
+
+        public static void GetWin32AppNotificationValue(string input)
+        {
+            // Method to get the Win32LobAppNotification enum value based on input string
+            win32LobAppNotification = input switch
+            {
+                "Show all toast notifications" => Win32LobAppNotification.ShowAll,
+                "Hide toast notifications and show only reboot" => Win32LobAppNotification.ShowReboot,
+                "Hide all toast notifications" => Win32LobAppNotification.HideAll,
+                _ => Win32LobAppNotification.ShowAll
+            };
+        }
+
+        public static void GetDeploymentMode(string input)
+        {
+            // TODO when fixing exclusion assignments
+            _selectedDeploymentMode = input switch
+            {
+
+            };
+        }
+
+        public static void GetInstallIntent(string input)
+        {
+            _selectedAppDeploymentIntent = input switch
+            {
+                "Available" => InstallIntent.Available,
+                "Required" => InstallIntent.Required,
+                "Uninstall" => InstallIntent.Uninstall,
+                _ => InstallIntent.Required
+            };
+        }
+
+        public static void GetDeliveryOptimizationPriority(string input)
+        {
+            win32LobAppDeliveryOptimizationPriority = input switch
+            {
+                "Content download in foreground" => Win32LobAppDeliveryOptimizationPriority.Foreground,
+                "Content download in background" => Win32LobAppDeliveryOptimizationPriority.NotConfigured,
+                _ => Win32LobAppDeliveryOptimizationPriority.NotConfigured
+            };
+        }
+
+        public static void GetAndroidManagedStoreAutoUpdateMode(string input)
+        {
+            _androidManagedStoreAutoUpdateMode = input switch
+            {
+                "High priority" => AndroidManagedStoreAutoUpdateMode.Priority,
+                "Postponed" => AndroidManagedStoreAutoUpdateMode.Postponed,
+                _ => AndroidManagedStoreAutoUpdateMode.Default
             };
         }
 

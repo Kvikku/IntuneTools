@@ -1,13 +1,8 @@
-﻿using System;
+﻿using Microsoft.Graph;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Graph;
-using Microsoft.Graph.Beta;
-using Microsoft.Graph.Beta.Models;
-using static IntuneTools.Utilities.HelperClass;
-using static IntuneTools.Utilities.Variables;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
 {
@@ -208,7 +203,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     }
                     catch (Exception ex)
                     {
-                        LogToImportStatusFile($"Failed to import {policyName}\n",LogLevels.Error);
+                        LogToImportStatusFile($"Failed to import {policyName}\n", LogLevels.Error);
                         WriteToImportStatusFile($"Failed to import {policyName}: {ex.Message}", LogType.Error);
                     }
                 }
@@ -424,7 +419,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToImportStatusFile("An error occurred while deleting settings catalog policies",LogLevels.Error);
+                LogToImportStatusFile("An error occurred while deleting settings catalog policies", LogLevels.Error);
             }
         }
 

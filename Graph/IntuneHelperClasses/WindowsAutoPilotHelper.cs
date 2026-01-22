@@ -1,14 +1,8 @@
 ﻿using Microsoft.Graph;
-using Microsoft.Graph.Beta;
-using Microsoft.Graph.Beta.Models;
 using Microsoft.Graph.Beta.Models.ODataErrors;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using static IntuneTools.Utilities.HelperClass;
-using static IntuneTools.Utilities.Variables;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
 {
@@ -39,7 +33,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToImportStatusFile("An error occurred while searching for Windows AutoPilot profiles",LogLevels.Error);
+                LogToImportStatusFile("An error occurred while searching for Windows AutoPilot profiles", LogLevels.Error);
                 return new List<WindowsAutopilotDeploymentProfile>();
             }
         }
@@ -69,11 +63,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToImportStatusFile("An error occurred while retrieving all Windows AutoPilot profiles",LogLevels.Error);
+                LogToImportStatusFile("An error occurred while retrieving all Windows AutoPilot profiles", LogLevels.Error);
                 return new List<WindowsAutopilotDeploymentProfile>();
             }
         }
-        public static async Task ImportMultipleWindowsAutoPilotProfiles(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient,List<string> profiles, bool assignments, bool filter, List<string> groups)
+        public static async Task ImportMultipleWindowsAutoPilotProfiles(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> profiles, bool assignments, bool filter, List<string> groups)
         {
             try
             {
@@ -90,7 +84,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         if (result.OdataType.Contains("ActiveDirectory", StringComparison.OrdinalIgnoreCase))
                         {
-                            WriteToImportStatusFile($"Hybrid Autopilot profiles are currently bugged in Graph API/C# SDK. Please handle manually for now.",LogType.Warning);
+                            WriteToImportStatusFile($"Hybrid Autopilot profiles are currently bugged in Graph API/C# SDK. Please handle manually for now.", LogType.Warning);
 
                             //var requestBody = new ActiveDirectoryWindowsAutopilotDeploymentProfile()
                             //{
@@ -352,7 +346,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while attempting to delete Autopilot profile assignments",LogType.Error);
+                WriteToImportStatusFile("An error occurred while attempting to delete Autopilot profile assignments", LogType.Error);
             }
         }
 
@@ -418,7 +412,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while deleting Windows Autopilot profiles",LogType.Error);
+                WriteToImportStatusFile("An error occurred while deleting Windows Autopilot profiles", LogType.Error);
             }
         }
 

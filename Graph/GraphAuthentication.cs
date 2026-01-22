@@ -1,15 +1,11 @@
 ﻿using Microsoft.Identity.Client;
-using Microsoft.Graph.Beta;
 using Microsoft.Kiota.Abstractions.Authentication;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Threading;
+using System.Threading.Tasks;
 using MsalPrompt = Microsoft.Identity.Client.Prompt;
-
-using static IntuneTools.Utilities.HelperClass;
 
 namespace IntuneTools.Graph
 {

@@ -1,17 +1,12 @@
-﻿using Microsoft.Graph.Beta.Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace IntuneTools.Utilities
 {
     public class Variables
     {
-        public static string appVersion = "1.1.0.0";
+        public static string appVersion = "1.2.0.0";
         // Log file
         public static string appDataPath = @"C:\ProgramData\";
         public static string appFolderName = "InToolz";
@@ -24,7 +19,7 @@ namespace IntuneTools.Utilities
 
         public static string timestamp = DateTime.Now.ToString("HH-mm-ss_dd-MM-yyyy");
         public static string logFileName = "InToolz.log";
-        
+
         // Specific settings files - now using full paths
         public static string sourceTenantSettingsFileFullPath = Path.Combine(appSettingsFolder, "SourceTenantSettings.json");
         public static string destinationTenantSettingsFileFullPath = Path.Combine(appSettingsFolder, "DestinationTenantSettings.json");
@@ -82,5 +77,32 @@ namespace IntuneTools.Utilities
 
         //public static Microsoft.Graph.Beta.GraphServiceClient? sourceGraphServiceClient;
         //public static Microsoft.Graph.Beta.GraphServiceClient? destinationGraphServiceClient;
+
+        // Generic App Deployment Options
+        public static string _selectedDeploymentMode;
+        public static string _selectedIntent;
+        public static InstallIntent _selectedInstallIntent;
+        public static InstallIntent _selectedAppDeploymentIntent;
+
+        // Windows specific
+
+        public static string _selectedNotificationSetting;
+        public static string _selectedDeliveryOptimizationPriority;
+        public static Win32LobAppNotification win32LobAppNotification;
+        public static Win32LobAppDeliveryOptimizationPriority win32LobAppDeliveryOptimizationPriority;
+
+        // Android specific
+
+        public static string _selectedAndroidManagedStoreAutoUpdateMode;
+        public static AndroidManagedStoreAutoUpdateMode _androidManagedStoreAutoUpdateMode;
+
+        // iOS specific
+        public static string _licensingType;
+        public static string _deviceRemovalAction;
+        public static string _removable;
+        public static string _preventManagedAppBackup;
+        public static string _preventAutoUpdate;
+        public static IosVppAppAssignmentSettings iOSAppDeploymentSettings;
+
     }
 }

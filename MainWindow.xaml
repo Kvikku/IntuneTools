@@ -18,14 +18,18 @@
         </Grid.RowDefinitions>
 
         <!-- Custom Title Bar -->
-        <Grid x:Name="CustomTitleBar" Background="DarkOrange" Height="32" VerticalAlignment="Top" Grid.Row="0">
+        <Grid x:Name="CustomTitleBar" Background="CornflowerBlue" Height="32" VerticalAlignment="Top" Grid.Row="0">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
+            <!-- Icon: Ensure the Source path points to a valid image in your project -->
+            <Image Source="Assets/Square44x44Logo.png" Width="16" Height="16" Margin="10,0,0,0" VerticalAlignment="Center" Grid.Column="0"/>
+
             <!-- Title -->
-            <TextBlock Text="IntuneTools" VerticalAlignment="Center" Margin="10,0,0,0" FontWeight="Bold" Foreground="White" />
+            <TextBlock Text="InToolz" VerticalAlignment="Center" Margin="10,0,0,0" FontWeight="Bold" Foreground="White" Grid.Column="1"/>
         </Grid>
 
         <!-- NavigationView -->

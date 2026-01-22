@@ -1,15 +1,11 @@
-using System;
-using System.Threading.Tasks;
+using IntuneTools.Utilities;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
-using Windows.UI;
-using IntuneTools.Utilities;
 using Microsoft.UI.Xaml.Navigation;
-using System.Linq;
+using System;
+using System.Threading.Tasks;
 using Windows.System;
-using static IntuneTools.Utilities.HelperClass;
-using static IntuneTools.Utilities.Variables;
 
 namespace IntuneTools.Pages
 {

@@ -1,27 +1,16 @@
 using CommunityToolkit.WinUI.UI.Controls;
 using IntuneTools.Utilities;
-using Microsoft.Graph.Beta;
-using Microsoft.Graph.Beta.Models.Networkaccess;
-using Microsoft.Graph.Beta.Models.Security;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Documents;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
-using Windows.ApplicationModel.Contacts;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
 using static IntuneTools.Graph.EntraHelperClasses.GroupHelperClass;
 using static IntuneTools.Graph.IntuneHelperClasses.AppleBYODEnrollmentProfileHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceCompliancePolicyHelper;
@@ -36,8 +25,6 @@ using static IntuneTools.Graph.IntuneHelperClasses.WindowsDriverUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsFeatureUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdatePolicyHandler;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHelper;
-using static IntuneTools.Utilities.HelperClass;
-using static IntuneTools.Utilities.Variables;
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
 
@@ -59,7 +46,7 @@ namespace IntuneTools.Pages
 
         public ObservableCollection<ContentInfo> ContentList { get; set; } = new ObservableCollection<ContentInfo>();
 
-        
+
 
         public RenamingPage()
         {
@@ -351,7 +338,7 @@ namespace IntuneTools.Pages
                     }
                     contentNames.Add(name);
                 }
-            
+
 
                 // display a dialog box with the new names and confirm renaming
                 if (contentNames.Count == 0)
@@ -746,7 +733,7 @@ namespace IntuneTools.Pages
                     var group = await sourceGraphServiceClient.Groups[id].GetAsync((requestConfiguration) =>
                     {
                         requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
-                    }); 
+                    });
                     await RenameGroup(sourceGraphServiceClient, id, prefix);
                     AppendToDetailsRichTextBlock($"Updated Entra Group '{group.DisplayName}' with '{prefix}'.");
                 }
@@ -813,7 +800,7 @@ namespace IntuneTools.Pages
                     });
 
                     await RenameSettingsCatalogPolicy(sourceGraphServiceClient, id, prefix);
-                    
+
                     AppendToDetailsRichTextBlock($"Updated Settings Catalog '{policy.Name}' with '{prefix}'.");
                 }
                 catch (Exception ex)
@@ -1531,7 +1518,7 @@ namespace IntuneTools.Pages
             }
         }
         private async void RenameButton_Click(object sender, RoutedEventArgs e)
-        {   
+        {
             var itemsToRename = ContentList.ToList();
             var renameMode = GetSelectedRenameMode();
 
@@ -1557,7 +1544,7 @@ namespace IntuneTools.Pages
                 return;
             }
 
-            
+
 
             selectedRenameMode = renameMode.ToString();
 

@@ -1,13 +1,7 @@
 ﻿using Microsoft.Graph;
-using Microsoft.Graph.Beta;
-using Microsoft.Graph.Beta.Models;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using static IntuneTools.Utilities.HelperClass;
-using static IntuneTools.Utilities.Variables;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
 {
@@ -41,7 +35,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while searching for proactive remediation scripts",LogType.Error);
+                WriteToImportStatusFile("An error occurred while searching for proactive remediation scripts", LogType.Error);
                 return new List<DeviceHealthScript>();
             }
         }
@@ -74,7 +68,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while retrieving all proactive remediation scripts",LogType.Error);
+                WriteToImportStatusFile("An error occurred while retrieving all proactive remediation scripts", LogType.Error);
                 return new List<DeviceHealthScript>();
             }
         }
@@ -123,7 +117,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred during the import process",LogType.Error);
+                WriteToImportStatusFile("An error occurred during the import process", LogType.Error);
             }
         }
 
@@ -295,7 +289,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while deleting proactive remediation scripts",LogType.Error);
+                WriteToImportStatusFile("An error occurred while deleting proactive remediation scripts", LogType.Error);
             }
         }
 

@@ -1,14 +1,9 @@
 ﻿using Microsoft.Graph;
-using Microsoft.Graph.Beta;
-using Microsoft.Graph.Beta.Models;
 using Microsoft.Graph.Beta.Models.ODataErrors;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using static IntuneTools.Utilities.HelperClass;
-using static IntuneTools.Utilities.Variables;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
 {
@@ -60,14 +55,14 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (ODataError odataError) when (odataError.ResponseStatusCode == 400) // Handle potential filter query issues
             {
-                WriteToImportStatusFile($"Server-side filtering might not be supported or the query is invalid for {PolicyType}. Trying client-side filtering. Error: {odataError.Error?.Message}",LogType.Error);
+                WriteToImportStatusFile($"Server-side filtering might not be supported or the query is invalid for {PolicyType}. Trying client-side filtering. Error: {odataError.Error?.Message}", LogType.Error);
                 // Fallback: Get all and filter client-side
                 var allFilters = await GetAllAssignmentFilters(graphServiceClient);
                 return allFilters.Where(f => f.DisplayName != null && f.DisplayName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)).ToList();
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile($"An error occurred while searching for {PolicyType} policies",LogType.Error);
+                WriteToImportStatusFile($"An error occurred while searching for {PolicyType} policies", LogType.Error);
                 return new List<DeviceAndAppManagementAssignmentFilter>();
             }
         }
