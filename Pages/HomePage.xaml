@@ -55,27 +55,62 @@
                     </StackPanel>
                 </Border>
 
-                <TextBlock Text="Connection Info" FontSize="28" FontWeight="SemiBold" Margin="0,10,0,10"/>
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,10">
-                    <TextBlock Text="Tenant Name:" FontSize="18" VerticalAlignment="Center"/>
-                    <TextBlock x:Name="TenantNameText" Text="Not Connected" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0,0,0"/>
-                    <Image x:Name="LoginStatusImage" Width="32" Height="32" VerticalAlignment="Center" Margin="10,0,0,0"/>
-                </StackPanel>
-                <TextBlock Text="Key Features" FontSize="28" FontWeight="SemiBold" Margin="0,30,0,10"/>
-                <TextBlock Text="-  Export and Import of Intune content between tenants." FontSize="16"/>
-                <TextBlock Text="-  Manage assignment of Intune content in bulk." FontSize="16"/>
-                <TextBlock Text="-  Clean up policies, scripts, and profiles in bulk." FontSize="16"/>
-                <TextBlock Text="-  Rename Intune objects with customizable prefixes." FontSize="16"/>
-                <TextBlock Text="Documentation" FontSize="28" FontWeight="SemiBold" Margin="0,30,0,10"/>
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,10">
-                    <TextBlock Text="For more details on how to use the application, please refer to our documentation on GitHub." TextWrapping="Wrap" VerticalAlignment="Center"/>
-                    <HyperlinkButton x:Name="GitHubLink" Content="View on GitHub" NavigateUri="https://github.com/Kvikku/IntuneTools" Click="GitHubLink_Click" />
-                </StackPanel>
-                <TextBlock Text="Feedback and Issues" FontSize="28" FontWeight="SemiBold" Margin="0,30,0,10"/>
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="Encountered a bug or have a feature request? Please submit it on our GitHub issues page." TextWrapping="Wrap" VerticalAlignment="Center"/>
-                    <HyperlinkButton x:Name="GitHubIssuesLink" Content="Submit Feedback" NavigateUri="https://github.com/Kvikku/IntuneTools/issues" Click="GitHubLink_Click" />
-                </StackPanel>
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="20">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Connection Info" FontSize="28" FontWeight="SemiBold"/>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="Tenant Name:" FontSize="18" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="TenantNameText" Text="Not Connected" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                            <Image x:Name="LoginStatusImage" Width="32" Height="32" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="20">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Key Features" FontSize="28" FontWeight="SemiBold"/>
+                        <TextBlock Text="-  Export and Import of Intune content between tenants." FontSize="16"/>
+                        <TextBlock Text="-  Manage assignment of Intune content in bulk." FontSize="16"/>
+                        <TextBlock Text="-  Clean up policies, scripts, and profiles in bulk." FontSize="16"/>
+                        <TextBlock Text="-  Rename Intune objects with customizable prefixes." FontSize="16"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="20">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Documentation" FontSize="28" FontWeight="SemiBold"/>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="For more details on how to use the application, please refer to our documentation on GitHub." TextWrapping="Wrap" VerticalAlignment="Center"/>
+                            <HyperlinkButton x:Name="GitHubLink" Content="View on GitHub" NavigateUri="https://github.com/Kvikku/IntuneTools" Click="GitHubLink_Click" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="20">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Feedback and Issues" FontSize="28" FontWeight="SemiBold"/>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="Encountered a bug or have a feature request? Please submit it on our GitHub issues page." TextWrapping="Wrap" VerticalAlignment="Center"/>
+                            <HyperlinkButton x:Name="GitHubIssuesLink" Content="Submit Feedback" NavigateUri="https://github.com/Kvikku/IntuneTools/issues" Click="GitHubLink_Click" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
             </StackPanel>
         </ScrollViewer>
     </Grid>
