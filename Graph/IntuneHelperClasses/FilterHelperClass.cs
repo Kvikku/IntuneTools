@@ -16,7 +16,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                WriteToImportStatusFile($"Searching for {PolicyType} policies. Search query: {searchQuery}");
+                LogToFunctionFile(appFunction.Main, $"Searching for {PolicyType} policies. Search query: {searchQuery}");
 
                 // Assignment filters don't have a direct filter on DisplayName in the same way,
                 // so we get all and filter locally, or adjust if a specific filter query is needed.
@@ -32,7 +32,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 if (result == null || result.Value == null)
                 {
-                    WriteToImportStatusFile($"Search returned null or empty result for {PolicyType} policies.");
+                    LogToFunctionFile(appFunction.Main, $"Search returned null or empty result for {PolicyType} policies.");
                     return new List<DeviceAndAppManagementAssignmentFilter>();
                 }
 
@@ -49,20 +49,20 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 // assignmentFilters = assignmentFilters.Where(f => f.DisplayName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)).ToList();
 
 
-                WriteToImportStatusFile($"Found {assignmentFilters.Count} {PolicyType} policies matching the search query.");
+                LogToFunctionFile(appFunction.Main, $"Found {assignmentFilters.Count} {PolicyType} policies matching the search query.");
 
                 return assignmentFilters;
             }
             catch (ODataError odataError) when (odataError.ResponseStatusCode == 400) // Handle potential filter query issues
             {
-                WriteToImportStatusFile($"Server-side filtering might not be supported or the query is invalid for {PolicyType}. Trying client-side filtering. Error: {odataError.Error?.Message}", LogType.Error);
+                LogToFunctionFile(appFunction.Main, $"Server-side filtering might not be supported or the query is invalid for {PolicyType}. Trying client-side filtering. Error: {odataError.Error?.Message}", LogLevels.Error);
                 // Fallback: Get all and filter client-side
                 var allFilters = await GetAllAssignmentFilters(graphServiceClient);
                 return allFilters.Where(f => f.DisplayName != null && f.DisplayName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)).ToList();
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile($"An error occurred while searching for {PolicyType} policies", LogType.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for {PolicyType} policies", LogLevels.Error);
                 return new List<DeviceAndAppManagementAssignmentFilter>();
             }
         }
@@ -99,7 +99,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             catch (Exception ex)
             {
                 // Handle exceptions (e.g., log the error)
-                WriteToImportStatusFile($"An error occurred while getting assignment filters: {ex.Message}", LogType.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while getting assignment filters: {ex.Message}", LogLevels.Error);
             }
 
             // Add filter name and ID to the dictionary
@@ -118,8 +118,8 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                WriteToImportStatusFile(" ");
-                WriteToImportStatusFile($"{DateTime.Now.ToString()} - Importing {filterIds.Count} Assignment filters.");
+                LogToFunctionFile(appFunction.Main, " ");
+                LogToFunctionFile(appFunction.Main, $"{DateTime.Now.ToString()} - Importing {filterIds.Count} Assignment filters.");
 
 
                 foreach (var filterId in filterIds)
@@ -132,7 +132,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         if (sourceFilter == null)
                         {
-                            WriteToImportStatusFile($"Skipping filter ID {filterId}: Not found in source tenant.");
+                            LogToFunctionFile(appFunction.Main, $"Skipping filter ID {filterId}: Not found in source tenant.");
                             continue;
                         }
 
@@ -155,21 +155,21 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         var importedFilter = await destinationGraphServiceClient.DeviceManagement.AssignmentFilters.PostAsync(newFilter);
 
-                        WriteToImportStatusFile($"Successfully imported {importedFilter.DisplayName}\n");
+                        LogToFunctionFile(appFunction.Main, $"Successfully imported {importedFilter.DisplayName}\n");
                     }
                     catch (Exception ex)
                     {
-                        WriteToImportStatusFile($"Failed to import {filterName}\n", LogType.Error);
+                        LogToFunctionFile(appFunction.Main, $"Failed to import {filterName}\n", LogLevels.Error);
                     }
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile($"An unexpected error occurred during the import process: {ex.Message}", LogType.Error);
+                LogToFunctionFile(appFunction.Main, $"An unexpected error occurred during the import process: {ex.Message}", LogLevels.Error);
             }
             finally
             {
-                WriteToImportStatusFile($"{DateTime.Now.ToString()} - Finished importing {filterIds.Count} Assignment filters.");
+                LogToFunctionFile(appFunction.Main, $"{DateTime.Now.ToString()} - Finished importing {filterIds.Count} Assignment filters.");
             }
         }
         public static async Task<bool> DeleteAssignmentFilter(GraphServiceClient graphServiceClient, string filterID)
@@ -237,7 +237,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.AssignmentFilters[filterID].PatchAsync(filter);
-                    WriteToImportStatusFile($"Successfully renamed filter with ID '{filterID}' to '{name}'.", LogType.Info);
+                    LogToFunctionFile(appFunction.Main, $"Successfully renamed filter with ID '{filterID}' to '{name}'.", LogLevels.Info);
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
@@ -259,13 +259,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.AssignmentFilters[filterID].PatchAsync(filter);
-                    WriteToImportStatusFile($"Updated description for filter {filterID} to '{newName}'.", LogType.Info);
+                    LogToFunctionFile(appFunction.Main, $"Updated description for filter {filterID} to '{newName}'.", LogLevels.Info);
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while renaming assignment filter", LogType.Warning);
-                WriteToImportStatusFile(ex.Message, LogType.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while renaming assignment filter", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
         }
     }

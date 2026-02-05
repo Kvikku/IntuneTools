@@ -108,8 +108,8 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                WriteToImportStatusFile(" ");
-                WriteToImportStatusFile($"{DateTime.Now.ToString()} - Importing {policies.Count} Device Compliance policies.");
+                LogToFunctionFile(appFunction.Main, " ");
+                LogToFunctionFile(appFunction.Main, $"{DateTime.Now.ToString()} - Importing {policies.Count} Device Compliance policies.");
 
                 foreach (var policy in policies)
                 {
@@ -204,18 +204,18 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     catch (Exception ex)
                     {
                         LogToImportStatusFile($"Failed to import {policyName}\n", LogLevels.Error);
-                        WriteToImportStatusFile($"Failed to import {policyName}: {ex.Message}", LogType.Error);
+                        LogToFunctionFile(appFunction.Main, $"Failed to import {policyName}: {ex.Message}", LogLevels.Error);
                     }
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile($"An unexpected error occurred during the import process: {ex.Message}", LogType.Error);
-                WriteToImportStatusFile($"An unexpected error occurred during the import process. Please check the log file for more information.", LogType.Error);
+                LogToFunctionFile(appFunction.Main, $"An unexpected error occurred during the import process: {ex.Message}", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, "An unexpected error occurred during the import process. Please check the log file for more information.", LogLevels.Error);
             }
             finally
             {
-                WriteToImportStatusFile($"{DateTime.Now.ToString()} - Finished importing Device Compliance policies.");
+                LogToFunctionFile(appFunction.Main, $"{DateTime.Now.ToString()} - Finished importing Device Compliance policies.");
             }
         }
 
@@ -353,7 +353,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 try
                 {
                     await destinationGraphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyID].Assign.PostAsync(requestBody);
-                    WriteToImportStatusFile($"Assigned {assignments.Count} assignments to policy {policyID} with filter type {deviceAndAppManagementAssignmentFilterType}.");
+                    LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to policy {policyID} with filter type {deviceAndAppManagementAssignmentFilterType}.");
                 }
                 catch (Exception ex)
                 {

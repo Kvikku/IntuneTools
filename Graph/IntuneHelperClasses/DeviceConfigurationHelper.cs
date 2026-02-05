@@ -11,7 +11,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                WriteToImportStatusFile("Searching for device configuration policies. Search query: " + searchQuery);
+                LogToFunctionFile(appFunction.Main, "Searching for device configuration policies. Search query: " + searchQuery);
 
                 var result = await graphServiceClient.DeviceManagement.DeviceConfigurations
                     .GetAsync(requestConfiguration =>
@@ -30,12 +30,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 await pageIterator.IterateAsync();
 
-                WriteToImportStatusFile($"Found {deviceConfigurations.Count} device configuration policies.");
+                LogToFunctionFile(appFunction.Main, $"Found {deviceConfigurations.Count} device configuration policies.");
                 return deviceConfigurations;
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while searching for device configuration policies", LogType.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while searching for device configuration policies", LogLevels.Error);
                 return new List<Microsoft.Graph.Beta.Models.DeviceConfiguration>();
             }
         }
@@ -44,7 +44,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                WriteToImportStatusFile("Retrieving all device configuration policies.");
+                LogToFunctionFile(appFunction.Main, "Retrieving all device configuration policies.");
 
                 var result = await graphServiceClient.DeviceManagement.DeviceConfigurations
                     .GetAsync(requestConfiguration =>
@@ -62,12 +62,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 await pageIterator.IterateAsync();
 
-                WriteToImportStatusFile($"Found {deviceConfigurations.Count} device configuration policies.");
+                LogToFunctionFile(appFunction.Main, $"Found {deviceConfigurations.Count} device configuration policies.");
                 return deviceConfigurations;
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while retrieving all device configuration policies", LogType.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while retrieving all device configuration policies", LogLevels.Error);
                 return new List<Microsoft.Graph.Beta.Models.DeviceConfiguration>();
             }
         }
@@ -76,8 +76,8 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                WriteToImportStatusFile(" ");
-                WriteToImportStatusFile($"{DateTime.Now.ToString()} - Importing {configurationIds.Count} Device Configuration profiles.");
+                LogToFunctionFile(appFunction.Main, " ");
+                LogToFunctionFile(appFunction.Main, $"{DateTime.Now.ToString()} - Importing {configurationIds.Count} Device Configuration profiles.");
 
                 foreach (var configId in configurationIds)
                 {
@@ -94,7 +94,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         {
                             //MessageBox.Show("iOS Device Feature template is currently bugged in graph SDK. Handle manually until this is resolved");
                             //rtb.AppendText("iOS Device Feature template is currently bugged in graph SDK. Handle manually until this is resolved");
-                            WriteToImportStatusFile(originalConfig.DisplayName + " failed to import. iOS Device Feature template is currently bugged in graph SDK. Handle manually until this is resolved" + LogType.Error);
+                            LogToFunctionFile(appFunction.Main, originalConfig.DisplayName + " failed to import. iOS Device Feature template is currently bugged in graph SDK. Handle manually until this is resolved", LogLevels.Error);
                             continue;
                         }
 
@@ -149,7 +149,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         var import = await destinationGraphServiceClient.DeviceManagement.DeviceConfigurations.PostAsync(deviceConfiguration);
 
-                        WriteToImportStatusFile($"Successfully imported {import.DisplayName}");
+                        LogToFunctionFile(appFunction.Main, $"Successfully imported {import.DisplayName}");
 
                         if (assignments)
                         {
@@ -162,17 +162,17 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         // Change color of the error output text to red and then reset it for the next text entry
                         //rtb.AppendText(ex.Message + Environment.NewLine);
 
-                        WriteToImportStatusFile($"Failed to import {policyName}\n", LogType.Error);
+                        LogToFunctionFile(appFunction.Main, $"Failed to import {policyName}\n", LogLevels.Error);
                     }
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile($"An unexpected error occurred during the import process: {ex.Message}", LogType.Error);
+                LogToFunctionFile(appFunction.Main, $"An unexpected error occurred during the import process: {ex.Message}", LogLevels.Error);
             }
             finally
             {
-                WriteToImportStatusFile($"{DateTime.Now.ToString()} - Finished importing Device Configuration profiles.");
+                LogToFunctionFile(appFunction.Main, $"{DateTime.Now.ToString()} - Finished importing Device Configuration profiles.");
             }
         }
 
@@ -314,18 +314,18 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 {
                     var result = await destinationGraphServiceClient.DeviceManagement.DeviceConfigurations[configId].Assign.PostAsAssignPostResponseAsync(requestBody);
 
-                    WriteToImportStatusFile($"Assigned {assignments.Count} assignments to device configuration {configId} with filter type {deviceAndAppManagementAssignmentFilterType}.");
+                    LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to device configuration {configId} with filter type {deviceAndAppManagementAssignmentFilterType}.");
                 }
                 catch (Exception ex)
                 {
-                    WriteToImportStatusFile("An error occurred while assigning groups to device configuration policy", LogType.Warning);
-                    WriteToImportStatusFile(ex.Message, LogType.Error);
+                    LogToFunctionFile(appFunction.Main, "An error occurred while assigning groups to device configuration policy", LogLevels.Warning);
+                    LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while assigning groups to a single device configuration policy", LogType.Warning);
-                WriteToImportStatusFile(ex.Message, LogType.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while assigning groups to a single device configuration policy", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
         }
         public static async Task DeleteDeviceConfigurationPolicy(GraphServiceClient graphServiceClient, string policyID)
@@ -345,7 +345,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile($"An error occurred while deleting the device configuration policy: {ex.Message}", LogType.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while deleting the device configuration policy: {ex.Message}", LogLevels.Error);
             }
         }
         public static async Task RenameDeviceConfigurationPolicy(GraphServiceClient graphServiceClient, string policyID, string newName)
@@ -392,7 +392,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     policy.DisplayName = name;
 
                     await graphServiceClient.DeviceManagement.DeviceConfigurations[policyID].PatchAsync(policy);
-                    WriteToImportStatusFile($"Successfully renamed device configuration policy {policyID} to {name}");
+                    LogToFunctionFile(appFunction.Main, $"Successfully renamed device configuration policy {policyID} to {name}");
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
@@ -420,13 +420,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     policy.Description = newName;
 
                     await graphServiceClient.DeviceManagement.DeviceConfigurations[policyID].PatchAsync(policy);
-                    WriteToImportStatusFile($"Updated description for device configuration policy {policyID} to {newName}");
+                    LogToFunctionFile(appFunction.Main, $"Updated description for device configuration policy {policyID} to {newName}");
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while renaming device configuration policies", LogType.Warning);
-                WriteToImportStatusFile(ex.Message, LogType.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while renaming device configuration policies", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
         }
     }
