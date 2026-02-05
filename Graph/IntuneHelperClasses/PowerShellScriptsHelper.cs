@@ -11,7 +11,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                WriteToImportStatusFile("Searching for PowerShell scripts. Search query: " + searchQuery);
+                LogToFunctionFile(appFunction.Main, "Searching for PowerShell scripts. Search query: " + searchQuery);
 
                 var result = await graphServiceClient.DeviceManagement.DeviceManagementScripts.GetAsync((requestConfiguration) =>
                 {
@@ -26,13 +26,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 });
                 await pageIterator.IterateAsync();
 
-                WriteToImportStatusFile($"Found {scripts.Count} PowerShell scripts.");
+                LogToFunctionFile(appFunction.Main, $"Found {scripts.Count} PowerShell scripts.");
 
                 return scripts;
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while searching for PowerShell scripts", LogType.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while searching for PowerShell scripts", LogLevels.Error);
                 return new List<DeviceManagementScript>();
             }
         }
@@ -41,7 +41,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                WriteToImportStatusFile("Retrieving all PowerShell scripts.");
+                LogToFunctionFile(appFunction.Main, "Retrieving all PowerShell scripts.");
 
                 var result = await graphServiceClient.DeviceManagement.DeviceManagementScripts.GetAsync((requestConfiguration) =>
                 {
@@ -56,13 +56,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 });
                 await pageIterator.IterateAsync();
 
-                WriteToImportStatusFile($"Found {scripts.Count} PowerShell scripts.");
+                LogToFunctionFile(appFunction.Main, $"Found {scripts.Count} PowerShell scripts.");
 
                 return scripts;
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while retrieving all PowerShell scripts", LogType.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while retrieving all PowerShell scripts", LogLevels.Error);
                 return new List<DeviceManagementScript>();
             }
         }
@@ -71,7 +71,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                WriteToImportStatusFile($"Importing {scripts.Count} PowerShell scripts.");
+                LogToFunctionFile(appFunction.Main, $"Importing {scripts.Count} PowerShell scripts.");
 
                 foreach (var script in scripts)
                 {
@@ -95,7 +95,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         requestBody.Id = "";
 
                         var import = await destinationGraphServiceClient.DeviceManagement.DeviceManagementScripts.PostAsync(requestBody);
-                        WriteToImportStatusFile($"Imported script: {requestBody.DisplayName}");
+                        LogToFunctionFile(appFunction.Main, $"Imported script: {requestBody.DisplayName}");
 
                         if (assignments)
                         {
@@ -104,13 +104,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     }
                     catch (Exception ex)
                     {
-                        WriteToImportStatusFile($"Error importing script {script}", LogType.Error);
+                        LogToFunctionFile(appFunction.Main, $"Error importing script {script}", LogLevels.Error);
                     }
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred during the import process", LogType.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred during the import process", LogLevels.Error);
             }
         }
 
@@ -251,18 +251,18 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 try
                 {
                     await destinationGraphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].Assign.PostAsync(requestBody);
-                    WriteToImportStatusFile($"Assigned {assignments.Count} assignments to script {scriptID} with filter type {deviceAndAppManagementAssignmentFilterType}.");
+                    LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to script {scriptID} with filter type {deviceAndAppManagementAssignmentFilterType}.");
                 }
                 catch (Exception ex)
                 {
-                    WriteToImportStatusFile("An error occurred while assigning groups to PowerShell script", LogType.Warning);
-                    WriteToImportStatusFile(ex.Message, LogType.Error);
+                    LogToFunctionFile(appFunction.Main, "An error occurred while assigning groups to PowerShell script", LogLevels.Warning);
+                    LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while assigning groups to a single PowerShell script", LogType.Warning);
-                WriteToImportStatusFile(ex.Message, LogType.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while assigning groups to a single PowerShell script", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
         }
         public static async Task DeletePowerShellScript(GraphServiceClient graphServiceClient, string scriptID)
@@ -282,7 +282,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while deleting PowerShell scripts", LogType.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while deleting PowerShell scripts", LogLevels.Error);
             }
         }
         public static async Task RenamePowerShellScript(GraphServiceClient graphServiceClient, string scriptID, string newName)
@@ -322,7 +322,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].PatchAsync(script);
-                    WriteToImportStatusFile($"Renamed Powershell script {scriptID} to {name}");
+                    LogToFunctionFile(appFunction.Main, $"Renamed Powershell script {scriptID} to {name}");
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
@@ -344,13 +344,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].PatchAsync(script);
-                    WriteToImportStatusFile($"Updated description for Powershell script {scriptID} to {newName}");
+                    LogToFunctionFile(appFunction.Main, $"Updated description for Powershell script {scriptID} to {newName}");
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while renaming PowerShell scripts", LogType.Warning);
-                WriteToImportStatusFile(ex.Message, LogType.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while renaming PowerShell scripts", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
         }
     }

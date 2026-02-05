@@ -12,7 +12,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                WriteToImportStatusFile("Searching for macOS shell scripts. Search query: " + searchQuery);
+                LogToFunctionFile(appFunction.Main, "Searching for macOS shell scripts. Search query: " + searchQuery);
 
                 // Note: The Graph API for DeviceShellScript might not support filtering by name directly in the same way.
                 // This might require fetching all and filtering locally, or adjusting the query if supported.
@@ -32,13 +32,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 });
                 await pageIterator.IterateAsync();
 
-                WriteToImportStatusFile($"Found {shellScripts.Count} macOS shell scripts matching the search.");
+                LogToFunctionFile(appFunction.Main, $"Found {shellScripts.Count} macOS shell scripts matching the search.");
 
                 return shellScripts;
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while searching for macOS shell scripts", LogType.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while searching for macOS shell scripts", LogLevels.Error);
                 return new List<DeviceShellScript>();
             }
         }
@@ -47,7 +47,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                WriteToImportStatusFile("Retrieving all macOS shell scripts.");
+                LogToFunctionFile(appFunction.Main, "Retrieving all macOS shell scripts.");
 
                 var result = await graphServiceClient.DeviceManagement.DeviceShellScripts.GetAsync((requestConfiguration) =>
                 {
@@ -62,13 +62,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 });
                 await pageIterator.IterateAsync();
 
-                WriteToImportStatusFile($"Found {shellScripts.Count} macOS shell scripts.");
+                LogToFunctionFile(appFunction.Main, $"Found {shellScripts.Count} macOS shell scripts.");
 
                 return shellScripts;
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while retrieving all macOS shell scripts", LogType.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while retrieving all macOS shell scripts", LogLevels.Error);
                 return new List<DeviceShellScript>();
             }
         }
@@ -76,7 +76,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                WriteToImportStatusFile($"Importing {scriptIDs.Count} macOS shell scripts.");
+                LogToFunctionFile(appFunction.Main, $"Importing {scriptIDs.Count} macOS shell scripts.");
 
                 foreach (var scriptId in scriptIDs)
                 {
@@ -88,7 +88,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         if (sourceScript == null)
                         {
-                            WriteToImportStatusFile($"Script with ID {scriptId} not found in source tenant. Skipping.");
+                            LogToFunctionFile(appFunction.Main, $"Script with ID {scriptId} not found in source tenant. Skipping.");
                             continue;
                         }
 
@@ -112,7 +112,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         if (importResult != null)
                         {
-                            WriteToImportStatusFile($"Imported script: {importResult.DisplayName} (ID: {importResult.Id})");
+                            LogToFunctionFile(appFunction.Main, $"Imported script: {importResult.DisplayName} (ID: {importResult.Id})");
 
                             if (assignments && groups != null && groups.Any())
                             {
@@ -122,20 +122,20 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         }
                         else
                         {
-                            WriteToImportStatusFile($"Failed to import script: {sourceScript.DisplayName} (ID: {scriptId}). Result was null.");
+                            LogToFunctionFile(appFunction.Main, $"Failed to import script: {sourceScript.DisplayName} (ID: {scriptId}). Result was null.");
                         }
 
                     }
                     catch (Exception ex)
                     {
-                        WriteToImportStatusFile($"Failed to import script  (ID: {scriptId}): {ex.Message}", LogType.Error);
+                        LogToFunctionFile(appFunction.Main, $"Failed to import script  (ID: {scriptId}): {ex.Message}", LogLevels.Error);
                     }
                 }
-                WriteToImportStatusFile("macOS shell script import process finished.");
+                LogToFunctionFile(appFunction.Main, "macOS shell script import process finished.");
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile($"An error occurred during the macOS shell script import process: {ex.Message}", LogType.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred during the macOS shell script import process: {ex.Message}", LogLevels.Error);
             }
         }
 
@@ -165,7 +165,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 var hasAllUsers = false;
                 var hasAllDevices = false;
 
-                WriteToImportStatusFile($"Assigning {groupIDs.Count} groups to macOS shell script {scriptId}.");
+                LogToFunctionFile(appFunction.Main, $"Assigning {groupIDs.Count} groups to macOS shell script {scriptId}.");
 
                 // Step 1: Add new assignments to request body
                 foreach (var groupId in groupIDs)
@@ -253,7 +253,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 if (!assignments.Any())
                 {
-                    WriteToImportStatusFile($"No valid group assignments to process for script {scriptId}.");
+                    LogToFunctionFile(appFunction.Main, $"No valid group assignments to process for script {scriptId}.");
                     return;
                 }
 
@@ -266,25 +266,25 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 try
                 {
                     await destinationGraphServiceClient.DeviceManagement.DeviceShellScripts[scriptId].Assign.PostAsync(requestBody);
-                    WriteToImportStatusFile($"Assigned {assignments.Count} assignments to macOS shell script {scriptId}.");
+                    LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to macOS shell script {scriptId}.");
 
                     // Note: Filters are not directly supported in the Assign action for shell scripts
                     // They would need to be applied via a separate PATCH operation if supported
                     if (!string.IsNullOrEmpty(SelectedFilterID))
                     {
-                        WriteToImportStatusFile($"Filter application requested for script {scriptId}, but direct filter assignment via Assign action is not supported for shell scripts. Manual verification/update might be needed.");
+                        LogToFunctionFile(appFunction.Main, $"Filter application requested for script {scriptId}, but direct filter assignment via Assign action is not supported for shell scripts. Manual verification/update might be needed.");
                     }
                 }
                 catch (Exception ex)
                 {
-                    WriteToImportStatusFile("An error occurred while assigning groups to macOS shell script", LogType.Warning);
-                    WriteToImportStatusFile(ex.Message, LogType.Error);
+                    LogToFunctionFile(appFunction.Main, "An error occurred while assigning groups to macOS shell script", LogLevels.Warning);
+                    LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while assigning groups to macOS shell script", LogType.Warning);
-                WriteToImportStatusFile(ex.Message, LogType.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while assigning groups to macOS shell script", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
         }
         public static async Task DeleteMacosShellScript(GraphServiceClient graphServiceClient, string profileID)
@@ -304,7 +304,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while deleting macOS shell script", LogType.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while deleting macOS shell script", LogLevels.Error);
             }
         }
         public static async Task RenameMacOSShellScript(GraphServiceClient graphServiceClient, string scriptID, string newName)
@@ -351,7 +351,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     script.DisplayName = name;
 
                     await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptID].PatchAsync(script);
-                    WriteToImportStatusFile($"Renamed macOS shell script '{existingScript.DisplayName}' to '{name}' (ID: {scriptID})");
+                    LogToFunctionFile(appFunction.Main, $"Renamed macOS shell script '{existingScript.DisplayName}' to '{name}' (ID: {scriptID})");
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
@@ -379,13 +379,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     script.Description = newName;
 
                     await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptID].PatchAsync(script);
-                    WriteToImportStatusFile($"Updated description for macOS shell script {scriptID} to '{newName}'");
+                    LogToFunctionFile(appFunction.Main, $"Updated description for macOS shell script {scriptID} to '{newName}'");
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while renaming macOS shell scripts", LogType.Warning);
-                WriteToImportStatusFile(ex.Message, LogType.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while renaming macOS shell scripts", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
         }
     }

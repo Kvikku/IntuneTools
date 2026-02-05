@@ -144,10 +144,10 @@ namespace IntuneTools.Graph.EntraHelperClasses
             try
             {
                 Console.WriteLine($"{DateTime.Now.ToString()} - Importing {groupIds.Count} Security groups.\n");
-                WriteToImportStatusFile(" ");
-                WriteToImportStatusFile($"{DateTime.Now.ToString()} - Importing {groupIds.Count} Security groups.");
-                WriteToImportStatusFile(" ");
-                WriteToImportStatusFile($"{DateTime.Now.ToString()} - Importing {groupIds.Count} Security groups.");
+                LogToFunctionFile(appFunction.Main, " ");
+                LogToFunctionFile(appFunction.Main, $"{DateTime.Now.ToString()} - Importing {groupIds.Count} Security groups.");
+                LogToFunctionFile(appFunction.Main, " ");
+                LogToFunctionFile(appFunction.Main, $"{DateTime.Now.ToString()} - Importing {groupIds.Count} Security groups.");
 
 
                 foreach (var groupId in groupIds)
@@ -228,7 +228,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
                     catch (Exception ex)
                     {
                         LogToImportStatusFile($"Failed to import {groupName}\n", LogLevels.Error);
-                        WriteToImportStatusFile($"Failed to import {groupName}: {ex.Message}", LogType.Error);
+                        LogToFunctionFile(appFunction.Main, $"Failed to import {groupName}: {ex.Message}", LogLevels.Error);
                     }
                 }
             }
@@ -261,7 +261,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while deleting a security group", LogType.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while deleting a security group", LogLevels.Error);
             }
         }
         public static async Task RenameGroup(GraphServiceClient graphServiceClient, string groupID, string newName)
@@ -301,7 +301,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
                     };
 
                     await graphServiceClient.Groups[groupID].PatchAsync(group);
-                    WriteToImportStatusFile($"Successfully renamed group {groupID} to '{name}'");
+                    LogToFunctionFile(appFunction.Main, $"Successfully renamed group {groupID} to '{name}'");
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
@@ -323,13 +323,13 @@ namespace IntuneTools.Graph.EntraHelperClasses
                     };
 
                     await graphServiceClient.Groups[groupID].PatchAsync(group);
-                    WriteToImportStatusFile($"Updated description for group {groupID} to '{newName}'");
+                    LogToFunctionFile(appFunction.Main, $"Updated description for group {groupID} to '{newName}'");
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while renaming group", LogType.Warning);
-                WriteToImportStatusFile(ex.Message, LogType.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while renaming group", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
         }
     }
