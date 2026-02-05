@@ -37,7 +37,11 @@ namespace IntuneTools
             size.Height = 800;
             m_window.AppWindow.Resize(size);
 
-            CreateLogFile();
+            //CreateLogFile();
+
+            CreateTimestampedAppFolder();
+
+            LogToFunctionFile(appFunction.Summary, "Application Launched");
 
             LogApplicationStart();
         }
