@@ -13,7 +13,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                LogToImportStatusFile("Retrieving all Mobile Apps.");
+                LogToFunctionFile(appFunction.Main, "Retrieving all Mobile Apps.");
 
                 var result = await graphServiceClient.DeviceAppManagement.MobileApps.GetAsync();
 
@@ -27,11 +27,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         return true;
                     });
                     await pageIterator.IterateAsync();
-                    LogToImportStatusFile($"Found {mobileApps.Count} Mobile Apps.");
+                    LogToFunctionFile(appFunction.Main, $"Found {mobileApps.Count} Mobile Apps.");
                 }
                 else
                 {
-                    LogToImportStatusFile("No Mobile Apps found or the result was null.");
+                    LogToFunctionFile(appFunction.Main, "No Mobile Apps found or the result was null.");
                 }
 
 
@@ -53,7 +53,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception)
             {
-                LogToImportStatusFile("An error occurred while retrieving all Mobile Apps", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while retrieving all Mobile Apps", LogLevels.Error);
                 return new List<MobileApp>();
             }
         }
@@ -62,7 +62,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                LogToImportStatusFile($"Searching for Mobile Apps containing '{searchQuery}'.");
+                LogToFunctionFile(appFunction.Main, $"Searching for Mobile Apps containing '{searchQuery}'.");
 
                 var result = await graphServiceClient.DeviceAppManagement.MobileApps.GetAsync((requestConfiguration) =>
                 {
@@ -79,18 +79,18 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         return true;
                     });
                     await pageIterator.IterateAsync();
-                    LogToImportStatusFile($"Found {mobileApps.Count} Mobile Apps matching '{searchQuery}'.");
+                    LogToFunctionFile(appFunction.Main, $"Found {mobileApps.Count} Mobile Apps matching '{searchQuery}'.");
                 }
                 else
                 {
-                    LogToImportStatusFile($"No Mobile Apps found matching '{searchQuery}' or the result was null.");
+                    LogToFunctionFile(appFunction.Main, $"No Mobile Apps found matching '{searchQuery}' or the result was null.");
                 }
 
                 return mobileApps;
             }
             catch (Exception)
             {
-                LogToImportStatusFile($"An error occurred while searching for Mobile Apps with query '{searchQuery}'", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for Mobile Apps with query '{searchQuery}'", LogLevels.Error);
                 return new List<MobileApp>();
             }
         }
@@ -151,7 +151,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception)
             {
-                LogToImportStatusFile($"An error occurred while preparing application of type '{appInfo.Value.Platform}' for assignment", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while preparing application of type '{appInfo.Value.Platform}' for assignment", LogLevels.Error);
             }
         }
 
@@ -370,12 +370,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         .PostAsync(requestBody);
                 }, maxRetries: 5, baseDelaySeconds: 2);
 
-                LogToImportStatusFile($"Assigned {assignments.Count} assignments to application {appId} with filter type {deviceAndAppManagementAssignmentFilterType}.");
+                LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to application {appId} with filter type {deviceAndAppManagementAssignmentFilterType}.");
             }
             catch (Exception ex)
             {
-                LogToImportStatusFile("An error occurred while assigning groups to application", LogLevels.Warning);
-                LogToImportStatusFile(ex.Message, LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while assigning groups to application", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
         }
 
@@ -397,7 +397,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                     // Calculate delay with exponential backoff
                     var delaySeconds = baseDelaySeconds * Math.Pow(2, attempt);
-                    LogToImportStatusFile($"Rate limited (429). Retrying in {delaySeconds} seconds... (Attempt {attempt + 1}/{maxRetries})", LogLevels.Warning);
+                    LogToFunctionFile(appFunction.Main, $"Rate limited (429). Retrying in {delaySeconds} seconds... (Attempt {attempt + 1}/{maxRetries})", LogLevels.Warning);
                     await Task.Delay(TimeSpan.FromSeconds(delaySeconds));
                 }
             }

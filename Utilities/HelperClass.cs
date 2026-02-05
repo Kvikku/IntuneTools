@@ -109,24 +109,7 @@ namespace IntuneTools.Utilities
             Warning,
             Error
         }
-        public static void WriteToImportStatusFile(string data, LogType logType = LogType.Info)
-        {
-            try
-            {
-                // Use the using statement to ensure proper disposal of StreamWriter
-                using (StreamWriter sw = new StreamWriter(ImportStatusFilePath, true))
-                {
-                    // Write the data to the import status file with log type
-                    sw.WriteLine($"{DateTime.Now:HH:mm:ss - dd-MM-yyyy} - [{logType.ToString().ToUpper()}] - {data}");
-                }
-                // StreamWriter is automatically closed and disposed of when leaving the using block
-            }
-            catch (IOException ex)
-            {
-                // Handle the exception
-
-            }
-        }
+        
 
         public static void LogApplicationStart()
         {

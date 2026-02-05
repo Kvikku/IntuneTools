@@ -16,7 +16,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
 
             try
             {
-                LogToImportStatusFile("Getting all groups in the tenant");
+                LogToFunctionFile(appFunction.Main, "Getting all groups in the tenant");
                 var result = await graphServiceClient.Groups.GetAsync((requestConfiguration) =>
                 {
                     requestConfiguration.QueryParameters.Count = true;
@@ -34,7 +34,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
                 });
                 // start the iteration
                 await pageIterator.IterateAsync();
-                LogToImportStatusFile($"Found {groups.Count} groups in the tenant");
+                LogToFunctionFile(appFunction.Main, $"Found {groups.Count} groups in the tenant");
 
                 // Add virtual groups for All Users and All Devices
                 var allUsersGroup = new Group
@@ -57,7 +57,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
                 groups.Insert(0, allUsersGroup);
                 groups.Insert(1, allDevicesGroup);
 
-                LogToImportStatusFile($"Added virtual groups. Total groups: {groups.Count}");
+                LogToFunctionFile(appFunction.Main, $"Added virtual groups. Total groups: {groups.Count}");
 
                 // Populate the groupNameAndID dictionary with group names and IDs
                 foreach (var group in groups)
@@ -74,7 +74,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
             catch (Microsoft.Graph.Beta.Models.ODataErrors.ODataError me)
             {
                 // Log the error message
-                LogToImportStatusFile($"ODataError: {me.Message}");
+                LogToFunctionFile(appFunction.Main, $"ODataError: {me.Message}");
                 return null;
             }
         }
@@ -88,7 +88,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
 
             try
             {
-                LogToImportStatusFile("Searching for groups. Search query: " + searchQuery);
+                LogToFunctionFile(appFunction.Main, "Searching for groups. Search query: " + searchQuery);
 
                 var result = await graphServiceClient.Groups.GetAsync((requestConfiguration) =>
                 {
@@ -106,7 +106,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
                 });
                 // start the iteration
                 await pageIterator.IterateAsync();
-                LogToImportStatusFile($"Found {groups.Count} groups in the tenant");
+                LogToFunctionFile(appFunction.Main, $"Found {groups.Count} groups in the tenant");
 
                 // Populate the groupNameAndID dictionary with group names and IDs
                 foreach (var group in groups)
@@ -123,7 +123,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
             catch (Microsoft.Graph.Beta.Models.ODataErrors.ODataError me)
             {
                 // Log the error message
-                LogToImportStatusFile($"ODataError: {me.Message}");
+                LogToFunctionFile(appFunction.Main, $"ODataError: {me.Message}");
                 return null;
             }
         }
@@ -136,7 +136,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
             // Basic null checks for arguments
             if (sourceGraphServiceClient == null || destinationGraphServiceClient == null || groupIds == null)
             {
-                LogToImportStatusFile("ImportMultipleGroups called with null arguments.");
+                LogToFunctionFile(appFunction.Main, "ImportMultipleGroups called with null arguments.");
                 return;
             }
 
@@ -164,7 +164,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
 
                         if (sourceGroup == null)
                         {
-                            LogToImportStatusFile($"Skipping {ItemType} ID {groupId}: Not found in source tenant.");
+                            LogToFunctionFile(appFunction.Main, $"Skipping {ItemType} ID {groupId}: Not found in source tenant.");
                             continue;
                         }
 
@@ -206,7 +206,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
                         {
                             if (string.IsNullOrWhiteSpace(sourceGroup.MembershipRule))
                             {
-                                LogToImportStatusFile($"Skipping Dynamic {ItemType} '{sourceGroup.DisplayName}' (ID: {groupId}): Missing membership rule.");
+                                LogToFunctionFile(appFunction.Main, $"Skipping Dynamic {ItemType} '{sourceGroup.DisplayName}' (ID: {groupId}): Missing membership rule.");
                                 continue; // Cannot create dynamic group without a rule
                             }
                             newGroup.GroupTypes = new List<string> { "DynamicMembership" };
@@ -222,23 +222,23 @@ namespace IntuneTools.Graph.EntraHelperClasses
 
                         // Create the group in the destination tenant
                         var importedGroup = await destinationGraphServiceClient.Groups.PostAsync(newGroup);
-                        LogToImportStatusFile($"Successfully imported {groupName}");
+                        LogToFunctionFile(appFunction.Main, $"Successfully imported {groupName}");
 
                     }
                     catch (Exception ex)
                     {
-                        LogToImportStatusFile($"Failed to import {groupName}\n", LogLevels.Error);
+                        LogToFunctionFile(appFunction.Main, $"Failed to import {groupName}\n", LogLevels.Error);
                         LogToFunctionFile(appFunction.Main, $"Failed to import {groupName}: {ex.Message}", LogLevels.Error);
                     }
                 }
             }
             catch (Exception ex)
             {
-                LogToImportStatusFile($"An unexpected error occurred during the import process: {ex.Message}", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An unexpected error occurred during the import process: {ex.Message}", LogLevels.Error);
             }
             finally
             {
-                LogToImportStatusFile($"{DateTime.Now.ToString()} - Finished importing Security groups.");
+                LogToFunctionFile(appFunction.Main, $"{DateTime.Now.ToString()} - Finished importing Security groups.");
             }
         }
         public static async Task DeleteSecurityGroup(GraphServiceClient graphServiceClient, string groupId)
