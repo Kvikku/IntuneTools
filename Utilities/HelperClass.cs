@@ -17,7 +17,7 @@ namespace IntuneTools.Utilities
     {
         public static void CreateLogFile()
         {
-            // This method will be used to create the log file if it does not exist
+            // Obsolote - Delete later
 
             // Check if the log file directory exists
             if (!Directory.Exists(appDataFolder))
