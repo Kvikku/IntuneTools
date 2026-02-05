@@ -108,30 +108,7 @@ namespace IntuneTools.Utilities
             LogToFunctionFile(appFunction.Summary, $"Command Line Args Count: {Environment.GetCommandLineArgs().Length}", LogLevels.Info);
         }
 
-        public static async Task ShowMessageBox(string title, string message, string primaryButtonText = "OK")
-        {
-            ContentDialog dialog = new ContentDialog
-            {
-                Title = title,
-                Content = message,
-                PrimaryButtonText = primaryButtonText,
-                XamlRoot = App.MainWindowInstance?.Content.XamlRoot // Use the XamlRoot from the main window.
-            };
-
-            if (dialog.XamlRoot != null)
-            {
-                await dialog.ShowAsync();
-            }
-            else
-            {
-                // Fallback or error handling if XamlRoot is not available (e.g., log, throw)
-                LogToFunctionFile(appFunction.Main,"XamlRoot is null, cannot display ContentDialog.", LogLevels.Error);
-                // Consider a non-UI fallback if critical, e.g., writing to console or a log file.
-                Console.WriteLine($"Error: XamlRoot is null. Dialog Title: {title}, Message: {message}");
-
-            }
-        }
-
+        
         public static void UpdateImage(Microsoft.UI.Xaml.Controls.Image image, string imageFileName)
         {
             try
