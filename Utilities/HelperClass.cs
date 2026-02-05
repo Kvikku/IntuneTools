@@ -60,85 +60,7 @@ namespace IntuneTools.Utilities
             }
         }
 
-        public static void CreateAppSettingsFile()
-        {
-            try
-            {
-                // Ensure the app settings directory exists
-                if (!Directory.Exists(appSettingsFolder))
-                {
-                    Directory.CreateDirectory(appSettingsFolder);
-                    Log($"App settings directory created at {appSettingsFolder}", LogLevels.Info);
-                }
-
-                // Default content for the settings files
-                var appSettingsContent = new Dictionary<string, Dictionary<string, string>>
-                {
-                    ["Tenant #1"] = new Dictionary<string, string>
-                    {
-                        ["TenantID"] = "ABC123", // Placeholder
-                        ["ClientID"] = "ABC123"  // Placeholder
-                    },
-                    ["Tenant #2"] = new Dictionary<string, string>
-                    {
-                        ["TenantID"] = "ABC123", // Placeholder
-                        ["ClientID"] = "ABC123"  // Placeholder
-                    }
-                };
-                var options = new JsonSerializerOptions { WriteIndented = true };
-                // Serialize the content once to be reused
-                string jsonString = JsonSerializer.Serialize(appSettingsContent, options);
-
-                // Helper action to create/populate a specific settings file
-                Action<string, string> createSpecificFileIfNeeded = (filePath, description) =>
-                {
-                    try
-                    {
-                        bool createFile = false;
-                        if (!File.Exists(filePath))
-                        {
-                            createFile = true;
-                        }
-                        else
-                        {
-                            FileInfo fileInfo = new FileInfo(filePath);
-                            if (fileInfo.Length == 0)
-                            {
-                                createFile = true;
-                            }
-                        }
-
-                        if (createFile)
-                        {
-                            File.WriteAllText(filePath, jsonString);
-                            Log($"{description} settings file created/populated at {filePath}", LogLevels.Info);
-                        }
-                        else
-                        {
-                            Log($"{description} settings file already exists at {filePath} and contains data. No changes made.", LogLevels.Info);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log($"Error processing {description} settings file {filePath}: {ex.Message}", LogLevels.Error);
-                        // Optionally, rethrow or handle more gracefully depending on application requirements
-                        Console.WriteLine($"Error processing {description} settings file {filePath}: {ex.Message}");
-                    }
-                };
-
-                // Process source tenant settings file
-                createSpecificFileIfNeeded(sourceTenantSettingsFileFullPath, "Source tenant");
-
-                // Process destination tenant settings file
-                createSpecificFileIfNeeded(destinationTenantSettingsFileFullPath, "Destination tenant");
-            }
-            catch (Exception ex) // Catch errors from directory creation or other general issues not caught by the helper
-            {
-                Log($"Overall error in CreateAppSettingsFile: {ex.Message}", LogLevels.Error);
-                // Optionally, rethrow or handle more gracefully depending on application requirements
-                Console.WriteLine($"Error in CreateAppSettingsFile method: {ex.Message}");
-            }
-        }
+        
 
         public static void Log(string message, LogLevels level = LogLevels.Info)
         {
@@ -212,7 +134,7 @@ namespace IntuneTools.Utilities
             Log($"Memory Usage: {GC.GetTotalMemory(false)} bytes", LogLevels.Info);
 
             // Log this app version
-            Log($"App Version: {System.Reflection.Assembly.GetExecutingAssembly().GetName().Version}", LogLevels.Info);
+            Log($"App Version: {appVersion}", LogLevels.Info);
         }
 
         public static async Task ShowMessageBox(string title, string message, string primaryButtonText = "OK")
