@@ -13,6 +13,8 @@ namespace IntuneTools.Utilities
         public static string logFileDirectoryName = "Logs";
         public static string appSettingsDirectoryName = "Settings";
 
+        public static string timestampedAppFolder = string.Empty;
+
         public static string appDataFolder = Path.Combine(appDataPath, appFolderName);
         public static string logFileFolder = Path.Combine(appDataPath, appFolderName, logFileDirectoryName);
         public static string appSettingsFolder = Path.Combine(appDataPath, appFolderName, appSettingsDirectoryName);
@@ -54,6 +56,7 @@ namespace IntuneTools.Utilities
             Assignment,
             Rename, 
             Delete,
+            Summary
         }
 
         public static string selectedRenameMode = "Prefix"; // Default rename mode

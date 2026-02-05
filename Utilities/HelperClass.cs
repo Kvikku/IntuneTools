@@ -68,6 +68,36 @@ namespace IntuneTools.Utilities
             return fullPath;
         }
 
+        public static void LogToFunctionFile(appFunction function, string message, LogLevels level = LogLevels.Info)
+        {
+            if (string.IsNullOrWhiteSpace(timestampedAppFolder))
+            {
+                timestampedAppFolder = CreateTimestampedAppFolder();
+            }
+
+            var logFilePath = Path.Combine(timestampedAppFolder, $"{function}.log");
+            var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            var logEntry = $"{timestamp} - [{level}] - {message}";
+
+            try
+            {
+                if (!File.Exists(logFilePath))
+                {
+                    using (File.Create(logFilePath))
+                    {
+                    }
+                }
+
+                using (StreamWriter writer = new StreamWriter(logFilePath, true))
+                {
+                    writer.WriteLine(logEntry);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error writing to {function} log file: {ex.Message}");
+            }
+        }
         public static void Log(string message, LogLevels level = LogLevels.Info)
         {
             // Create a timestamp
