@@ -74,7 +74,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             try
             {
 
-                WriteToImportStatusFile($"Importing {policies.Count} settings catalog policies.");
+                LogToFunctionFile(appFunction.Main, $"Importing {policies.Count} settings catalog policies.");
 
                 foreach (var policy in policies)
                 {
@@ -101,7 +101,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         var import = await destinationGraphServiceClient.DeviceManagement.ConfigurationPolicies.PostAsync(newPolicy);
 
-                        WriteToImportStatusFile($"Imported policy: {import.Name}");
+                        LogToFunctionFile(appFunction.Main, $"Imported policy: {import.Name}");
 
                         if (assignments)
                         {
@@ -267,7 +267,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         .Assign
                         .PostAsAssignPostResponseAsync(requestBody);
 
-                    WriteToImportStatusFile($"Assigned {assignments.Count} assignments to policy {policyID} with filter type {deviceAndAppManagementAssignmentFilterType}.");
+                    LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to policy {policyID} with filter type {deviceAndAppManagementAssignmentFilterType}.");
                 }
                 catch (Exception ex)
                 {

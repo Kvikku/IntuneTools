@@ -106,7 +106,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                WriteToImportStatusFile($"Importing {profileIds.Count} Windows Driver Update Profiles.");
+                LogToFunctionFile(appFunction.Main, $"Importing {profileIds.Count} Windows Driver Update Profiles.");
                 foreach (var profileId in profileIds)
                 {
                     var profileName = "";
@@ -117,7 +117,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         if (sourceProfile == null)
                         {
-                            WriteToImportStatusFile($"Profile with ID {profileId} not found in source tenant."); // Removed LogType
+                            LogToFunctionFile(appFunction.Main, $"Profile with ID {profileId} not found in source tenant.");
                             continue;
                         }
 
@@ -137,7 +137,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
 
                         var importResult = await destinationGraphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles.PostAsync(newProfile);
-                        WriteToImportStatusFile($"Imported profile: {importResult?.DisplayName ?? "Unknown"}"); // Added null check
+                        LogToFunctionFile(appFunction.Main, $"Imported profile: {importResult?.DisplayName ?? "Unknown"}");
 
                         if (assignments && importResult?.Id != null)
                         {
@@ -148,11 +148,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     catch (Exception ex)
                     {
                         //rtb.AppendText($"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active\n");
-                        WriteToImportStatusFile($"Failed to import Windows Driver Update policy {profileName}: {ex.Message}", LogType.Error);
-                        WriteToImportStatusFile("This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", LogType.Warning);
+                        LogToFunctionFile(appFunction.Main, $"Failed to import Windows Driver Update policy {profileName}: {ex.Message}", LogLevels.Error);
+                        LogToFunctionFile(appFunction.Main, "This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", LogLevels.Warning);
                     }
                 }
-                WriteToImportStatusFile("Windows Driver Update policy import process finished.");
+                LogToFunctionFile(appFunction.Main, "Windows Driver Update policy import process finished.");
             }
 
             catch (Exception ex)
@@ -206,14 +206,14 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     // Check if this is All Users - Driver Update profiles cannot be assigned to All Users
                     if (groupId.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
                     {
-                        WriteToImportStatusFile($"Warning: Windows Driver Update profiles cannot be assigned to 'All Users'. Only device groups are supported. Skipping this assignment.", LogType.Warning);
+                LogToFunctionFile(appFunction.Main, "Warning: Windows Driver Update profiles cannot be assigned to 'All Users'. Only device groups are supported. Skipping this assignment.", LogLevels.Warning);
                         continue;
                     }
 
                     // Check if this is All Devices - Driver Update profiles cannot be assigned to All Devices
                     if (groupId.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
                     {
-                        WriteToImportStatusFile($"Warning: Windows Driver Update profiles cannot be assigned to 'All Devices'. Only device groups are supported. Skipping this assignment.", LogType.Warning);
+                        LogToFunctionFile(appFunction.Main, "Warning: Windows Driver Update profiles cannot be assigned to 'All Devices'. Only device groups are supported. Skipping this assignment.", LogLevels.Warning);
                         continue;
                     }
 
@@ -248,13 +248,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         if (existing.Target is AllLicensedUsersAssignmentTarget)
                         {
                             // Skip All Users assignments - they shouldn't exist but handle gracefully
-                            WriteToImportStatusFile($"Warning: Found existing 'All Users' assignment on Driver Update profile {profileID}. This should not exist and will be skipped.", LogType.Warning);
+                            LogToFunctionFile(appFunction.Main, $"Warning: Found existing 'All Users' assignment on Driver Update profile {profileID}. This should not exist and will be skipped.", LogLevels.Warning);
                             continue;
                         }
                         else if (existing.Target is AllDevicesAssignmentTarget)
                         {
                             // Skip All Devices assignments - they shouldn't exist but handle gracefully
-                            WriteToImportStatusFile($"Warning: Found existing 'All Devices' assignment on Driver Update profile {profileID}. This should not exist and will be skipped.", LogType.Warning);
+                            LogToFunctionFile(appFunction.Main, $"Warning: Found existing 'All Devices' assignment on Driver Update profile {profileID}. This should not exist and will be skipped.", LogLevels.Warning);
                             continue;
                         }
                         else if (existing.Target is GroupAssignmentTarget groupTarget)
@@ -284,26 +284,26 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 try
                 {
                     await destinationGraphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileID].Assign.PostAsync(requestBody);
-                    WriteToImportStatusFile($"Assigned {assignments.Count} assignments to driver profile {profileID}. Filter: {SelectedFilterID ?? "None"}");
+                    LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to driver profile {profileID}. Filter: {SelectedFilterID ?? "None"}");
                 }
                 catch (ServiceException svcex)
                 {
-                    WriteToImportStatusFile($"Graph API error assigning groups to profile {profileID}: {svcex.Message}", LogType.Error);
+                    LogToFunctionFile(appFunction.Main, $"Graph API error assigning groups to profile {profileID}: {svcex.Message}", LogLevels.Error);
                 }
                 catch (Exception ex)
                 {
-                    WriteToImportStatusFile($"Error assigning groups to profile {profileID}: {ex.Message}", LogType.Error);
+                    LogToFunctionFile(appFunction.Main, $"Error assigning groups to profile {profileID}: {ex.Message}", LogLevels.Error);
                 }
             }
             catch (ArgumentNullException argEx)
             {
-                WriteToImportStatusFile("Argument null exception during group assignment setup.", LogType.Error);
-                WriteToImportStatusFile(argEx.Message, LogType.Error);
+                LogToFunctionFile(appFunction.Main, "Argument null exception during group assignment setup.", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, argEx.Message, LogLevels.Error);
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An unexpected error occurred while preparing group assignments for a driver profile.", LogType.Warning);
-                WriteToImportStatusFile(ex.Message, LogType.Error);
+                LogToFunctionFile(appFunction.Main, "An unexpected error occurred while preparing group assignments for a driver profile.", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
         }
         public static async Task DeleteDriverProfile(GraphServiceClient graphServiceClient, string profileID)
@@ -320,18 +320,18 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     throw new ArgumentNullException(nameof(profileID), "Profile ID cannot be null or empty.");
                 }
 
-                WriteToImportStatusFile($"Attempting to delete Windows Driver Update Profile with ID: {profileID}");
+                LogToFunctionFile(appFunction.Main, $"Attempting to delete Windows Driver Update Profile with ID: {profileID}");
                 await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileID].DeleteAsync();
-                WriteToImportStatusFile($"Successfully deleted Windows Driver Update Profile with ID: {profileID}");
+                LogToFunctionFile(appFunction.Main, $"Successfully deleted Windows Driver Update Profile with ID: {profileID}");
             }
             catch (ServiceException svcex) when (svcex.ResponseStatusCode == (int)System.Net.HttpStatusCode.NotFound) // Corrected comparison
             {
                 // Handle case where the profile doesn't exist (might have been deleted already)
-                WriteToImportStatusFile($"Windows Driver Update Profile with ID {profileID} not found. It might have already been deleted."); // Removed LogType
+                LogToFunctionFile(appFunction.Main, $"Windows Driver Update Profile with ID {profileID} not found. It might have already been deleted.");
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile($"An error occurred while deleting Windows Driver Update Profile with ID: {profileID}", LogType.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while deleting Windows Driver Update Profile with ID: {profileID}", LogLevels.Error);
             }
         }
         public static async Task RenameDriverProfile(GraphServiceClient graphServiceClient, string profileID, string newName)
@@ -371,7 +371,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileID].PatchAsync(profile);
-                    WriteToImportStatusFile($"Successfully renamed Windows Driver Update Profile from '{existingProfile.DisplayName}' to '{name}'");
+                    LogToFunctionFile(appFunction.Main, $"Successfully renamed Windows Driver Update Profile from '{existingProfile.DisplayName}' to '{name}'");
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
@@ -393,13 +393,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileID].PatchAsync(profile);
-                    WriteToImportStatusFile($"Updated description for Windows Driver Update Profile {profileID} to '{newName}'");
+                    LogToFunctionFile(appFunction.Main, $"Updated description for Windows Driver Update Profile {profileID} to '{newName}'");
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while renaming Windows Driver Update Profile", LogType.Warning);
-                WriteToImportStatusFile(ex.Message, LogType.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while renaming Windows Driver Update Profile", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
         }
     }

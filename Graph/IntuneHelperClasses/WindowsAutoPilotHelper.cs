@@ -71,7 +71,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                WriteToImportStatusFile($"Importing {profiles.Count} Windows AutoPilot profiles.");
+                LogToFunctionFile(appFunction.Main, $"Importing {profiles.Count} Windows AutoPilot profiles.");
                 foreach (var profile in profiles)
                 {
                     try
@@ -84,7 +84,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         if (result.OdataType.Contains("ActiveDirectory", StringComparison.OrdinalIgnoreCase))
                         {
-                            WriteToImportStatusFile($"Hybrid Autopilot profiles are currently bugged in Graph API/C# SDK. Please handle manually for now.", LogType.Warning);
+                            LogToFunctionFile(appFunction.Main, "Hybrid Autopilot profiles are currently bugged in Graph API/C# SDK. Please handle manually for now.", LogLevels.Warning);
 
                             //var requestBody = new ActiveDirectoryWindowsAutopilotDeploymentProfile()
                             //{
@@ -128,7 +128,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                                 }
                             }
                             var import = await destinationGraphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles.PostAsync(requestBody);
-                            WriteToImportStatusFile($"Imported profile: {requestBody.DisplayName}");
+                            LogToFunctionFile(appFunction.Main, $"Imported profile: {requestBody.DisplayName}");
                             if (assignments)
                             {
                                 await AssignGroupsToSingleWindowsAutoPilotProfile(import.Id, groups, destinationGraphServiceClient);
@@ -181,7 +181,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     // Check if this is All Users - AutoPilot profiles cannot be assigned to All Users
                     if (group.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
                     {
-                        WriteToImportStatusFile($"Warning: AutoPilot profiles cannot be assigned to 'All Users'. Skipping this assignment.", LogType.Warning);
+                        LogToFunctionFile(appFunction.Main, "Warning: AutoPilot profiles cannot be assigned to 'All Users'. Skipping this assignment.", LogLevels.Warning);
                         continue;
                     }
 
@@ -234,7 +234,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         if (existing.Target is AllLicensedUsersAssignmentTarget)
                         {
                             // Skip All Users assignments - they shouldn't exist but handle gracefully
-                            WriteToImportStatusFile($"Warning: Found existing 'All Users' assignment on AutoPilot profile {profileID}. This should not exist and will be skipped.", LogType.Warning);
+                            LogToFunctionFile(appFunction.Main, $"Warning: Found existing 'All Users' assignment on AutoPilot profile {profileID}. This should not exist and will be skipped.", LogLevels.Warning);
                             continue;
                         }
                         else if (existing.Target is AllDevicesAssignmentTarget)
@@ -291,7 +291,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                             _ => "unknown target"
                         };
 
-                        WriteToImportStatusFile($"Assigned {targetType} to AutoPilot profile {profileID}.");
+                        LogToFunctionFile(appFunction.Main, $"Assigned {targetType} to AutoPilot profile {profileID}.");
                     }
                     catch (Exception ex)
                     {
@@ -299,7 +299,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     }
                 }
 
-                WriteToImportStatusFile($"Assigned {successCount} of {assignments.Count} assignments to AutoPilot profile {profileID}.");
+                LogToFunctionFile(appFunction.Main, $"Assigned {successCount} of {assignments.Count} assignments to AutoPilot profile {profileID}.");
             }
             catch (Exception ex)
             {
@@ -342,11 +342,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (ODataError error)
             {
-                WriteToImportStatusFile("An error occurred while attempting to delete Autopilot profile assignments", LogType.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while attempting to delete Autopilot profile assignments", LogLevels.Error);
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while attempting to delete Autopilot profile assignments", LogType.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while attempting to delete Autopilot profile assignments", LogLevels.Error);
             }
         }
 
@@ -412,7 +412,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while deleting Windows Autopilot profiles", LogType.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while deleting Windows Autopilot profiles", LogLevels.Error);
             }
         }
 
@@ -453,7 +453,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].PatchAsync(profile);
-                    WriteToImportStatusFile($"Renamed Windows Autopilot profile '{existingProfile.DisplayName}' to '{name}'", LogType.Info);
+                    LogToFunctionFile(appFunction.Main, $"Renamed Windows Autopilot profile '{existingProfile.DisplayName}' to '{name}'", LogLevels.Info);
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
@@ -475,13 +475,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].PatchAsync(profile);
-                    WriteToImportStatusFile($"Updated description for Windows Autopilot profile {profileID} to '{newName}'", LogType.Info);
+                    LogToFunctionFile(appFunction.Main, $"Updated description for Windows Autopilot profile {profileID} to '{newName}'", LogLevels.Info);
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while renaming Windows Autopilot profiles", LogType.Warning);
-                WriteToImportStatusFile(ex.Message, LogType.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while renaming Windows Autopilot profiles", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
         }
     }

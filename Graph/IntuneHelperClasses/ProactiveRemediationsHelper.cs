@@ -11,7 +11,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                WriteToImportStatusFile("Searching for proactive remediation scripts. Search query: " + searchQuery);
+                LogToFunctionFile(appFunction.Main, "Searching for proactive remediation scripts. Search query: " + searchQuery);
 
                 var result = await graphServiceClient.DeviceManagement.DeviceHealthScripts.GetAsync((requestConfiguration) =>
                 {
@@ -29,13 +29,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 });
                 await pageIterator.IterateAsync();
 
-                WriteToImportStatusFile($"Found {healthScripts.Count} proactive remediation scripts.");
+                LogToFunctionFile(appFunction.Main, $"Found {healthScripts.Count} proactive remediation scripts.");
 
                 return healthScripts;
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while searching for proactive remediation scripts", LogType.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while searching for proactive remediation scripts", LogLevels.Error);
                 return new List<DeviceHealthScript>();
             }
         }
@@ -44,7 +44,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                WriteToImportStatusFile("Retrieving all proactive remediation scripts.");
+                LogToFunctionFile(appFunction.Main, "Retrieving all proactive remediation scripts.");
 
                 var result = await graphServiceClient.DeviceManagement.DeviceHealthScripts.GetAsync((requestConfiguration) =>
                 {
@@ -62,13 +62,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 });
                 await pageIterator.IterateAsync();
 
-                WriteToImportStatusFile($"Found {healthScripts.Count} proactive remediation scripts.");
+                LogToFunctionFile(appFunction.Main, $"Found {healthScripts.Count} proactive remediation scripts.");
 
                 return healthScripts;
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while retrieving all proactive remediation scripts", LogType.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while retrieving all proactive remediation scripts", LogLevels.Error);
                 return new List<DeviceHealthScript>();
             }
         }
@@ -77,7 +77,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                WriteToImportStatusFile($"Importing {scripts.Count} proactive remediation scripts.");
+                LogToFunctionFile(appFunction.Main, $"Importing {scripts.Count} proactive remediation scripts.");
 
                 foreach (var script in scripts)
                 {
@@ -102,7 +102,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
 
                         var import = await destinationGraphServiceClient.DeviceManagement.DeviceHealthScripts.PostAsync(requestBody);
-                        WriteToImportStatusFile($"Imported script: {import.DisplayName}");
+                        LogToFunctionFile(appFunction.Main, $"Imported script: {import.DisplayName}");
 
                         if (assignments)
                         {
@@ -111,13 +111,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     }
                     catch (Exception ex)
                     {
-                        WriteToImportStatusFile($"Error importing script {script}", LogType.Error);
+                        LogToFunctionFile(appFunction.Main, $"Error importing script {script}", LogLevels.Error);
                     }
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred during the import process", LogType.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred during the import process", LogLevels.Error);
             }
         }
 
@@ -258,18 +258,18 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 try
                 {
                     await destinationGraphServiceClient.DeviceManagement.DeviceHealthScripts[scriptID].Assign.PostAsync(requestBody);
-                    WriteToImportStatusFile($"Assigned {assignments.Count} assignments to proactive remediation script {scriptID} with filter type {deviceAndAppManagementAssignmentFilterType}.");
+                    LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to proactive remediation script {scriptID} with filter type {deviceAndAppManagementAssignmentFilterType}.");
                 }
                 catch (Exception ex)
                 {
-                    WriteToImportStatusFile("An error occurred while assigning groups to proactive remediation script", LogType.Warning);
-                    WriteToImportStatusFile(ex.Message, LogType.Error);
+                    LogToFunctionFile(appFunction.Main, "An error occurred while assigning groups to proactive remediation script", LogLevels.Warning);
+                    LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while assigning groups to a single proactive remediation script", LogType.Warning);
-                WriteToImportStatusFile(ex.Message, LogType.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while assigning groups to a single proactive remediation script", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
         }
         public static async Task DeleteProactiveRemediationScript(GraphServiceClient graphServiceClient, string policyID)
@@ -289,7 +289,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while deleting proactive remediation scripts", LogType.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while deleting proactive remediation scripts", LogLevels.Error);
             }
         }
 
@@ -330,7 +330,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.DeviceHealthScripts[scriptID].PatchAsync(script);
-                    WriteToImportStatusFile($"Renamed Proactive remediation script {scriptID} to {name}");
+                    LogToFunctionFile(appFunction.Main, $"Renamed Proactive remediation script {scriptID} to {name}");
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
@@ -352,13 +352,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.DeviceHealthScripts[scriptID].PatchAsync(script);
-                    WriteToImportStatusFile($"Updated description for Proactive remediation script {scriptID} to {newName}");
+                    LogToFunctionFile(appFunction.Main, $"Updated description for Proactive remediation script {scriptID} to {newName}");
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while renaming proactive remediation scripts", LogType.Warning);
-                WriteToImportStatusFile(ex.Message, LogType.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while renaming proactive remediation scripts", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
         }
     }
