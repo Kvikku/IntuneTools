@@ -15,36 +15,7 @@ namespace IntuneTools.Utilities
 {
     public class HelperClass
     {
-        public static void CreateLogFile()
-        {
-            // Obsolote - Delete later
-
-            // Check if the log file directory exists
-            if (!Directory.Exists(appDataFolder))
-            {
-                // If the directory does not exist, create it
-                Directory.CreateDirectory(appDataFolder);
-                Directory.CreateDirectory(logFileFolder);
-                Directory.CreateDirectory(appSettingsFolder);
-
-            }
-
-            //CreateAppSettingsFile(); // Ensure app settings file is created
-
-
-            // Create a new log file with date and time appended to the name
-
-            File.Create(primaryLogFile).Close();
-        }
-
-        public static void CreateImportStatusFile()
-        {
-            // Create a new import status file with date and time appended to the name
-            File.Create(ImportStatusFilePath).Close();
-        }
-
         
-
         public static string CreateTimestampedAppFolder()
         {
             var folderName = DateTime.Now.ToString("yyyy-MM-dd-HH-mm");

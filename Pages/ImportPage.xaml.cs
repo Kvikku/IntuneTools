@@ -1564,8 +1564,6 @@ namespace IntuneTools.Pages
                 return;
             }
 
-            // Ensure the import status file is created before importing
-            CreateImportStatusFile();
 
 
             // Log the start of the import process
