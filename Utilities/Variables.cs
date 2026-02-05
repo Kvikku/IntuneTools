@@ -48,6 +48,14 @@ namespace IntuneTools.Utilities
             Description = 1
         }
 
+        public enum appFunction
+        {
+            Import,
+            Assignment,
+            Rename, 
+            Delete,
+        }
+
         public static string selectedRenameMode = "Prefix"; // Default rename mode
 
         // Group variables
