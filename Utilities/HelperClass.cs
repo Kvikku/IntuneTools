@@ -56,14 +56,6 @@ namespace IntuneTools.Utilities
         }
         
 
-        public enum LogType
-        {
-            Info,
-            Warning,
-            Error
-        }
-        
-
         public static void LogApplicationStart()
         {
             // Log the application start time
