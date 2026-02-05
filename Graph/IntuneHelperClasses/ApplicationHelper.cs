@@ -141,7 +141,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
             if (!supportedTypes.Contains(appType))
             {
-                WriteToImportStatusFile("The selected app type is not supported for deployment yet. Skipping");
+                LogToFunctionFile(appFunction.Main, "The selected app type is not supported for deployment yet. Skipping");
                 return;
             }
 
@@ -305,7 +305,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     if (assignment.Intent == InstallIntent.Available || assignment.Target.OdataType == "#microsoft.graph.allDevicesAssignmentTarget")
                     {
                         // Not supported
-                        WriteToImportStatusFile("Assignment settings for 'Available' intent to 'All Devices virtual group' is not supported.");
+                        LogToFunctionFile(appFunction.Main, "Assignment settings for 'Available' intent to 'All Devices virtual group' is not supported.");
                     }
                 }
 
