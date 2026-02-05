@@ -175,7 +175,7 @@ namespace IntuneTools.Utilities
             // Log this app version
             LogToFunctionFile(appFunction.Summary, $"App Version: {appVersion}", LogLevels.Info);
 
-            var process = Process.GetCurrentProcess();
+            using var process = System.Diagnostics.Process.GetCurrentProcess();
 
             LogToFunctionFile(appFunction.Summary, $"App Base Directory: {AppContext.BaseDirectory}", LogLevels.Info);
             LogToFunctionFile(appFunction.Summary, $"Process ID: {process.Id}", LogLevels.Info);
@@ -185,7 +185,15 @@ namespace IntuneTools.Utilities
             LogToFunctionFile(appFunction.Summary, $"Process Architecture: {RuntimeInformation.ProcessArchitecture}", LogLevels.Info);
             LogToFunctionFile(appFunction.Summary, $"Current Culture: {CultureInfo.CurrentCulture}", LogLevels.Info);
             LogToFunctionFile(appFunction.Summary, $"Current UI Culture: {CultureInfo.CurrentUICulture}", LogLevels.Info);
-            LogToFunctionFile(appFunction.Summary, $"Time Zone: {TimeZoneInfo.Local.StandardName} (UTC{TimeZoneInfo.Local.BaseUtcOffset:+hh\:mm;-hh\:mm})", LogLevels.Info);
+            
+            // Build the UTC offset string safely
+            var offset = TimeZoneInfo.Local.BaseUtcOffset;
+            var sign = offset < TimeSpan.Zero ? "-" : "+";
+            var offsetText = $"{sign}{offset.Duration():hh\\:mm}";
+
+            LogToFunctionFile(appFunction.Summary,
+                $"Time Zone: {TimeZoneInfo.Local.StandardName} (UTC{offsetText})",
+                LogLevels.Info);
             LogToFunctionFile(appFunction.Summary, $"System Uptime: {TimeSpan.FromMilliseconds(Environment.TickCount64)}", LogLevels.Info);
             LogToFunctionFile(appFunction.Summary, $"Command Line Args Count: {Environment.GetCommandLineArgs().Length}", LogLevels.Info);
         }
