@@ -52,11 +52,12 @@ namespace IntuneTools.Utilities
 
         public enum appFunction
         {
+            Main, // Used for most logging operations for the time being
+            Summary, // Used to log system settings upon app launch
             Import,
             Assignment,
             Rename, 
             Delete,
-            Summary
         }
 
         public static string selectedRenameMode = "Prefix"; // Default rename mode

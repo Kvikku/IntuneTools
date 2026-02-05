@@ -101,25 +101,7 @@ namespace IntuneTools.Utilities
                 Console.WriteLine($"Error writing to {function} log file: {ex.Message}");
             }
         }
-        public static void Log(string message, LogLevels level = LogLevels.Info)
-        {
-            // Create a timestamp
-            string timestamp = DateTime.Now.ToString("HH:mm:ss - dd-MM-yyyy");
-            string logEntry = $"{timestamp} - [{level}] - {message}";
-
-            // Append the log entry to the file
-            try
-            {
-                using (StreamWriter writer = new StreamWriter(primaryLogFile, true))
-                {
-                    writer.WriteLine(logEntry);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error writing to log file: {ex.Message}");
-            }
-        }
+        
 
         public enum LogType
         {
@@ -215,7 +197,7 @@ namespace IntuneTools.Utilities
             else
             {
                 // Fallback or error handling if XamlRoot is not available (e.g., log, throw)
-                Log("XamlRoot is null, cannot display ContentDialog.", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main,"XamlRoot is null, cannot display ContentDialog.", LogLevels.Error);
                 // Consider a non-UI fallback if critical, e.g., writing to console or a log file.
                 Console.WriteLine($"Error: XamlRoot is null. Dialog Title: {title}, Message: {message}");
 
@@ -230,7 +212,7 @@ namespace IntuneTools.Utilities
             }
             catch (Exception ex)
             {
-                Log($"Failed to update image source. Image: {image.Name}, FileName: {imageFileName}, Error: {ex.Message}", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main,$"Failed to update image source. Image: {image.Name}, FileName: {imageFileName}, Error: {ex.Message}", LogLevels.Error);
             }
         }
 

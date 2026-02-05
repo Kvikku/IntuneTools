@@ -95,7 +95,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                             //MessageBox.Show("iOS Device Feature template is currently bugged in graph SDK. Handle manually until this is resolved");
                             //rtb.AppendText("iOS Device Feature template is currently bugged in graph SDK. Handle manually until this is resolved");
                             WriteToImportStatusFile(originalConfig.DisplayName + " failed to import. iOS Device Feature template is currently bugged in graph SDK. Handle manually until this is resolved" + LogType.Error);
-                            Log($"Failed to import {originalConfig.DisplayName}. iOS Device Feature template is currently bugged in C# Graph SDK. Handle manually until this is resolved", LogLevels.Error);
                             continue;
                         }
 
