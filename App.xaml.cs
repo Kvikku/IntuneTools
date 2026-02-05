@@ -41,8 +41,6 @@ namespace IntuneTools
 
             CreateTimestampedAppFolder();
 
-            LogToFunctionFile(appFunction.Summary, "Application Launched");
-
             LogApplicationStart();
         }
 

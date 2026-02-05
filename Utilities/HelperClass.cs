@@ -3,8 +3,11 @@ using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -146,31 +149,45 @@ namespace IntuneTools.Utilities
         public static void LogApplicationStart()
         {
             // Log the application start time
-            Log("Application started", LogLevels.Info);
+            LogToFunctionFile(appFunction.Summary, "Application started", LogLevels.Info);
 
             // Log the machine name
-            Log($"Machine Name: {Environment.MachineName}", LogLevels.Info);
+            LogToFunctionFile(appFunction.Summary, $"Machine Name: {Environment.MachineName}", LogLevels.Info);
 
             // Log the user name
-            Log($"User Name: {Environment.UserName}", LogLevels.Info);
+            LogToFunctionFile(appFunction.Summary, $"User Name: {Environment.UserName}", LogLevels.Info);
 
             // Log the OS version
-            Log($"OS Version: {Environment.OSVersion}", LogLevels.Info);
+            LogToFunctionFile(appFunction.Summary, $"OS Version: {Environment.OSVersion}", LogLevels.Info);
 
             // Log the .NET version
-            Log($".NET Version: {Environment.Version}", LogLevels.Info);
+            LogToFunctionFile(appFunction.Summary, $".NET Version: {Environment.Version}", LogLevels.Info);
 
             // Log the CPU name
-            Log($"CPU Name: {Environment.GetEnvironmentVariable("PROCESSOR_IDENTIFIER")}", LogLevels.Info);
+            LogToFunctionFile(appFunction.Summary, $"CPU Name: {Environment.GetEnvironmentVariable("PROCESSOR_IDENTIFIER")}", LogLevels.Info);
 
             // Log the system's processor count
-            Log($"Processor Count: {Environment.ProcessorCount}", LogLevels.Info);
+            LogToFunctionFile(appFunction.Summary, $"Processor Count: {Environment.ProcessorCount}", LogLevels.Info);
 
             // Log the system's memory usage
-            Log($"Memory Usage: {GC.GetTotalMemory(false)} bytes", LogLevels.Info);
+            LogToFunctionFile(appFunction.Summary, $"Memory Usage: {GC.GetTotalMemory(false)} bytes", LogLevels.Info);
 
             // Log this app version
-            Log($"App Version: {appVersion}", LogLevels.Info);
+            LogToFunctionFile(appFunction.Summary, $"App Version: {appVersion}", LogLevels.Info);
+
+            var process = Process.GetCurrentProcess();
+
+            LogToFunctionFile(appFunction.Summary, $"App Base Directory: {AppContext.BaseDirectory}", LogLevels.Info);
+            LogToFunctionFile(appFunction.Summary, $"Process ID: {process.Id}", LogLevels.Info);
+            LogToFunctionFile(appFunction.Summary, $"Process Name: {process.ProcessName}", LogLevels.Info);
+            LogToFunctionFile(appFunction.Summary, $"Working Set: {process.WorkingSet64} bytes", LogLevels.Info);
+            LogToFunctionFile(appFunction.Summary, $"OS Architecture: {RuntimeInformation.OSArchitecture}", LogLevels.Info);
+            LogToFunctionFile(appFunction.Summary, $"Process Architecture: {RuntimeInformation.ProcessArchitecture}", LogLevels.Info);
+            LogToFunctionFile(appFunction.Summary, $"Current Culture: {CultureInfo.CurrentCulture}", LogLevels.Info);
+            LogToFunctionFile(appFunction.Summary, $"Current UI Culture: {CultureInfo.CurrentUICulture}", LogLevels.Info);
+            LogToFunctionFile(appFunction.Summary, $"Time Zone: {TimeZoneInfo.Local.StandardName} (UTC{TimeZoneInfo.Local.BaseUtcOffset:+hh\:mm;-hh\:mm})", LogLevels.Info);
+            LogToFunctionFile(appFunction.Summary, $"System Uptime: {TimeSpan.FromMilliseconds(Environment.TickCount64)}", LogLevels.Info);
+            LogToFunctionFile(appFunction.Summary, $"Command Line Args Count: {Environment.GetCommandLineArgs().Length}", LogLevels.Info);
         }
 
         public static async Task ShowMessageBox(string title, string message, string primaryButtonText = "OK")
