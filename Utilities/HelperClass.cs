@@ -60,7 +60,13 @@ namespace IntuneTools.Utilities
             }
         }
 
-        
+        public static string CreateTimestampedAppFolder()
+        {
+            var folderName = DateTime.Now.ToString("yyyy-MM-dd-HH-mm");
+            var fullPath = Path.Combine(appDataPath, appFolderName, folderName);
+            Directory.CreateDirectory(fullPath);
+            return fullPath;
+        }
 
         public static void Log(string message, LogLevels level = LogLevels.Info)
         {
