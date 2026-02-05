@@ -43,25 +43,7 @@ namespace IntuneTools.Utilities
             File.Create(ImportStatusFilePath).Close();
         }
 
-        public static void LogToImportStatusFile(string message, LogLevels level = LogLevels.Info)
-        {
-            // Create a timestamp
-            string timestamp = DateTime.Now.ToString("HH:mm:ss - dd-MM-yyyy");
-            string logEntry = $"{timestamp} - [{level.ToString().ToUpper()}] - {message}";
-
-            // Append the log entry to the file
-            try
-            {
-                using (StreamWriter writer = new StreamWriter(ImportStatusFilePath, true))
-                {
-                    writer.WriteLine(logEntry);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error writing to import status file: {ex.Message}");
-            }
-        }
+        
 
         public static string CreateTimestampedAppFolder()
         {

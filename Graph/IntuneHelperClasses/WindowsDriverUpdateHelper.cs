@@ -17,7 +17,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                LogToImportStatusFile("Searching for Windows Driver Update Profiles. Search query: " + searchQuery);
+                LogToFunctionFile(appFunction.Main, "Searching for Windows Driver Update Profiles. Search query: " + searchQuery);
 
                 var result = await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles.GetAsync();
 
@@ -36,11 +36,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     });
                     await pageIterator.IterateAsync();
 
-                    LogToImportStatusFile($"Found {driverProfiles.Count} Windows Driver Update Profiles matching the search query.");
+                    LogToFunctionFile(appFunction.Main, $"Found {driverProfiles.Count} Windows Driver Update Profiles matching the search query.");
                 }
                 else
                 {
-                    LogToImportStatusFile("No Windows Driver Update Profiles found matching the search query or the result was null.", LogLevels.Error);
+                    LogToFunctionFile(appFunction.Main, "No Windows Driver Update Profiles found matching the search query or the result was null.", LogLevels.Error);
                 }
 
 
@@ -48,7 +48,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToImportStatusFile("An error occurred while searching for Windows Driver Update Profiles", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while searching for Windows Driver Update Profiles", LogLevels.Error);
                 return new List<WindowsDriverUpdateProfile>();
             }
         }
@@ -62,7 +62,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                LogToImportStatusFile("Retrieving all Windows Driver Update Profiles.");
+                LogToFunctionFile(appFunction.Main, "Retrieving all Windows Driver Update Profiles.");
 
                 var result = await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles.GetAsync();
 
@@ -76,18 +76,18 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         return true;
                     });
                     await pageIterator.IterateAsync();
-                    LogToImportStatusFile($"Found {driverProfiles.Count} Windows Driver Update Profiles.");
+                    LogToFunctionFile(appFunction.Main, $"Found {driverProfiles.Count} Windows Driver Update Profiles.");
                 }
                 else
                 {
-                    LogToImportStatusFile("No Windows Driver Update Profiles found or the result was null.");
+                    LogToFunctionFile(appFunction.Main, "No Windows Driver Update Profiles found or the result was null.");
                 }
 
                 return driverProfiles;
             }
             catch (Exception ex)
             {
-                LogToImportStatusFile("An error occurred while retrieving all Windows Driver Update Profiles", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while retrieving all Windows Driver Update Profiles", LogLevels.Error);
                 return new List<WindowsDriverUpdateProfile>();
             }
         }
@@ -157,7 +157,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
             catch (Exception ex)
             {
-                LogToImportStatusFile("An error occurred during the driver profile import process", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, "An error occurred during the driver profile import process", LogLevels.Warning);
             }
         }
 
@@ -193,7 +193,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 var assignments = new List<WindowsDriverUpdateProfileAssignment>();
                 var seenGroupIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-                LogToImportStatusFile($"Assigning {groupIDs.Count} groups to driver profile {profileID}.");
+                LogToFunctionFile(appFunction.Main, $"Assigning {groupIDs.Count} groups to driver profile {profileID}.");
 
                 // Step 1: Add new assignments to request body
                 foreach (var groupId in groupIDs)
