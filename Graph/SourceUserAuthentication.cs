@@ -32,7 +32,8 @@ public static class SourceUserAuthentication
             "DeviceManagementManagedDevices.Read.All",
             "DeviceManagementRBAC.Read.All",
             "DeviceManagementScripts.Read.All",
-            "DeviceManagementServiceConfig.Read.All"
+            "DeviceManagementServiceConfig.Read.All",
+            "Group.ReadWrite.All"
         };
 
     private const string PublicClientId = "14d82eec-204b-4c2f-b7e8-296a70dab67e";
