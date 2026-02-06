@@ -256,9 +256,11 @@
                            FontWeight="SemiBold"
                            Margin="0,0,0,12"/>
 
-                <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                <ScrollViewer x:Name="LogScrollViewer"
+                              HorizontalScrollBarVisibility="Disabled"
                               VerticalScrollBarVisibility="Auto"
-                              VerticalAlignment="Stretch">
+                              VerticalAlignment="Stretch"
+                              MaxHeight="400">
                     <RichTextBlock x:Name="LogConsole"
                                    IsTextSelectionEnabled="True"
                                    TextWrapping="Wrap"/>
