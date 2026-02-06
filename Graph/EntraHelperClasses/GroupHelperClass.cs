@@ -338,6 +338,18 @@ namespace IntuneTools.Graph.EntraHelperClasses
                     LogToFunctionFile(appFunction.Main, $"Updated description for group {groupID} to '{newName}'");
                 }
             }
+            catch (Microsoft.Graph.Beta.Models.ODataErrors.ODataError odataError)
+            {
+                if (string.Equals(odataError?.Error?.Message, "Insufficient privileges to complete the operation.", StringComparison.OrdinalIgnoreCase))
+                {
+                    LogToFunctionFile(appFunction.Main, "Insufficient privileges to rename the group.", LogLevels.Error);
+                    LogToFunctionFile(appFunction.Main, "Please double check that the Microsoft Graph command line tools app has permissions to rename groups.", LogLevels.Warning);
+                }
+                else
+                {
+                    LogToFunctionFile(appFunction.Main, "An OData error occurred while renaming the group. Check the permissions and try again.", LogLevels.Error);
+                }
+            }
             catch (Exception ex)
             {
                 LogToFunctionFile(appFunction.Main, "An error occurred while renaming group", LogLevels.Warning);

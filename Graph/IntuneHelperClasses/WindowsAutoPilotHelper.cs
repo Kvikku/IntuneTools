@@ -447,12 +447,26 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                     var name = FindPreFixInPolicyName(existingProfile.DisplayName ?? string.Empty, newName);
 
-                    var profile = new WindowsAutopilotDeploymentProfile
+                    // after existingProfile is retrieved
+                    if (existingProfile.OdataType?.Contains("activeDirectory", StringComparison.OrdinalIgnoreCase) == true)
                     {
-                        DisplayName = name,
-                    };
+                        var profile = new ActiveDirectoryWindowsAutopilotDeploymentProfile
+                        {
+                            OdataType = existingProfile.OdataType,
+                            DisplayName = name
+                        };
+                        await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].PatchAsync(profile);
+                    }
+                    else
+                    {
+                        var profile = new AzureADWindowsAutopilotDeploymentProfile
+                        {
+                            OdataType = existingProfile.OdataType ?? "#microsoft.graph.azureADWindowsAutopilotDeploymentProfile",
+                            DisplayName = name
+                        };
+                        await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].PatchAsync(profile);
+                    }
 
-                    await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].PatchAsync(profile);
                     LogToFunctionFile(appFunction.Main, $"Renamed Windows Autopilot profile '{existingProfile.DisplayName}' to '{name}'", LogLevels.Info);
                 }
                 else if (selectedRenameMode == "Suffix")
@@ -469,8 +483,15 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
                     }
 
-                    var profile = new WindowsAutopilotDeploymentProfile
+                    if (existingProfile.OdataType?.Contains("activeDirectory", StringComparison.OrdinalIgnoreCase) == true)
                     {
+                        LogToFunctionFile(appFunction.Main, "Active Directory Autopilot profiles is not supported yet. Skipping.", LogLevels.Warning);
+                        return;
+                    }
+
+                    var profile = new AzureADWindowsAutopilotDeploymentProfile
+                    {
+                        OdataType = existingProfile.OdataType ?? "#microsoft.graph.azureADWindowsAutopilotDeploymentProfile",
                         Description = newName,
                     };
 

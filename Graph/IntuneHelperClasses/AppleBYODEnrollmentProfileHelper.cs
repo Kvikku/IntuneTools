@@ -412,7 +412,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     profile.DisplayName = name;
 
                     await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileID].PatchAsync(profile);
-                    LogToFunctionFile(appFunction.Main, $"Successfully renamed Apple BYOD Enrollment profile with ID {profileID} to '{name}'.");
+                    LogToFunctionFile(appFunction.Main, $"Renamed Apple BYOD Enrollment profile with ID {profileID} to '{name}'.");
                 }
                 else if (selectedRenameMode == "Suffix")
                 {

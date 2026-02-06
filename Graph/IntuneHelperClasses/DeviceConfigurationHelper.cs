@@ -392,7 +392,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     policy.DisplayName = name;
 
                     await graphServiceClient.DeviceManagement.DeviceConfigurations[policyID].PatchAsync(policy);
-                    LogToFunctionFile(appFunction.Main, $"Successfully renamed device configuration policy {policyID} to {name}");
+                    LogToFunctionFile(appFunction.Main, $"Renamed device configuration policy {policyID} to {name}");
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
