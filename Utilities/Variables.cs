@@ -15,24 +15,6 @@ namespace IntuneTools.Utilities
         public static string timestampedAppFolder = string.Empty;
 
 
-
-        // Can be deleted
-        //public static string logFileDirectoryName = "Logs";
-        //public static string appSettingsDirectoryName = "Settings";
-        //public static string appDataFolder = Path.Combine(appDataPath, appFolderName);
-        //public static string logFileFolder = Path.Combine(appDataPath, appFolderName, logFileDirectoryName);
-        //public static string appSettingsFolder = Path.Combine(appDataPath, appFolderName, appSettingsDirectoryName);
-        //public static string timestamp = DateTime.Now.ToString("HH-mm-ss_dd-MM-yyyy");
-        //public static string logFileName = "InToolz.log";
-        //public static string sourceTenantSettingsFileFullPath = Path.Combine(appSettingsFolder, "SourceTenantSettings.json");
-        //public static string destinationTenantSettingsFileFullPath = Path.Combine(appSettingsFolder, "DestinationTenantSettings.json");
-        //public static string appSettingsFileName = "AppSettings.json"; // General settings file name
-        //public static string appSettingsFile = Path.Combine(appSettingsFolder, appSettingsFileName); // Full path for the general settings file
-        //public static string primaryLogFile = Path.Combine(logFileFolder, $"{DateTime.Now:yyyy-MM-dd}-" + logFileName); // Corrected to use logFileFolder
-        //public static string ImportStatusFileName = $"{DateTime.Now:yyyy-MM-dd-HH-mm}-ImportStatus.log";
-        //public static string ImportStatusFilePath = Path.Combine(logFileFolder, ImportStatusFileName); // Full path for the import status log file
-
-
         public enum LogLevels
         {
             Info,
