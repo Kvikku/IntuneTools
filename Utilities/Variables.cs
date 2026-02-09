@@ -6,14 +6,21 @@ namespace IntuneTools.Utilities
 {
     public class Variables
     {
+        // Application version (consider retrieving this dynamically from assembly info in the future)
         public static string appVersion = "1.2.0.0";
+        
         // Log file
         public static string appDataPath = @"C:\ProgramData\";
         public static string appFolderName = "InToolz";
+        public static string timestampedAppFolder = string.Empty;
+
+
+
+        // Can be deleted
         public static string logFileDirectoryName = "Logs";
         public static string appSettingsDirectoryName = "Settings";
 
-        public static string timestampedAppFolder = string.Empty;
+        
 
         public static string appDataFolder = Path.Combine(appDataPath, appFolderName);
         public static string logFileFolder = Path.Combine(appDataPath, appFolderName, logFileDirectoryName);
