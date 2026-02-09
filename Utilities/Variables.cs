@@ -95,6 +95,11 @@ namespace IntuneTools.Utilities
         public static IosVppAppAssignmentSettings iOSAppDeploymentSettings;
 
 
-
+        // Time saved variables
+        public static int totalTimeSavedInSeconds = 0;
+        public static int timeSavedOnAssignment = 20;
+        public static int timeSavedOnRenaming = 15;
+        public static int timeSavedOnDeletion = 10;
+        public static int timeSavedOnImport = 60;
     }
 }
