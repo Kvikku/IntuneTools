@@ -37,7 +37,8 @@ namespace IntuneTools
             size.Height = 800;
             m_window.AppWindow.Resize(size);
 
-            CreateTimestampedAppFolder();
+            var appFolderPath = CreateTimestampedAppFolder();
+            Variables.timestampedAppFolder = appFolderPath;
 
             LogApplicationStart();
         }
