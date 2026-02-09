@@ -156,13 +156,13 @@ namespace IntuneTools.Pages
                 sourceTenantName = await GetAzureTenantName(Client);
                 Variables.sourceTenantName = sourceTenantName ?? string.Empty;
 
-                Log($"Source Tenant Name: {sourceTenantName}");
+                LogToFunctionFile(appFunction.Main,$"Source Tenant Name: {sourceTenantName}");
                 UpdateImage(SourceLoginStatusImage, "GreenCheck.png");
                 SourceLoginStatusText.Text = $"Signed in: {sourceTenantName}";
             }
             else
             {
-                Log("Failed to authenticate to source tenant.");
+                LogToFunctionFile(appFunction.Main,"Failed to authenticate to source tenant.");
                 UpdateImage(SourceLoginStatusImage, "RedCross.png");
                 SourceLoginStatusText.Text = "Not signed in";
                 Variables.sourceTenantName = string.Empty;
@@ -185,13 +185,13 @@ namespace IntuneTools.Pages
                 destinationTenantName = await GetAzureTenantName(client);
                 Variables.destinationTenantName = destinationTenantName ?? string.Empty;
 
-                Log($"Destination Tenant Name: {destinationTenantName}");
+                LogToFunctionFile(appFunction.Main,$"Destination Tenant Name: {destinationTenantName}");
                 UpdateImage(DestinationLoginStatusImage, "GreenCheck.png");
                 DestinationLoginStatusText.Text = $"Signed in: {destinationTenantName}";
             }
             else
             {
-                Log("Failed to authenticate to destination tenant.");
+                LogToFunctionFile(appFunction.Main,"Failed to authenticate to destination tenant.");
                 UpdateImage(DestinationLoginStatusImage, "RedCross.png");
                 DestinationLoginStatusText.Text = "Not signed in";
                 Variables.destinationTenantName = string.Empty;
@@ -212,7 +212,7 @@ namespace IntuneTools.Pages
             }
             else
             {
-                Log($"Invalid log file folder path: {Variables.logFileFolder}");
+                LogToFunctionFile(appFunction.Main,$"Invalid log file folder path: {Variables.logFileFolder}");
             }
         }
 
@@ -229,12 +229,12 @@ namespace IntuneTools.Pages
 
                     UpdateImage(SourceLoginStatusImage, "RedCross.png");
                     SourceLoginStatusText.Text = "Not signed in";
-                    Log("Source token/session cleared.");
+                    LogToFunctionFile(appFunction.Main,"Source token/session cleared.");
                 }
             }
             catch (Exception ex)
             {
-                Log($"Failed to clear source token: {ex.Message}");
+                LogToFunctionFile(appFunction.Main,$"Failed to clear source token: {ex.Message}");
             }
         }
 
@@ -251,12 +251,12 @@ namespace IntuneTools.Pages
 
                     UpdateImage(DestinationLoginStatusImage, "RedCross.png");
                     DestinationLoginStatusText.Text = "Not signed in";
-                    Log("Destination token/session cleared.");
+                    LogToFunctionFile(appFunction.Main,"Destination token/session cleared.");
                 }
             }
             catch (Exception ex)
             {
-                Log($"Failed to clear destination token: {ex.Message}");
+                LogToFunctionFile(appFunction.Main,$"Failed to clear destination token: {ex.Message}");
             }
         }
     }

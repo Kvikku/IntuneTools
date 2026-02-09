@@ -16,8 +16,14 @@ public static class DestinationUserAuthentication
     // Delegated permission scopes (adjust as needed)
     public static readonly string[] DefaultScopes = new[]
     {
+            "openid",
+            "offline_access",
             "User.Read",
             "Directory.Read.All",
+            "Policy.Read.All",
+            "AuditLog.Read.All",
+            "Reports.Read.All",
+            "RoleManagement.Read.All",
             "Application.Read.All",
             "DelegatedPermissionGrant.Read.All",
             "DeviceManagementApps.ReadWrite.All",
@@ -26,7 +32,8 @@ public static class DestinationUserAuthentication
             "DeviceManagementManagedDevices.ReadWrite.All",
             "DeviceManagementRBAC.ReadWrite.All",
             "DeviceManagementScripts.ReadWrite.All",
-            "DeviceManagementServiceConfig.ReadWrite.All"
+            "DeviceManagementServiceConfig.ReadWrite.All",
+            "Group.ReadWrite.All"
         };
 
     private const string PublicClientId = "14d82eec-204b-4c2f-b7e8-296a70dab67e";

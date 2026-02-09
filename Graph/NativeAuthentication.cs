@@ -14,14 +14,24 @@ namespace IntuneTools.Graph
         // Delegated permission scopes (adjust as needed)
         public static readonly string[] DefaultScopes = new[]
         {
+            "openid",
+            "offline_access",
             "User.Read",
-            "DeviceManagementApps.ReadWrite.All",
-            "DeviceManagementCloudCA.ReadWrite.All",
-            "DeviceManagementConfiguration.ReadWrite.All",
-            "DeviceManagementManagedDevices.ReadWrite.All",
-            "DeviceManagementRBAC.ReadWrite.All",
-            "DeviceManagementScripts.ReadWrite.All",
-            "DeviceManagementServiceConfig.ReadWrite.All"
+            "Directory.Read.All",
+            "Policy.Read.All",
+            "AuditLog.Read.All",
+            "Reports.Read.All",
+            "RoleManagement.Read.All",
+            "Application.Read.All",
+            "DelegatedPermissionGrant.Read.All",
+            "DeviceManagementApps.Read.All",
+            "DeviceManagementCloudCA.Read.All",
+            "DeviceManagementConfiguration.Read.All",
+            "DeviceManagementManagedDevices.Read.All",
+            "DeviceManagementRBAC.Read.All",
+            "DeviceManagementScripts.Read.All",
+            "DeviceManagementServiceConfig.Read.All",
+            "Group.ReadWrite.All"
         };
 
         private const string PublicClientId = "14d82eec-204b-4c2f-b7e8-296a70dab67e";

@@ -12,7 +12,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                LogToImportStatusFile("Searching for Windows AutoPilot profiles. Search query: " + searchQuery);
+                LogToFunctionFile(appFunction.Main, "Searching for Windows AutoPilot profiles. Search query: " + searchQuery);
 
                 var result = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles.GetAsync((requestConfiguration) =>
                 {
@@ -27,13 +27,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 });
                 await pageIterator.IterateAsync();
 
-                LogToImportStatusFile($"Found {profiles.Count} Windows AutoPilot profiles.");
+                LogToFunctionFile(appFunction.Main, $"Found {profiles.Count} Windows AutoPilot profiles.");
 
                 return profiles;
             }
             catch (Exception ex)
             {
-                LogToImportStatusFile("An error occurred while searching for Windows AutoPilot profiles", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while searching for Windows AutoPilot profiles", LogLevels.Error);
                 return new List<WindowsAutopilotDeploymentProfile>();
             }
         }
@@ -42,7 +42,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                LogToImportStatusFile("Retrieving all Windows AutoPilot profiles.");
+                LogToFunctionFile(appFunction.Main, "Retrieving all Windows AutoPilot profiles.");
 
                 var result = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles.GetAsync((requestConfiguration) =>
                 {
@@ -57,13 +57,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 });
                 await pageIterator.IterateAsync();
 
-                LogToImportStatusFile($"Found {profiles.Count} Windows AutoPilot profiles.");
+                LogToFunctionFile(appFunction.Main, $"Found {profiles.Count} Windows AutoPilot profiles.");
 
                 return profiles;
             }
             catch (Exception ex)
             {
-                LogToImportStatusFile("An error occurred while retrieving all Windows AutoPilot profiles", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while retrieving all Windows AutoPilot profiles", LogLevels.Error);
                 return new List<WindowsAutopilotDeploymentProfile>();
             }
         }
@@ -71,7 +71,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                WriteToImportStatusFile($"Importing {profiles.Count} Windows AutoPilot profiles.");
+                LogToFunctionFile(appFunction.Main, $"Importing {profiles.Count} Windows AutoPilot profiles.");
                 foreach (var profile in profiles)
                 {
                     try
@@ -84,7 +84,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         if (result.OdataType.Contains("ActiveDirectory", StringComparison.OrdinalIgnoreCase))
                         {
-                            WriteToImportStatusFile($"Hybrid Autopilot profiles are currently bugged in Graph API/C# SDK. Please handle manually for now.", LogType.Warning);
+                            LogToFunctionFile(appFunction.Main, "Hybrid Autopilot profiles are currently bugged in Graph API/C# SDK. Please handle manually for now.", LogLevels.Warning);
 
                             //var requestBody = new ActiveDirectoryWindowsAutopilotDeploymentProfile()
                             //{
@@ -128,7 +128,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                                 }
                             }
                             var import = await destinationGraphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles.PostAsync(requestBody);
-                            WriteToImportStatusFile($"Imported profile: {requestBody.DisplayName}");
+                            LogToFunctionFile(appFunction.Main, $"Imported profile: {requestBody.DisplayName}");
                             if (assignments)
                             {
                                 await AssignGroupsToSingleWindowsAutoPilotProfile(import.Id, groups, destinationGraphServiceClient);
@@ -137,13 +137,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     }
                     catch (Exception ex)
                     {
-                        LogToImportStatusFile($"Error importing profile {profile}", LogLevels.Error);
+                        LogToFunctionFile(appFunction.Main, $"Error importing profile {profile}", LogLevels.Error);
                     }
                 }
             }
             catch (Exception ex)
             {
-                LogToImportStatusFile("An error occurred during the import process", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred during the import process", LogLevels.Error);
             }
         }
 
@@ -181,7 +181,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     // Check if this is All Users - AutoPilot profiles cannot be assigned to All Users
                     if (group.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
                     {
-                        WriteToImportStatusFile($"Warning: AutoPilot profiles cannot be assigned to 'All Users'. Skipping this assignment.", LogType.Warning);
+                        LogToFunctionFile(appFunction.Main, "Warning: AutoPilot profiles cannot be assigned to 'All Users'. Skipping this assignment.", LogLevels.Warning);
                         continue;
                     }
 
@@ -234,7 +234,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         if (existing.Target is AllLicensedUsersAssignmentTarget)
                         {
                             // Skip All Users assignments - they shouldn't exist but handle gracefully
-                            WriteToImportStatusFile($"Warning: Found existing 'All Users' assignment on AutoPilot profile {profileID}. This should not exist and will be skipped.", LogType.Warning);
+                            LogToFunctionFile(appFunction.Main, $"Warning: Found existing 'All Users' assignment on AutoPilot profile {profileID}. This should not exist and will be skipped.", LogLevels.Warning);
                             continue;
                         }
                         else if (existing.Target is AllDevicesAssignmentTarget)
@@ -291,20 +291,20 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                             _ => "unknown target"
                         };
 
-                        WriteToImportStatusFile($"Assigned {targetType} to AutoPilot profile {profileID}.");
+                        LogToFunctionFile(appFunction.Main, $"Assigned {targetType} to AutoPilot profile {profileID}.");
                     }
                     catch (Exception ex)
                     {
-                        LogToImportStatusFile($"Error assigning to profile {profileID}: {ex.Message}", LogLevels.Error);
+                        LogToFunctionFile(appFunction.Main, $"Error assigning to profile {profileID}: {ex.Message}", LogLevels.Error);
                     }
                 }
 
-                WriteToImportStatusFile($"Assigned {successCount} of {assignments.Count} assignments to AutoPilot profile {profileID}.");
+                LogToFunctionFile(appFunction.Main, $"Assigned {successCount} of {assignments.Count} assignments to AutoPilot profile {profileID}.");
             }
             catch (Exception ex)
             {
-                LogToImportStatusFile("An error occurred while assigning groups to a single Windows AutoPilot profile", LogLevels.Warning);
-                LogToImportStatusFile(ex.Message, LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while assigning groups to a single Windows AutoPilot profile", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
         }
 
@@ -342,11 +342,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (ODataError error)
             {
-                WriteToImportStatusFile("An error occurred while attempting to delete Autopilot profile assignments", LogType.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while attempting to delete Autopilot profile assignments", LogLevels.Error);
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while attempting to delete Autopilot profile assignments", LogType.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while attempting to delete Autopilot profile assignments", LogLevels.Error);
             }
         }
 
@@ -412,7 +412,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while deleting Windows Autopilot profiles", LogType.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while deleting Windows Autopilot profiles", LogLevels.Error);
             }
         }
 
@@ -447,13 +447,27 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                     var name = FindPreFixInPolicyName(existingProfile.DisplayName ?? string.Empty, newName);
 
-                    var profile = new WindowsAutopilotDeploymentProfile
+                    // after existingProfile is retrieved
+                    if (existingProfile.OdataType?.Contains("activeDirectory", StringComparison.OrdinalIgnoreCase) == true)
                     {
-                        DisplayName = name,
-                    };
+                        var profile = new ActiveDirectoryWindowsAutopilotDeploymentProfile
+                        {
+                            OdataType = existingProfile.OdataType,
+                            DisplayName = name
+                        };
+                        await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].PatchAsync(profile);
+                    }
+                    else
+                    {
+                        var profile = new AzureADWindowsAutopilotDeploymentProfile
+                        {
+                            OdataType = existingProfile.OdataType ?? "#microsoft.graph.azureADWindowsAutopilotDeploymentProfile",
+                            DisplayName = name
+                        };
+                        await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].PatchAsync(profile);
+                    }
 
-                    await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].PatchAsync(profile);
-                    WriteToImportStatusFile($"Renamed Windows Autopilot profile '{existingProfile.DisplayName}' to '{name}'", LogType.Info);
+                    LogToFunctionFile(appFunction.Main, $"Renamed Windows Autopilot profile '{existingProfile.DisplayName}' to '{name}'", LogLevels.Info);
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
@@ -469,19 +483,26 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
                     }
 
-                    var profile = new WindowsAutopilotDeploymentProfile
+                    if (existingProfile.OdataType?.Contains("activeDirectory", StringComparison.OrdinalIgnoreCase) == true)
                     {
+                        LogToFunctionFile(appFunction.Main, "Active Directory Autopilot profiles is not supported yet. Skipping.", LogLevels.Warning);
+                        return;
+                    }
+
+                    var profile = new AzureADWindowsAutopilotDeploymentProfile
+                    {
+                        OdataType = existingProfile.OdataType ?? "#microsoft.graph.azureADWindowsAutopilotDeploymentProfile",
                         Description = newName,
                     };
 
                     await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].PatchAsync(profile);
-                    WriteToImportStatusFile($"Updated description for Windows Autopilot profile {profileID} to '{newName}'", LogType.Info);
+                    LogToFunctionFile(appFunction.Main, $"Updated description for Windows Autopilot profile {profileID} to '{newName}'", LogLevels.Info);
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile("An error occurred while renaming Windows Autopilot profiles", LogType.Warning);
-                WriteToImportStatusFile(ex.Message, LogType.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while renaming Windows Autopilot profiles", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
         }
     }

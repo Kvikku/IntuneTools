@@ -77,7 +77,7 @@
                 <!-- InfoBar -->
                 <InfoBar Grid.Row="0"
                          IsOpen="True"
-                         Severity="Warning"
+                         Severity="Informational"
                          Title="Staging Area"
                          Message="This grid acts as a staging area. All items listed below will be permanently deleted. Use the 'Clear' buttons to exclude items you do not wish to delete."
                          IsClosable="True"

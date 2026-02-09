@@ -13,6 +13,8 @@ namespace IntuneTools.Utilities
         public static string logFileDirectoryName = "Logs";
         public static string appSettingsDirectoryName = "Settings";
 
+        public static string timestampedAppFolder = string.Empty;
+
         public static string appDataFolder = Path.Combine(appDataPath, appFolderName);
         public static string logFileFolder = Path.Combine(appDataPath, appFolderName, logFileDirectoryName);
         public static string appSettingsFolder = Path.Combine(appDataPath, appFolderName, appSettingsDirectoryName);
@@ -46,6 +48,16 @@ namespace IntuneTools.Utilities
             Prefix = 0,
             Suffix = 2,
             Description = 1
+        }
+
+        public enum appFunction
+        {
+            Main, // Used for most logging operations for the time being
+            Summary, // Used to log system settings upon app launch
+            Import,
+            Assignment,
+            Rename, 
+            Delete,
         }
 
         public static string selectedRenameMode = "Prefix"; // Default rename mode

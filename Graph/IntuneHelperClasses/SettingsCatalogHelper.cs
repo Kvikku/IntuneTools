@@ -11,7 +11,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                LogToImportStatusFile("Searching for settings catalog policies. Search query: " + searchQuery);
+                LogToFunctionFile(appFunction.Main, "Searching for settings catalog policies. Search query: " + searchQuery);
 
                 var result = await graphServiceClient.DeviceManagement.ConfigurationPolicies.GetAsync((requestConfiguration) =>
                 {
@@ -26,14 +26,14 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 });
                 await pageIterator.IterateAsync();
 
-                LogToImportStatusFile($"Found {configurationPolicies.Count} settings catalog policies.");
+                LogToFunctionFile(appFunction.Main, $"Found {configurationPolicies.Count} settings catalog policies.");
 
                 return configurationPolicies;
             }
             catch (Exception ex)
             {
-                LogToImportStatusFile("An error occurred while searching for settings catalog policies", Utilities.Variables.LogLevels.Warning);
-                LogToImportStatusFile(ex.Message, Utilities.Variables.LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while searching for settings catalog policies", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
                 return new List<DeviceManagementConfigurationPolicy>();
             }
         }
@@ -42,7 +42,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                LogToImportStatusFile("Retrieving all settings catalog policies.");
+                LogToFunctionFile(appFunction.Main, "Retrieving all settings catalog policies.");
 
                 var result = await graphServiceClient.DeviceManagement.ConfigurationPolicies.GetAsync((requestConfiguration) =>
                 {
@@ -57,14 +57,14 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 });
                 await pageIterator.IterateAsync();
 
-                LogToImportStatusFile($"Found {configurationPolicies.Count} settings catalog policies.");
+                LogToFunctionFile(appFunction.Main, $"Found {configurationPolicies.Count} settings catalog policies.");
 
                 return configurationPolicies;
             }
             catch (Exception ex)
             {
-                LogToImportStatusFile("An error occurred while searching for settings catalog policies", Utilities.Variables.LogLevels.Warning);
-                LogToImportStatusFile(ex.Message, Utilities.Variables.LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while searching for settings catalog policies", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
                 return new List<DeviceManagementConfigurationPolicy>();
             }
         }
@@ -74,7 +74,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             try
             {
 
-                WriteToImportStatusFile($"Importing {policies.Count} settings catalog policies.");
+                LogToFunctionFile(appFunction.Main, $"Importing {policies.Count} settings catalog policies.");
 
                 foreach (var policy in policies)
                 {
@@ -101,7 +101,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         var import = await destinationGraphServiceClient.DeviceManagement.ConfigurationPolicies.PostAsync(newPolicy);
 
-                        WriteToImportStatusFile($"Imported policy: {import.Name}");
+                        LogToFunctionFile(appFunction.Main, $"Imported policy: {import.Name}");
 
                         if (assignments)
                         {
@@ -110,15 +110,15 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     }
                     catch (Exception ex)
                     {
-                        LogToImportStatusFile("An error occurred while searching for settings catalog policies", Utilities.Variables.LogLevels.Warning);
-                        LogToImportStatusFile(ex.Message, Utilities.Variables.LogLevels.Error);
+                        LogToFunctionFile(appFunction.Main, "An error occurred while searching for settings catalog policies", LogLevels.Warning);
+                        LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
                     }
                 }
             }
             catch (Exception ex)
             {
-                LogToImportStatusFile("An error occurred while searching for settings catalog policies", Utilities.Variables.LogLevels.Warning);
-                LogToImportStatusFile(ex.Message, Utilities.Variables.LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while searching for settings catalog policies", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
         }
 
@@ -267,18 +267,18 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         .Assign
                         .PostAsAssignPostResponseAsync(requestBody);
 
-                    WriteToImportStatusFile($"Assigned {assignments.Count} assignments to policy {policyID} with filter type {deviceAndAppManagementAssignmentFilterType}.");
+                    LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to policy {policyID} with filter type {deviceAndAppManagementAssignmentFilterType}.");
                 }
                 catch (Exception ex)
                 {
-                    LogToImportStatusFile("An error occurred while assigning groups to settings catalog policy", Utilities.Variables.LogLevels.Warning);
-                    LogToImportStatusFile(ex.Message, Utilities.Variables.LogLevels.Error);
+                    LogToFunctionFile(appFunction.Main, "An error occurred while assigning groups to settings catalog policy", LogLevels.Warning);
+                    LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
                 }
             }
             catch (Exception ex)
             {
-                LogToImportStatusFile("An error occurred while assigning groups to settings catalog policy", Utilities.Variables.LogLevels.Warning);
-                LogToImportStatusFile(ex.Message, Utilities.Variables.LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while assigning groups to settings catalog policy", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
         }
 
@@ -299,8 +299,8 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToImportStatusFile("An error occurred while searching for settings catalog policies", Utilities.Variables.LogLevels.Warning);
-                LogToImportStatusFile(ex.Message, Utilities.Variables.LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while searching for settings catalog policies", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
         }
 
@@ -336,7 +336,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].PatchAsync(policy);
-                    LogToImportStatusFile($"Renamed policy {policyID} to {name}");
+                    LogToFunctionFile(appFunction.Main, $"Renamed policy {policyID} to {name}");
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
@@ -353,7 +353,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].PatchAsync(policy);
-                    LogToImportStatusFile($"Updated description for {policyID} to {newName}");
+                    LogToFunctionFile(appFunction.Main, $"Updated description for {policyID} to {newName}");
                 }
 
 
@@ -361,8 +361,8 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToImportStatusFile("An error occurred while renaming settings catalog policies", Utilities.Variables.LogLevels.Warning);
-                LogToImportStatusFile(ex.Message, Utilities.Variables.LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, "An error occurred while renaming settings catalog policies", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
         }
     }

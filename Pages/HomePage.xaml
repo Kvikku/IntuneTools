@@ -9,59 +9,108 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
     <Grid>
         <ScrollViewer>
-            <StackPanel Padding="40">
-                <TextBlock Text="Welcome to InToolz" FontSize="48" FontWeight="Bold" HorizontalAlignment="Left"/>
-                <TextBlock TextWrapping="WrapWholeWords" FontSize="18" Margin="0,20,0,0" MaxWidth="1200" HorizontalAlignment="Left">
-                    InToolz is a powerful application designed to help you manage and migrate your Microsoft Intune environment with ease.
-                    This tool simplifies bulk management tasks, such as assignment, renaming, cleaning up and migrating Intune configurations between tenants.
-                </TextBlock>
+            <StackPanel Padding="40" Spacing="20">
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="24">
+                    <StackPanel Spacing="16">
+                        <TextBlock Text="Welcome to InToolz"
+                                   FontSize="48"
+                                   FontWeight="Bold"
+                                   HorizontalAlignment="Left"/>
+                        <TextBlock TextWrapping="WrapWholeWords"
+                                   FontSize="18"
+                                   MaxWidth="1200"
+                                   HorizontalAlignment="Left">
+                            InToolz is a powerful application designed to help you manage and migrate your Microsoft Intune environment with ease.
+                            This tool simplifies bulk management tasks, such as assignment, renaming, cleaning up and migrating Intune configurations between tenants.
+                        </TextBlock>
 
-                <!-- Version status indicator with action buttons -->
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,20,0,0" Spacing="8">
-                    <Ellipse x:Name="VersionStatusIndicator" Width="12" Height="12" VerticalAlignment="Center">
-                        <Ellipse.Fill>
-                            <SolidColorBrush x:Name="VersionStatusBrush" Color="Gray"/>
-                        </Ellipse.Fill>
-                    </Ellipse>
-                    <TextBlock x:Name="VersionStatusText"
-                               Text="Checking version..."
-                               FontSize="16"
-                               VerticalAlignment="Center"/>
+                        <!-- Version status indicator with action buttons -->
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="8">
+                            <Ellipse x:Name="VersionStatusIndicator" Width="12" Height="12" VerticalAlignment="Center">
+                                <Ellipse.Fill>
+                                    <SolidColorBrush x:Name="VersionStatusBrush" Color="Gray"/>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                            <TextBlock x:Name="VersionStatusText"
+                                       Text="Checking version..."
+                                       FontSize="16"
+                                       VerticalAlignment="Center"/>
 
-                    <!-- Buttons shown only when update is available -->
-                    <StackPanel Orientation="Horizontal" x:Name="UpdateButtonsPanel" Visibility="Collapsed" Spacing="6">
-                        <Button x:Name="OpenGitHubButton"
-                                Content="Open GitHub"
-                                Click="OpenGitHubButton_Click"
-                                VerticalAlignment="Center"/>
-                        <Button x:Name="OpenStoreButton"
-                                Content="Open in Store"
-                                Click="OpenStoreButton_Click"
-                                VerticalAlignment="Center"/>
+                            <!-- Buttons shown only when update is available -->
+                            <StackPanel Orientation="Horizontal" x:Name="UpdateButtonsPanel" Visibility="Collapsed" Spacing="6">
+                                <Button x:Name="OpenGitHubButton"
+                                        Content="Open GitHub"
+                                        Click="OpenGitHubButton_Click"
+                                        VerticalAlignment="Center"/>
+                                <Button x:Name="OpenStoreButton"
+                                        Content="Open in Store"
+                                        Click="OpenStoreButton_Click"
+                                        VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </StackPanel>
                     </StackPanel>
-                </StackPanel>
+                </Border>
 
-                <TextBlock Text="Connection Info" FontSize="28" FontWeight="SemiBold" Margin="0,30,0,10"/>
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,10">
-                    <TextBlock Text="Tenant Name:" FontSize="18" VerticalAlignment="Center"/>
-                    <TextBlock x:Name="TenantNameText" Text="Not Connected" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0,0,0"/>
-                    <Image x:Name="LoginStatusImage" Width="32" Height="32" VerticalAlignment="Center" Margin="10,0,0,0"/>
-                </StackPanel>
-                <TextBlock Text="Key Features" FontSize="28" FontWeight="SemiBold" Margin="0,30,0,10"/>
-                <TextBlock Text="-  Export and Import of Intune content between tenants." FontSize="16"/>
-                <TextBlock Text="-  Manage assignment of Intune content in bulk." FontSize="16"/>
-                <TextBlock Text="-  Clean up policies, scripts, and profiles in bulk." FontSize="16"/>
-                <TextBlock Text="-  Rename Intune objects with customizable prefixes." FontSize="16"/>
-                <TextBlock Text="Documentation" FontSize="28" FontWeight="SemiBold" Margin="0,30,0,10"/>
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,10">
-                    <TextBlock Text="For more details on how to use the application, please refer to our documentation on GitHub." TextWrapping="Wrap" VerticalAlignment="Center"/>
-                    <HyperlinkButton x:Name="GitHubLink" Content="View on GitHub" NavigateUri="https://github.com/Kvikku/IntuneTools" Click="GitHubLink_Click" />
-                </StackPanel>
-                <TextBlock Text="Feedback and Issues" FontSize="28" FontWeight="SemiBold" Margin="0,30,0,10"/>
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="Encountered a bug or have a feature request? Please submit it on our GitHub issues page." TextWrapping="Wrap" VerticalAlignment="Center"/>
-                    <HyperlinkButton x:Name="GitHubIssuesLink" Content="Submit Feedback" NavigateUri="https://github.com/Kvikku/IntuneTools/issues" Click="GitHubLink_Click" />
-                </StackPanel>
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="20">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Connection Info" FontSize="28" FontWeight="SemiBold"/>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="Tenant Name:" FontSize="18" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="TenantNameText" Text="Not Connected" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                            <Image x:Name="LoginStatusImage" Width="32" Height="32" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="20">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Key Features" FontSize="28" FontWeight="SemiBold"/>
+                        <TextBlock Text="-  Export and Import of Intune content between tenants." FontSize="16"/>
+                        <TextBlock Text="-  Manage assignment of Intune content in bulk." FontSize="16"/>
+                        <TextBlock Text="-  Clean up policies, scripts, and profiles in bulk." FontSize="16"/>
+                        <TextBlock Text="-  Rename Intune objects with customizable prefixes." FontSize="16"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="20">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Documentation" FontSize="28" FontWeight="SemiBold"/>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="For more details on how to use the application, please refer to our documentation on GitHub." TextWrapping="Wrap" VerticalAlignment="Center"/>
+                            <HyperlinkButton x:Name="GitHubLink" Content="View on GitHub" NavigateUri="https://github.com/Kvikku/IntuneTools" Click="GitHubLink_Click" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="20">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Feedback and Issues" FontSize="28" FontWeight="SemiBold"/>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="Encountered a bug or have a feature request? Please submit it on our GitHub issues page." TextWrapping="Wrap" VerticalAlignment="Center"/>
+                            <HyperlinkButton x:Name="GitHubIssuesLink" Content="Submit Feedback" NavigateUri="https://github.com/Kvikku/IntuneTools/issues" Click="GitHubLink_Click" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
             </StackPanel>
         </ScrollViewer>
     </Grid>

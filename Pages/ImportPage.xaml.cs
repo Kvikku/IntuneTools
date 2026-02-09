@@ -164,6 +164,18 @@ namespace IntuneTools.Pages
                 paragraph.Inlines.Add(new LineBreak());
             }
             paragraph.Inlines.Add(new Run { Text = text });
+
+            ScrollLogToEnd();
+        }
+
+        private void ScrollLogToEnd()
+        {
+            // Ensure measure is up-to-date before scrolling
+            LogConsole.UpdateLayout();
+            LogScrollViewer.UpdateLayout();
+
+            // Scroll to the bottom
+            LogScrollViewer.ChangeView(null, LogScrollViewer.ScrollableHeight, null, true);
         }
 
         private void LoadFilterOptions()
@@ -1471,7 +1483,7 @@ namespace IntuneTools.Pages
 
         private List<string> LogContentToImport()
         {
-            LogToImportStatusFile("Importing the following content:", LogLevels.Info);
+            LogToFunctionFile(appFunction.Main, "Importing the following content:", LogLevels.Info);
             AppendToDetailsRichTextBlock("Importing the following content:\n");
 
             List<string> contentTypes = new List<string>();
@@ -1482,12 +1494,12 @@ namespace IntuneTools.Pages
                 if (!contentTypes.Contains(content.ContentType))
                 {
                     contentTypes.Add(content.ContentType);
-                    LogToImportStatusFile($"- {content.ContentType}", LogLevels.Info);
+                    LogToFunctionFile(appFunction.Main, $"- {content.ContentType}", LogLevels.Info);
                     AppendToDetailsRichTextBlock($"- {content.ContentType}\n");
                 }
             }
 
-            LogToImportStatusFile("--------------------------------------------------", LogLevels.Info);
+            LogToFunctionFile(appFunction.Main, "--------------------------------------------------", LogLevels.Info);
             AppendToDetailsRichTextBlock("--------------------------------------------------\n");
             return contentTypes;
         }
@@ -1497,7 +1509,7 @@ namespace IntuneTools.Pages
             selectedGroupNameAndID.Clear(); // Clear previous selections
             IsGroupSelected = false; // Reset group selection status
 
-            LogToImportStatusFile("Assigning to the following groups:", LogLevels.Info);
+            LogToFunctionFile(appFunction.Main, "Assigning to the following groups:", LogLevels.Info);
             AppendToDetailsRichTextBlock("Assigning to the following groups:\n");
             if (GroupDataGrid.SelectedItems != null && GroupDataGrid.SelectedItems.Count > 0)
             {
@@ -1505,7 +1517,7 @@ namespace IntuneTools.Pages
                 {
                     if (selectedGroup != null && !string.IsNullOrEmpty(selectedGroup.GroupName))
                     {
-                        LogToImportStatusFile($"- {selectedGroup.GroupName}", LogLevels.Info);
+                        LogToFunctionFile(appFunction.Main, $"- {selectedGroup.GroupName}", LogLevels.Info);
                         AppendToDetailsRichTextBlock($"- {selectedGroup.GroupName}\n");
                         // Add the group name and ID to the selectedGroupNameAndID dictionary
                         if (!selectedGroupNameAndID.ContainsKey(selectedGroup.GroupName))
@@ -1518,10 +1530,10 @@ namespace IntuneTools.Pages
             }
             else
             {
-                LogToImportStatusFile("No groups selected for assignment.", LogLevels.Info);
+                LogToFunctionFile(appFunction.Main, "No groups selected for assignment.", LogLevels.Info);
                 AppendToDetailsRichTextBlock("No groups selected for assignment.\n");
             }
-            LogToImportStatusFile("--------------------------------------------------", LogLevels.Info);
+            LogToFunctionFile(appFunction.Main, "--------------------------------------------------", LogLevels.Info);
             AppendToDetailsRichTextBlock("--------------------------------------------------\n");
         }
 
@@ -1529,7 +1541,7 @@ namespace IntuneTools.Pages
         {
             IsFilterSelected = false; // Reset filter selection status
 
-            LogToImportStatusFile("Applying the following filters:", LogLevels.Info);
+            LogToFunctionFile(appFunction.Main, "Applying the following filters:", LogLevels.Info);
             AppendToDetailsRichTextBlock("Applying the following filters:\n");
             if (FilterSelectionComboBox.SelectedItem != null)
             {
@@ -1538,16 +1550,16 @@ namespace IntuneTools.Pages
                 SelectedFilterID = filterNameAndID.ContainsKey(selectedFilter) ? filterNameAndID[selectedFilter] : null;
                 deviceAndAppManagementAssignmentFilterType = DeviceAndAppManagementAssignmentFilterType.Include;
 
-                LogToImportStatusFile($"- {selectedFilter}", LogLevels.Info);
+                LogToFunctionFile(appFunction.Main, $"- {selectedFilter}", LogLevels.Info);
                 AppendToDetailsRichTextBlock($"- {selectedFilter}\n");
                 IsFilterSelected = true; // Set filter selection status to true if a filter is selected
             }
             else
             {
-                LogToImportStatusFile("No filter selected for assignment.", LogLevels.Info);
+                LogToFunctionFile(appFunction.Main, "No filter selected for assignment.", LogLevels.Info);
                 AppendToDetailsRichTextBlock("No filter selected for assignment.\n");
             }
-            LogToImportStatusFile("--------------------------------------------------", LogLevels.Info);
+            LogToFunctionFile(appFunction.Main, "--------------------------------------------------", LogLevels.Info);
             AppendToDetailsRichTextBlock("--------------------------------------------------\n");
         }
 
@@ -1559,19 +1571,17 @@ namespace IntuneTools.Pages
             // Check if there is content to import
             if (ContentList.Count == 0)
             {
-                LogToImportStatusFile("No content to import.", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, "No content to import.", LogLevels.Warning);
                 AppendToDetailsRichTextBlock("No content to import.\n");
                 return;
             }
 
-            // Ensure the import status file is created before importing
-            CreateImportStatusFile();
 
 
             // Log the start of the import process
-            LogToImportStatusFile("Starting import process...", LogLevels.Info);
-            LogToImportStatusFile($"Source Tenant: {sourceTenantName}", LogLevels.Info);
-            LogToImportStatusFile($"Destination Tenant: {destinationTenantName}", LogLevels.Info);
+            LogToFunctionFile(appFunction.Main, "Starting import process...", LogLevels.Info);
+            LogToFunctionFile(appFunction.Main, $"Source Tenant: {sourceTenantName}", LogLevels.Info);
+            LogToFunctionFile(appFunction.Main, $"Destination Tenant: {destinationTenantName}", LogLevels.Info);
             AppendToDetailsRichTextBlock($"Source Tenant: {sourceTenantName}\n");
             AppendToDetailsRichTextBlock($"Destination Tenant: {destinationTenantName}\n");
 
@@ -1603,7 +1613,7 @@ namespace IntuneTools.Pages
             {
                 // Import Entra Groups
                 AppendToDetailsRichTextBlock("Importing Entra Groups...\n");
-                LogToImportStatusFile("Importing Entra Groups...", LogLevels.Info);
+                LogToFunctionFile(appFunction.Main, "Importing Entra Groups...", LogLevels.Info);
                 var groups = GetGroupIDs();
                 await ImportMultipleGroups(sourceGraphServiceClient, destinationGraphServiceClient, groups);
                 AppendToDetailsRichTextBlock("Entra Groups imported successfully.\n");
@@ -1612,7 +1622,7 @@ namespace IntuneTools.Pages
             {
                 // Import Settings Catalog policies
                 AppendToDetailsRichTextBlock("Importing Settings Catalog policies...\n");
-                LogToImportStatusFile("Importing Settings Catalog policies...", LogLevels.Info);
+                LogToFunctionFile(appFunction.Main, "Importing Settings Catalog policies...", LogLevels.Info);
                 var policies = GetSettingsCatalogIDs();
                 await ImportMultipleSettingsCatalog(sourceGraphServiceClient, destinationGraphServiceClient, policies, IsGroupSelected, IsFilterSelected, groupIDs);
                 AppendToDetailsRichTextBlock("Settings Catalog policies imported successfully.\n");
@@ -1621,7 +1631,7 @@ namespace IntuneTools.Pages
             {
                 // Import Device Compliance policies
                 AppendToDetailsRichTextBlock("Importing Device Compliance policies...\n");
-                LogToImportStatusFile("Importing Device Compliance policies...", LogLevels.Info);
+                LogToFunctionFile(appFunction.Main, "Importing Device Compliance policies...", LogLevels.Info);
                 var policies = GetDeviceComplianceIDs();
                 await ImportMultipleDeviceCompliancePolicies(sourceGraphServiceClient, destinationGraphServiceClient, policies, IsGroupSelected, IsFilterSelected, groupIDs);
                 AppendToDetailsRichTextBlock("Device Compliance policies imported successfully.\n");
@@ -1630,7 +1640,7 @@ namespace IntuneTools.Pages
             {
                 // Import Device Configuration policies
                 AppendToDetailsRichTextBlock("Importing Device Configuration policies...\n");
-                LogToImportStatusFile("Importing Device Configuration policies...", LogLevels.Info);
+                LogToFunctionFile(appFunction.Main, "Importing Device Configuration policies...", LogLevels.Info);
                 var policies = GetDeviceConfigurationIDs();
                 await ImportMultipleDeviceConfigurations(sourceGraphServiceClient, destinationGraphServiceClient, policies, IsGroupSelected, IsFilterSelected, groupIDs);
                 AppendToDetailsRichTextBlock("Device Configuration policies imported successfully.\n");
@@ -1639,7 +1649,7 @@ namespace IntuneTools.Pages
             {
                 // Import Apple BYOD Enrollment Profiles
                 AppendToDetailsRichTextBlock("Importing Apple BYOD Enrollment Profiles...\n");
-                LogToImportStatusFile("Importing Apple BYOD Enrollment Profiles...", LogLevels.Info);
+                LogToFunctionFile(appFunction.Main, "Importing Apple BYOD Enrollment Profiles...", LogLevels.Info);
                 var profiles = GetAppleBYODEnrollmentProfileIDs();
                 await ImportMultipleAppleBYODEnrollmentProfiles(sourceGraphServiceClient, destinationGraphServiceClient, profiles, IsGroupSelected, IsFilterSelected, groupIDs);
                 AppendToDetailsRichTextBlock("Apple BYOD Enrollment Profiles imported successfully.\n");
@@ -1648,7 +1658,7 @@ namespace IntuneTools.Pages
             {
                 // Import Assignment Filters
                 AppendToDetailsRichTextBlock("Importing Assignment Filters...\n");
-                LogToImportStatusFile("Importing Assignment Filters...", LogLevels.Info);
+                LogToFunctionFile(appFunction.Main, "Importing Assignment Filters...", LogLevels.Info);
                 var filters = GetFilterIDs();
                 await ImportMultipleAssignmentFilters(sourceGraphServiceClient, destinationGraphServiceClient, filters);
                 AppendToDetailsRichTextBlock("Assignment Filters imported successfully.\n");
@@ -1657,7 +1667,7 @@ namespace IntuneTools.Pages
             {
                 // Import PowerShell Scripts
                 AppendToDetailsRichTextBlock("Importing PowerShell Scripts...\n");
-                LogToImportStatusFile("Importing PowerShell Scripts...", LogLevels.Info);
+                LogToFunctionFile(appFunction.Main, "Importing PowerShell Scripts...", LogLevels.Info);
                 var scripts = GetPowerShellScriptIDs();
                 await ImportMultiplePowerShellScripts(sourceGraphServiceClient, destinationGraphServiceClient, scripts, IsGroupSelected, IsFilterSelected, groupIDs);
                 AppendToDetailsRichTextBlock("PowerShell Scripts imported successfully.\n");
@@ -1666,7 +1676,7 @@ namespace IntuneTools.Pages
             {
                 // Import Proactive Remediations
                 AppendToDetailsRichTextBlock("Importing Proactive Remediations...\n");
-                LogToImportStatusFile("Importing Proactive Remediations...", LogLevels.Info);
+                LogToFunctionFile(appFunction.Main, "Importing Proactive Remediations...", LogLevels.Info);
                 var scripts = GetProactiveRemediationIDs();
                 await ImportMultipleProactiveRemediations(sourceGraphServiceClient, destinationGraphServiceClient, scripts, IsGroupSelected, IsFilterSelected, groupIDs);
                 AppendToDetailsRichTextBlock("Proactive Remediations imported successfully.\n");
@@ -1675,7 +1685,7 @@ namespace IntuneTools.Pages
             {
                 // Import macOS Shell Scripts
                 AppendToDetailsRichTextBlock("Importing macOS Shell Scripts...\n");
-                LogToImportStatusFile("Importing macOS Shell Scripts...", LogLevels.Info);
+                LogToFunctionFile(appFunction.Main, "Importing macOS Shell Scripts...", LogLevels.Info);
                 var scripts = GetmacOSShellScriptIDs();
                 await ImportMultiplemacOSShellScripts(sourceGraphServiceClient, destinationGraphServiceClient, scripts, IsGroupSelected, IsFilterSelected, groupIDs);
                 AppendToDetailsRichTextBlock("macOS Shell Scripts imported successfully.\n");
@@ -1684,7 +1694,7 @@ namespace IntuneTools.Pages
             {
                 // Import Windows AutoPilot Profiles
                 AppendToDetailsRichTextBlock("Importing Windows AutoPilot Profiles...\n");
-                LogToImportStatusFile("Importing Windows AutoPilot Profiles...", LogLevels.Info);
+                LogToFunctionFile(appFunction.Main, "Importing Windows AutoPilot Profiles...", LogLevels.Info);
                 var profiles = GetWindowsAutoPilotProfileIDs();
                 await ImportMultipleWindowsAutoPilotProfiles(sourceGraphServiceClient, destinationGraphServiceClient, profiles, IsGroupSelected, IsFilterSelected, groupIDs);
                 AppendToDetailsRichTextBlock("Windows AutoPilot Profiles imported successfully.\n");
@@ -1693,7 +1703,7 @@ namespace IntuneTools.Pages
             {
                 // Import Windows Driver Updates
                 AppendToDetailsRichTextBlock("Importing Windows Driver Updates...\n");
-                LogToImportStatusFile("Importing Windows Driver Updates...", LogLevels.Info);
+                LogToFunctionFile(appFunction.Main, "Importing Windows Driver Updates...", LogLevels.Info);
                 var updates = GetWindowsDriverUpdateIDs();
                 await ImportMultipleDriverProfiles(sourceGraphServiceClient, destinationGraphServiceClient, updates, IsGroupSelected, IsFilterSelected, groupIDs);
                 AppendToDetailsRichTextBlock("Windows Driver Updates imported successfully.\n");
@@ -1702,7 +1712,7 @@ namespace IntuneTools.Pages
             {
                 // Import Windows Feature Updates
                 AppendToDetailsRichTextBlock("Importing Windows Feature Updates...\n");
-                LogToImportStatusFile("Importing Windows Feature Updates...", LogLevels.Info);
+                LogToFunctionFile(appFunction.Main, "Importing Windows Feature Updates...", LogLevels.Info);
                 var updates = GetWindowsFeatureUpdateIDs();
                 await ImportMultipleWindowsFeatureUpdateProfiles(sourceGraphServiceClient, destinationGraphServiceClient, updates, IsGroupSelected, IsFilterSelected, groupIDs);
                 AppendToDetailsRichTextBlock("Windows Feature Updates imported successfully.\n");
@@ -1711,7 +1721,7 @@ namespace IntuneTools.Pages
             {
                 // Import Windows Quality Update Policies
                 AppendToDetailsRichTextBlock("Importing Windows Quality Update Policies...\n");
-                LogToImportStatusFile("Importing Windows Quality Update Policies...", LogLevels.Info);
+                LogToFunctionFile(appFunction.Main, "Importing Windows Quality Update Policies...", LogLevels.Info);
                 var policies = GetWindowsQualityUpdatePolicyIDs();
                 await ImportMultipleWindowsQualityUpdatePolicies(sourceGraphServiceClient, destinationGraphServiceClient, policies, IsGroupSelected, IsFilterSelected, groupIDs);
                 AppendToDetailsRichTextBlock("Windows Quality Update Policies imported successfully.\n");
@@ -1720,7 +1730,7 @@ namespace IntuneTools.Pages
             {
                 // Import Windows Quality Update Profiles
                 AppendToDetailsRichTextBlock("Importing Windows Quality Update Profiles...\n");
-                LogToImportStatusFile("Importing Windows Quality Update Profiles...", LogLevels.Info);
+                LogToFunctionFile(appFunction.Main, "Importing Windows Quality Update Profiles...", LogLevels.Info);
                 var profiles = GetWindowsQualityUpdateProfileIDs();
                 await ImportMultipleWindowsQualityUpdateProfiles(sourceGraphServiceClient, destinationGraphServiceClient, profiles, IsGroupSelected, IsFilterSelected, groupIDs);
                 AppendToDetailsRichTextBlock("Windows Quality Update Profiles imported successfully.\n");

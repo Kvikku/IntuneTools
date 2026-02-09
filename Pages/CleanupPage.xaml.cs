@@ -290,25 +290,25 @@ namespace IntuneTools.Pages
                 var settingsCatalogIDs = GetSettingsCatalogIDs();
                 if (settingsCatalogIDs.Count == 0)
                 {
-                    WriteToImportStatusFile("No settings catalog policies found to delete.");
+                    LogToFunctionFile(appFunction.Main, "No settings catalog policies found to delete.");
                     return;
                 }
 
                 count = settingsCatalogIDs.Count;
 
-                WriteToImportStatusFile($"Found {count} settings catalog policies to delete.");
+                LogToFunctionFile(appFunction.Main, $"Found {count} settings catalog policies to delete.");
 
                 // Delete each settings catalog policy
 
                 foreach (var id in settingsCatalogIDs)
                 {
                     await DeleteSettingsCatalog(sourceGraphServiceClient, id);
-                    WriteToImportStatusFile($"Deleted settings catalog policy with ID: {id}");
+                    LogToFunctionFile(appFunction.Main, $"Deleted settings catalog policy with ID: {id}");
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile($"Error deleting settings catalog policies: {ex.Message}", LogType.Error);
+                LogToFunctionFile(appFunction.Main, $"Error deleting settings catalog policies: {ex.Message}", LogLevels.Error);
             }
             finally
             {
@@ -369,20 +369,20 @@ namespace IntuneTools.Pages
                 var deviceCompliancePolicyIDs = GetDeviceCompliancePolicyIDs();
                 if (deviceCompliancePolicyIDs.Count == 0)
                 {
-                    WriteToImportStatusFile("No device compliance policies found to delete.");
+                    LogToFunctionFile(appFunction.Main, "No device compliance policies found to delete.");
                     return;
                 }
-                WriteToImportStatusFile($"Found {deviceCompliancePolicyIDs.Count} device compliance policies to delete.");
+                LogToFunctionFile(appFunction.Main, $"Found {deviceCompliancePolicyIDs.Count} device compliance policies to delete.");
                 // Delete each device compliance policy
                 foreach (var id in deviceCompliancePolicyIDs)
                 {
                     await DeleteDeviceCompliancePolicy(sourceGraphServiceClient, id);
-                    WriteToImportStatusFile($"Deleted device compliance policy with ID: {id}");
+                    LogToFunctionFile(appFunction.Main, $"Deleted device compliance policy with ID: {id}");
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile($"Error deleting device compliance policies: {ex.Message}", LogType.Error);
+                LogToFunctionFile(appFunction.Main, $"Error deleting device compliance policies: {ex.Message}", LogLevels.Error);
             }
             finally
             {
@@ -443,20 +443,20 @@ namespace IntuneTools.Pages
                 var deviceConfigurationPolicyIDs = GetDeviceConfigurationPolicyIDs();
                 if (deviceConfigurationPolicyIDs.Count == 0)
                 {
-                    WriteToImportStatusFile("No device configuration policies found to delete.");
+                    LogToFunctionFile(appFunction.Main, "No device configuration policies found to delete.");
                     return;
                 }
-                WriteToImportStatusFile($"Found {deviceConfigurationPolicyIDs.Count} device configuration policies to delete.");
+                LogToFunctionFile(appFunction.Main, $"Found {deviceConfigurationPolicyIDs.Count} device configuration policies to delete.");
                 // Delete each device configuration policy
                 foreach (var id in deviceConfigurationPolicyIDs)
                 {
                     await DeleteDeviceConfigurationPolicy(sourceGraphServiceClient, id);
-                    WriteToImportStatusFile($"Deleted device configuration policy with ID: {id}");
+                    LogToFunctionFile(appFunction.Main, $"Deleted device configuration policy with ID: {id}");
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile($"Error deleting device configuration policies: {ex.Message}", LogType.Error);
+                LogToFunctionFile(appFunction.Main, $"Error deleting device configuration policies: {ex.Message}", LogLevels.Error);
             }
             finally
             {
@@ -517,20 +517,20 @@ namespace IntuneTools.Pages
                 var appleBYODEnrollmentProfileIDs = GetAppleBYODEnrollmentProfileIDs();
                 if (appleBYODEnrollmentProfileIDs.Count == 0)
                 {
-                    WriteToImportStatusFile("No Apple BYOD enrollment profiles found to delete.");
+                    LogToFunctionFile(appFunction.Main, "No Apple BYOD enrollment profiles found to delete.");
                     return;
                 }
-                WriteToImportStatusFile($"Found {appleBYODEnrollmentProfileIDs.Count} Apple BYOD enrollment profiles to delete.");
+                LogToFunctionFile(appFunction.Main, $"Found {appleBYODEnrollmentProfileIDs.Count} Apple BYOD enrollment profiles to delete.");
                 // Delete each Apple BYOD enrollment profile
                 foreach (var id in appleBYODEnrollmentProfileIDs)
                 {
                     await DeleteAppleBYODEnrollmentProfile(sourceGraphServiceClient, id);
-                    WriteToImportStatusFile($"Deleted Apple BYOD enrollment profile with ID: {id}");
+                    LogToFunctionFile(appFunction.Main, $"Deleted Apple BYOD enrollment profile with ID: {id}");
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile($"Error deleting Apple BYOD enrollment profiles: {ex.Message}", LogType.Error);
+                LogToFunctionFile(appFunction.Main, $"Error deleting Apple BYOD enrollment profiles: {ex.Message}", LogLevels.Error);
             }
             finally
             {
@@ -591,20 +591,20 @@ namespace IntuneTools.Pages
                 var assignmentFilterIDs = GetAssignmentFilterIDs();
                 if (assignmentFilterIDs.Count == 0)
                 {
-                    WriteToImportStatusFile("No assignment filters found to delete.");
+                    LogToFunctionFile(appFunction.Main, "No assignment filters found to delete.");
                     return;
                 }
-                WriteToImportStatusFile($"Found {assignmentFilterIDs.Count} assignment filters to delete.");
+                LogToFunctionFile(appFunction.Main, $"Found {assignmentFilterIDs.Count} assignment filters to delete.");
                 // Delete each assignment filter
                 foreach (var id in assignmentFilterIDs)
                 {
                     await DeleteAssignmentFilter(sourceGraphServiceClient, id);
-                    WriteToImportStatusFile($"Deleted assignment filter with ID: {id}");
+                    LogToFunctionFile(appFunction.Main, $"Deleted assignment filter with ID: {id}");
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile($"Error deleting assignment filters: {ex.Message}", LogType.Error);
+                LogToFunctionFile(appFunction.Main, $"Error deleting assignment filters: {ex.Message}", LogLevels.Error);
             }
             finally
             {
@@ -665,20 +665,20 @@ namespace IntuneTools.Pages
                 var entraGroupIDs = GetEntraGroupIDs();
                 if (entraGroupIDs.Count == 0)
                 {
-                    WriteToImportStatusFile("No Entra groups found to delete.");
+                    LogToFunctionFile(appFunction.Main, "No Entra groups found to delete.");
                     return;
                 }
-                WriteToImportStatusFile($"Found {entraGroupIDs.Count} Entra groups to delete.");
+                LogToFunctionFile(appFunction.Main, $"Found {entraGroupIDs.Count} Entra groups to delete.");
                 // Delete each Entra group
                 foreach (var id in entraGroupIDs)
                 {
                     await DeleteSecurityGroup(sourceGraphServiceClient, id);
-                    WriteToImportStatusFile($"Deleted Entra group with ID: {id}");
+                    LogToFunctionFile(appFunction.Main, $"Deleted Entra group with ID: {id}");
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile($"Error deleting Entra groups: {ex.Message}", LogType.Error);
+                LogToFunctionFile(appFunction.Main, $"Error deleting Entra groups: {ex.Message}", LogLevels.Error);
             }
             finally
             {
@@ -739,20 +739,20 @@ namespace IntuneTools.Pages
                 var powerShellScriptIDs = GetPowerShellScriptIDs();
                 if (powerShellScriptIDs.Count == 0)
                 {
-                    WriteToImportStatusFile("No PowerShell scripts found to delete.");
+                    LogToFunctionFile(appFunction.Main, "No PowerShell scripts found to delete.");
                     return;
                 }
-                WriteToImportStatusFile($"Found {powerShellScriptIDs.Count} PowerShell scripts to delete.");
+                LogToFunctionFile(appFunction.Main, $"Found {powerShellScriptIDs.Count} PowerShell scripts to delete.");
                 // Delete each PowerShell script
                 foreach (var id in powerShellScriptIDs)
                 {
                     await DeletePowerShellScript(sourceGraphServiceClient, id);
-                    WriteToImportStatusFile($"Deleted PowerShell script with ID: {id}");
+                    LogToFunctionFile(appFunction.Main, $"Deleted PowerShell script with ID: {id}");
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile($"Error deleting PowerShell scripts: {ex.Message}", LogType.Error);
+                LogToFunctionFile(appFunction.Main, $"Error deleting PowerShell scripts: {ex.Message}", LogLevels.Error);
             }
             finally
             {
@@ -813,20 +813,20 @@ namespace IntuneTools.Pages
                 var proactiveRemediationIDs = GetProactiveRemediationIDs();
                 if (proactiveRemediationIDs.Count == 0)
                 {
-                    WriteToImportStatusFile("No proactive remediations found to delete.");
+                    LogToFunctionFile(appFunction.Main, "No proactive remediations found to delete.");
                     return;
                 }
-                WriteToImportStatusFile($"Found {proactiveRemediationIDs.Count} proactive remediations to delete.");
+                LogToFunctionFile(appFunction.Main, $"Found {proactiveRemediationIDs.Count} proactive remediations to delete.");
                 // Delete each proactive remediation
                 foreach (var id in proactiveRemediationIDs)
                 {
                     await DeleteProactiveRemediationScript(sourceGraphServiceClient, id);
-                    WriteToImportStatusFile($"Deleted proactive remediation with ID: {id}");
+                    LogToFunctionFile(appFunction.Main, $"Deleted proactive remediation with ID: {id}");
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile($"Error deleting proactive remediations: {ex.Message}", LogType.Error);
+                LogToFunctionFile(appFunction.Main, $"Error deleting proactive remediations: {ex.Message}", LogLevels.Error);
             }
             finally
             {
@@ -887,20 +887,20 @@ namespace IntuneTools.Pages
                 var macOSShellScriptIDs = GetMacOSShellScriptIDs();
                 if (macOSShellScriptIDs.Count == 0)
                 {
-                    WriteToImportStatusFile("No MacOS shell scripts found to delete.");
+                    LogToFunctionFile(appFunction.Main, "No MacOS shell scripts found to delete.");
                     return;
                 }
-                WriteToImportStatusFile($"Found {macOSShellScriptIDs.Count} MacOS shell scripts to delete.");
+                LogToFunctionFile(appFunction.Main, $"Found {macOSShellScriptIDs.Count} MacOS shell scripts to delete.");
                 // Delete each MacOS shell script
                 foreach (var id in macOSShellScriptIDs)
                 {
                     await DeleteMacosShellScript(sourceGraphServiceClient, id);
-                    WriteToImportStatusFile($"Deleted MacOS shell script with ID: {id}");
+                    LogToFunctionFile(appFunction.Main, $"Deleted MacOS shell script with ID: {id}");
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile($"Error deleting MacOS shell scripts: {ex.Message}", LogType.Error);
+                LogToFunctionFile(appFunction.Main, $"Error deleting MacOS shell scripts: {ex.Message}", LogLevels.Error);
             }
             finally
             {
@@ -962,10 +962,10 @@ namespace IntuneTools.Pages
                 var windowsAutoPilotProfileIDs = GetWindowsAutoPilotProfileIDs();
                 if (windowsAutoPilotProfileIDs.Count == 0)
                 {
-                    WriteToImportStatusFile("No Windows AutoPilot profiles found to delete.");
+                    LogToFunctionFile(appFunction.Main, "No Windows AutoPilot profiles found to delete.");
                     return;
                 }
-                WriteToImportStatusFile($"Found {windowsAutoPilotProfileIDs.Count} Windows AutoPilot profiles to delete.");
+                LogToFunctionFile(appFunction.Main, $"Found {windowsAutoPilotProfileIDs.Count} Windows AutoPilot profiles to delete.");
                 // Delete each Windows AutoPilot profile
                 foreach (var id in windowsAutoPilotProfileIDs)
                 {
@@ -990,30 +990,30 @@ namespace IntuneTools.Pages
                         {
                             // Delete the assignments first
                             await DeleteWindowsAutoPilotProfileAssignments(sourceGraphServiceClient, id);
-                            WriteToImportStatusFile($"Deleted assignments for Windows AutoPilot profile with ID: {id}");
+                            LogToFunctionFile(appFunction.Main, $"Deleted assignments for Windows AutoPilot profile with ID: {id}");
 
                             // Now delete the profile
                             await DeleteWindowsAutopilotProfile(sourceGraphServiceClient, id);
-                            WriteToImportStatusFile($"Deleted Windows AutoPilot profile with ID: {id}");
+                            LogToFunctionFile(appFunction.Main, $"Deleted Windows AutoPilot profile with ID: {id}");
                             count++;
                         }
                         else
                         {
                             // User chose not to delete assignments, skip deletion of the profile
-                            WriteToImportStatusFile($"Skipped deletion of Windows AutoPilot profile with ID: {id} as it is assigned to devices.", LogType.Warning);
+                            LogToFunctionFile(appFunction.Main, $"Skipped deletion of Windows AutoPilot profile with ID: {id} as it is assigned to devices.", LogLevels.Warning);
                         }
                     }
                     else
                     {
                         await DeleteWindowsAutopilotProfile(sourceGraphServiceClient, id);
-                        WriteToImportStatusFile($"Deleted Windows AutoPilot profile with ID: {id}");
+                        LogToFunctionFile(appFunction.Main, $"Deleted Windows AutoPilot profile with ID: {id}");
                         count++;
                     }
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile($"Error deleting Windows AutoPilot profiles: {ex.Message}", LogType.Error);
+                LogToFunctionFile(appFunction.Main, $"Error deleting Windows AutoPilot profiles: {ex.Message}", LogLevels.Error);
             }
             finally
             {
@@ -1073,20 +1073,20 @@ namespace IntuneTools.Pages
                 var windowsDriverUpdateIDs = GetWindowsDriverUpdateIDs();
                 if (windowsDriverUpdateIDs.Count == 0)
                 {
-                    WriteToImportStatusFile("No Windows driver updates found to delete.");
+                    LogToFunctionFile(appFunction.Main, "No Windows driver updates found to delete.");
                     return;
                 }
-                WriteToImportStatusFile($"Found {windowsDriverUpdateIDs.Count} Windows driver updates to delete.");
+                LogToFunctionFile(appFunction.Main, $"Found {windowsDriverUpdateIDs.Count} Windows driver updates to delete.");
                 // Delete each Windows driver update
                 foreach (var id in windowsDriverUpdateIDs)
                 {
                     await DeleteDriverProfile(sourceGraphServiceClient, id);
-                    WriteToImportStatusFile($"Deleted Windows driver update with ID: {id}");
+                    LogToFunctionFile(appFunction.Main, $"Deleted Windows driver update with ID: {id}");
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile($"Error deleting Windows driver updates: {ex.Message}", LogType.Error);
+                LogToFunctionFile(appFunction.Main, $"Error deleting Windows driver updates: {ex.Message}", LogLevels.Error);
             }
             finally
             {
@@ -1147,20 +1147,20 @@ namespace IntuneTools.Pages
                 var windowsFeatureUpdateIDs = GetWindowsFeatureUpdateIDs();
                 if (windowsFeatureUpdateIDs.Count == 0)
                 {
-                    WriteToImportStatusFile("No Windows feature updates found to delete.");
+                    LogToFunctionFile(appFunction.Main, "No Windows feature updates found to delete.");
                     return;
                 }
-                WriteToImportStatusFile($"Found {windowsFeatureUpdateIDs.Count} Windows feature updates to delete.");
+                LogToFunctionFile(appFunction.Main, $"Found {windowsFeatureUpdateIDs.Count} Windows feature updates to delete.");
                 // Delete each Windows feature update
                 foreach (var id in windowsFeatureUpdateIDs)
                 {
                     await DeleteWindowsFeatureUpdateProfile(sourceGraphServiceClient, id);
-                    WriteToImportStatusFile($"Deleted Windows feature update with ID: {id}");
+                    LogToFunctionFile(appFunction.Main, $"Deleted Windows feature update with ID: {id}");
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile($"Error deleting Windows feature updates: {ex.Message}", LogType.Error);
+                LogToFunctionFile(appFunction.Main, $"Error deleting Windows feature updates: {ex.Message}", LogLevels.Error);
             }
             finally
             {
@@ -1221,20 +1221,20 @@ namespace IntuneTools.Pages
                 var windowsQualityUpdateIDs = GetWindowsQualityUpdatePolicyIDs();
                 if (windowsQualityUpdateIDs.Count == 0)
                 {
-                    WriteToImportStatusFile("No Windows quality updates found to delete.");
+                    LogToFunctionFile(appFunction.Main, "No Windows quality updates found to delete.");
                     return;
                 }
-                WriteToImportStatusFile($"Found {windowsQualityUpdateIDs.Count} Windows quality updates to delete.");
+                LogToFunctionFile(appFunction.Main, $"Found {windowsQualityUpdateIDs.Count} Windows quality updates to delete.");
                 // Delete each Windows quality update
                 foreach (var id in windowsQualityUpdateIDs)
                 {
                     await DeleteWindowsQualityUpdatePolicy(sourceGraphServiceClient, id);
-                    WriteToImportStatusFile($"Deleted Windows quality update with ID: {id}");
+                    LogToFunctionFile(appFunction.Main, $"Deleted Windows quality update with ID: {id}");
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile($"Error deleting Windows quality updates: {ex.Message}", LogType.Error);
+                LogToFunctionFile(appFunction.Main, $"Error deleting Windows quality updates: {ex.Message}", LogLevels.Error);
             }
             finally
             {
@@ -1295,20 +1295,20 @@ namespace IntuneTools.Pages
                 var windowsQualityUpdateProfileIDs = GetWindowsQualityUpdateProfileIDs();
                 if (windowsQualityUpdateProfileIDs.Count == 0)
                 {
-                    WriteToImportStatusFile("No Windows quality update profiles found to delete.");
+                    LogToFunctionFile(appFunction.Main, "No Windows quality update profiles found to delete.");
                     return;
                 }
-                WriteToImportStatusFile($"Found {windowsQualityUpdateProfileIDs.Count} Windows quality update profiles to delete.");
+                LogToFunctionFile(appFunction.Main, $"Found {windowsQualityUpdateProfileIDs.Count} Windows quality update profiles to delete.");
                 // Delete each Windows quality update profile
                 foreach (var id in windowsQualityUpdateProfileIDs)
                 {
                     await DeleteWindowsQualityUpdateProfile(sourceGraphServiceClient, id);
-                    WriteToImportStatusFile($"Deleted Windows quality update profile with ID: {id}");
+                    LogToFunctionFile(appFunction.Main, $"Deleted Windows quality update profile with ID: {id}");
                 }
             }
             catch (Exception ex)
             {
-                WriteToImportStatusFile($"Error deleting Windows quality update profiles: {ex.Message}", LogType.Error);
+                LogToFunctionFile(appFunction.Main, $"Error deleting Windows quality update profiles: {ex.Message}", LogLevels.Error);
             }
             finally
             {
