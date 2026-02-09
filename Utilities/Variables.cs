@@ -94,5 +94,7 @@ namespace IntuneTools.Utilities
         public static string _preventAutoUpdate = string.Empty;
         public static IosVppAppAssignmentSettings iOSAppDeploymentSettings;
 
+
+
     }
 }
