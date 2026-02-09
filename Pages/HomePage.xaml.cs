@@ -20,6 +20,7 @@ namespace IntuneTools.Pages
         private async void HomePage_Loaded(object sender, RoutedEventArgs e)
         {
             await UpdateVersionStatusAsync();
+            UpdateTimeSavedCounter();
         }
 
         private async Task UpdateVersionStatusAsync()
@@ -77,6 +78,16 @@ namespace IntuneTools.Pages
             {
                 UpdateImage(LoginStatusImage, "RedCross.png");
             }
+        }
+
+        private void UpdateTimeSavedCounter(int minutesAdded = 0)
+        {
+            var totalMinutes = minutesAdded > 0
+                ? TimeSaved.UpdateTotalTimeSaved(minutesAdded)
+                : TimeSaved.GetTotalTimeSaved();
+
+            TimeSavedMinutesText.Text = totalMinutes.ToString();
+            TimeSavedProgress.Value = Math.Min(TimeSavedProgress.Maximum, totalMinutes);
         }
 
         private async void GitHubLink_Click(object sender, RoutedEventArgs e)
