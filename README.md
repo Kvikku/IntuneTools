@@ -18,6 +18,7 @@ This version is now available on [Microsoft Store](https://apps.microsoft.com/de
 If you prefer to download and install manually, you can check out the [release section](https://github.com/Kvikku/IntuneTools/releases) where I attach the sources files.
 
 You could also clone the repo and build locally, of course.
+
 __NOTE - This application is a work in progress. Errors, crashes and unexpected behaviour can occur__
 
 
