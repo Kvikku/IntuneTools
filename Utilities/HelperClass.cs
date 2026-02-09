@@ -18,7 +18,7 @@ namespace IntuneTools.Utilities
         
         public static string CreateTimestampedAppFolder()
         {
-            var folderName = DateTime.Now.ToString("yyyy-MM-dd-HH-mm");
+            var folderName = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
             var fullPath = Path.Combine(appDataPath, appFolderName, folderName);
             Directory.CreateDirectory(fullPath);
             return fullPath;

@@ -56,91 +56,8 @@ namespace IntuneTools.Pages
             UpdateImage(DestinationLoginStatusImage, destinationSignedIn ? "GreenCheck.png" : "RedCross.png");
         }
 
-        //private void LoadTenantSettings()
-        //{
-        //    _sourceTenantSettings = LoadSettingsFromFile(Variables.sourceTenantSettingsFileFullPath);
-        //    _destinationTenantSettings = LoadSettingsFromFile(Variables.destinationTenantSettingsFileFullPath);
-
-        //    PopulateComboBox(SourceEnvironmentComboBox, _sourceTenantSettings);
-        //    PopulateComboBox(DestinationEnvironmentComboBox, _destinationTenantSettings);
-
-        //    // Populate the login information for source and destination tenants
-
-        //    if (_sourceTenantSettings != null && _sourceTenantSettings.Count > 0)
-        //    {
-        //        SourceEnvironmentComboBox.SelectedIndex = 0; // Select the first item by default
-        //    }
-
-        //    if (sourceGraphServiceClient != null)
-        //    {
-        //        UpdateImage(SourceLoginStatusImage, "GreenCheck.png");
-        //    }
-        //    else
-        //    {
-        //        UpdateImage(SourceLoginStatusImage, "RedCross.png");
-        //    }
-
-        //    if (_destinationTenantSettings != null && _destinationTenantSettings.Count > 0)
-        //    {
-        //        DestinationEnvironmentComboBox.SelectedIndex = 0; // Select the first item by default
-        //    }
-
-        //    if (destinationGraphServiceClient != null)
-        //    {
-        //        UpdateImage(DestinationLoginStatusImage, "GreenCheck.png");
-        //    }
-        //    else
-        //    {
-        //        UpdateImage(DestinationLoginStatusImage, "RedCross.png");
-        //    }
-
-        //}
-
-        private Dictionary<string, Dictionary<string, string>>? LoadSettingsFromFile(string filePath)
-        {
-            if (File.Exists(filePath))
-            {
-                var json = File.ReadAllText(filePath);
-                return JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(json);
-            }
-            return null;
-        }
-
-        private void PopulateComboBox(ComboBox comboBox, Dictionary<string, Dictionary<string, string>>? settings)
-        {
-            if (settings != null)
-            {
-                foreach (var tenantKey in settings.Keys)
-                {
-                    comboBox.Items.Add(tenantKey);
-                }
-            }
-        }
-
-        //private void SourceEnvironmentComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        //{
-        //    UpdateTenantFields(SourceEnvironmentComboBox, _sourceTenantSettings, SourceTenantIdTextBox, SourceClientIdTextBox);
-        //}
-
-        //private void DestinationEnvironmentComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        //{
-        //    UpdateTenantFields(DestinationEnvironmentComboBox, _destinationTenantSettings, DestinationTenantIdTextBox, DestinationClientIdTextBox);
-        //}
-
-        private void UpdateTenantFields(ComboBox comboBox, Dictionary<string, Dictionary<string, string>>? settings, TextBox tenantIdTextBox, TextBox clientIdTextBox)
-        {
-            if (comboBox.SelectedItem is string selectedTenantKey && settings != null && settings.TryGetValue(selectedTenantKey, out var tenantDetails))
-            {
-                tenantIdTextBox.Text = tenantDetails.TryGetValue("TenantID", out var tenantId) ? tenantId : string.Empty;
-                clientIdTextBox.Text = tenantDetails.TryGetValue("ClientID", out var clientId) ? clientId : string.Empty;
-            }
-            else
-            {
-                tenantIdTextBox.Text = string.Empty;
-                clientIdTextBox.Text = string.Empty;
-            }
-        }
-
+     
+       
         private async void SourceLoginButton_Click(object sender, RoutedEventArgs e)
         {
             //await Utilities.HelperClass.ShowMessageBox("Source Tenant Login", "Authenticating to the source tenant. Please wait...","NO");
@@ -200,19 +117,21 @@ namespace IntuneTools.Pages
 
         private void OpenLogFileLocation_Click(object sender, RoutedEventArgs e)
         {
-            if (Directory.Exists(Variables.logFileFolder))
+            var folderToOpen = timestampedAppFolder;
+
+            if (Directory.Exists(folderToOpen))
             {
                 var startInfo = new ProcessStartInfo
                 {
                     FileName = "explorer.exe",
-                    Arguments = Variables.logFileFolder,
+                    Arguments = folderToOpen,
                     UseShellExecute = true
                 };
                 System.Diagnostics.Process.Start(startInfo);
             }
             else
             {
-                LogToFunctionFile(appFunction.Main,$"Invalid log file folder path: {Variables.logFileFolder}");
+                LogToFunctionFile(appFunction.Main,$"Invalid log file folder path: {folderToOpen}");
             }
         }
 
