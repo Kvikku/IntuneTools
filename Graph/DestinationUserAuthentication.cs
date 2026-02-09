@@ -26,13 +26,13 @@ public static class DestinationUserAuthentication
             "RoleManagement.Read.All",
             "Application.Read.All",
             "DelegatedPermissionGrant.Read.All",
-            "DeviceManagementApps.Read.All",
-            "DeviceManagementCloudCA.Read.All",
-            "DeviceManagementConfiguration.Read.All",
-            "DeviceManagementManagedDevices.Read.All",
-            "DeviceManagementRBAC.Read.All",
-            "DeviceManagementScripts.Read.All",
-            "DeviceManagementServiceConfig.Read.All",
+            "DeviceManagementApps.ReadWrite.All",
+            "DeviceManagementCloudCA.ReadWrite.All",
+            "DeviceManagementConfiguration.ReadWrite.All",
+            "DeviceManagementManagedDevices.ReadWrite.All",
+            "DeviceManagementRBAC.ReadWrite.All",
+            "DeviceManagementScripts.ReadWrite.All",
+            "DeviceManagementServiceConfig.ReadWrite.All",
             "Group.ReadWrite.All"
         };
 
