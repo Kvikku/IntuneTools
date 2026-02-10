@@ -304,6 +304,7 @@ namespace IntuneTools.Pages
                 {
                     await DeleteSettingsCatalog(sourceGraphServiceClient, id);
                     LogToFunctionFile(appFunction.Main, $"Deleted settings catalog policy with ID: {id}");
+                    UpdateTotalTimeSaved(timeSavedOnDeletion, appFunction.Delete);
                 }
             }
             catch (Exception ex)
@@ -378,6 +379,7 @@ namespace IntuneTools.Pages
                 {
                     await DeleteDeviceCompliancePolicy(sourceGraphServiceClient, id);
                     LogToFunctionFile(appFunction.Main, $"Deleted device compliance policy with ID: {id}");
+                    UpdateTotalTimeSaved(timeSavedOnDeletion, appFunction.Delete);
                 }
             }
             catch (Exception ex)
@@ -452,6 +454,7 @@ namespace IntuneTools.Pages
                 {
                     await DeleteDeviceConfigurationPolicy(sourceGraphServiceClient, id);
                     LogToFunctionFile(appFunction.Main, $"Deleted device configuration policy with ID: {id}");
+                    UpdateTotalTimeSaved(timeSavedOnDeletion, appFunction.Delete);
                 }
             }
             catch (Exception ex)
@@ -526,6 +529,7 @@ namespace IntuneTools.Pages
                 {
                     await DeleteAppleBYODEnrollmentProfile(sourceGraphServiceClient, id);
                     LogToFunctionFile(appFunction.Main, $"Deleted Apple BYOD enrollment profile with ID: {id}");
+                    UpdateTotalTimeSaved(timeSavedOnDeletion, appFunction.Delete);
                 }
             }
             catch (Exception ex)
@@ -600,6 +604,7 @@ namespace IntuneTools.Pages
                 {
                     await DeleteAssignmentFilter(sourceGraphServiceClient, id);
                     LogToFunctionFile(appFunction.Main, $"Deleted assignment filter with ID: {id}");
+                    UpdateTotalTimeSaved(timeSavedOnDeletion, appFunction.Delete);
                 }
             }
             catch (Exception ex)
@@ -674,6 +679,7 @@ namespace IntuneTools.Pages
                 {
                     await DeleteSecurityGroup(sourceGraphServiceClient, id);
                     LogToFunctionFile(appFunction.Main, $"Deleted Entra group with ID: {id}");
+                    UpdateTotalTimeSaved(timeSavedOnDeletion, appFunction.Delete);
                 }
             }
             catch (Exception ex)
@@ -748,6 +754,7 @@ namespace IntuneTools.Pages
                 {
                     await DeletePowerShellScript(sourceGraphServiceClient, id);
                     LogToFunctionFile(appFunction.Main, $"Deleted PowerShell script with ID: {id}");
+                    UpdateTotalTimeSaved(timeSavedOnDeletion, appFunction.Delete);
                 }
             }
             catch (Exception ex)
@@ -822,6 +829,7 @@ namespace IntuneTools.Pages
                 {
                     await DeleteProactiveRemediationScript(sourceGraphServiceClient, id);
                     LogToFunctionFile(appFunction.Main, $"Deleted proactive remediation with ID: {id}");
+                    UpdateTotalTimeSaved(timeSavedOnDeletion, appFunction.Delete);
                 }
             }
             catch (Exception ex)
@@ -896,6 +904,7 @@ namespace IntuneTools.Pages
                 {
                     await DeleteMacosShellScript(sourceGraphServiceClient, id);
                     LogToFunctionFile(appFunction.Main, $"Deleted MacOS shell script with ID: {id}");
+                    UpdateTotalTimeSaved(timeSavedOnDeletion, appFunction.Delete);
                 }
             }
             catch (Exception ex)
@@ -995,6 +1004,7 @@ namespace IntuneTools.Pages
                             // Now delete the profile
                             await DeleteWindowsAutopilotProfile(sourceGraphServiceClient, id);
                             LogToFunctionFile(appFunction.Main, $"Deleted Windows AutoPilot profile with ID: {id}");
+                            UpdateTotalTimeSaved(timeSavedOnDeletion, appFunction.Delete);
                             count++;
                         }
                         else
@@ -1082,6 +1092,7 @@ namespace IntuneTools.Pages
                 {
                     await DeleteDriverProfile(sourceGraphServiceClient, id);
                     LogToFunctionFile(appFunction.Main, $"Deleted Windows driver update with ID: {id}");
+                    UpdateTotalTimeSaved(timeSavedOnDeletion, appFunction.Delete);
                 }
             }
             catch (Exception ex)
@@ -1156,6 +1167,7 @@ namespace IntuneTools.Pages
                 {
                     await DeleteWindowsFeatureUpdateProfile(sourceGraphServiceClient, id);
                     LogToFunctionFile(appFunction.Main, $"Deleted Windows feature update with ID: {id}");
+                    UpdateTotalTimeSaved(timeSavedOnDeletion, appFunction.Delete);
                 }
             }
             catch (Exception ex)
@@ -1230,6 +1242,7 @@ namespace IntuneTools.Pages
                 {
                     await DeleteWindowsQualityUpdatePolicy(sourceGraphServiceClient, id);
                     LogToFunctionFile(appFunction.Main, $"Deleted Windows quality update with ID: {id}");
+                    UpdateTotalTimeSaved(timeSavedOnDeletion, appFunction.Delete);
                 }
             }
             catch (Exception ex)
@@ -1304,6 +1317,7 @@ namespace IntuneTools.Pages
                 {
                     await DeleteWindowsQualityUpdateProfile(sourceGraphServiceClient, id);
                     LogToFunctionFile(appFunction.Main, $"Deleted Windows quality update profile with ID: {id}");
+                    UpdateTotalTimeSaved(timeSavedOnDeletion, appFunction.Delete);
                 }
             }
             catch (Exception ex)

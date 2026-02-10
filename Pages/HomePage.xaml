@@ -101,7 +101,7 @@
                             <TextBlock Text="Activity breakdown" FontSize="16" FontWeight="SemiBold"/>
                             <StackPanel x:Name="RenamedItemsPanel" Orientation="Horizontal" Spacing="8" Visibility="Collapsed">
                                 <TextBlock x:Name="RenamedItemsCountText" Text="0" FontWeight="SemiBold"/>
-                                <TextBlock Text="items renamed"/>
+                                <TextBlock Text="items renamed / descriptions updated"/>
                             </StackPanel>
                             <StackPanel x:Name="AssignedItemsPanel" Orientation="Horizontal" Spacing="8" Visibility="Collapsed">
                                 <TextBlock x:Name="AssignedItemsCountText" Text="0" FontWeight="SemiBold"/>
