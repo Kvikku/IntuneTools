@@ -11,6 +11,7 @@ namespace IntuneTools.Utilities
         public static int UpdateTotalTimeSaved(int minutes, appFunction function)
         {
             totalTimeSavedInSeconds += minutes;
+
             switch (function)
             {
                 case appFunction.Rename:
@@ -26,6 +27,7 @@ namespace IntuneTools.Utilities
                     Variables.numberOfItemsAssigned++;
                     break;
             }
+
             return totalTimeSavedInSeconds;
         }
 

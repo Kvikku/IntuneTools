@@ -97,10 +97,10 @@ namespace IntuneTools.Utilities
 
         // Time saved variables
         public static int totalTimeSavedInSeconds = 0;
-        public static readonly int timeSavedOnAssignment = 30;
-        public static readonly int timeSavedOnRenaming = 20;
-        public static readonly int timeSavedOnDeletion = 10;
-        public static readonly int timeSavedOnImport = 90;
+        public static readonly int secondsSavedOnAssignments = 30;
+        public static readonly int secondsSavedOnRenaming = 20;
+        public static readonly int secondsSavedOnDeleting = 10;
+        public static readonly int secondsSavedOnImporting = 90;
         public static int numberOfItemsRenamed = 0;
         public static int numberOfItemsDeleted = 0;
         public static int numberOfItemsAssigned = 0;

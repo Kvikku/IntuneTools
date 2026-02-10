@@ -536,7 +536,7 @@ namespace IntuneTools.Pages
                     });
                     await RenameAppleBYODEnrollmentProfile(sourceGraphServiceClient, id, prefix);
                     AppendToDetailsRichTextBlock($"Updated Apple BYOD Enrollment Profile '{profile.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(timeSavedOnRenaming, appFunction.Rename);
+                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
                 }
                 catch (Exception ex)
                 {
@@ -557,7 +557,7 @@ namespace IntuneTools.Pages
                     });
                     await RenameMacOSShellScript(sourceGraphServiceClient, id, prefix);
                     AppendToDetailsRichTextBlock($"Updated MacOS Shell Script '{script.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(timeSavedOnRenaming, appFunction.Rename);
+                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
                 }
                 catch (Exception ex)
                 {
@@ -578,7 +578,7 @@ namespace IntuneTools.Pages
                     });
                     await RenamePowerShellScript(sourceGraphServiceClient, id, prefix);
                     AppendToDetailsRichTextBlock($"Updated PowerShell Script '{script.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(timeSavedOnRenaming, appFunction.Rename);
+                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
                 }
                 catch (Exception ex)
                 {
@@ -599,7 +599,7 @@ namespace IntuneTools.Pages
                     });
                     await RenameProactiveRemediation(sourceGraphServiceClient, id, prefix);
                     AppendToDetailsRichTextBlock($"Updated Proactive Remediation '{remediation.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(timeSavedOnRenaming, appFunction.Rename);
+                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
                 }
                 catch (Exception ex)
                 {
@@ -620,7 +620,7 @@ namespace IntuneTools.Pages
                     });
                     await RenameWindowsAutoPilotProfile(sourceGraphServiceClient, id, prefix);
                     AppendToDetailsRichTextBlock($"Updated Windows AutoPilot Profile '{profile.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(timeSavedOnRenaming, appFunction.Rename);
+                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
                 }
                 catch (Exception ex)
                 {
@@ -641,7 +641,7 @@ namespace IntuneTools.Pages
                     });
                     await RenameDriverProfile(sourceGraphServiceClient, id, prefix);
                     AppendToDetailsRichTextBlock($"Updated Windows Driver Update '{update.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(timeSavedOnRenaming, appFunction.Rename);
+                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
                 }
                 catch (Exception ex)
                 {
@@ -662,7 +662,7 @@ namespace IntuneTools.Pages
                     });
                     await RenameWindowsFeatureUpdateProfile(sourceGraphServiceClient, id, prefix);
                     AppendToDetailsRichTextBlock($"Updated Windows Feature Update '{update.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(timeSavedOnRenaming, appFunction.Rename);
+                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
                 }
                 catch (Exception ex)
                 {
@@ -683,7 +683,7 @@ namespace IntuneTools.Pages
                     });
                     await RenameWindowsQualityUpdatePolicy(sourceGraphServiceClient, id, prefix);
                     AppendToDetailsRichTextBlock($"Updated Windows Quality Update Policy '{policy.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(timeSavedOnRenaming, appFunction.Rename);
+                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
                 }
                 catch (Exception ex)
                 {
@@ -704,7 +704,7 @@ namespace IntuneTools.Pages
                     });
                     await RenameWindowsQualityUpdateProfile(sourceGraphServiceClient, id, prefix);
                     AppendToDetailsRichTextBlock($"Updated Windows Quality Update Profile '{profile.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(timeSavedOnRenaming, appFunction.Rename);
+                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
                 }
                 catch (Exception ex)
                 {
@@ -725,7 +725,7 @@ namespace IntuneTools.Pages
                     });
                     await RenameAssignmentFilter(sourceGraphServiceClient, id, prefix);
                     AppendToDetailsRichTextBlock($"Updated Assignment Filter '{filter.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(timeSavedOnRenaming, appFunction.Rename);
+                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
                 }
                 catch (Exception ex)
                 {
@@ -746,7 +746,7 @@ namespace IntuneTools.Pages
                     });
                     await RenameGroup(sourceGraphServiceClient, id, prefix);
                     AppendToDetailsRichTextBlock($"Updated Entra Group '{group.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(timeSavedOnRenaming, appFunction.Rename);
+                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
                 }
                 catch (Exception ex)
                 {
@@ -813,7 +813,7 @@ namespace IntuneTools.Pages
                     await RenameSettingsCatalogPolicy(sourceGraphServiceClient, id, prefix);
 
                     AppendToDetailsRichTextBlock($"Updated Settings Catalog '{policy.Name}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(timeSavedOnRenaming, appFunction.Rename);
+                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
                 }
                 catch (Exception ex)
                 {
@@ -877,7 +877,7 @@ namespace IntuneTools.Pages
                     });
                     await RenameDeviceCompliancePolicy(sourceGraphServiceClient, id, prefix);
                     AppendToDetailsRichTextBlock($"Updated Device Compliance Policy '{policyName.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(timeSavedOnRenaming, appFunction.Rename);
+                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
                 }
                 catch (Exception ex)
                 {
@@ -943,7 +943,7 @@ namespace IntuneTools.Pages
                     });
                     await RenameDeviceConfigurationPolicy(sourceGraphServiceClient, id, prefix);
                     AppendToDetailsRichTextBlock($"Renamed Device Configuration Policy '{policy.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(timeSavedOnRenaming, appFunction.Rename);
+                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
                 }
                 catch (Exception ex)
                 {

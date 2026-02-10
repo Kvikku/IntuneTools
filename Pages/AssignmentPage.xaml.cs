@@ -343,10 +343,7 @@ namespace IntuneTools.Pages
 
                     }
 
-
-
-
-
+                    
                     foreach (var group in selectedGroups)
                     {
                         try
@@ -363,6 +360,7 @@ namespace IntuneTools.Pages
                         }
                     }
                 }
+
 
                 AppendToDetailsRichTextBlock($"Assignment completed: {successCount} successful, {failureCount} failed.");
 
