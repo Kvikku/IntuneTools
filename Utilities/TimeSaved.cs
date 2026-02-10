@@ -19,6 +19,10 @@ namespace IntuneTools.Utilities
             return totalTimeSavedInSeconds;
         }
 
+        public static int GetTotalTimeSavedInMinutes()
+        {
+            return totalTimeSavedInSeconds / 60;
+        }
 
     }
 }

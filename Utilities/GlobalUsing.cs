@@ -6,3 +6,4 @@ global using static IntuneTools.Graph.DestinationUserAuthentication;
 global using static IntuneTools.Graph.SourceUserAuthentication;
 global using static IntuneTools.Utilities.HelperClass;
 global using static IntuneTools.Utilities.Variables;
+global using static IntuneTools.Utilities.TimeSaved;

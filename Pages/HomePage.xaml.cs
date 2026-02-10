@@ -82,9 +82,12 @@ namespace IntuneTools.Pages
 
         private void UpdateTimeSavedCounter(int minutesAdded = 0)
         {
-            var totalMinutes = minutesAdded > 0
-                ? TimeSaved.UpdateTotalTimeSaved(minutesAdded)
-                : TimeSaved.GetTotalTimeSaved();
+            if (minutesAdded > 0)
+            {
+                TimeSaved.UpdateTotalTimeSaved(minutesAdded);
+            }
+
+            var totalMinutes = TimeSaved.GetTotalTimeSavedInMinutes();
 
             TimeSavedMinutesText.Text = totalMinutes.ToString();
             TimeSavedProgress.Value = Math.Min(TimeSavedProgress.Maximum, totalMinutes);
