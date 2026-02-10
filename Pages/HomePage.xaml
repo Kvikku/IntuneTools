@@ -96,6 +96,26 @@
                                    TextWrapping="WrapWholeWords"
                                    FontSize="14"
                                    Opacity="0.75"/>
+
+                        <StackPanel x:Name="TimeSavedBreakdownPanel" Spacing="6" Visibility="Collapsed">
+                            <TextBlock Text="Activity breakdown" FontSize="16" FontWeight="SemiBold"/>
+                            <StackPanel x:Name="RenamedItemsPanel" Orientation="Horizontal" Spacing="8" Visibility="Collapsed">
+                                <TextBlock x:Name="RenamedItemsCountText" Text="0" FontWeight="SemiBold"/>
+                                <TextBlock Text="items renamed"/>
+                            </StackPanel>
+                            <StackPanel x:Name="AssignedItemsPanel" Orientation="Horizontal" Spacing="8" Visibility="Collapsed">
+                                <TextBlock x:Name="AssignedItemsCountText" Text="0" FontWeight="SemiBold"/>
+                                <TextBlock Text="items assigned"/>
+                            </StackPanel>
+                            <StackPanel x:Name="DeletedItemsPanel" Orientation="Horizontal" Spacing="8" Visibility="Collapsed">
+                                <TextBlock x:Name="DeletedItemsCountText" Text="0" FontWeight="SemiBold"/>
+                                <TextBlock Text="items deleted"/>
+                            </StackPanel>
+                            <StackPanel x:Name="ImportedItemsPanel" Orientation="Horizontal" Spacing="8" Visibility="Collapsed">
+                                <TextBlock x:Name="ImportedItemsCountText" Text="0" FontWeight="SemiBold"/>
+                                <TextBlock Text="items imported"/>
+                            </StackPanel>
+                        </StackPanel>
                     </StackPanel>
                 </Border>
 

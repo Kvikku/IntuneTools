@@ -91,6 +91,33 @@ namespace IntuneTools.Pages
 
             TimeSavedMinutesText.Text = totalMinutes.ToString();
             TimeSavedProgress.Value = Math.Min(TimeSavedProgress.Maximum, totalMinutes);
+
+            UpdateTimeSavedBreakdown();
+        }
+
+        private void UpdateTimeSavedBreakdown()
+        {
+            var anyVisible = false;
+
+            anyVisible |= UpdateBreakdownRow(RenamedItemsPanel, RenamedItemsCountText, numberOfItemsRenamed);
+            anyVisible |= UpdateBreakdownRow(AssignedItemsPanel, AssignedItemsCountText, numberOfItemsAssigned);
+            anyVisible |= UpdateBreakdownRow(DeletedItemsPanel, DeletedItemsCountText, numberOfItemsDeleted);
+            anyVisible |= UpdateBreakdownRow(ImportedItemsPanel, ImportedItemsCountText, numberOfItemsImported);
+
+            TimeSavedBreakdownPanel.Visibility = anyVisible ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private static bool UpdateBreakdownRow(StackPanel panel, TextBlock countText, int count)
+        {
+            if (count > 0)
+            {
+                countText.Text = count.ToString();
+                panel.Visibility = Visibility.Visible;
+                return true;
+            }
+
+            panel.Visibility = Visibility.Collapsed;
+            return false;
         }
 
         private async void GitHubLink_Click(object sender, RoutedEventArgs e)
