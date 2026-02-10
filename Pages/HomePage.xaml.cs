@@ -84,7 +84,7 @@ namespace IntuneTools.Pages
         {
             if (minutesAdded > 0)
             {
-                TimeSaved.UpdateTotalTimeSaved(minutesAdded);
+                TimeSaved.UpdateTotalTimeSaved(minutesAdded, appFunction.Main);
             }
 
             var totalMinutes = TimeSaved.GetTotalTimeSavedInMinutes();
