@@ -292,6 +292,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         };
 
                         LogToFunctionFile(appFunction.Main, $"Assigned {targetType} to AutoPilot profile {profileID}.");
+                        UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
                     }
                     catch (Exception ex)
                     {

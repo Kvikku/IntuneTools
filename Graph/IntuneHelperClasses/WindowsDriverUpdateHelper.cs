@@ -285,6 +285,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 {
                     await destinationGraphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileID].Assign.PostAsync(requestBody);
                     LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to driver profile {profileID}. Filter: {SelectedFilterID ?? "None"}");
+                    UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
                 }
                 catch (ServiceException svcex)
                 {

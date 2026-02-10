@@ -267,6 +267,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 {
                     await destinationGraphServiceClient.DeviceManagement.DeviceShellScripts[scriptId].Assign.PostAsync(requestBody);
                     LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to macOS shell script {scriptId}.");
+                    UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
 
                     // Note: Filters are not directly supported in the Assign action for shell scripts
                     // They would need to be applied via a separate PATCH operation if supported
