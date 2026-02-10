@@ -268,6 +268,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         .PostAsAssignPostResponseAsync(requestBody);
 
                     LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to policy {policyID} with filter type {deviceAndAppManagementAssignmentFilterType}.");
+                    UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
                 }
                 catch (Exception ex)
                 {

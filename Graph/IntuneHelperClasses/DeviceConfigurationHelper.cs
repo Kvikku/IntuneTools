@@ -315,6 +315,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     var result = await destinationGraphServiceClient.DeviceManagement.DeviceConfigurations[configId].Assign.PostAsAssignPostResponseAsync(requestBody);
 
                     LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to device configuration {configId} with filter type {deviceAndAppManagementAssignmentFilterType}.");
+                    UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
                 }
                 catch (Exception ex)
                 {
