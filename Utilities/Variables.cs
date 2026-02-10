@@ -101,5 +101,9 @@ namespace IntuneTools.Utilities
         public static readonly int timeSavedOnRenaming = 20;
         public static readonly int timeSavedOnDeletion = 10;
         public static readonly int timeSavedOnImport = 90;
+        public static int numberOfItemsRenamed = 0;
+        public static int numberOfItemsDeleted = 0;
+        public static int numberOfItemsAssigned = 0;
+        public static int numberOfItemsImported = 0;
     }
 }
