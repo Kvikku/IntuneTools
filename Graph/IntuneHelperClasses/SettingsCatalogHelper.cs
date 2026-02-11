@@ -7,6 +7,27 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 {
     public class SettingsCatalogHelper
     {
+        private static void ApplySelectedFilter(DeviceAndAppManagementAssignmentTarget target)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            if (IsFilterSelected
+                && !string.IsNullOrWhiteSpace(SelectedFilterID)
+                && Guid.TryParse(SelectedFilterID, out _)
+                && deviceAndAppManagementAssignmentFilterType != DeviceAndAppManagementAssignmentFilterType.None)
+            {
+                target.DeviceAndAppManagementAssignmentFilterId = SelectedFilterID;
+                target.DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType;
+                return;
+            }
+
+            target.DeviceAndAppManagementAssignmentFilterId = null;
+            target.DeviceAndAppManagementAssignmentFilterType = DeviceAndAppManagementAssignmentFilterType.None;
+        }
+
         public static async Task<List<DeviceManagementConfigurationPolicy>> SearchForSettingsCatalog(GraphServiceClient graphServiceClient, string searchQuery)
         {
             try
@@ -158,47 +179,50 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     if (group.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
                     {
                         hasAllUsers = true;
+                        var target = new AllLicensedUsersAssignmentTarget
+                        {
+                            OdataType = "#microsoft.graph.allLicensedUsersAssignmentTarget"
+                        };
+                        ApplySelectedFilter(target);
+
                         assignment = new DeviceManagementConfigurationPolicyAssignment
                         {
                             OdataType = "#microsoft.graph.deviceManagementConfigurationPolicyAssignment",
-                            Target = new AllLicensedUsersAssignmentTarget
-                            {
-                                OdataType = "#microsoft.graph.allLicensedUsersAssignmentTarget",
-                                DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
-                                DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
-                            },
+                            Target = target,
                             Source = DeviceAndAppManagementAssignmentSource.Direct
                         };
                     }
                     else if (group.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
                     {
                         hasAllDevices = true;
+                        var target = new AllDevicesAssignmentTarget
+                        {
+                            OdataType = "#microsoft.graph.allDevicesAssignmentTarget"
+                        };
+                        ApplySelectedFilter(target);
+
                         assignment = new DeviceManagementConfigurationPolicyAssignment
                         {
                             OdataType = "#microsoft.graph.deviceManagementConfigurationPolicyAssignment",
-                            Target = new AllDevicesAssignmentTarget
-                            {
-                                OdataType = "#microsoft.graph.allDevicesAssignmentTarget",
-                                DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
-                                DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
-                            },
+                            Target = target,
                             Source = DeviceAndAppManagementAssignmentSource.Direct
                         };
                     }
                     else
                     {
                         // Regular group assignment
+                        var target = new GroupAssignmentTarget
+                        {
+                            OdataType = "#microsoft.graph.groupAssignmentTarget",
+                            GroupId = group
+                        };
+                        ApplySelectedFilter(target);
+
                         assignment = new DeviceManagementConfigurationPolicyAssignment
                         {
                             OdataType = "#microsoft.graph.deviceManagementConfigurationPolicyAssignment",
                             Id = group,
-                            Target = new GroupAssignmentTarget
-                            {
-                                OdataType = "#microsoft.graph.groupAssignmentTarget",
-                                DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
-                                DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType,
-                                GroupId = group
-                            },
+                            Target = target,
                             Source = DeviceAndAppManagementAssignmentSource.Direct,
                             SourceId = group
                         };
