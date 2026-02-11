@@ -89,6 +89,36 @@ namespace IntuneTools.Pages
 
             var totalMinutes = TimeSaved.GetTotalTimeSavedInMinutes();
 
+            HelperClass.LogToFunctionFile(
+                appFunction.Summary,
+                $"Time saved updated. Added: {minutesAdded} minute(s). Total: {totalMinutes} minute(s).",
+                LogLevels.Info);
+
+            var renameSeconds = numberOfItemsRenamed * secondsSavedOnRenaming;
+            var assignmentSeconds = numberOfItemsAssigned * secondsSavedOnAssignments;
+            var deleteSeconds = numberOfItemsDeleted * secondsSavedOnDeleting;
+            var importSeconds = numberOfItemsImported * secondsSavedOnImporting;
+
+            HelperClass.LogToFunctionFile(
+                appFunction.Summary,
+                $"Time saved breakdown - Rename: {numberOfItemsRenamed} item(s), {renameSeconds} sec ({renameSeconds / 60.0:F2} min).",
+                LogLevels.Info);
+
+            HelperClass.LogToFunctionFile(
+                appFunction.Summary,
+                $"Time saved breakdown - Assignment: {numberOfItemsAssigned} item(s), {assignmentSeconds} sec ({assignmentSeconds / 60.0:F2} min).",
+                LogLevels.Info);
+
+            HelperClass.LogToFunctionFile(
+                appFunction.Summary,
+                $"Time saved breakdown - Delete: {numberOfItemsDeleted} item(s), {deleteSeconds} sec ({deleteSeconds / 60.0:F2} min).",
+                LogLevels.Info);
+
+            HelperClass.LogToFunctionFile(
+                appFunction.Summary,
+                $"Time saved breakdown - Import: {numberOfItemsImported} item(s), {importSeconds} sec ({importSeconds / 60.0:F2} min).",
+                LogLevels.Info);
+
             TimeSavedMinutesText.Text = totalMinutes.ToString();
             TimeSavedProgress.Value = Math.Min(TimeSavedProgress.Maximum, totalMinutes);
 
