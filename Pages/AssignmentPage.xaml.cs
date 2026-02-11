@@ -293,7 +293,7 @@ namespace IntuneTools.Pages
                     if (item.Value.Type == "Settings Catalog")
                     {
                         await AssignGroupsToSingleSettingsCatalog(item.Value.Id, groupList, sourceGraphServiceClient);
-                    }
+                     }
                     if (item.Value.Type == "Device Configuration")
                     {
                         await AssignGroupsToSingleDeviceConfiguration(item.Value.Id, groupList, sourceGraphServiceClient);
@@ -1041,17 +1041,16 @@ namespace IntuneTools.Pages
             if (FilterSelectionComboBox.SelectedItem is DeviceAndAppManagementAssignmentFilter selectedFilter)
             {
                 _selectedFilterID = selectedFilter;
-                _selectedFilterName = selectedFilter.DisplayName;
+                _selectedFilterName = selectedFilter.DisplayName ?? string.Empty;
                 SelectedFilterID = _selectedFilterID.Id;
-
-                //AppendToDetailsRichTextBlock($"Selected filter: '{_selectedFilterName}' (ID: {_selectedFilterID.Id})");
+                IsFilterSelected = FilterToggle.IsOn && !string.IsNullOrWhiteSpace(SelectedFilterID);
             }
             else
             {
                 _selectedFilterID = null;
                 _selectedFilterName = string.Empty;
                 SelectedFilterID = null;
-                //AppendToDetailsRichTextBlock("Filter selection cleared.");
+                IsFilterSelected = false;
             }
         }
 
@@ -1099,6 +1098,7 @@ namespace IntuneTools.Pages
                         await LoadAllAssignmentFiltersAsync();
                     }
                     _selectedFilterMode = "Include";
+                    IsFilterSelected = !string.IsNullOrWhiteSpace(SelectedFilterID);
                     AppendToDetailsRichTextBlock("Assignment filter enabled.");
                 }
                 else
@@ -1113,6 +1113,9 @@ namespace IntuneTools.Pages
                         FilterModeToggle.IsOn = true; // Keep semantic default (Include) even while hidden
                     }
                     _selectedFilterMode = "Include";
+                    SelectedFilterID = null;
+                    IsFilterSelected = false;
+                    deviceAndAppManagementAssignmentFilterType = DeviceAndAppManagementAssignmentFilterType.None;
                     AppendToDetailsRichTextBlock("Assignment filter disabled.");
                 }
             }
