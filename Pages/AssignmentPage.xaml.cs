@@ -102,6 +102,7 @@ namespace IntuneTools.Pages
             AppDataGrid.ItemsSource = AssignmentList;
 
             this.Loaded += AssignmentPage_Loaded;
+            RightClickMenu.AttachDataGridContextMenu(AppDataGrid);
             // Removed direct logging call here to avoid NullReference due to control construction order.
         }
 

@@ -142,13 +142,23 @@ namespace IntuneTools.Utilities
 
         private static bool TryGetLookupUrlTemplate(string contentType, out string template)
         {
+            var trimmed = contentType.Trim();
+
+            if (trimmed.StartsWith("App", StringComparison.OrdinalIgnoreCase))
+            {
+                template = "https://intune.microsoft.com/#view/Microsoft_Intune_Apps/SettingsMenu/~/0/appId/INSERT_ID_HERE";
+                return true;
+            }
+
             var templates = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["Settings Catalog"] = "https://intune.microsoft.com/#view/Microsoft_Intune_Workflows/PolicySummaryBlade/policyId/INSERT_ID_HERE/isAssigned~/true/technology/mdm/templateId//platformName/windows10",
-                ["settingsCatalog"] = "https://intune.microsoft.com/#view/Microsoft_Intune_Workflows/PolicySummaryBlade/policyId/INSERT_ID_HERE/isAssigned~/true/technology/mdm/templateId//platformName/windows10"
+                ["Device Compliance Policy"] = "https://intune.microsoft.com/#view/Microsoft_Intune_DeviceSettings/DevicesMenu/~/compliance",
+                ["Device Compliance"] = "https://intune.microsoft.com/#view/Microsoft_Intune_DeviceSettings/DevicesMenu/~/compliance",
+                ["Application"] = "https://intune.microsoft.com/#view/Microsoft_Intune_Apps/SettingsMenu/~/0/appId/INSERT_ID_HERE",
             };
 
-            return templates.TryGetValue(contentType.Trim(), out template);
+            return templates.TryGetValue(trimmed, out template);
         }
 
         private static string? GetRowCellText(DataGrid dataGrid, DataGridRow row, int columnIndex)
