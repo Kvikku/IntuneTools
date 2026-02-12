@@ -69,6 +69,7 @@ namespace IntuneTools.Pages
             NewControlsPanel.Visibility = Visibility.Collapsed;
             //LoadFilterOptions();
             AppendToDetailsRichTextBlock("Console output");
+            RightClickMenu.AttachDataGridContextMenu(ContentDataGrid);
 
         }
 

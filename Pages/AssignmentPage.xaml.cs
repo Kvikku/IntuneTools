@@ -102,6 +102,7 @@ namespace IntuneTools.Pages
             AppDataGrid.ItemsSource = AssignmentList;
 
             this.Loaded += AssignmentPage_Loaded;
+            RightClickMenu.AttachDataGridContextMenu(AppDataGrid);
             // Removed direct logging call here to avoid NullReference due to control construction order.
         }
 
@@ -293,7 +294,7 @@ namespace IntuneTools.Pages
                     if (item.Value.Type == "Settings Catalog")
                     {
                         await AssignGroupsToSingleSettingsCatalog(item.Value.Id, groupList, sourceGraphServiceClient);
-                     }
+                    }
                     if (item.Value.Type == "Device Configuration")
                     {
                         await AssignGroupsToSingleDeviceConfiguration(item.Value.Id, groupList, sourceGraphServiceClient);
@@ -343,7 +344,7 @@ namespace IntuneTools.Pages
 
                     }
 
-                    
+
                     foreach (var group in selectedGroups)
                     {
                         try

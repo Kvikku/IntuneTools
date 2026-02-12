@@ -206,7 +206,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     // Check if this is All Users - Driver Update profiles cannot be assigned to All Users
                     if (groupId.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
                     {
-                LogToFunctionFile(appFunction.Main, "Warning: Windows Driver Update profiles cannot be assigned to 'All Users'. Only device groups are supported. Skipping this assignment.", LogLevels.Warning);
+                        LogToFunctionFile(appFunction.Main, "Warning: Windows Driver Update profiles cannot be assigned to 'All Users'. Only device groups are supported. Skipping this assignment.", LogLevels.Warning);
                         continue;
                     }
 

@@ -3,19 +3,17 @@ using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace IntuneTools.Utilities
 {
     public class HelperClass
     {
-        
+
         public static string CreateTimestampedAppFolder()
         {
             var folderName = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
@@ -54,7 +52,7 @@ namespace IntuneTools.Utilities
                 Console.WriteLine($"Error writing to {function} log file: {ex.Message}");
             }
         }
-        
+
 
         public static void LogApplicationStart()
         {
@@ -95,7 +93,7 @@ namespace IntuneTools.Utilities
             LogToFunctionFile(appFunction.Summary, $"Process Architecture: {RuntimeInformation.ProcessArchitecture}", LogLevels.Info);
             LogToFunctionFile(appFunction.Summary, $"Current Culture: {CultureInfo.CurrentCulture}", LogLevels.Info);
             LogToFunctionFile(appFunction.Summary, $"Current UI Culture: {CultureInfo.CurrentUICulture}", LogLevels.Info);
-            
+
             // Build the UTC offset string safely
             var offset = TimeZoneInfo.Local.BaseUtcOffset;
             var sign = offset < TimeSpan.Zero ? "-" : "+";
@@ -108,7 +106,9 @@ namespace IntuneTools.Utilities
             LogToFunctionFile(appFunction.Summary, $"Command Line Args Count: {Environment.GetCommandLineArgs().Length}", LogLevels.Info);
         }
 
-        
+
+
+
         public static void UpdateImage(Microsoft.UI.Xaml.Controls.Image image, string imageFileName)
         {
             try
@@ -117,7 +117,7 @@ namespace IntuneTools.Utilities
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main,$"Failed to update image source. Image: {image.Name}, FileName: {imageFileName}, Error: {ex.Message}", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"Failed to update image source. Image: {image.Name}, FileName: {imageFileName}, Error: {ex.Message}", LogLevels.Error);
             }
         }
 

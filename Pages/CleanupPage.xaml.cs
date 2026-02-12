@@ -41,6 +41,7 @@ namespace IntuneTools.Pages
         public CleanupPage()
         {
             InitializeComponent();
+            RightClickMenu.AttachDataGridContextMenu(CleanupDataGrid);
         }
 
 
