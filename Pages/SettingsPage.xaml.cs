@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Text.Json;
 using System.Threading.Tasks;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -56,8 +55,8 @@ namespace IntuneTools.Pages
             UpdateImage(DestinationLoginStatusImage, destinationSignedIn ? "GreenCheck.png" : "RedCross.png");
         }
 
-     
-       
+
+
         private async void SourceLoginButton_Click(object sender, RoutedEventArgs e)
         {
             //await Utilities.HelperClass.ShowMessageBox("Source Tenant Login", "Authenticating to the source tenant. Please wait...","NO");
@@ -73,13 +72,13 @@ namespace IntuneTools.Pages
                 sourceTenantName = await GetAzureTenantName(Client);
                 Variables.sourceTenantName = sourceTenantName ?? string.Empty;
 
-                LogToFunctionFile(appFunction.Main,$"Source Tenant Name: {sourceTenantName}");
+                LogToFunctionFile(appFunction.Main, $"Source Tenant Name: {sourceTenantName}");
                 UpdateImage(SourceLoginStatusImage, "GreenCheck.png");
                 SourceLoginStatusText.Text = $"Signed in: {sourceTenantName}";
             }
             else
             {
-                LogToFunctionFile(appFunction.Main,"Failed to authenticate to source tenant.");
+                LogToFunctionFile(appFunction.Main, "Failed to authenticate to source tenant.");
                 UpdateImage(SourceLoginStatusImage, "RedCross.png");
                 SourceLoginStatusText.Text = "Not signed in";
                 Variables.sourceTenantName = string.Empty;
@@ -102,13 +101,13 @@ namespace IntuneTools.Pages
                 destinationTenantName = await GetAzureTenantName(client);
                 Variables.destinationTenantName = destinationTenantName ?? string.Empty;
 
-                LogToFunctionFile(appFunction.Main,$"Destination Tenant Name: {destinationTenantName}");
+                LogToFunctionFile(appFunction.Main, $"Destination Tenant Name: {destinationTenantName}");
                 UpdateImage(DestinationLoginStatusImage, "GreenCheck.png");
                 DestinationLoginStatusText.Text = $"Signed in: {destinationTenantName}";
             }
             else
             {
-                LogToFunctionFile(appFunction.Main,"Failed to authenticate to destination tenant.");
+                LogToFunctionFile(appFunction.Main, "Failed to authenticate to destination tenant.");
                 UpdateImage(DestinationLoginStatusImage, "RedCross.png");
                 DestinationLoginStatusText.Text = "Not signed in";
                 Variables.destinationTenantName = string.Empty;
@@ -131,7 +130,7 @@ namespace IntuneTools.Pages
             }
             else
             {
-                LogToFunctionFile(appFunction.Main,$"Invalid log file folder path: {folderToOpen}");
+                LogToFunctionFile(appFunction.Main, $"Invalid log file folder path: {folderToOpen}");
             }
         }
 
@@ -148,12 +147,12 @@ namespace IntuneTools.Pages
 
                     UpdateImage(SourceLoginStatusImage, "RedCross.png");
                     SourceLoginStatusText.Text = "Not signed in";
-                    LogToFunctionFile(appFunction.Main,"Source token/session cleared.");
+                    LogToFunctionFile(appFunction.Main, "Source token/session cleared.");
                 }
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main,$"Failed to clear source token: {ex.Message}");
+                LogToFunctionFile(appFunction.Main, $"Failed to clear source token: {ex.Message}");
             }
         }
 
@@ -170,12 +169,12 @@ namespace IntuneTools.Pages
 
                     UpdateImage(DestinationLoginStatusImage, "RedCross.png");
                     DestinationLoginStatusText.Text = "Not signed in";
-                    LogToFunctionFile(appFunction.Main,"Destination token/session cleared.");
+                    LogToFunctionFile(appFunction.Main, "Destination token/session cleared.");
                 }
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main,$"Failed to clear destination token: {ex.Message}");
+                LogToFunctionFile(appFunction.Main, $"Failed to clear destination token: {ex.Message}");
             }
         }
     }

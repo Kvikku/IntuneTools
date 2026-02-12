@@ -1,18 +1,10 @@
 ﻿using CommunityToolkit.WinUI.UI.Controls;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text.Json;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
 
@@ -205,7 +197,7 @@ namespace IntuneTools.Utilities
                 ["Assignment Filter"] = "https://intune.microsoft.com/#view/Microsoft_Intune_DeviceSettings/AssignmentFilterSummaryBlade/assignmentFilterId/INSERT_ID_HERE/filterType~/2,",
                 ["MacOS Shell Script"] = "https://intune.microsoft.com/#view/Microsoft_Intune_DeviceSettings/ConfigureWMPolicyMenuBlade/~/overview/policyId/INSERT_ID_HERE/policyType~/1",
 
-                // Note : For "Device Configuration Profile", the template is more complex and may require additional context to determine the correct URL, so it's not included in this dictionary
+                // Note: For "Device Configuration Profile", the template is more complex and may require additional context to determine the correct URL, so it's not included in this dictionary
                 // Note 2: The other templates require special formatting of the URL that may not be achievable with a simple template replacement, so they are also not included in this dictionary. If needed, they can be added with custom logic to handle the URL formatting.
 
             };

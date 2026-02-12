@@ -294,7 +294,7 @@ namespace IntuneTools.Pages
                     if (item.Value.Type == "Settings Catalog")
                     {
                         await AssignGroupsToSingleSettingsCatalog(item.Value.Id, groupList, sourceGraphServiceClient);
-                     }
+                    }
                     if (item.Value.Type == "Device Configuration")
                     {
                         await AssignGroupsToSingleDeviceConfiguration(item.Value.Id, groupList, sourceGraphServiceClient);
@@ -344,7 +344,7 @@ namespace IntuneTools.Pages
 
                     }
 
-                    
+
                     foreach (var group in selectedGroups)
                     {
                         try
