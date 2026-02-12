@@ -22,6 +22,21 @@ namespace IntuneTools.Utilities
     {
         #region Datagrid context menu helper methods
 
+        private sealed class DataGridContext
+        {
+            public DataGridContext(DataGrid dataGrid, DataGridCell cell, DataGridRow? row, string? cellText)
+            {
+                DataGrid = dataGrid;
+                Cell = cell;
+                Row = row;
+                CellText = cellText;
+            }
+            public DataGrid DataGrid { get; }
+            public DataGridCell Cell { get; }
+            public DataGridRow? Row { get; }
+            public string? CellText { get; }
+        }
+
         public static void AttachDataGridContextMenu(DataGrid dataGrid)
         {
             if (dataGrid == null)
@@ -33,6 +48,10 @@ namespace IntuneTools.Utilities
             var copyItem = CreateCopyCellMenuItem();
             menuFlyout.Items.Add(copyItem);
             menuUpdaters.Add(context => UpdateCopyCellMenuItem(copyItem, context));
+
+            var lookupItem = CreateLookupMenuItem();
+            menuFlyout.Items.Add(lookupItem);
+            menuUpdaters.Add(context => UpdateLookupMenuItem(lookupItem, context));
 
             dataGrid.RightTapped += (_, e) =>
             {
@@ -53,22 +72,6 @@ namespace IntuneTools.Utilities
             };
 
             dataGrid.ContextFlyout = menuFlyout;
-        }
-
-        private sealed class DataGridContext
-        {
-            public DataGridContext(DataGrid dataGrid, DataGridCell cell, DataGridRow? row, string? cellText)
-            {
-                DataGrid = dataGrid;
-                Cell = cell;
-                Row = row;
-                CellText = cellText;
-            }
-
-            public DataGrid DataGrid { get; }
-            public DataGridCell Cell { get; }
-            public DataGridRow? Row { get; }
-            public string? CellText { get; }
         }
 
         private static MenuFlyoutItem CreateCopyCellMenuItem()
@@ -92,6 +95,80 @@ namespace IntuneTools.Utilities
         {
             item.Tag = context.CellText ?? string.Empty;
             item.IsEnabled = !string.IsNullOrWhiteSpace(context.CellText);
+        }
+
+        private static MenuFlyoutItem CreateLookupMenuItem()
+        {
+            var lookupItem = new MenuFlyoutItem { Text = "Lookup" };
+
+            lookupItem.Click += (_, __) =>
+            {
+                if (lookupItem.Tag is not string url || string.IsNullOrWhiteSpace(url))
+                    return;
+
+                System.Diagnostics.Process.Start(new ProcessStartInfo
+                {
+                    FileName = url,
+                    UseShellExecute = true
+                });
+            };
+
+            return lookupItem;
+        }
+
+        private static void UpdateLookupMenuItem(MenuFlyoutItem item, DataGridContext context)
+        {
+            var url = TryBuildLookupUrl(context);
+            item.Tag = url ?? string.Empty;
+            item.IsEnabled = !string.IsNullOrWhiteSpace(url);
+        }
+
+        private static string? TryBuildLookupUrl(DataGridContext context)
+        {
+            if (context.Row == null)
+                return null;
+
+            var contentType = GetRowCellText(context.DataGrid, context.Row, 1);
+            var id = GetRowCellText(context.DataGrid, context.Row, 3);
+
+            if (string.IsNullOrWhiteSpace(contentType) || string.IsNullOrWhiteSpace(id))
+                return null;
+
+            if (!TryGetLookupUrlTemplate(contentType, out var template))
+                return null;
+
+            return template.Replace("INSERT_ID_HERE", id, StringComparison.Ordinal);
+        }
+
+        private static bool TryGetLookupUrlTemplate(string contentType, out string template)
+        {
+            var templates = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Settings Catalog"] = "https://intune.microsoft.com/#view/Microsoft_Intune_Workflows/PolicySummaryBlade/policyId/INSERT_ID_HERE/isAssigned~/true/technology/mdm/templateId//platformName/windows10",
+                ["settingsCatalog"] = "https://intune.microsoft.com/#view/Microsoft_Intune_Workflows/PolicySummaryBlade/policyId/INSERT_ID_HERE/isAssigned~/true/technology/mdm/templateId//platformName/windows10"
+            };
+
+            return templates.TryGetValue(contentType.Trim(), out template);
+        }
+
+        private static string? GetRowCellText(DataGrid dataGrid, DataGridRow row, int columnIndex)
+        {
+            if (columnIndex < 0 || columnIndex >= dataGrid.Columns.Count)
+                return null;
+
+            var content = dataGrid.Columns[columnIndex].GetCellContent(row);
+
+            if (content is TextBlock textBlock)
+                return textBlock.Text;
+
+            if (content is FrameworkElement element)
+            {
+                var innerTextBlock = FindChild<TextBlock>(element);
+                if (innerTextBlock != null)
+                    return innerTextBlock.Text;
+            }
+
+            return content?.ToString();
         }
 
         private static string? GetCellText(DataGridCell? cell)
