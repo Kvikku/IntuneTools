@@ -78,14 +78,22 @@ namespace IntuneTools.Utilities
         {
             var copyItem = new MenuFlyoutItem { Text = "Copy cell" };
 
-            copyItem.Click += (_, __) =>
+            copyItem.Click += async (_, __) =>
             {
                 if (copyItem.Tag is not string text || string.IsNullOrWhiteSpace(text))
                     return;
 
-                var package = new DataPackage();
-                package.SetText(text);
-                Clipboard.SetContent(package);
+                try
+                {
+                    var package = new DataPackage();
+                    package.SetText(text);
+                    Clipboard.SetContent(package);
+                }
+                catch (Exception ex)
+                {
+                    HelperClass.LogToFunctionFile(appFunction.Main, $"Copy failed to set clipboard content. {ex}", LogLevels.Error);
+                    await ShowLookupErrorDialogAsync("Copy failed", "The clipboard is unavailable or blocked. Please try again.");
+                }
             };
 
             return copyItem;
