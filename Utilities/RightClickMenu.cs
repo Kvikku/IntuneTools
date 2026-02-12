@@ -101,19 +101,55 @@ namespace IntuneTools.Utilities
         {
             var lookupItem = new MenuFlyoutItem { Text = "Lookup" };
 
-            lookupItem.Click += (_, __) =>
+            lookupItem.Click += async (_, __) =>
             {
                 if (lookupItem.Tag is not string url || string.IsNullOrWhiteSpace(url))
-                    return;
-
-                System.Diagnostics.Process.Start(new ProcessStartInfo
                 {
-                    FileName = url,
-                    UseShellExecute = true
-                });
+                    HelperClass.LogToFunctionFile(appFunction.Main, "Lookup failed: empty URL.", LogLevels.Warning);
+                    await ShowLookupErrorDialogAsync("Lookup failed", "No URL was available for this item.");
+                    return;
+                }
+
+                if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+                {
+                    HelperClass.LogToFunctionFile(appFunction.Main, $"Lookup failed: invalid URL '{url}'.", LogLevels.Warning);
+                    await ShowLookupErrorDialogAsync("Lookup failed", $"The lookup URL is invalid:\n{url}");
+                    return;
+                }
+
+                try
+                {
+                    System.Diagnostics.Process.Start(new ProcessStartInfo
+                    {
+                        FileName = uri.AbsoluteUri,
+                        UseShellExecute = true
+                    });
+                }
+                catch (Exception ex)
+                {
+                    HelperClass.LogToFunctionFile(appFunction.Main, $"Lookup failed to open URL '{uri.AbsoluteUri}'. {ex}", LogLevels.Error);
+                    await ShowLookupErrorDialogAsync("Lookup failed", "The lookup page could not be opened. Please try again.");
+                }
             };
 
             return lookupItem;
+        }
+
+        private static async Task ShowLookupErrorDialogAsync(string title, string message)
+        {
+            var xamlRoot = (App.MainWindowInstance?.Content as FrameworkElement)?.XamlRoot;
+            if (xamlRoot == null)
+                return;
+
+            var dialog = new ContentDialog
+            {
+                Title = title,
+                Content = message,
+                CloseButtonText = "OK",
+                XamlRoot = xamlRoot
+            };
+
+            await dialog.ShowAsync();
         }
 
         private static void UpdateLookupMenuItem(MenuFlyoutItem item, DataGridContext context)
