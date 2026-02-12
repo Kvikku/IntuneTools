@@ -2,9 +2,9 @@
 {
     public class TimeSaved
     {
-        public static int UpdateTotalTimeSaved(int minutes, appFunction function)
+        public static int UpdateTotalTimeSaved(int seconds, appFunction function)
         {
-            totalTimeSavedInSeconds += minutes;
+            totalTimeSavedInSeconds += seconds;
 
             switch (function)
             {
