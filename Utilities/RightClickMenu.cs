@@ -156,6 +156,12 @@ namespace IntuneTools.Utilities
                 ["Device Compliance Policy"] = "https://intune.microsoft.com/#view/Microsoft_Intune_DeviceSettings/DevicesMenu/~/compliance",
                 ["Device Compliance"] = "https://intune.microsoft.com/#view/Microsoft_Intune_DeviceSettings/DevicesMenu/~/compliance",
                 ["Application"] = "https://intune.microsoft.com/#view/Microsoft_Intune_Apps/SettingsMenu/~/0/appId/INSERT_ID_HERE",
+                ["Windows Autopilot Profile"] = "https://intune.microsoft.com/#view/Microsoft_Intune_Enrollment/AutopilotMenuBlade/~/overview/apProfileId/INSERT_ID_HERE",
+                ["Entra Group"] = "https://intune.microsoft.com/#view/Microsoft_AAD_IAM/GroupDetailsMenuBlade/~/Overview/groupId/INSERT_ID_HERE/menuId/",
+                ["Assignment Filter"] = "https://intune.microsoft.com/#view/Microsoft_Intune_DeviceSettings/AssignmentFilterSummaryBlade/assignmentFilterId/INSERT_ID_HERE/filterType~/2,",
+                ["MacOS Shell Script"] = "https://intune.microsoft.com/#view/Microsoft_Intune_DeviceSettings/ConfigureWMPolicyMenuBlade/~/overview/policyId/INSERT_ID_HERE/policyType~/1",
+
+
             };
 
             return templates.TryGetValue(trimmed, out template);
