@@ -1,4 +1,8 @@
-﻿using Microsoft.UI.Xaml.Controls;
+﻿using CommunityToolkit.WinUI.UI.Controls;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Data;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
@@ -10,6 +14,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Windows.ApplicationModel.DataTransfer;
 
 namespace IntuneTools.Utilities
 {
@@ -108,7 +113,98 @@ namespace IntuneTools.Utilities
             LogToFunctionFile(appFunction.Summary, $"Command Line Args Count: {Environment.GetCommandLineArgs().Length}", LogLevels.Info);
         }
 
-        
+
+        #region Datagrid context menu helper methods
+
+        public static void AttachDataGridContextMenu(DataGrid dataGrid)
+        {
+            if (dataGrid == null)
+                return;
+
+            var menuFlyout = new MenuFlyout();
+            var copyItem = new MenuFlyoutItem { Text = "Copy cell" };
+
+            copyItem.Click += (_, __) =>
+            {
+                if (copyItem.Tag is not string text || string.IsNullOrWhiteSpace(text))
+                    return;
+
+                var package = new DataPackage();
+                package.SetText(text);
+                Clipboard.SetContent(package);
+            };
+
+            menuFlyout.Items.Add(copyItem);
+
+            dataGrid.RightTapped += (_, e) =>
+            {
+                var cell = FindParent<DataGridCell>(e.OriginalSource as DependencyObject);
+                var cellText = GetCellText(cell);
+
+                copyItem.Tag = cellText ?? string.Empty;
+                copyItem.IsEnabled = !string.IsNullOrWhiteSpace(cellText);
+
+                if (cell == null)
+                    return;
+
+                menuFlyout.ShowAt(dataGrid, e.GetPosition(dataGrid));
+                e.Handled = true;
+            };
+
+            dataGrid.ContextFlyout = menuFlyout;
+        }
+
+        private static string? GetCellText(DataGridCell? cell)
+        {
+            if (cell == null)
+                return null;
+
+            if (cell.Content is TextBlock textBlock)
+                return textBlock.Text;
+
+            if (cell.Content is FrameworkElement element)
+            {
+                var innerTextBlock = FindChild<TextBlock>(element);
+                if (innerTextBlock != null)
+                    return innerTextBlock.Text;
+            }
+
+            return cell.Content?.ToString();
+        }
+
+        private static T? FindChild<T>(DependencyObject parent) where T : DependencyObject
+        {
+            var count = VisualTreeHelper.GetChildrenCount(parent);
+            for (var i = 0; i < count; i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T match)
+                    return match;
+
+                var nested = FindChild<T>(child);
+                if (nested != null)
+                    return nested;
+            }
+
+            return null;
+        }
+
+        private static T? FindParent<T>(DependencyObject? element) where T : DependencyObject
+        {
+            while (element != null)
+            {
+                if (element is T match)
+                    return match;
+
+                element = VisualTreeHelper.GetParent(element);
+            }
+
+            return null;
+        }
+
+
+        #endregion
+
         public static void UpdateImage(Microsoft.UI.Xaml.Controls.Image image, string imageFileName)
         {
             try
