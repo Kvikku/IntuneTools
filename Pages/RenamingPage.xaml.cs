@@ -51,6 +51,7 @@ namespace IntuneTools.Pages
         public RenamingPage()
         {
             this.InitializeComponent();
+            HelperClass.AttachDataGridContextMenu(RenamingDataGrid);
         }
 
         /// <summary>
