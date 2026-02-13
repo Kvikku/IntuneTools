@@ -278,6 +278,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 {
                     await destinationGraphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileID].Assign.PostAsync(requestBody);
                     LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to Feature Update profile {profileID}");
+                    UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
                 }
                 catch (Exception ex)
                 {

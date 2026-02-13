@@ -20,6 +20,7 @@ namespace IntuneTools.Pages
         private async void HomePage_Loaded(object sender, RoutedEventArgs e)
         {
             await UpdateVersionStatusAsync();
+            UpdateTimeSavedCounter();
         }
 
         private async Task UpdateVersionStatusAsync()
@@ -77,6 +78,76 @@ namespace IntuneTools.Pages
             {
                 UpdateImage(LoginStatusImage, "RedCross.png");
             }
+        }
+
+        private void UpdateTimeSavedCounter(int minutesAdded = 0)
+        {
+            if (minutesAdded > 0)
+            {
+                TimeSaved.UpdateTotalTimeSaved(minutesAdded, appFunction.Main);
+            }
+
+            var totalMinutes = TimeSaved.GetTotalTimeSavedInMinutes();
+
+            HelperClass.LogToFunctionFile(
+                appFunction.Summary,
+                $"Time saved updated. Added: {minutesAdded} minute(s). Total: {totalMinutes} minute(s).",
+                LogLevels.Info);
+
+            var renameSeconds = numberOfItemsRenamed * secondsSavedOnRenaming;
+            var assignmentSeconds = numberOfItemsAssigned * secondsSavedOnAssignments;
+            var deleteSeconds = numberOfItemsDeleted * secondsSavedOnDeleting;
+            var importSeconds = numberOfItemsImported * secondsSavedOnImporting;
+
+            HelperClass.LogToFunctionFile(
+                appFunction.Summary,
+                $"Time saved breakdown - Rename: {numberOfItemsRenamed} item(s), {renameSeconds} sec ({renameSeconds / 60.0:F2} min).",
+                LogLevels.Info);
+
+            HelperClass.LogToFunctionFile(
+                appFunction.Summary,
+                $"Time saved breakdown - Assignment: {numberOfItemsAssigned} item(s), {assignmentSeconds} sec ({assignmentSeconds / 60.0:F2} min).",
+                LogLevels.Info);
+
+            HelperClass.LogToFunctionFile(
+                appFunction.Summary,
+                $"Time saved breakdown - Delete: {numberOfItemsDeleted} item(s), {deleteSeconds} sec ({deleteSeconds / 60.0:F2} min).",
+                LogLevels.Info);
+
+            HelperClass.LogToFunctionFile(
+                appFunction.Summary,
+                $"Time saved breakdown - Import: {numberOfItemsImported} item(s), {importSeconds} sec ({importSeconds / 60.0:F2} min).",
+                LogLevels.Info);
+
+            TimeSavedMinutesText.Text = totalMinutes.ToString();
+            TimeSavedProgress.Value = Math.Min(TimeSavedProgress.Maximum, totalMinutes);
+
+            UpdateTimeSavedBreakdown();
+        }
+
+        private void UpdateTimeSavedBreakdown()
+        {
+            var anyVisible = false;
+
+            anyVisible |= UpdateBreakdownRow(RenamedItemsPanel, RenamedItemsCountText, numberOfItemsRenamed);
+            anyVisible |= UpdateBreakdownRow(AssignedItemsPanel, AssignedItemsCountText, numberOfItemsAssigned);
+            anyVisible |= UpdateBreakdownRow(DeletedItemsPanel, DeletedItemsCountText, numberOfItemsDeleted);
+            anyVisible |= UpdateBreakdownRow(ImportedItemsPanel, ImportedItemsCountText, numberOfItemsImported);
+
+            TimeSavedBreakdownPanel.Visibility = anyVisible ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private static bool UpdateBreakdownRow(StackPanel panel, TextBlock countText, int count)
+        {
+            if (count > 0)
+            {
+                countText.Text = count.ToString();
+                panel.Visibility = Visibility.Visible;
+                return true;
+            }
+
+            panel.Visibility = Visibility.Collapsed;
+            return false;
         }
 
         private async void GitHubLink_Click(object sender, RoutedEventArgs e)

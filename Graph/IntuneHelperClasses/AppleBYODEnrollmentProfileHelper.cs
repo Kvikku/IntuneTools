@@ -329,6 +329,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                             : "";
 
                         LogToFunctionFile(appFunction.Main, $"Assigned {targetType} to profile {profileId}{filterInfo}.");
+                        UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
                     }
                     catch (ODataError odataError)
                     {

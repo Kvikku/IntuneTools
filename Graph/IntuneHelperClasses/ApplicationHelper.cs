@@ -371,6 +371,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }, maxRetries: 5, baseDelaySeconds: 2);
 
                 LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to application {appId} with filter type {deviceAndAppManagementAssignmentFilterType}.");
+                UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
             }
             catch (Exception ex)
             {

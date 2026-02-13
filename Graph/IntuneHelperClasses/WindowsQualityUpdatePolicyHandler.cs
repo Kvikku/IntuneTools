@@ -277,6 +277,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 {
                     await destinationGraphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].Assign.PostAsync(requestBody);
                     LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to Quality Update policy {policyID}.");
+                    UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
                 }
                 catch (Exception ex)
                 {

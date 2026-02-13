@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.Collections.Generic;
 
 namespace IntuneTools.Utilities
 {
@@ -8,7 +6,7 @@ namespace IntuneTools.Utilities
     {
         // Application version (consider retrieving this dynamically from assembly info in the future)
         public static readonly string appVersion = "1.2.0.0";
-        
+
         // Log file
         public static readonly string appDataPath = @"C:\ProgramData\";
         public static readonly string appFolderName = "InToolz";
@@ -36,7 +34,7 @@ namespace IntuneTools.Utilities
             Summary, // Used to log system settings upon app launch
             Import,
             Assignment,
-            Rename, 
+            Rename,
             Delete,
         }
 
@@ -95,6 +93,15 @@ namespace IntuneTools.Utilities
         public static IosVppAppAssignmentSettings iOSAppDeploymentSettings;
 
 
-
+        // Time saved variables
+        public static int totalTimeSavedInSeconds = 0;
+        public static readonly int secondsSavedOnAssignments = 30;
+        public static readonly int secondsSavedOnRenaming = 20;
+        public static readonly int secondsSavedOnDeleting = 10;
+        public static readonly int secondsSavedOnImporting = 90;
+        public static int numberOfItemsRenamed = 0;
+        public static int numberOfItemsDeleted = 0;
+        public static int numberOfItemsAssigned = 0;
+        public static int numberOfItemsImported = 0;
     }
 }
