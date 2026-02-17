@@ -4,7 +4,7 @@
 InToolz is a focused toolset for bulk management in Microsoft Intune. The spirit of the project is to make large-scale admin work fast and repeatable—without clicking a million times in the Intune admin console.
 
 **Main functions:**
-1. Bulk import Intune content.
+1. Bulk import Intune content from a master tenant
 2. Bulk assign groups to profiles and applications.
 3. Bulk rename items and update description fields.
 4. Bulk delete Intune content.
@@ -23,9 +23,10 @@ Check out [the wiki](https://github.com/Kvikku/IntuneTools/wiki) for how to use 
 
 ## Future functionality
 Planned and community-requested features:
-- Assign applications
 - Import applications
 - Delete duplicate policies/apps
+- Delete group assignment
+- Import from json-file
 - Bulk add objects to groups (community request :D )
 
 ## Kudos and creds
