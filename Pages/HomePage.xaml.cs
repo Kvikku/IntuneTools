@@ -94,35 +94,24 @@ namespace IntuneTools.Pages
                 $"Time saved updated. Added: {minutesAdded} minute(s). Total: {totalMinutes} minute(s).",
                 LogLevels.Info);
 
-            var renameSeconds = numberOfItemsRenamed * secondsSavedOnRenaming;
-            var assignmentSeconds = numberOfItemsAssigned * secondsSavedOnAssignments;
-            var deleteSeconds = numberOfItemsDeleted * secondsSavedOnDeleting;
-            var importSeconds = numberOfItemsImported * secondsSavedOnImporting;
-
-            HelperClass.LogToFunctionFile(
-                appFunction.Summary,
-                $"Time saved breakdown - Rename: {numberOfItemsRenamed} item(s), {renameSeconds} sec ({renameSeconds / 60.0:F2} min).",
-                LogLevels.Info);
-
-            HelperClass.LogToFunctionFile(
-                appFunction.Summary,
-                $"Time saved breakdown - Assignment: {numberOfItemsAssigned} item(s), {assignmentSeconds} sec ({assignmentSeconds / 60.0:F2} min).",
-                LogLevels.Info);
-
-            HelperClass.LogToFunctionFile(
-                appFunction.Summary,
-                $"Time saved breakdown - Delete: {numberOfItemsDeleted} item(s), {deleteSeconds} sec ({deleteSeconds / 60.0:F2} min).",
-                LogLevels.Info);
-
-            HelperClass.LogToFunctionFile(
-                appFunction.Summary,
-                $"Time saved breakdown - Import: {numberOfItemsImported} item(s), {importSeconds} sec ({importSeconds / 60.0:F2} min).",
-                LogLevels.Info);
+            LogBreakdown("Rename", numberOfItemsRenamed, secondsSavedOnRenaming);
+            LogBreakdown("Assignment", numberOfItemsAssigned, secondsSavedOnAssignments);
+            LogBreakdown("Delete", numberOfItemsDeleted, secondsSavedOnDeleting);
+            LogBreakdown("Import", numberOfItemsImported, secondsSavedOnImporting);
 
             TimeSavedMinutesText.Text = totalMinutes.ToString();
             TimeSavedProgress.Value = Math.Min(TimeSavedProgress.Maximum, totalMinutes);
 
             UpdateTimeSavedBreakdown();
+        }
+
+        private void LogBreakdown(string label, int itemCount, int secondsPerItem)
+        {
+            var totalSeconds = itemCount * secondsPerItem;
+            HelperClass.LogToFunctionFile(
+                appFunction.Summary,
+                $"Time saved breakdown - {label}: {itemCount} item(s), {totalSeconds} sec ({totalSeconds / 60.0:F2} min).",
+                LogLevels.Info);
         }
 
         private void UpdateTimeSavedBreakdown()
