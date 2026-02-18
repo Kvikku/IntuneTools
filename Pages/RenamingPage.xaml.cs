@@ -44,7 +44,13 @@ namespace IntuneTools.Pages
             public string? ContentDescription { get; set; }
         }
 
+        // old list
         public ObservableCollection<ContentInfo> ContentList { get; set; } = new ObservableCollection<ContentInfo>();
+        
+        
+        // new list
+        public ObservableCollection<CustomContentInfo> CustomContentList { get; set; } = new ObservableCollection<CustomContentInfo>();
+
 
 
 
@@ -761,35 +767,20 @@ namespace IntuneTools.Pages
         /// </summary>
         private async Task LoadAllSettingsCatalogPoliciesAsync()
         {
-            var policies = await GetAllSettingsCatalogPolicies(sourceGraphServiceClient);
-            foreach (var policy in policies)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = policy.Name,
-                    ContentType = "Settings Catalog",
-                    ContentPlatform = TranslatePolicyPlatformName(policy.Platforms.ToString()),
-                    ContentId = policy.Id,
-                    ContentDescription = policy.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Loaded {policies.Count()} settings catalog policies.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await GetAllSettingsCatalogContentAsync(sourceGraphServiceClient));
+
+            AppendToDetailsRichTextBlock($"Loaded {count} settings catalog policies.");
         }
+
         private async Task SearchForSettingsCatalogPoliciesAsync(string searchQuery)
         {
-            var policies = await SearchForSettingsCatalog(sourceGraphServiceClient, searchQuery);
-            foreach (var policy in policies)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = policy.Name,
-                    ContentType = "Settings Catalog",
-                    ContentPlatform = TranslatePolicyPlatformName(policy.Platforms.ToString()),
-                    ContentId = policy.Id,
-                    ContentDescription = policy.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Found {policies.Count()} settings catalog policies matching '{searchQuery}'.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await SearchSettingsCatalogContentAsync(sourceGraphServiceClient, searchQuery));
+
+            AppendToDetailsRichTextBlock($"Found {count} settings catalog policies matching '{searchQuery}'.");
         }
         private List<string> GetSettingsCatalogIDs()
         {
