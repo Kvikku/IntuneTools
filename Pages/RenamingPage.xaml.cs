@@ -1180,40 +1180,24 @@ namespace IntuneTools.Pages
 
         private async Task LoadAllWindowsFeatureUpdatesAsync()
         {
-            var updates = await GetAllWindowsFeatureUpdateProfiles(sourceGraphServiceClient);
-            foreach (var update in updates)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = update.DisplayName,
-                    ContentType = "Windows Feature Update",
-                    ContentPlatform = "Windows",
-                    ContentId = update.Id,
-                    ContentDescription = update.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Loaded {updates.Count()} Windows feature updates.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await GetAllWindowsFeatureUpdateContentAsync(sourceGraphServiceClient));
+
+            AppendToDetailsRichTextBlock($"Loaded {count} Windows feature updates.");
         }
         private async Task SearchForWindowsFeatureUpdatesAsync(string searchQuery)
         {
-            var updates = await SearchForWindowsFeatureUpdateProfiles(sourceGraphServiceClient, searchQuery);
-            foreach (var update in updates)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = update.DisplayName,
-                    ContentType = "Windows Feature Update",
-                    ContentPlatform = "Windows",
-                    ContentId = update.Id,
-                    ContentDescription = update.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Found {updates.Count()} Windows feature updates matching '{searchQuery}'.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await SearchWindowsFeatureUpdateContentAsync(sourceGraphServiceClient, searchQuery));
+
+            AppendToDetailsRichTextBlock($"Found {count} Windows feature updates matching '{searchQuery}'.");
         }
         private List<string> GetWindowsFeatureUpdateIDs()
         {
-            // This method retrieves the IDs of all Windows feature updates in ContentList
-            return ContentList
+            // This method retrieves the IDs of all Windows feature updates in CustomContentList
+            return CustomContentList
                 .Where(c => c.ContentType == "Windows Feature Update")
                 .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
