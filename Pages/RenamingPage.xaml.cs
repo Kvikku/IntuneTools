@@ -1123,40 +1123,24 @@ namespace IntuneTools.Pages
 
         private async Task LoadAllWindowsAutoPilotProfilesAsync()
         {
-            var profiles = await GetAllWindowsAutoPilotProfiles(sourceGraphServiceClient);
-            foreach (var profile in profiles)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = profile.DisplayName,
-                    ContentType = "Windows AutoPilot Profile",
-                    ContentPlatform = "Windows",
-                    ContentId = profile.Id,
-                    ContentDescription = profile.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Loaded {profiles.Count()} Windows AutoPilot profiles.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await GetAllWindowsAutoPilotContentAsync(sourceGraphServiceClient));
+
+            AppendToDetailsRichTextBlock($"Loaded {count} Windows AutoPilot profiles.");
         }
         private async Task SearchForWindowsAutoPilotProfilesAsync(string searchQuery)
         {
-            var profiles = await SearchForWindowsAutoPilotProfiles(sourceGraphServiceClient, searchQuery);
-            foreach (var profile in profiles)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = profile.DisplayName,
-                    ContentType = "Windows AutoPilot Profile",
-                    ContentPlatform = "Windows",
-                    ContentId = profile.Id,
-                    ContentDescription = profile.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Found {profiles.Count()} Windows AutoPilot profiles matching '{searchQuery}'.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await SearchWindowsAutoPilotContentAsync(sourceGraphServiceClient, searchQuery));
+
+            AppendToDetailsRichTextBlock($"Found {count} Windows AutoPilot profiles matching '{searchQuery}'.");
         }
         private List<string> GetWindowsAutoPilotProfileIDs()
         {
-            // This method retrieves the IDs of all Windows AutoPilot profiles in ContentList
-            return ContentList
+            // This method retrieves the IDs of all Windows AutoPilot profiles in CustomContentList
+            return CustomContentList
                 .Where(c => c.ContentType == "Windows AutoPilot Profile")
                 .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
