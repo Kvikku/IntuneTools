@@ -1,4 +1,5 @@
-﻿using Microsoft.Graph;
+﻿using IntuneTools.Utilities;
+using Microsoft.Graph;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -355,6 +356,46 @@ namespace IntuneTools.Graph.EntraHelperClasses
                 LogToFunctionFile(appFunction.Main, "An error occurred while renaming group", LogLevels.Warning);
                 LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
+        }
+
+        public static async Task<List<CustomContentInfo>> GetAllGroupContentAsync(GraphServiceClient graphServiceClient)
+        {
+            var groups = await GetAllGroups(graphServiceClient) ?? new List<Group>();
+            var content = new List<CustomContentInfo>();
+
+            foreach (var group in groups)
+            {
+                content.Add(new CustomContentInfo
+                {
+                    ContentName = group.DisplayName,
+                    ContentType = "Entra Group",
+                    ContentPlatform = "Entra group",
+                    ContentId = group.Id,
+                    ContentDescription = group.Description
+                });
+            }
+
+            return content;
+        }
+
+        public static async Task<List<CustomContentInfo>> SearchGroupContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
+        {
+            var groups = await SearchForGroups(graphServiceClient, searchQuery) ?? new List<Group>();
+            var content = new List<CustomContentInfo>();
+
+            foreach (var group in groups)
+            {
+                content.Add(new CustomContentInfo
+                {
+                    ContentName = group.DisplayName,
+                    ContentType = "Entra Group",
+                    ContentPlatform = "Entra group",
+                    ContentId = group.Id,
+                    ContentDescription = group.Description
+                });
+            }
+
+            return content;
         }
     }
 }

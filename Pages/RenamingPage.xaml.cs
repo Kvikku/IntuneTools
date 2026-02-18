@@ -975,40 +975,24 @@ namespace IntuneTools.Pages
 
         private async Task LoadAllEntraGroupsAsync()
         {
-            var groups = await GetAllGroups(sourceGraphServiceClient);
-            foreach (var group in groups)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = group.DisplayName,
-                    ContentType = "Entra Group",
-                    ContentPlatform = "Entra group",
-                    ContentId = group.Id,
-                    ContentDescription = group.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Loaded {groups.Count()} Entra groups.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await GetAllGroupContentAsync(sourceGraphServiceClient));
+
+            AppendToDetailsRichTextBlock($"Loaded {count} Entra groups.");
         }
         private async Task SearchForEntraGroupsAsync(string searchQuery)
         {
-            var groups = await SearchForGroups(sourceGraphServiceClient, searchQuery);
-            foreach (var group in groups)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = group.DisplayName,
-                    ContentType = "Entra Group",
-                    ContentPlatform = "Entra group",
-                    ContentId = group.Id,
-                    ContentDescription = group.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Found {groups.Count()} Entra groups matching '{searchQuery}'.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await SearchGroupContentAsync(sourceGraphServiceClient, searchQuery));
+
+            AppendToDetailsRichTextBlock($"Found {count} Entra groups matching '{searchQuery}'.");
         }
         private List<string> GetEntraGroupIDs()
         {
-            // This method retrieves the IDs of all Entra groups in ContentList
-            return ContentList
+            // This method retrieves the IDs of all Entra groups in CustomContentList
+            return CustomContentList
                 .Where(c => c.ContentType == "Entra Group")
                 .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
