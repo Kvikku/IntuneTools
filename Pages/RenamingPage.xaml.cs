@@ -252,7 +252,10 @@ namespace IntuneTools.Pages
                 await LoadAllEntraGroupsAsync();
 
                 // Bind the combined list to the grid once
-                RenamingDataGrid.ItemsSource = ContentList;
+                //RenamingDataGrid.ItemsSource = ContentList;
+
+                // New list
+                RenamingDataGrid.ItemsSource = CustomContentList;
             }
             catch (Exception ex)
             {
