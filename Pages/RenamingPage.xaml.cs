@@ -45,7 +45,7 @@ namespace IntuneTools.Pages
         }
 
         // old list
-        public ObservableCollection<ContentInfo> ContentList { get; set; } = new ObservableCollection<ContentInfo>();
+        //public ObservableCollection<ContentInfo> ContentList { get; set; } = new ObservableCollection<ContentInfo>();
         
         
         // new list
@@ -831,8 +831,8 @@ namespace IntuneTools.Pages
         }
         private List<string> GetDeviceCompliancePolicyIDs()
         {
-            // This method retrieves the IDs of all device compliance policies in ContentList
-            return ContentList
+            // This method retrieves the IDs of all device compliance policies in CustomContentList
+            return CustomContentList
                 .Where(c => c.ContentType == "Device Compliance Policy")
                 .Select(c => c.ContentId ?? string.Empty)
                 .ToList();
@@ -1257,9 +1257,9 @@ namespace IntuneTools.Pages
 
         private void ClearAllButton_Click(object sender, RoutedEventArgs e)
         {
-            ContentList.Clear();
+            CustomContentList.Clear();
             RenamingDataGrid.ItemsSource = null;
-            RenamingDataGrid.ItemsSource = ContentList;
+            RenamingDataGrid.ItemsSource = CustomContentList;
             AppendToDetailsRichTextBlock("All items cleared from the list.");
         }
 
@@ -1276,7 +1276,7 @@ namespace IntuneTools.Pages
                 CustomContentList.Remove(item);
             }
             RenamingDataGrid.ItemsSource = null;
-            RenamingDataGrid.ItemsSource = ContentList;
+            RenamingDataGrid.ItemsSource = CustomContentList;
             AppendToDetailsRichTextBlock($"Cleared {selectedItems.Count} selected item(s) from the list.");
         }
 
@@ -1316,7 +1316,7 @@ namespace IntuneTools.Pages
         }
         private async void RenameButton_Click(object sender, RoutedEventArgs e)
         {
-            var itemsToRename = ContentList.ToList();
+            var itemsToRename = CustomContentList.ToList();
             var renameMode = GetSelectedRenameMode();
 
             if (itemsToRename == null || itemsToRename.Count == 0)
