@@ -1209,40 +1209,24 @@ namespace IntuneTools.Pages
 
         private async Task LoadAllWindowsQualityUpdatePoliciesAsync()
         {
-            var policies = await GetAllWindowsQualityUpdatePolicies(sourceGraphServiceClient);
-            foreach (var policy in policies)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = policy.DisplayName,
-                    ContentType = "Windows Quality Update Policy",
-                    ContentPlatform = "Windows",
-                    ContentId = policy.Id,
-                    ContentDescription = policy.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Loaded {policies.Count()} Windows quality update policies.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await GetAllWindowsQualityUpdatePolicyContentAsync(sourceGraphServiceClient));
+
+            AppendToDetailsRichTextBlock($"Loaded {count} Windows quality update policies.");
         }
         private async Task SearchForWindowsQualityUpdatePoliciesAsync(string searchQuery)
         {
-            var policies = await SearchForWindowsQualityUpdatePolicies(sourceGraphServiceClient, searchQuery);
-            foreach (var policy in policies)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = policy.DisplayName,
-                    ContentType = "Windows Quality Update Policy",
-                    ContentPlatform = "Windows",
-                    ContentId = policy.Id,
-                    ContentDescription = policy.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Found {policies.Count()} Windows quality update policies matching '{searchQuery}'.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await SearchWindowsQualityUpdatePolicyContentAsync(sourceGraphServiceClient, searchQuery));
+
+            AppendToDetailsRichTextBlock($"Found {count} Windows quality update policies matching '{searchQuery}'.");
         }
         private List<string> GetWindowsQualityUpdatePolicyIDs()
         {
-            // This method retrieves the IDs of all Windows quality update policies in ContentList
-            return ContentList
+            // This method retrieves the IDs of all Windows quality update policies in CustomContentList
+            return CustomContentList
                 .Where(c => c.ContentType == "Windows Quality Update Policy")
                 .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
