@@ -1,4 +1,5 @@
-﻿using Microsoft.Graph;
+﻿using IntuneTools.Utilities;
+using Microsoft.Graph;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -504,6 +505,46 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 LogToFunctionFile(appFunction.Main, "An error occurred while renaming device compliance policies", LogLevels.Warning);
                 LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
+        }
+
+        public static async Task<List<CustomContentInfo>> GetAllDeviceComplianceContentAsync(GraphServiceClient graphServiceClient)
+        {
+            var policies = await GetAllDeviceCompliancePolicies(graphServiceClient);
+            var content = new List<CustomContentInfo>();
+
+            foreach (var policy in policies)
+            {
+                content.Add(new CustomContentInfo
+                {
+                    ContentName = policy.DisplayName,
+                    ContentType = "Device Compliance Policy",
+                    ContentPlatform = HelperClass.TranslatePolicyPlatformName(policy.OdataType?.ToString() ?? string.Empty),
+                    ContentId = policy.Id,
+                    ContentDescription = policy.Description
+                });
+            }
+
+            return content;
+        }
+
+        public static async Task<List<CustomContentInfo>> SearchDeviceComplianceContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
+        {
+            var policies = await SearchForDeviceCompliancePolicies(graphServiceClient, searchQuery);
+            var content = new List<CustomContentInfo>();
+
+            foreach (var policy in policies)
+            {
+                content.Add(new CustomContentInfo
+                {
+                    ContentName = policy.DisplayName,
+                    ContentType = "Device Compliance Policy",
+                    ContentPlatform = HelperClass.TranslatePolicyPlatformName(policy.OdataType?.ToString() ?? string.Empty),
+                    ContentId = policy.Id,
+                    ContentDescription = policy.Description
+                });
+            }
+
+            return content;
         }
     }
 

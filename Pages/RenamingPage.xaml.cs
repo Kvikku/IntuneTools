@@ -815,42 +815,26 @@ namespace IntuneTools.Pages
 
         private async Task LoadAllDeviceCompliancePoliciesAsync()
         {
-            var policies = await GetAllDeviceCompliancePolicies(sourceGraphServiceClient);
-            foreach (var policy in policies)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = policy.DisplayName,
-                    ContentType = "Device Compliance Policy",
-                    ContentPlatform = TranslatePolicyPlatformName(policy.OdataType.ToString()),
-                    ContentId = policy.Id,
-                    ContentDescription = policy.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Loaded {policies.Count()} device compliance policies.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await GetAllDeviceComplianceContentAsync(sourceGraphServiceClient));
+
+            AppendToDetailsRichTextBlock($"Loaded {count} device compliance policies.");
         }
         private async Task SearchForDeviceCompliancePoliciesAsync(string searchQuery)
         {
-            var policies = await SearchForDeviceCompliancePolicies(sourceGraphServiceClient, searchQuery);
-            foreach (var policy in policies)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = policy.DisplayName,
-                    ContentType = "Device Compliance Policy",
-                    ContentPlatform = TranslatePolicyPlatformName(policy.OdataType.ToString()),
-                    ContentId = policy.Id,
-                    ContentDescription = policy.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Found {policies.Count()} device compliance policies matching '{searchQuery}'.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await SearchDeviceComplianceContentAsync(sourceGraphServiceClient, searchQuery));
+
+            AppendToDetailsRichTextBlock($"Found {count} device compliance policies matching '{searchQuery}'.");
         }
         private List<string> GetDeviceCompliancePolicyIDs()
         {
-            // This method retrieves the IDs of all device compliance policies in ContentList
-            return ContentList
+            // This method retrieves the IDs of all device compliance policies in CustomContentList
+            return CustomContentList
                 .Where(c => c.ContentType == "Device Compliance Policy")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
+                .Select(c => c.ContentId ?? string.Empty)
                 .ToList();
         }
 
