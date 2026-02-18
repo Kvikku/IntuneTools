@@ -1036,40 +1036,24 @@ namespace IntuneTools.Pages
 
         private async Task LoadAllPowerShellScriptsAsync()
         {
-            var scripts = await GetAllPowerShellScripts(sourceGraphServiceClient);
-            foreach (var script in scripts)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = script.DisplayName,
-                    ContentType = "PowerShell Script",
-                    ContentPlatform = "Windows",
-                    ContentId = script.Id,
-                    ContentDescription = script.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Loaded {scripts.Count()} PowerShell scripts.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await GetAllPowerShellScriptContentAsync(sourceGraphServiceClient));
+
+            AppendToDetailsRichTextBlock($"Loaded {count} PowerShell scripts.");
         }
         private async Task SearchForPowerShellScriptsAsync(string searchQuery)
         {
-            var scripts = await SearchForPowerShellScripts(sourceGraphServiceClient, searchQuery);
-            foreach (var script in scripts)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = script.DisplayName,
-                    ContentType = "PowerShell Script",
-                    ContentPlatform = "Windows",
-                    ContentId = script.Id,
-                    ContentDescription = script.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Found {scripts.Count()} PowerShell scripts matching '{searchQuery}'.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await SearchPowerShellScriptContentAsync(sourceGraphServiceClient, searchQuery));
+
+            AppendToDetailsRichTextBlock($"Found {count} PowerShell scripts matching '{searchQuery}'.");
         }
         private List<string> GetPowerShellScriptIDs()
         {
-            // This method retrieves the IDs of all PowerShell scripts in ContentList
-            return ContentList
+            // This method retrieves the IDs of all PowerShell scripts in CustomContentList
+            return CustomContentList
                 .Where(c => c.ContentType == "PowerShell Script")
                 .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
