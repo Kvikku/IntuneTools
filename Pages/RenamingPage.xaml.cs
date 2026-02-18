@@ -946,40 +946,24 @@ namespace IntuneTools.Pages
 
         private async Task LoadAllAssignmentFiltersAsync()
         {
-            var filters = await GetAllAssignmentFilters(sourceGraphServiceClient);
-            foreach (var filter in filters)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = filter.DisplayName,
-                    ContentType = "Assignment Filter",
-                    ContentPlatform = TranslatePolicyPlatformName(filter.Platform.ToString()),
-                    ContentId = filter.Id,
-                    ContentDescription = filter.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Loaded {filters.Count()} assignment filters.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await GetAllAssignmentFilterContentAsync(sourceGraphServiceClient));
+
+            AppendToDetailsRichTextBlock($"Loaded {count} assignment filters.");
         }
         private async Task SearchForAssignmentFiltersAsync(string searchQuery)
         {
-            var filters = await SearchForAssignmentFilters(sourceGraphServiceClient, searchQuery);
-            foreach (var filter in filters)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = filter.DisplayName,
-                    ContentType = "Assignment Filter",
-                    ContentPlatform = TranslatePolicyPlatformName(filter.Platform.ToString()),
-                    ContentId = filter.Id,
-                    ContentDescription = filter.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Found {filters.Count()} assignment filters matching '{searchQuery}'.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await SearchAssignmentFilterContentAsync(sourceGraphServiceClient, searchQuery));
+
+            AppendToDetailsRichTextBlock($"Found {count} assignment filters matching '{searchQuery}'.");
         }
         private List<string> GetAssignmentFilterIDs()
         {
-            // This method retrieves the IDs of all assignment filters in ContentList
-            return ContentList
+            // This method retrieves the IDs of all assignment filters in CustomContentList
+            return CustomContentList
                 .Where(c => c.ContentType == "Assignment Filter")
                 .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
