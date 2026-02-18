@@ -1065,40 +1065,24 @@ namespace IntuneTools.Pages
 
         private async Task LoadAllProactiveRemediationsAsync()
         {
-            var scripts = await GetAllProactiveRemediations(sourceGraphServiceClient);
-            foreach (var script in scripts)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = script.DisplayName,
-                    ContentType = "Proactive Remediation",
-                    ContentPlatform = "Windows",
-                    ContentId = script.Id,
-                    ContentDescription = script.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Loaded {scripts.Count()} proactive remediations.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await GetAllProactiveRemediationContentAsync(sourceGraphServiceClient));
+
+            AppendToDetailsRichTextBlock($"Loaded {count} proactive remediations.");
         }
         private async Task SearchForProactiveRemediationsAsync(string searchQuery)
         {
-            var scripts = await SearchForProactiveRemediations(sourceGraphServiceClient, searchQuery);
-            foreach (var script in scripts)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = script.DisplayName,
-                    ContentType = "Proactive Remediation",
-                    ContentPlatform = "Windows",
-                    ContentId = script.Id,
-                    ContentDescription = script.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Found {scripts.Count()} proactive remediations matching '{searchQuery}'.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await SearchProactiveRemediationContentAsync(sourceGraphServiceClient, searchQuery));
+
+            AppendToDetailsRichTextBlock($"Found {count} proactive remediations matching '{searchQuery}'.");
         }
         private List<string> GetProactiveRemediationIDs()
         {
-            // This method retrieves the IDs of all proactive remediations in ContentList
-            return ContentList
+            // This method retrieves the IDs of all proactive remediations in CustomContentList
+            return CustomContentList
                 .Where(c => c.ContentType == "Proactive Remediation")
                 .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();

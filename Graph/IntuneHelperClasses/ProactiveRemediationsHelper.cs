@@ -1,4 +1,5 @@
-﻿using Microsoft.Graph;
+﻿using IntuneTools.Utilities;
+using Microsoft.Graph;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -361,6 +362,46 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 LogToFunctionFile(appFunction.Main, "An error occurred while renaming proactive remediation scripts", LogLevels.Warning);
                 LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
+        }
+
+        public static async Task<List<CustomContentInfo>> GetAllProactiveRemediationContentAsync(GraphServiceClient graphServiceClient)
+        {
+            var scripts = await GetAllProactiveRemediations(graphServiceClient);
+            var content = new List<CustomContentInfo>();
+
+            foreach (var script in scripts)
+            {
+                content.Add(new CustomContentInfo
+                {
+                    ContentName = script.DisplayName,
+                    ContentType = "Proactive Remediation",
+                    ContentPlatform = "Windows",
+                    ContentId = script.Id,
+                    ContentDescription = script.Description
+                });
+            }
+
+            return content;
+        }
+
+        public static async Task<List<CustomContentInfo>> SearchProactiveRemediationContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
+        {
+            var scripts = await SearchForProactiveRemediations(graphServiceClient, searchQuery);
+            var content = new List<CustomContentInfo>();
+
+            foreach (var script in scripts)
+            {
+                content.Add(new CustomContentInfo
+                {
+                    ContentName = script.DisplayName,
+                    ContentType = "Proactive Remediation",
+                    ContentPlatform = "Windows",
+                    ContentId = script.Id,
+                    ContentDescription = script.Description
+                });
+            }
+
+            return content;
         }
     }
 }
