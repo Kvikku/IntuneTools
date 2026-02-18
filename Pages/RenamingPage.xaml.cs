@@ -1238,40 +1238,24 @@ namespace IntuneTools.Pages
 
         private async Task LoadAllWindowsQualityUpdateProfilesAsync()
         {
-            var profiles = await GetAllWindowsQualityUpdateProfiles(sourceGraphServiceClient);
-            foreach (var profile in profiles)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = profile.DisplayName,
-                    ContentType = "Windows Quality Update Profile",
-                    ContentPlatform = "Windows",
-                    ContentId = profile.Id,
-                    ContentDescription = profile.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Loaded {profiles.Count()} Windows quality update profiles.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await GetAllWindowsQualityUpdateProfileContentAsync(sourceGraphServiceClient));
+
+            AppendToDetailsRichTextBlock($"Loaded {count} Windows quality update profiles.");
         }
         private async Task SearchForWindowsQualityUpdateProfilesAsync(string searchQuery)
         {
-            var profiles = await SearchForWindowsQualityUpdateProfiles(sourceGraphServiceClient, searchQuery);
-            foreach (var profile in profiles)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = profile.DisplayName,
-                    ContentType = "Windows Quality Update Profile",
-                    ContentPlatform = "Windows",
-                    ContentId = profile.Id,
-                    ContentDescription = profile.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Found {profiles.Count()} Windows quality update profiles matching '{searchQuery}'.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await SearchWindowsQualityUpdateProfileContentAsync(sourceGraphServiceClient, searchQuery));
+
+            AppendToDetailsRichTextBlock($"Found {count} Windows quality update profiles matching '{searchQuery}'.");
         }
         private List<string> GetWindowsQualityUpdateProfileIDs()
         {
-            // This method retrieves the IDs of all Windows quality update profiles in ContentList
-            return ContentList
+            // This method retrieves the IDs of all Windows quality update profiles in CustomContentList
+            return CustomContentList
                 .Where(c => c.ContentType == "Windows Quality Update Profile")
                 .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
