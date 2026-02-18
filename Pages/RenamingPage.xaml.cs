@@ -917,40 +917,24 @@ namespace IntuneTools.Pages
 
         private async Task LoadAllAppleBYODEnrollmentProfilesAsync()
         {
-            var profiles = await GetAllAppleBYODEnrollmentProfiles(sourceGraphServiceClient);
-            foreach (var profile in profiles)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = profile.DisplayName,
-                    ContentType = "Apple BYOD Enrollment Profile",
-                    ContentPlatform = TranslatePolicyPlatformName(profile.Platform.ToString()),
-                    ContentId = profile.Id,
-                    ContentDescription = profile.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Loaded {profiles.Count()} Apple BYOD enrollment profiles.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await GetAllAppleBYODEnrollmentContentAsync(sourceGraphServiceClient));
+
+            AppendToDetailsRichTextBlock($"Loaded {count} Apple BYOD enrollment profiles.");
         }
         private async Task SearchForAppleBYODEnrollmentProfilesAsync(string searchQuery)
         {
-            var profiles = await SearchForAppleBYODEnrollmentProfiles(sourceGraphServiceClient, searchQuery);
-            foreach (var profile in profiles)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = profile.DisplayName,
-                    ContentType = "Apple BYOD Enrollment Profile",
-                    ContentPlatform = TranslatePolicyPlatformName(profile.Platform.ToString()),
-                    ContentId = profile.Id,
-                    ContentDescription = profile.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Found {profiles.Count()} Apple BYOD enrollment profiles matching '{searchQuery}'.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await SearchAppleBYODEnrollmentContentAsync(sourceGraphServiceClient, searchQuery));
+
+            AppendToDetailsRichTextBlock($"Found {count} Apple BYOD enrollment profiles matching '{searchQuery}'.");
         }
         private List<string> GetAppleBYODEnrollmentProfileIDs()
         {
-            // This method retrieves the IDs of all Apple BYOD enrollment profiles in ContentList
-            return ContentList
+            // This method retrieves the IDs of all Apple BYOD enrollment profiles in CustomContentList
+            return CustomContentList
                 .Where(c => c.ContentType == "Apple BYOD Enrollment Profile")
                 .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
