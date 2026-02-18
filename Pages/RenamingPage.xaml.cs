@@ -114,10 +114,9 @@ namespace IntuneTools.Pages
         private void RenamingDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
         {
             var dataGrid = sender as DataGrid;
-            if (ContentList == null || ContentList.Count == 0)
+            if (CustomContentList == null || CustomContentList.Count == 0)
                 return;
 
-            // Get the property name from the column binding
             var textColumn = e.Column as DataGridTextColumn;
             var binding = textColumn?.Binding as Binding;
             string sortProperty = binding?.Path?.Path;
@@ -127,15 +126,13 @@ namespace IntuneTools.Pages
                 return;
             }
 
-            // Check if property exists on ContentInfo
-            var propInfo = typeof(ContentInfo).GetProperty(sortProperty);
+            var propInfo = typeof(CustomContentInfo).GetProperty(sortProperty);
             if (propInfo == null)
             {
-                AppendToDetailsRichTextBlock($"Sorting error: Property '{sortProperty}' not found on ContentInfo.");
+                AppendToDetailsRichTextBlock($"Sorting error: Property '{sortProperty}' not found on CustomContentInfo.");
                 return;
             }
 
-            // Toggle sort direction
             ListSortDirection direction;
             if (e.Column.SortDirection.HasValue && e.Column.SortDirection.Value == DataGridSortDirection.Ascending)
             {
@@ -146,17 +143,16 @@ namespace IntuneTools.Pages
                 direction = ListSortDirection.Ascending;
             }
 
-            // Sort the ContentList in place
-            List<ContentInfo> sorted;
+            List<CustomContentInfo> sorted;
             try
             {
                 if (direction == ListSortDirection.Ascending)
                 {
-                    sorted = ContentList.OrderBy(x => propInfo.GetValue(x, null) ?? string.Empty).ToList();
+                    sorted = CustomContentList.OrderBy(x => propInfo.GetValue(x, null) ?? string.Empty).ToList();
                 }
                 else
                 {
-                    sorted = ContentList.OrderByDescending(x => propInfo.GetValue(x, null) ?? string.Empty).ToList();
+                    sorted = CustomContentList.OrderByDescending(x => propInfo.GetValue(x, null) ?? string.Empty).ToList();
                 }
             }
             catch (Exception ex)
@@ -165,12 +161,10 @@ namespace IntuneTools.Pages
                 return;
             }
 
-            // Update ContentList
-            ContentList.Clear();
+            CustomContentList.Clear();
             foreach (var item in sorted)
-                ContentList.Add(item);
+                CustomContentList.Add(item);
 
-            // Update sort direction indicator
             foreach (var col in dataGrid.Columns)
                 col.SortDirection = null;
             e.Column.SortDirection = direction == ListSortDirection.Ascending
@@ -233,8 +227,8 @@ namespace IntuneTools.Pages
             AppendToDetailsRichTextBlock("Starting to load all content. This could take a while...");
             try
             {
-                // Clear the ContentList before loading new data
-                ContentList.Clear();
+                // Clear the CustomContentList before loading new data
+                CustomContentList.Clear();
 
                 await LoadAllSettingsCatalogPoliciesAsync();
                 await LoadAllDeviceCompliancePoliciesAsync();
@@ -274,8 +268,8 @@ namespace IntuneTools.Pages
             AppendToDetailsRichTextBlock($"Searching for content matching '{searchQuery}'. This may take a while...");
             try
             {
-                // Clear the ContentList before loading new data
-                ContentList.Clear();
+                // Clear the CustomContentList before loading new data
+                CustomContentList.Clear();
                 await SearchForSettingsCatalogPoliciesAsync(searchQuery);
                 await SearchForDeviceCompliancePoliciesAsync(searchQuery);
                 await SearchForDeviceConfigurationPoliciesAsync(searchQuery);
@@ -292,7 +286,7 @@ namespace IntuneTools.Pages
                 await SearchForWindowsQualityUpdateProfilesAsync(searchQuery);
 
                 // Bind the combined list to the grid once
-                RenamingDataGrid.ItemsSource = ContentList;
+                RenamingDataGrid.ItemsSource = CustomContentList;
             }
             catch (Exception ex)
             {
@@ -341,7 +335,7 @@ namespace IntuneTools.Pages
                 foreach (var id in contentIDs)
                 {
                     var name = string.Empty;
-                    var content = ContentList.FirstOrDefault(c => c.ContentId == id);
+                    var content = CustomContentList.FirstOrDefault(c => c.ContentId == id);
                     if (content != null)
                     {
                         name = FindPreFixInPolicyName(content.ContentName, prefix);
@@ -401,7 +395,7 @@ namespace IntuneTools.Pages
 
             try
             {
-                if (ContentList.Any(c => c.ContentType == "Settings Catalog"))
+                if (CustomContentList.Any(c => c.ContentType == "Settings Catalog"))
                 {
                     var settingsCatalogIDs = GetSettingsCatalogIDs();
                     if (settingsCatalogIDs.Count > 0)
@@ -410,7 +404,7 @@ namespace IntuneTools.Pages
                     }
                 }
 
-                if (ContentList.Any(c => c.ContentType == "Device Compliance Policy"))
+                if (CustomContentList.Any(c => c.ContentType == "Device Compliance Policy"))
                 {
                     var deviceCompliancePolicyIDs = GetDeviceCompliancePolicyIDs();
                     if (deviceCompliancePolicyIDs.Count > 0)
@@ -419,7 +413,7 @@ namespace IntuneTools.Pages
                     }
                 }
 
-                if (ContentList.Any(c => c.ContentType == "Device Configuration Policy"))
+                if (CustomContentList.Any(c => c.ContentType == "Device Configuration Policy"))
                 {
                     var deviceConfigurationPolicyIDs = GetDeviceConfigurationPolicyIDs();
                     if (deviceConfigurationPolicyIDs.Count > 0)
@@ -428,7 +422,7 @@ namespace IntuneTools.Pages
                     }
                 }
 
-                if (ContentList.Any(c => c.ContentType == "Apple BYOD Enrollment Profile"))
+                if (CustomContentList.Any(c => c.ContentType == "Apple BYOD Enrollment Profile"))
                 {
                     var appleBYODProfileIDs = GetAppleBYODEnrollmentProfileIDs();
                     if (appleBYODProfileIDs.Count > 0)
@@ -437,7 +431,7 @@ namespace IntuneTools.Pages
                     }
                 }
 
-                if (ContentList.Any(c => c.ContentType == "MacOS Shell Script"))
+                if (CustomContentList.Any(c => c.ContentType == "MacOS Shell Script"))
                 {
                     var macOSShellScriptIDs = GetMacOSShellScriptIDs();
                     if (macOSShellScriptIDs.Count > 0)
@@ -446,7 +440,7 @@ namespace IntuneTools.Pages
                     }
                 }
 
-                if (ContentList.Any(c => c.ContentType == "PowerShell Script"))
+                if (CustomContentList.Any(c => c.ContentType == "PowerShell Script"))
                 {
                     var powerShellScriptIDs = GetPowerShellScriptIDs();
                     if (powerShellScriptIDs.Count > 0)
@@ -455,7 +449,7 @@ namespace IntuneTools.Pages
                     }
                 }
 
-                if (ContentList.Any(c => c.ContentType == "Proactive Remediation"))
+                if (CustomContentList.Any(c => c.ContentType == "Proactive Remediation"))
                 {
                     var proactiveRemediationIDs = GetProactiveRemediationIDs();
                     if (proactiveRemediationIDs.Count > 0)
@@ -464,7 +458,7 @@ namespace IntuneTools.Pages
                     }
                 }
 
-                if (ContentList.Any(c => c.ContentType == "Windows AutoPilot Profile"))
+                if (CustomContentList.Any(c => c.ContentType == "Windows AutoPilot Profile"))
                 {
                     var windowsAutoPilotProfileIDs = GetWindowsAutoPilotProfileIDs();
                     if (windowsAutoPilotProfileIDs.Count > 0)
@@ -473,7 +467,7 @@ namespace IntuneTools.Pages
                     }
                 }
 
-                if (ContentList.Any(c => c.ContentType == "Windows Driver Update"))
+                if (CustomContentList.Any(c => c.ContentType == "Windows Driver Update"))
                 {
                     var windowsDriverUpdateIDs = GetWindowsDriverUpdateIDs();
                     if (windowsDriverUpdateIDs.Count > 0)
@@ -482,7 +476,7 @@ namespace IntuneTools.Pages
                     }
                 }
 
-                if (ContentList.Any(c => c.ContentType == "Windows Feature Update"))
+                if (CustomContentList.Any(c => c.ContentType == "Windows Feature Update"))
                 {
                     var windowsFeatureUpdateIDs = GetWindowsFeatureUpdateIDs();
                     if (windowsFeatureUpdateIDs.Count > 0)
@@ -491,7 +485,7 @@ namespace IntuneTools.Pages
                     }
                 }
 
-                if (ContentList.Any(c => c.ContentType == "Windows Quality Update Policy"))
+                if (CustomContentList.Any(c => c.ContentType == "Windows Quality Update Policy"))
                 {
                     var windowsQualityUpdatePolicyIDs = GetWindowsQualityUpdatePolicyIDs();
                     if (windowsQualityUpdatePolicyIDs.Count > 0)
@@ -500,7 +494,7 @@ namespace IntuneTools.Pages
                     }
                 }
 
-                if (ContentList.Any(c => c.ContentType == "Windows Quality Update Profile"))
+                if (CustomContentList.Any(c => c.ContentType == "Windows Quality Update Profile"))
                 {
                     var windowsQualityUpdateProfileIDs = GetWindowsQualityUpdateProfileIDs();
                     if (windowsQualityUpdateProfileIDs.Count > 0)
@@ -509,7 +503,7 @@ namespace IntuneTools.Pages
                     }
                 }
 
-                if (ContentList.Any(c => c.ContentType == "Assignment Filter"))
+                if (CustomContentList.Any(c => c.ContentType == "Assignment Filter"))
                 {
                     var assignmentFilterIDs = GetAssignmentFilterIDs();
                     if (assignmentFilterIDs.Count > 0)
@@ -518,7 +512,7 @@ namespace IntuneTools.Pages
                     }
                 }
 
-                if (ContentList.Any(c => c.ContentType == "Entra Group"))
+                if (CustomContentList.Any(c => c.ContentType == "Entra Group"))
                 {
                     var entraGroupIDs = GetEntraGroupIDs();
                     if (entraGroupIDs.Count > 0)
@@ -787,8 +781,8 @@ namespace IntuneTools.Pages
         }
         private List<string> GetSettingsCatalogIDs()
         {
-            // This method retrieves the IDs of all settings catalog policies in ContentList
-            return ContentList
+            // This method retrieves the IDs of all settings catalog policies in CustomContentList
+            return CustomContentList
                 .Where(c => c.ContentType == "Settings Catalog")
                 .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
@@ -1477,7 +1471,7 @@ namespace IntuneTools.Pages
 
         private void ClearSelectedButton_Click(object sender, RoutedEventArgs e)
         {
-            var selectedItems = RenamingDataGrid.SelectedItems?.Cast<ContentInfo>().ToList();
+            var selectedItems = RenamingDataGrid.SelectedItems?.Cast<CustomContentInfo>().ToList();
             if (selectedItems == null || selectedItems.Count == 0)
             {
                 AppendToDetailsRichTextBlock("No items selected to clear.");
@@ -1485,7 +1479,7 @@ namespace IntuneTools.Pages
             }
             foreach (var item in selectedItems)
             {
-                ContentList.Remove(item);
+                CustomContentList.Remove(item);
             }
             RenamingDataGrid.ItemsSource = null;
             RenamingDataGrid.ItemsSource = ContentList;
