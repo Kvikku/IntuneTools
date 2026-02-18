@@ -1,4 +1,5 @@
-﻿using Microsoft.Graph;
+﻿using IntuneTools.Utilities;
+using Microsoft.Graph;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -402,6 +403,46 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 LogToFunctionFile(appFunction.Main, "An error occurred while renaming Windows Driver Update Profile", LogLevels.Warning);
                 LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
+        }
+
+        public static async Task<List<CustomContentInfo>> GetAllWindowsDriverUpdateContentAsync(GraphServiceClient graphServiceClient)
+        {
+            var profiles = await GetAllDriverProfiles(graphServiceClient);
+            var content = new List<CustomContentInfo>();
+
+            foreach (var profile in profiles)
+            {
+                content.Add(new CustomContentInfo
+                {
+                    ContentName = profile.DisplayName,
+                    ContentType = "Windows Driver Update",
+                    ContentPlatform = "Windows",
+                    ContentId = profile.Id,
+                    ContentDescription = profile.Description
+                });
+            }
+
+            return content;
+        }
+
+        public static async Task<List<CustomContentInfo>> SearchWindowsDriverUpdateContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
+        {
+            var profiles = await SearchForDriverProfiles(graphServiceClient, searchQuery);
+            var content = new List<CustomContentInfo>();
+
+            foreach (var profile in profiles)
+            {
+                content.Add(new CustomContentInfo
+                {
+                    ContentName = profile.DisplayName,
+                    ContentType = "Windows Driver Update",
+                    ContentPlatform = "Windows",
+                    ContentId = profile.Id,
+                    ContentDescription = profile.Description
+                });
+            }
+
+            return content;
         }
     }
 }

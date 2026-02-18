@@ -1151,40 +1151,24 @@ namespace IntuneTools.Pages
         /// </summary>
         private async Task LoadAllWindowsDriverUpdatesAsync()
         {
-            var updates = await GetAllDriverProfiles(sourceGraphServiceClient);
-            foreach (var update in updates)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = update.DisplayName,
-                    ContentType = "Windows Driver Update",
-                    ContentPlatform = "Windows",
-                    ContentId = update.Id,
-                    ContentDescription = update.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Loaded {updates.Count()} Windows driver updates.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await GetAllWindowsDriverUpdateContentAsync(sourceGraphServiceClient));
+
+            AppendToDetailsRichTextBlock($"Loaded {count} Windows driver updates.");
         }
         private async Task SearchForWindowsDriverUpdatesAsync(string searchQuery)
         {
-            var updates = await SearchForDriverProfiles(sourceGraphServiceClient, searchQuery);
-            foreach (var update in updates)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = update.DisplayName,
-                    ContentType = "Windows Driver Update",
-                    ContentPlatform = "Windows",
-                    ContentId = update.Id,
-                    ContentDescription = update.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Found {updates.Count()} Windows driver updates matching '{searchQuery}'.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await SearchWindowsDriverUpdateContentAsync(sourceGraphServiceClient, searchQuery));
+
+            AppendToDetailsRichTextBlock($"Found {count} Windows driver updates matching '{searchQuery}'.");
         }
         private List<string> GetWindowsDriverUpdateIDs()
         {
-            // This method retrieves the IDs of all Windows driver updates in ContentList
-            return ContentList
+            // This method retrieves the IDs of all Windows driver updates in CustomContentList
+            return CustomContentList
                 .Where(c => c.ContentType == "Windows Driver Update")
                 .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
