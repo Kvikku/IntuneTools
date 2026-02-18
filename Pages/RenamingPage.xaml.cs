@@ -13,6 +13,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using static IntuneTools.Graph.EntraHelperClasses.GroupHelperClass;
 using static IntuneTools.Graph.IntuneHelperClasses.AppleBYODEnrollmentProfileHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.ApplicationHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceCompliancePolicyHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceConfigurationHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.FilterHelperClass;
@@ -242,6 +243,7 @@ namespace IntuneTools.Pages
                 await LoadAllProactiveRemediationsAsync();
                 await LoadAllMacOSShellScriptsAsync();
                 await LoadAllAppleBYODEnrollmentProfilesAsync();
+                await LoadAllApplicationsAsync();
                 await LoadAllAssignmentFiltersAsync();
                 await LoadAllEntraGroupsAsync();
 
@@ -284,6 +286,7 @@ namespace IntuneTools.Pages
                 await SearchForWindowsFeatureUpdatesAsync(searchQuery);
                 await SearchForWindowsQualityUpdatePoliciesAsync(searchQuery);
                 await SearchForWindowsQualityUpdateProfilesAsync(searchQuery);
+                await SearchForApplicationsAsync(searchQuery);
 
                 // Bind the combined list to the grid once
                 RenamingDataGrid.ItemsSource = CustomContentList;
@@ -520,6 +523,14 @@ namespace IntuneTools.Pages
                         await RenameEntraGroups(entraGroupIDs, prefix);
                     }
                 }
+                if (CustomContentList.Any(c => c.ContentType != null && (c.ContentType.StartsWith("App", StringComparison.OrdinalIgnoreCase) || c.ContentType.Equals("Application", StringComparison.OrdinalIgnoreCase))))
+                {
+                    var applicationIDs = GetApplicationIDs();
+                    if (applicationIDs.Count > 0)
+                    {
+                        await RenameApplications(applicationIDs, prefix);
+                    }
+                }
                 AppendToDetailsRichTextBlock($"Renamed {contentIDs.Count} items with prefix '{prefix}'.");
             }
             catch (Exception ex)
@@ -545,6 +556,31 @@ namespace IntuneTools.Pages
                 catch (Exception ex)
                 {
                     AppendToDetailsRichTextBlock($"Error renaming Apple BYOD Enrollment Profile with ID {id}: {ex.Message}");
+                }
+            }
+        }
+
+        private List<string> GetApplicationIDs()
+        {
+            return CustomContentList
+                .Where(c => c.ContentType != null && (c.ContentType.StartsWith("App", StringComparison.OrdinalIgnoreCase) || c.ContentType.Equals("Application", StringComparison.OrdinalIgnoreCase)))
+                .Select(c => c.ContentId ?? string.Empty)
+                .ToList();
+        }
+
+        private async Task RenameApplications(List<string> appIDs, string prefix)
+        {
+            foreach (var id in appIDs)
+            {
+                try
+                {
+                    await RenameApplication(sourceGraphServiceClient, id, prefix);
+                    AppendToDetailsRichTextBlock($"Updated Application with ID '{id}' with '{prefix}'.");
+                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
+                }
+                catch (Exception ex)
+                {
+                    AppendToDetailsRichTextBlock($"Error updating Application with ID {id}: {ex.Message}");
                 }
             }
         }
@@ -923,6 +959,15 @@ namespace IntuneTools.Pages
 
             AppendToDetailsRichTextBlock($"Loaded {count} Apple BYOD enrollment profiles.");
         }
+
+        private async Task LoadAllApplicationsAsync()
+        {
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await GetAllApplicationContentAsync(sourceGraphServiceClient));
+
+            AppendToDetailsRichTextBlock($"Loaded {count} applications.");
+        }
         private async Task SearchForAppleBYODEnrollmentProfilesAsync(string searchQuery)
         {
             var count = await UserInterfaceHelper.PopulateCollectionAsync(
@@ -930,6 +975,15 @@ namespace IntuneTools.Pages
                 async () => await SearchAppleBYODEnrollmentContentAsync(sourceGraphServiceClient, searchQuery));
 
             AppendToDetailsRichTextBlock($"Found {count} Apple BYOD enrollment profiles matching '{searchQuery}'.");
+        }
+
+        private async Task SearchForApplicationsAsync(string searchQuery)
+        {
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await SearchApplicationContentAsync(sourceGraphServiceClient, searchQuery));
+
+            AppendToDetailsRichTextBlock($"Found {count} applications matching '{searchQuery}'.");
         }
         private List<string> GetAppleBYODEnrollmentProfileIDs()
         {

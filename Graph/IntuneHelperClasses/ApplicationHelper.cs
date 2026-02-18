@@ -1,4 +1,5 @@
 ﻿using IntuneTools.Pages;
+using IntuneTools.Utilities;
 using Microsoft.Graph;
 using System;
 using System.Collections.Generic;
@@ -402,6 +403,122 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     await Task.Delay(TimeSpan.FromSeconds(delaySeconds));
                 }
             }
+        }
+
+        public static async Task RenameApplication(GraphServiceClient graphServiceClient, string appId, string newName)
+        {
+            try
+            {
+                if (graphServiceClient == null)
+                {
+                    throw new ArgumentNullException(nameof(graphServiceClient));
+                }
+
+                if (string.IsNullOrWhiteSpace(appId))
+                {
+                    throw new ArgumentNullException(nameof(appId));
+                }
+
+                if (string.IsNullOrWhiteSpace(newName))
+                {
+                    throw new InvalidOperationException("New name cannot be null or empty.");
+                }
+
+                var existingApp = await graphServiceClient.DeviceAppManagement.MobileApps[appId].GetAsync();
+
+                if (existingApp == null)
+                {
+                    throw new InvalidOperationException($"Application with ID '{appId}' not found.");
+                }
+
+                var supportedRenameTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    "#microsoft.graph.win32LobApp",
+                    "#microsoft.graph.winGetApp",
+                    "#microsoft.graph.webApp",
+                    "#microsoft.graph.windowsWebApp"
+                };
+
+                if (string.IsNullOrWhiteSpace(existingApp.OdataType) || !supportedRenameTypes.Contains(existingApp.OdataType))
+                {
+                    LogToFunctionFile(appFunction.Main, $"Rename/description updates are not supported for app type '{existingApp.OdataType ?? "Unknown"}'.", LogLevels.Warning);
+                    return;
+                }
+
+                if (selectedRenameMode == "Prefix")
+                {
+                    var name = FindPreFixInPolicyName(existingApp.DisplayName ?? string.Empty, newName);
+
+                    var app = new MobileApp
+                    {
+                        OdataType = existingApp.OdataType,
+                        DisplayName = name,
+                    };
+
+                    await graphServiceClient.DeviceAppManagement.MobileApps[appId].PatchAsync(app);
+                    LogToFunctionFile(appFunction.Main, $"Renamed application {appId} to '{name}'");
+                }
+                else if (selectedRenameMode == "Suffix")
+                {
+
+                }
+                else if (selectedRenameMode == "Description")
+                {
+                    var app = new MobileApp
+                    {
+                        OdataType = existingApp.OdataType,
+                        Description = newName,
+                    };
+
+                    await graphServiceClient.DeviceAppManagement.MobileApps[appId].PatchAsync(app);
+                    LogToFunctionFile(appFunction.Main, $"Updated description for application {appId} to '{newName}'");
+                }
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, "An error occurred while renaming applications", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
+            }
+        }
+
+        public static async Task<List<CustomContentInfo>> GetAllApplicationContentAsync(GraphServiceClient graphServiceClient)
+        {
+            var apps = await GetAllMobileApps(graphServiceClient);
+            var content = new List<CustomContentInfo>();
+
+            foreach (var app in apps)
+            {
+                content.Add(new CustomContentInfo
+                {
+                    ContentName = app.DisplayName,
+                    ContentType = HelperClass.TranslateApplicationType(app.OdataType),
+                    ContentPlatform = HelperClass.TranslatePolicyPlatformName(app.OdataType),
+                    ContentId = app.Id,
+                    ContentDescription = app.Description
+                });
+            }
+
+            return content;
+        }
+
+        public static async Task<List<CustomContentInfo>> SearchApplicationContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
+        {
+            var apps = await SearchMobileApps(graphServiceClient, searchQuery);
+            var content = new List<CustomContentInfo>();
+
+            foreach (var app in apps)
+            {
+                content.Add(new CustomContentInfo
+                {
+                    ContentName = app.DisplayName,
+                    ContentType = HelperClass.TranslateApplicationType(app.OdataType),
+                    ContentPlatform = HelperClass.TranslatePolicyPlatformName(app.OdataType),
+                    ContentId = app.Id,
+                    ContentDescription = app.Description
+                });
+            }
+
+            return content;
         }
     }
 }
