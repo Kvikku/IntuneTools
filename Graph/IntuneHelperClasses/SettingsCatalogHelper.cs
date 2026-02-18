@@ -1,4 +1,5 @@
-﻿using Microsoft.Graph;
+﻿using IntuneTools.Utilities;
+using Microsoft.Graph;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -389,6 +390,46 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 LogToFunctionFile(appFunction.Main, "An error occurred while renaming settings catalog policies", LogLevels.Warning);
                 LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
+        }
+
+        public static async Task<List<CustomContentInfo>> GetAllSettingsCatalogContentAsync(GraphServiceClient graphServiceClient)
+        {
+            var policies = await GetAllSettingsCatalogPolicies(graphServiceClient);
+            var content = new List<CustomContentInfo>();
+
+            foreach (var policy in policies)
+            {
+                content.Add(new CustomContentInfo
+                {
+                    ContentName = policy.Name,
+                    ContentType = "Settings Catalog",
+                    ContentPlatform = HelperClass.TranslatePolicyPlatformName(policy.Platforms.ToString()),
+                    ContentId = policy.Id,
+                    ContentDescription = policy.Description
+                });
+            }
+
+            return content;
+        }
+
+        public static async Task<List<CustomContentInfo>> SearchSettingsCatalogContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
+        {
+            var policies = await SearchForSettingsCatalog(graphServiceClient, searchQuery);
+            var content = new List<CustomContentInfo>();
+
+            foreach (var policy in policies)
+            {
+                content.Add(new CustomContentInfo
+                {
+                    ContentName = policy.Name,
+                    ContentType = "Settings Catalog",
+                    ContentPlatform = HelperClass.TranslatePolicyPlatformName(policy.Platforms.ToString()),
+                    ContentId = policy.Id,
+                    ContentDescription = policy.Description
+                });
+            }
+
+            return content;
         }
     }
 }
