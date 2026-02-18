@@ -1126,40 +1126,24 @@ namespace IntuneTools.Pages
 
         private async Task LoadAllMacOSShellScriptsAsync()
         {
-            var scripts = await GetAllmacOSShellScripts(sourceGraphServiceClient);
-            foreach (var script in scripts)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = script.DisplayName,
-                    ContentType = "MacOS Shell Script",
-                    ContentPlatform = "macOS",
-                    ContentId = script.Id,
-                    ContentDescription = script.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Loaded {scripts.Count()} MacOS shell scripts.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await GetAllMacOSShellScriptContentAsync(sourceGraphServiceClient));
+
+            AppendToDetailsRichTextBlock($"Loaded {count} MacOS shell scripts.");
         }
         private async Task SearchForMacOSShellScriptsAsync(string searchQuery)
         {
-            var scripts = await SearchForShellScriptmacOS(sourceGraphServiceClient, searchQuery);
-            foreach (var script in scripts)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = script.DisplayName,
-                    ContentType = "MacOS Shell Script",
-                    ContentPlatform = "macOS",
-                    ContentId = script.Id,
-                    ContentDescription = script.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Found {scripts.Count()} MacOS shell scripts matching '{searchQuery}'.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await SearchMacOSShellScriptContentAsync(sourceGraphServiceClient, searchQuery));
+
+            AppendToDetailsRichTextBlock($"Found {count} MacOS shell scripts matching '{searchQuery}'.");
         }
         private List<string> GetMacOSShellScriptIDs()
         {
-            // This method retrieves the IDs of all MacOS shell scripts in ContentList
-            return ContentList
+            // This method retrieves the IDs of all MacOS shell scripts in CustomContentList
+            return CustomContentList
                 .Where(c => c.ContentType == "MacOS Shell Script")
                 .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
