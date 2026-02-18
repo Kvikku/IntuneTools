@@ -831,8 +831,8 @@ namespace IntuneTools.Pages
         }
         private List<string> GetDeviceCompliancePolicyIDs()
         {
-            // This method retrieves the IDs of all device compliance policies in CustomContentList
-            return CustomContentList
+            // This method retrieves the IDs of all device compliance policies in ContentList
+            return ContentList
                 .Where(c => c.ContentType == "Device Compliance Policy")
                 .Select(c => c.ContentId ?? string.Empty)
                 .ToList();
@@ -865,42 +865,28 @@ namespace IntuneTools.Pages
 
         private async Task LoadAllDeviceConfigurationPoliciesAsync()
         {
-            var policies = await GetAllDeviceConfigurations(sourceGraphServiceClient);
-            foreach (var policy in policies)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = policy.DisplayName,
-                    ContentType = "Device Configuration Policy",
-                    ContentPlatform = TranslatePolicyPlatformName(policy.OdataType.ToString()),
-                    ContentId = policy.Id,
-                    ContentDescription = policy.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Loaded {policies.Count()} device configuration policies.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await GetAllDeviceConfigurationContentAsync(sourceGraphServiceClient));
+
+            AppendToDetailsRichTextBlock($"Loaded {count} device configuration policies.");
         }
+
         private async Task SearchForDeviceConfigurationPoliciesAsync(string searchQuery)
         {
-            var policies = await SearchForDeviceConfigurations(sourceGraphServiceClient, searchQuery);
-            foreach (var policy in policies)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = policy.DisplayName,
-                    ContentType = "Device Configuration Policy",
-                    ContentPlatform = TranslatePolicyPlatformName(policy.OdataType.ToString()),
-                    ContentId = policy.Id,
-                    ContentDescription = policy.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Found {policies.Count()} device configuration policies matching '{searchQuery}'.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await SearchDeviceConfigurationContentAsync(sourceGraphServiceClient, searchQuery));
+
+            AppendToDetailsRichTextBlock($"Found {count} device configuration policies matching '{searchQuery}'.");
         }
+
         private List<string> GetDeviceConfigurationPolicyIDs()
         {
-            // This method retrieves the IDs of all device configuration policies in ContentList
-            return ContentList
+            // This method retrieves the IDs of all device configuration policies in CustomContentList
+            return CustomContentList
                 .Where(c => c.ContentType == "Device Configuration Policy")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
+                .Select(c => c.ContentId ?? string.Empty)
                 .ToList();
         }
 
