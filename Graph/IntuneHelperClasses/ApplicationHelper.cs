@@ -437,6 +437,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     "#microsoft.graph.winGetApp",
                     "#microsoft.graph.webApp",
                     "#microsoft.graph.windowsWebApp"
+                    // TODO - Add more supported types as needed, currently only types that support renaming are included here
                 };
 
                 if (string.IsNullOrWhiteSpace(existingApp.OdataType) || !supportedRenameTypes.Contains(existingApp.OdataType))
