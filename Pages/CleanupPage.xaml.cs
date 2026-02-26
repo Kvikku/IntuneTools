@@ -221,8 +221,6 @@ namespace IntuneTools.Pages
 
         private async Task DeleteSettingsCatalogsAsync()
         {
-            int count = 0;
-            ShowLoading("Deleting settings catalog policies from Microsoft Graph...");
             try
             {
                 // Get all settings catalog IDs
@@ -233,27 +231,31 @@ namespace IntuneTools.Pages
                     return;
                 }
 
-                count = settingsCatalogIDs.Count;
-
-                LogToFunctionFile(appFunction.Main, $"Found {count} settings catalog policies to delete.");
+                LogToFunctionFile(appFunction.Main, $"Found {settingsCatalogIDs.Count} settings catalog policies to delete.");
 
                 // Delete each settings catalog policy
-
                 foreach (var id in settingsCatalogIDs)
                 {
-                    await DeleteSettingsCatalog(sourceGraphServiceClient, id);
-                    LogToFunctionFile(appFunction.Main, $"Deleted settings catalog policy with ID: {id}");
-                    UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
+                    _deleteCurrent++;
+                    ShowOperationProgress($"Deleting Settings Catalog", _deleteCurrent, _deleteTotal);
+                    try
+                    {
+                        await DeleteSettingsCatalog(sourceGraphServiceClient, id);
+                        LogToFunctionFile(appFunction.Main, $"Deleted settings catalog policy with ID: {id}");
+                        UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
+                        _deleteSuccessCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        _deleteErrorCount++;
+                        LogToFunctionFile(appFunction.Main, $"Error deleting settings catalog policy {id}: {ex.Message}", LogLevels.Error);
+                    }
                 }
+                AppendToDetailsRichTextBlock($"Deleted {settingsCatalogIDs.Count} settings catalog policies.");
             }
             catch (Exception ex)
             {
                 LogToFunctionFile(appFunction.Main, $"Error deleting settings catalog policies: {ex.Message}", LogLevels.Error);
-            }
-            finally
-            {
-                AppendToDetailsRichTextBlock($"Deleted {count} settings catalog policies.");
-                HideLoading();
             }
         }
 
@@ -278,8 +280,6 @@ namespace IntuneTools.Pages
 
         private async Task DeleteDeviceCompliancePoliciesAsync()
         {
-            int count = 0;
-            ShowLoading("Deleting device compliance policies from Microsoft Graph...");
             try
             {
                 // Get all device compliance policy IDs
@@ -293,19 +293,26 @@ namespace IntuneTools.Pages
                 // Delete each device compliance policy
                 foreach (var id in deviceCompliancePolicyIDs)
                 {
-                    await DeleteDeviceCompliancePolicy(sourceGraphServiceClient, id);
-                    LogToFunctionFile(appFunction.Main, $"Deleted device compliance policy with ID: {id}");
-                    UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
+                    _deleteCurrent++;
+                    ShowOperationProgress($"Deleting Device Compliance Policy", _deleteCurrent, _deleteTotal);
+                    try
+                    {
+                        await DeleteDeviceCompliancePolicy(sourceGraphServiceClient, id);
+                        LogToFunctionFile(appFunction.Main, $"Deleted device compliance policy with ID: {id}");
+                        UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
+                        _deleteSuccessCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        _deleteErrorCount++;
+                        LogToFunctionFile(appFunction.Main, $"Error deleting device compliance policy {id}: {ex.Message}", LogLevels.Error);
+                    }
                 }
+                AppendToDetailsRichTextBlock($"Deleted {deviceCompliancePolicyIDs.Count} device compliance policies.");
             }
             catch (Exception ex)
             {
                 LogToFunctionFile(appFunction.Main, $"Error deleting device compliance policies: {ex.Message}", LogLevels.Error);
-            }
-            finally
-            {
-                AppendToDetailsRichTextBlock($"Deleted {count} device compliance policies.");
-                HideLoading();
             }
         }
 
@@ -329,8 +336,6 @@ namespace IntuneTools.Pages
         }
         private async Task DeleteDeviceConfigurationPoliciesAsync()
         {
-            int count = 0;
-            ShowLoading("Deleting device configuration policies from Microsoft Graph...");
             try
             {
                 // Get all device configuration policy IDs
@@ -344,19 +349,26 @@ namespace IntuneTools.Pages
                 // Delete each device configuration policy
                 foreach (var id in deviceConfigurationPolicyIDs)
                 {
-                    await DeleteDeviceConfigurationPolicy(sourceGraphServiceClient, id);
-                    LogToFunctionFile(appFunction.Main, $"Deleted device configuration policy with ID: {id}");
-                    UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
+                    _deleteCurrent++;
+                    ShowOperationProgress($"Deleting Device Configuration Policy", _deleteCurrent, _deleteTotal);
+                    try
+                    {
+                        await DeleteDeviceConfigurationPolicy(sourceGraphServiceClient, id);
+                        LogToFunctionFile(appFunction.Main, $"Deleted device configuration policy with ID: {id}");
+                        UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
+                        _deleteSuccessCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        _deleteErrorCount++;
+                        LogToFunctionFile(appFunction.Main, $"Error deleting device configuration policy {id}: {ex.Message}", LogLevels.Error);
+                    }
                 }
+                AppendToDetailsRichTextBlock($"Deleted {deviceConfigurationPolicyIDs.Count} device configuration policies.");
             }
             catch (Exception ex)
             {
                 LogToFunctionFile(appFunction.Main, $"Error deleting device configuration policies: {ex.Message}", LogLevels.Error);
-            }
-            finally
-            {
-                AppendToDetailsRichTextBlock($"Deleted {count} device configuration policies.");
-                HideLoading();
             }
         }
 
@@ -380,8 +392,6 @@ namespace IntuneTools.Pages
         }
         private async Task DeleteAppleBYODEnrollmentProfilesAsync()
         {
-            int count = 0;
-            ShowLoading("Deleting Apple BYOD enrollment profiles from Microsoft Graph...");
             try
             {
                 // Get all Apple BYOD enrollment profile IDs
@@ -395,19 +405,26 @@ namespace IntuneTools.Pages
                 // Delete each Apple BYOD enrollment profile
                 foreach (var id in appleBYODEnrollmentProfileIDs)
                 {
-                    await DeleteAppleBYODEnrollmentProfile(sourceGraphServiceClient, id);
-                    LogToFunctionFile(appFunction.Main, $"Deleted Apple BYOD enrollment profile with ID: {id}");
-                    UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
+                    _deleteCurrent++;
+                    ShowOperationProgress($"Deleting Apple BYOD Enrollment Profile", _deleteCurrent, _deleteTotal);
+                    try
+                    {
+                        await DeleteAppleBYODEnrollmentProfile(sourceGraphServiceClient, id);
+                        LogToFunctionFile(appFunction.Main, $"Deleted Apple BYOD enrollment profile with ID: {id}");
+                        UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
+                        _deleteSuccessCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        _deleteErrorCount++;
+                        LogToFunctionFile(appFunction.Main, $"Error deleting Apple BYOD enrollment profile {id}: {ex.Message}", LogLevels.Error);
+                    }
                 }
+                AppendToDetailsRichTextBlock($"Deleted {appleBYODEnrollmentProfileIDs.Count} Apple BYOD enrollment profiles.");
             }
             catch (Exception ex)
             {
                 LogToFunctionFile(appFunction.Main, $"Error deleting Apple BYOD enrollment profiles: {ex.Message}", LogLevels.Error);
-            }
-            finally
-            {
-                AppendToDetailsRichTextBlock($"Deleted {count} Apple BYOD enrollment profiles.");
-                HideLoading();
             }
         }
 
@@ -431,8 +448,6 @@ namespace IntuneTools.Pages
         }
         private async Task DeleteAssignmentFiltersAsync()
         {
-            int count = 0;
-            ShowLoading("Deleting assignment filters from Microsoft Graph...");
             try
             {
                 // Get all assignment filter IDs
@@ -446,19 +461,26 @@ namespace IntuneTools.Pages
                 // Delete each assignment filter
                 foreach (var id in assignmentFilterIDs)
                 {
-                    await DeleteAssignmentFilter(sourceGraphServiceClient, id);
-                    LogToFunctionFile(appFunction.Main, $"Deleted assignment filter with ID: {id}");
-                    UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
+                    _deleteCurrent++;
+                    ShowOperationProgress($"Deleting Assignment Filter", _deleteCurrent, _deleteTotal);
+                    try
+                    {
+                        await DeleteAssignmentFilter(sourceGraphServiceClient, id);
+                        LogToFunctionFile(appFunction.Main, $"Deleted assignment filter with ID: {id}");
+                        UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
+                        _deleteSuccessCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        _deleteErrorCount++;
+                        LogToFunctionFile(appFunction.Main, $"Error deleting assignment filter {id}: {ex.Message}", LogLevels.Error);
+                    }
                 }
+                AppendToDetailsRichTextBlock($"Deleted {assignmentFilterIDs.Count} assignment filters.");
             }
             catch (Exception ex)
             {
                 LogToFunctionFile(appFunction.Main, $"Error deleting assignment filters: {ex.Message}", LogLevels.Error);
-            }
-            finally
-            {
-                AppendToDetailsRichTextBlock($"Deleted {count} assignment filters.");
-                HideLoading();
             }
         }
 
@@ -482,8 +504,6 @@ namespace IntuneTools.Pages
         }
         private async Task DeleteEntraGroupsAsync()
         {
-            int count = 0;
-            ShowLoading("Deleting Entra groups from Microsoft Graph...");
             try
             {
                 // Get all Entra group IDs
@@ -497,19 +517,26 @@ namespace IntuneTools.Pages
                 // Delete each Entra group
                 foreach (var id in entraGroupIDs)
                 {
-                    await DeleteSecurityGroup(sourceGraphServiceClient, id);
-                    LogToFunctionFile(appFunction.Main, $"Deleted Entra group with ID: {id}");
-                    UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
+                    _deleteCurrent++;
+                    ShowOperationProgress($"Deleting Entra Group", _deleteCurrent, _deleteTotal);
+                    try
+                    {
+                        await DeleteSecurityGroup(sourceGraphServiceClient, id);
+                        LogToFunctionFile(appFunction.Main, $"Deleted Entra group with ID: {id}");
+                        UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
+                        _deleteSuccessCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        _deleteErrorCount++;
+                        LogToFunctionFile(appFunction.Main, $"Error deleting Entra group {id}: {ex.Message}", LogLevels.Error);
+                    }
                 }
+                AppendToDetailsRichTextBlock($"Deleted {entraGroupIDs.Count} Entra groups.");
             }
             catch (Exception ex)
             {
                 LogToFunctionFile(appFunction.Main, $"Error deleting Entra groups: {ex.Message}", LogLevels.Error);
-            }
-            finally
-            {
-                AppendToDetailsRichTextBlock($"Deleted {count} Entra groups.");
-                HideLoading();
             }
         }
 
@@ -533,8 +560,6 @@ namespace IntuneTools.Pages
         }
         private async Task DeletePowerShellScriptsAsync()
         {
-            int count = 0;
-            ShowLoading("Deleting PowerShell scripts from Microsoft Graph...");
             try
             {
                 // Get all PowerShell script IDs
@@ -548,19 +573,26 @@ namespace IntuneTools.Pages
                 // Delete each PowerShell script
                 foreach (var id in powerShellScriptIDs)
                 {
-                    await DeletePowerShellScript(sourceGraphServiceClient, id);
-                    LogToFunctionFile(appFunction.Main, $"Deleted PowerShell script with ID: {id}");
-                    UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
+                    _deleteCurrent++;
+                    ShowOperationProgress($"Deleting PowerShell Script", _deleteCurrent, _deleteTotal);
+                    try
+                    {
+                        await DeletePowerShellScript(sourceGraphServiceClient, id);
+                        LogToFunctionFile(appFunction.Main, $"Deleted PowerShell script with ID: {id}");
+                        UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
+                        _deleteSuccessCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        _deleteErrorCount++;
+                        LogToFunctionFile(appFunction.Main, $"Error deleting PowerShell script {id}: {ex.Message}", LogLevels.Error);
+                    }
                 }
+                AppendToDetailsRichTextBlock($"Deleted {powerShellScriptIDs.Count} PowerShell scripts.");
             }
             catch (Exception ex)
             {
                 LogToFunctionFile(appFunction.Main, $"Error deleting PowerShell scripts: {ex.Message}", LogLevels.Error);
-            }
-            finally
-            {
-                AppendToDetailsRichTextBlock($"Deleted {count} PowerShell scripts.");
-                HideLoading();
             }
         }
 
@@ -584,8 +616,6 @@ namespace IntuneTools.Pages
         }
         private async Task DeleteProactiveRemediationsAsync()
         {
-            int count = 0;
-            ShowLoading("Deleting proactive remediations from Microsoft Graph...");
             try
             {
                 // Get all proactive remediation IDs
@@ -599,19 +629,26 @@ namespace IntuneTools.Pages
                 // Delete each proactive remediation
                 foreach (var id in proactiveRemediationIDs)
                 {
-                    await DeleteProactiveRemediationScript(sourceGraphServiceClient, id);
-                    LogToFunctionFile(appFunction.Main, $"Deleted proactive remediation with ID: {id}");
-                    UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
+                    _deleteCurrent++;
+                    ShowOperationProgress($"Deleting Proactive Remediation", _deleteCurrent, _deleteTotal);
+                    try
+                    {
+                        await DeleteProactiveRemediationScript(sourceGraphServiceClient, id);
+                        LogToFunctionFile(appFunction.Main, $"Deleted proactive remediation with ID: {id}");
+                        UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
+                        _deleteSuccessCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        _deleteErrorCount++;
+                        LogToFunctionFile(appFunction.Main, $"Error deleting proactive remediation {id}: {ex.Message}", LogLevels.Error);
+                    }
                 }
+                AppendToDetailsRichTextBlock($"Deleted {proactiveRemediationIDs.Count} proactive remediations.");
             }
             catch (Exception ex)
             {
                 LogToFunctionFile(appFunction.Main, $"Error deleting proactive remediations: {ex.Message}", LogLevels.Error);
-            }
-            finally
-            {
-                AppendToDetailsRichTextBlock($"Deleted {count} proactive remediations.");
-                HideLoading();
             }
         }
 
@@ -635,8 +672,6 @@ namespace IntuneTools.Pages
         }
         private async Task DeleteMacOSShellScriptsAsync()
         {
-            int count = 0;
-            ShowLoading("Deleting MacOS shell scripts from Microsoft Graph...");
             try
             {
                 // Get all MacOS shell script IDs
@@ -650,19 +685,26 @@ namespace IntuneTools.Pages
                 // Delete each MacOS shell script
                 foreach (var id in macOSShellScriptIDs)
                 {
-                    await DeleteMacosShellScript(sourceGraphServiceClient, id);
-                    LogToFunctionFile(appFunction.Main, $"Deleted MacOS shell script with ID: {id}");
-                    UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
+                    _deleteCurrent++;
+                    ShowOperationProgress($"Deleting macOS Shell Script", _deleteCurrent, _deleteTotal);
+                    try
+                    {
+                        await DeleteMacosShellScript(sourceGraphServiceClient, id);
+                        LogToFunctionFile(appFunction.Main, $"Deleted MacOS shell script with ID: {id}");
+                        UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
+                        _deleteSuccessCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        _deleteErrorCount++;
+                        LogToFunctionFile(appFunction.Main, $"Error deleting MacOS shell script {id}: {ex.Message}", LogLevels.Error);
+                    }
                 }
+                AppendToDetailsRichTextBlock($"Deleted {macOSShellScriptIDs.Count} MacOS shell scripts.");
             }
             catch (Exception ex)
             {
                 LogToFunctionFile(appFunction.Main, $"Error deleting MacOS shell scripts: {ex.Message}", LogLevels.Error);
-            }
-            finally
-            {
-                AppendToDetailsRichTextBlock($"Deleted {count} MacOS shell scripts.");
-                HideLoading();
             }
         }
 
@@ -687,8 +729,6 @@ namespace IntuneTools.Pages
         private async Task DeleteWindowsAutoPilotProfilesAsync()
 
         {
-            int count = 0;
-            ShowLoading("Deleting Windows AutoPilot profiles from Microsoft Graph...");
             try
             {
                 // Get all Windows AutoPilot profile IDs
@@ -702,6 +742,9 @@ namespace IntuneTools.Pages
                 // Delete each Windows AutoPilot profile
                 foreach (var id in windowsAutoPilotProfileIDs)
                 {
+                    _deleteCurrent++;
+                    ShowOperationProgress($"Deleting Windows AutoPilot Profile", _deleteCurrent, _deleteTotal);
+                    
                     // Check if the policy is assigned to any devices
                     // The policy cannot be deleted if it has assignments
                     var isAssigned = await CheckIfAutoPilotProfileHasAssignments(sourceGraphServiceClient, id);
@@ -721,15 +764,23 @@ namespace IntuneTools.Pages
                         var result = await dialog.ShowAsync();
                         if (result == ContentDialogResult.Primary)
                         {
-                            // Delete the assignments first
-                            await DeleteWindowsAutoPilotProfileAssignments(sourceGraphServiceClient, id);
-                            LogToFunctionFile(appFunction.Main, $"Deleted assignments for Windows AutoPilot profile with ID: {id}");
+                            try
+                            {
+                                // Delete the assignments first
+                                await DeleteWindowsAutoPilotProfileAssignments(sourceGraphServiceClient, id);
+                                LogToFunctionFile(appFunction.Main, $"Deleted assignments for Windows AutoPilot profile with ID: {id}");
 
-                            // Now delete the profile
-                            await DeleteWindowsAutopilotProfile(sourceGraphServiceClient, id);
-                            LogToFunctionFile(appFunction.Main, $"Deleted Windows AutoPilot profile with ID: {id}");
-                            UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
-                            count++;
+                                // Now delete the profile
+                                await DeleteWindowsAutopilotProfile(sourceGraphServiceClient, id);
+                                LogToFunctionFile(appFunction.Main, $"Deleted Windows AutoPilot profile with ID: {id}");
+                                UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
+                                _deleteSuccessCount++;
+                            }
+                            catch (Exception ex)
+                            {
+                                _deleteErrorCount++;
+                                LogToFunctionFile(appFunction.Main, $"Error deleting Windows AutoPilot profile {id}: {ex.Message}", LogLevels.Error);
+                            }
                         }
                         else
                         {
@@ -739,20 +790,24 @@ namespace IntuneTools.Pages
                     }
                     else
                     {
-                        await DeleteWindowsAutopilotProfile(sourceGraphServiceClient, id);
-                        LogToFunctionFile(appFunction.Main, $"Deleted Windows AutoPilot profile with ID: {id}");
-                        count++;
+                        try
+                        {
+                            await DeleteWindowsAutopilotProfile(sourceGraphServiceClient, id);
+                            LogToFunctionFile(appFunction.Main, $"Deleted Windows AutoPilot profile with ID: {id}");
+                            _deleteSuccessCount++;
+                        }
+                        catch (Exception ex)
+                        {
+                            _deleteErrorCount++;
+                            LogToFunctionFile(appFunction.Main, $"Error deleting Windows AutoPilot profile {id}: {ex.Message}", LogLevels.Error);
+                        }
                     }
                 }
+                AppendToDetailsRichTextBlock($"Deleted Windows AutoPilot profiles.");
             }
             catch (Exception ex)
             {
                 LogToFunctionFile(appFunction.Main, $"Error deleting Windows AutoPilot profiles: {ex.Message}", LogLevels.Error);
-            }
-            finally
-            {
-                AppendToDetailsRichTextBlock($"Deleted {count} Windows AutoPilot profiles.");
-                HideLoading();
             }
         }
 
@@ -775,8 +830,6 @@ namespace IntuneTools.Pages
         }
         private async Task DeleteWindowsDriverUpdatesAsync()
         {
-            int count = 0;
-            ShowLoading("Deleting Windows driver updates from Microsoft Graph...");
             try
             {
                 // Get all Windows driver update IDs
@@ -790,19 +843,26 @@ namespace IntuneTools.Pages
                 // Delete each Windows driver update
                 foreach (var id in windowsDriverUpdateIDs)
                 {
-                    await DeleteDriverProfile(sourceGraphServiceClient, id);
-                    LogToFunctionFile(appFunction.Main, $"Deleted Windows driver update with ID: {id}");
-                    UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
+                    _deleteCurrent++;
+                    ShowOperationProgress($"Deleting Windows Driver Update", _deleteCurrent, _deleteTotal);
+                    try
+                    {
+                        await DeleteDriverProfile(sourceGraphServiceClient, id);
+                        LogToFunctionFile(appFunction.Main, $"Deleted Windows driver update with ID: {id}");
+                        UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
+                        _deleteSuccessCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        _deleteErrorCount++;
+                        LogToFunctionFile(appFunction.Main, $"Error deleting Windows driver update {id}: {ex.Message}", LogLevels.Error);
+                    }
                 }
+                AppendToDetailsRichTextBlock($"Deleted {windowsDriverUpdateIDs.Count} Windows driver updates.");
             }
             catch (Exception ex)
             {
                 LogToFunctionFile(appFunction.Main, $"Error deleting Windows driver updates: {ex.Message}", LogLevels.Error);
-            }
-            finally
-            {
-                AppendToDetailsRichTextBlock($"Deleted {count} Windows driver updates.");
-                HideLoading();
             }
         }
 
@@ -826,8 +886,6 @@ namespace IntuneTools.Pages
         }
         private async Task DeleteWindowsFeatureUpdatesAsync()
         {
-            int count = 0;
-            ShowLoading("Deleting Windows feature updates from Microsoft Graph...");
             try
             {
                 // Get all Windows feature update IDs
@@ -841,19 +899,26 @@ namespace IntuneTools.Pages
                 // Delete each Windows feature update
                 foreach (var id in windowsFeatureUpdateIDs)
                 {
-                    await DeleteWindowsFeatureUpdateProfile(sourceGraphServiceClient, id);
-                    LogToFunctionFile(appFunction.Main, $"Deleted Windows feature update with ID: {id}");
-                    UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
+                    _deleteCurrent++;
+                    ShowOperationProgress($"Deleting Windows Feature Update", _deleteCurrent, _deleteTotal);
+                    try
+                    {
+                        await DeleteWindowsFeatureUpdateProfile(sourceGraphServiceClient, id);
+                        LogToFunctionFile(appFunction.Main, $"Deleted Windows feature update with ID: {id}");
+                        UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
+                        _deleteSuccessCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        _deleteErrorCount++;
+                        LogToFunctionFile(appFunction.Main, $"Error deleting Windows feature update {id}: {ex.Message}", LogLevels.Error);
+                    }
                 }
+                AppendToDetailsRichTextBlock($"Deleted {windowsFeatureUpdateIDs.Count} Windows feature updates.");
             }
             catch (Exception ex)
             {
                 LogToFunctionFile(appFunction.Main, $"Error deleting Windows feature updates: {ex.Message}", LogLevels.Error);
-            }
-            finally
-            {
-                AppendToDetailsRichTextBlock($"Deleted {count} Windows feature updates.");
-                HideLoading();
             }
         }
 
@@ -877,8 +942,6 @@ namespace IntuneTools.Pages
         }
         private async Task DeleteWindowsQualityUpdatePoliciesAsync()
         {
-            int count = 0;
-            ShowLoading("Deleting Windows quality updates from Microsoft Graph...");
             try
             {
                 // Get all Windows quality update IDs
@@ -892,19 +955,26 @@ namespace IntuneTools.Pages
                 // Delete each Windows quality update
                 foreach (var id in windowsQualityUpdateIDs)
                 {
-                    await DeleteWindowsQualityUpdatePolicy(sourceGraphServiceClient, id);
-                    LogToFunctionFile(appFunction.Main, $"Deleted Windows quality update with ID: {id}");
-                    UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
+                    _deleteCurrent++;
+                    ShowOperationProgress($"Deleting Windows Quality Update Policy", _deleteCurrent, _deleteTotal);
+                    try
+                    {
+                        await DeleteWindowsQualityUpdatePolicy(sourceGraphServiceClient, id);
+                        LogToFunctionFile(appFunction.Main, $"Deleted Windows quality update with ID: {id}");
+                        UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
+                        _deleteSuccessCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        _deleteErrorCount++;
+                        LogToFunctionFile(appFunction.Main, $"Error deleting Windows quality update {id}: {ex.Message}", LogLevels.Error);
+                    }
                 }
+                AppendToDetailsRichTextBlock($"Deleted {windowsQualityUpdateIDs.Count} Windows quality updates.");
             }
             catch (Exception ex)
             {
                 LogToFunctionFile(appFunction.Main, $"Error deleting Windows quality updates: {ex.Message}", LogLevels.Error);
-            }
-            finally
-            {
-                AppendToDetailsRichTextBlock($"Deleted {count} Windows quality updates.");
-                HideLoading();
             }
         }
 
@@ -928,8 +998,6 @@ namespace IntuneTools.Pages
         }
         private async Task DeleteWindowsQualityUpdateProfilesAsync()
         {
-            int count = 0;
-            ShowLoading("Deleting Windows quality update profiles from Microsoft Graph...");
             try
             {
                 // Get all Windows quality update profile IDs
@@ -943,19 +1011,26 @@ namespace IntuneTools.Pages
                 // Delete each Windows quality update profile
                 foreach (var id in windowsQualityUpdateProfileIDs)
                 {
-                    await DeleteWindowsQualityUpdateProfile(sourceGraphServiceClient, id);
-                    LogToFunctionFile(appFunction.Main, $"Deleted Windows quality update profile with ID: {id}");
-                    UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
+                    _deleteCurrent++;
+                    ShowOperationProgress($"Deleting Windows Quality Update Profile", _deleteCurrent, _deleteTotal);
+                    try
+                    {
+                        await DeleteWindowsQualityUpdateProfile(sourceGraphServiceClient, id);
+                        LogToFunctionFile(appFunction.Main, $"Deleted Windows quality update profile with ID: {id}");
+                        UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
+                        _deleteSuccessCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        _deleteErrorCount++;
+                        LogToFunctionFile(appFunction.Main, $"Error deleting Windows quality update profile {id}: {ex.Message}", LogLevels.Error);
+                    }
                 }
+                AppendToDetailsRichTextBlock($"Deleted {windowsQualityUpdateProfileIDs.Count} Windows quality update profiles.");
             }
             catch (Exception ex)
             {
                 LogToFunctionFile(appFunction.Main, $"Error deleting Windows quality update profiles: {ex.Message}", LogLevels.Error);
-            }
-            finally
-            {
-                AppendToDetailsRichTextBlock($"Deleted {count} Windows quality update profiles.");
-                HideLoading();
             }
         }
 
