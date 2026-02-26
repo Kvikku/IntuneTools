@@ -1,4 +1,5 @@
-﻿using Microsoft.Graph;
+﻿using IntuneTools.Utilities;
+using Microsoft.Graph;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -353,6 +354,46 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 LogToFunctionFile(appFunction.Main, "An error occurred while renaming PowerShell scripts", LogLevels.Warning);
                 LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
+        }
+
+        public static async Task<List<CustomContentInfo>> GetAllPowerShellScriptContentAsync(GraphServiceClient graphServiceClient)
+        {
+            var scripts = await GetAllPowerShellScripts(graphServiceClient);
+            var content = new List<CustomContentInfo>();
+
+            foreach (var script in scripts)
+            {
+                content.Add(new CustomContentInfo
+                {
+                    ContentName = script.DisplayName,
+                    ContentType = "PowerShell Script",
+                    ContentPlatform = "Windows",
+                    ContentId = script.Id,
+                    ContentDescription = script.Description
+                });
+            }
+
+            return content;
+        }
+
+        public static async Task<List<CustomContentInfo>> SearchPowerShellScriptContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
+        {
+            var scripts = await SearchForPowerShellScripts(graphServiceClient, searchQuery);
+            var content = new List<CustomContentInfo>();
+
+            foreach (var script in scripts)
+            {
+                content.Add(new CustomContentInfo
+                {
+                    ContentName = script.DisplayName,
+                    ContentType = "PowerShell Script",
+                    ContentPlatform = "Windows",
+                    ContentId = script.Id,
+                    ContentDescription = script.Description
+                });
+            }
+
+            return content;
         }
     }
 }

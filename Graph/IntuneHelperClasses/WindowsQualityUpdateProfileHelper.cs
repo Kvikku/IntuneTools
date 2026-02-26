@@ -1,4 +1,5 @@
-﻿using Microsoft.Graph;
+﻿using IntuneTools.Utilities;
+using Microsoft.Graph;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -371,6 +372,46 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 LogToFunctionFile(appFunction.Main, "An error occurred while renaming Windows Quality Update profile", LogLevels.Warning);
                 LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
+        }
+
+        public static async Task<List<CustomContentInfo>> GetAllWindowsQualityUpdateProfileContentAsync(GraphServiceClient graphServiceClient)
+        {
+            var profiles = await GetAllWindowsQualityUpdateProfiles(graphServiceClient);
+            var content = new List<CustomContentInfo>();
+
+            foreach (var profile in profiles)
+            {
+                content.Add(new CustomContentInfo
+                {
+                    ContentName = profile.DisplayName,
+                    ContentType = "Windows Quality Update Profile",
+                    ContentPlatform = "Windows",
+                    ContentId = profile.Id,
+                    ContentDescription = profile.Description
+                });
+            }
+
+            return content;
+        }
+
+        public static async Task<List<CustomContentInfo>> SearchWindowsQualityUpdateProfileContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
+        {
+            var profiles = await SearchForWindowsQualityUpdateProfiles(graphServiceClient, searchQuery);
+            var content = new List<CustomContentInfo>();
+
+            foreach (var profile in profiles)
+            {
+                content.Add(new CustomContentInfo
+                {
+                    ContentName = profile.DisplayName,
+                    ContentType = "Windows Quality Update Profile",
+                    ContentPlatform = "Windows",
+                    ContentId = profile.Id,
+                    ContentDescription = profile.Description
+                });
+            }
+
+            return content;
         }
     }
 }

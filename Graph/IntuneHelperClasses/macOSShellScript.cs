@@ -1,4 +1,5 @@
-﻿using Microsoft.Graph;
+﻿using IntuneTools.Utilities;
+using Microsoft.Graph;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -388,6 +389,46 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 LogToFunctionFile(appFunction.Main, "An error occurred while renaming macOS shell scripts", LogLevels.Warning);
                 LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
+        }
+
+        public static async Task<List<CustomContentInfo>> GetAllMacOSShellScriptContentAsync(GraphServiceClient graphServiceClient)
+        {
+            var scripts = await GetAllmacOSShellScripts(graphServiceClient);
+            var content = new List<CustomContentInfo>();
+
+            foreach (var script in scripts)
+            {
+                content.Add(new CustomContentInfo
+                {
+                    ContentName = script.DisplayName,
+                    ContentType = "MacOS Shell Script",
+                    ContentPlatform = "macOS",
+                    ContentId = script.Id,
+                    ContentDescription = script.Description
+                });
+            }
+
+            return content;
+        }
+
+        public static async Task<List<CustomContentInfo>> SearchMacOSShellScriptContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
+        {
+            var scripts = await SearchForShellScriptmacOS(graphServiceClient, searchQuery);
+            var content = new List<CustomContentInfo>();
+
+            foreach (var script in scripts)
+            {
+                content.Add(new CustomContentInfo
+                {
+                    ContentName = script.DisplayName,
+                    ContentType = "MacOS Shell Script",
+                    ContentPlatform = "macOS",
+                    ContentId = script.Id,
+                    ContentDescription = script.Description
+                });
+            }
+
+            return content;
         }
     }
 }

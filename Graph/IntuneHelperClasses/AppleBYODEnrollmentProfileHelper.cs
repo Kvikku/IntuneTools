@@ -1,4 +1,5 @@
-﻿using Microsoft.Graph;
+﻿using IntuneTools.Utilities;
+using Microsoft.Graph;
 using Microsoft.Graph.Beta.Models.ODataErrors;
 using System;
 using System.Collections.Generic;
@@ -449,6 +450,46 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 LogToFunctionFile(appFunction.Main, "An error occurred while renaming Apple BYOD Enrollment profiles", LogLevels.Warning);
                 LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
+        }
+
+        public static async Task<List<CustomContentInfo>> GetAllAppleBYODEnrollmentContentAsync(GraphServiceClient graphServiceClient)
+        {
+            var profiles = await GetAllAppleBYODEnrollmentProfiles(graphServiceClient);
+            var content = new List<CustomContentInfo>();
+
+            foreach (var profile in profiles)
+            {
+                content.Add(new CustomContentInfo
+                {
+                    ContentName = profile.DisplayName,
+                    ContentType = "Apple BYOD Enrollment Profile",
+                    ContentPlatform = HelperClass.TranslatePolicyPlatformName(profile.Platform.ToString()),
+                    ContentId = profile.Id,
+                    ContentDescription = profile.Description
+                });
+            }
+
+            return content;
+        }
+
+        public static async Task<List<CustomContentInfo>> SearchAppleBYODEnrollmentContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
+        {
+            var profiles = await SearchForAppleBYODEnrollmentProfiles(graphServiceClient, searchQuery);
+            var content = new List<CustomContentInfo>();
+
+            foreach (var profile in profiles)
+            {
+                content.Add(new CustomContentInfo
+                {
+                    ContentName = profile.DisplayName,
+                    ContentType = "Apple BYOD Enrollment Profile",
+                    ContentPlatform = HelperClass.TranslatePolicyPlatformName(profile.Platform.ToString()),
+                    ContentId = profile.Id,
+                    ContentDescription = profile.Description
+                });
+            }
+
+            return content;
         }
     }
 }

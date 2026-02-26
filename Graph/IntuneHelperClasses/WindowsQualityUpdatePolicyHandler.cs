@@ -1,4 +1,5 @@
-﻿using Microsoft.Graph;
+﻿using IntuneTools.Utilities;
+using Microsoft.Graph;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -382,6 +383,46 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 LogToFunctionFile(appFunction.Main, "An error occurred while renaming Windows Quality Update policy", LogLevels.Warning);
                 LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
+        }
+
+        public static async Task<List<CustomContentInfo>> GetAllWindowsQualityUpdatePolicyContentAsync(GraphServiceClient graphServiceClient)
+        {
+            var policies = await GetAllWindowsQualityUpdatePolicies(graphServiceClient);
+            var content = new List<CustomContentInfo>();
+
+            foreach (var policy in policies)
+            {
+                content.Add(new CustomContentInfo
+                {
+                    ContentName = policy.DisplayName,
+                    ContentType = "Windows Quality Update Policy",
+                    ContentPlatform = "Windows",
+                    ContentId = policy.Id,
+                    ContentDescription = policy.Description
+                });
+            }
+
+            return content;
+        }
+
+        public static async Task<List<CustomContentInfo>> SearchWindowsQualityUpdatePolicyContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
+        {
+            var policies = await SearchForWindowsQualityUpdatePolicies(graphServiceClient, searchQuery);
+            var content = new List<CustomContentInfo>();
+
+            foreach (var policy in policies)
+            {
+                content.Add(new CustomContentInfo
+                {
+                    ContentName = policy.DisplayName,
+                    ContentType = "Windows Quality Update Policy",
+                    ContentPlatform = "Windows",
+                    ContentId = policy.Id,
+                    ContentDescription = policy.Description
+                });
+            }
+
+            return content;
         }
     }
 }

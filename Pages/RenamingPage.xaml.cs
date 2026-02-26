@@ -13,6 +13,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using static IntuneTools.Graph.EntraHelperClasses.GroupHelperClass;
 using static IntuneTools.Graph.IntuneHelperClasses.AppleBYODEnrollmentProfileHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.ApplicationHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceCompliancePolicyHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceConfigurationHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.FilterHelperClass;
@@ -44,7 +45,13 @@ namespace IntuneTools.Pages
             public string? ContentDescription { get; set; }
         }
 
-        public ObservableCollection<ContentInfo> ContentList { get; set; } = new ObservableCollection<ContentInfo>();
+        // old list
+        //public ObservableCollection<ContentInfo> ContentList { get; set; } = new ObservableCollection<ContentInfo>();
+        
+        
+        // new list
+        public ObservableCollection<CustomContentInfo> CustomContentList { get; set; } = new ObservableCollection<CustomContentInfo>();
+
 
 
 
@@ -108,10 +115,9 @@ namespace IntuneTools.Pages
         private void RenamingDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
         {
             var dataGrid = sender as DataGrid;
-            if (ContentList == null || ContentList.Count == 0)
+            if (CustomContentList == null || CustomContentList.Count == 0)
                 return;
 
-            // Get the property name from the column binding
             var textColumn = e.Column as DataGridTextColumn;
             var binding = textColumn?.Binding as Binding;
             string sortProperty = binding?.Path?.Path;
@@ -121,15 +127,13 @@ namespace IntuneTools.Pages
                 return;
             }
 
-            // Check if property exists on ContentInfo
-            var propInfo = typeof(ContentInfo).GetProperty(sortProperty);
+            var propInfo = typeof(CustomContentInfo).GetProperty(sortProperty);
             if (propInfo == null)
             {
-                AppendToDetailsRichTextBlock($"Sorting error: Property '{sortProperty}' not found on ContentInfo.");
+                AppendToDetailsRichTextBlock($"Sorting error: Property '{sortProperty}' not found on CustomContentInfo.");
                 return;
             }
 
-            // Toggle sort direction
             ListSortDirection direction;
             if (e.Column.SortDirection.HasValue && e.Column.SortDirection.Value == DataGridSortDirection.Ascending)
             {
@@ -140,17 +144,16 @@ namespace IntuneTools.Pages
                 direction = ListSortDirection.Ascending;
             }
 
-            // Sort the ContentList in place
-            List<ContentInfo> sorted;
+            List<CustomContentInfo> sorted;
             try
             {
                 if (direction == ListSortDirection.Ascending)
                 {
-                    sorted = ContentList.OrderBy(x => propInfo.GetValue(x, null) ?? string.Empty).ToList();
+                    sorted = CustomContentList.OrderBy(x => propInfo.GetValue(x, null) ?? string.Empty).ToList();
                 }
                 else
                 {
-                    sorted = ContentList.OrderByDescending(x => propInfo.GetValue(x, null) ?? string.Empty).ToList();
+                    sorted = CustomContentList.OrderByDescending(x => propInfo.GetValue(x, null) ?? string.Empty).ToList();
                 }
             }
             catch (Exception ex)
@@ -159,12 +162,10 @@ namespace IntuneTools.Pages
                 return;
             }
 
-            // Update ContentList
-            ContentList.Clear();
+            CustomContentList.Clear();
             foreach (var item in sorted)
-                ContentList.Add(item);
+                CustomContentList.Add(item);
 
-            // Update sort direction indicator
             foreach (var col in dataGrid.Columns)
                 col.SortDirection = null;
             e.Column.SortDirection = direction == ListSortDirection.Ascending
@@ -227,8 +228,8 @@ namespace IntuneTools.Pages
             AppendToDetailsRichTextBlock("Starting to load all content. This could take a while...");
             try
             {
-                // Clear the ContentList before loading new data
-                ContentList.Clear();
+                // Clear the CustomContentList before loading new data
+                CustomContentList.Clear();
 
                 await LoadAllSettingsCatalogPoliciesAsync();
                 await LoadAllDeviceCompliancePoliciesAsync();
@@ -242,11 +243,15 @@ namespace IntuneTools.Pages
                 await LoadAllProactiveRemediationsAsync();
                 await LoadAllMacOSShellScriptsAsync();
                 await LoadAllAppleBYODEnrollmentProfilesAsync();
+                await LoadAllApplicationsAsync();
                 await LoadAllAssignmentFiltersAsync();
                 await LoadAllEntraGroupsAsync();
 
                 // Bind the combined list to the grid once
-                RenamingDataGrid.ItemsSource = ContentList;
+                //RenamingDataGrid.ItemsSource = ContentList;
+
+                // New list
+                RenamingDataGrid.ItemsSource = CustomContentList;
             }
             catch (Exception ex)
             {
@@ -265,8 +270,8 @@ namespace IntuneTools.Pages
             AppendToDetailsRichTextBlock($"Searching for content matching '{searchQuery}'. This may take a while...");
             try
             {
-                // Clear the ContentList before loading new data
-                ContentList.Clear();
+                // Clear the CustomContentList before loading new data
+                CustomContentList.Clear();
                 await SearchForSettingsCatalogPoliciesAsync(searchQuery);
                 await SearchForDeviceCompliancePoliciesAsync(searchQuery);
                 await SearchForDeviceConfigurationPoliciesAsync(searchQuery);
@@ -281,9 +286,10 @@ namespace IntuneTools.Pages
                 await SearchForWindowsFeatureUpdatesAsync(searchQuery);
                 await SearchForWindowsQualityUpdatePoliciesAsync(searchQuery);
                 await SearchForWindowsQualityUpdateProfilesAsync(searchQuery);
+                await SearchForApplicationsAsync(searchQuery);
 
                 // Bind the combined list to the grid once
-                RenamingDataGrid.ItemsSource = ContentList;
+                RenamingDataGrid.ItemsSource = CustomContentList;
             }
             catch (Exception ex)
             {
@@ -332,7 +338,7 @@ namespace IntuneTools.Pages
                 foreach (var id in contentIDs)
                 {
                     var name = string.Empty;
-                    var content = ContentList.FirstOrDefault(c => c.ContentId == id);
+                    var content = CustomContentList.FirstOrDefault(c => c.ContentId == id);
                     if (content != null)
                     {
                         name = FindPreFixInPolicyName(content.ContentName, prefix);
@@ -392,7 +398,7 @@ namespace IntuneTools.Pages
 
             try
             {
-                if (ContentList.Any(c => c.ContentType == "Settings Catalog"))
+                if (CustomContentList.Any(c => c.ContentType == "Settings Catalog"))
                 {
                     var settingsCatalogIDs = GetSettingsCatalogIDs();
                     if (settingsCatalogIDs.Count > 0)
@@ -401,7 +407,7 @@ namespace IntuneTools.Pages
                     }
                 }
 
-                if (ContentList.Any(c => c.ContentType == "Device Compliance Policy"))
+                if (CustomContentList.Any(c => c.ContentType == "Device Compliance Policy"))
                 {
                     var deviceCompliancePolicyIDs = GetDeviceCompliancePolicyIDs();
                     if (deviceCompliancePolicyIDs.Count > 0)
@@ -410,7 +416,7 @@ namespace IntuneTools.Pages
                     }
                 }
 
-                if (ContentList.Any(c => c.ContentType == "Device Configuration Policy"))
+                if (CustomContentList.Any(c => c.ContentType == "Device Configuration Policy"))
                 {
                     var deviceConfigurationPolicyIDs = GetDeviceConfigurationPolicyIDs();
                     if (deviceConfigurationPolicyIDs.Count > 0)
@@ -419,7 +425,7 @@ namespace IntuneTools.Pages
                     }
                 }
 
-                if (ContentList.Any(c => c.ContentType == "Apple BYOD Enrollment Profile"))
+                if (CustomContentList.Any(c => c.ContentType == "Apple BYOD Enrollment Profile"))
                 {
                     var appleBYODProfileIDs = GetAppleBYODEnrollmentProfileIDs();
                     if (appleBYODProfileIDs.Count > 0)
@@ -428,7 +434,7 @@ namespace IntuneTools.Pages
                     }
                 }
 
-                if (ContentList.Any(c => c.ContentType == "MacOS Shell Script"))
+                if (CustomContentList.Any(c => c.ContentType == "MacOS Shell Script"))
                 {
                     var macOSShellScriptIDs = GetMacOSShellScriptIDs();
                     if (macOSShellScriptIDs.Count > 0)
@@ -437,7 +443,7 @@ namespace IntuneTools.Pages
                     }
                 }
 
-                if (ContentList.Any(c => c.ContentType == "PowerShell Script"))
+                if (CustomContentList.Any(c => c.ContentType == "PowerShell Script"))
                 {
                     var powerShellScriptIDs = GetPowerShellScriptIDs();
                     if (powerShellScriptIDs.Count > 0)
@@ -446,7 +452,7 @@ namespace IntuneTools.Pages
                     }
                 }
 
-                if (ContentList.Any(c => c.ContentType == "Proactive Remediation"))
+                if (CustomContentList.Any(c => c.ContentType == "Proactive Remediation"))
                 {
                     var proactiveRemediationIDs = GetProactiveRemediationIDs();
                     if (proactiveRemediationIDs.Count > 0)
@@ -455,7 +461,7 @@ namespace IntuneTools.Pages
                     }
                 }
 
-                if (ContentList.Any(c => c.ContentType == "Windows AutoPilot Profile"))
+                if (CustomContentList.Any(c => c.ContentType == "Windows AutoPilot Profile"))
                 {
                     var windowsAutoPilotProfileIDs = GetWindowsAutoPilotProfileIDs();
                     if (windowsAutoPilotProfileIDs.Count > 0)
@@ -464,7 +470,7 @@ namespace IntuneTools.Pages
                     }
                 }
 
-                if (ContentList.Any(c => c.ContentType == "Windows Driver Update"))
+                if (CustomContentList.Any(c => c.ContentType == "Windows Driver Update"))
                 {
                     var windowsDriverUpdateIDs = GetWindowsDriverUpdateIDs();
                     if (windowsDriverUpdateIDs.Count > 0)
@@ -473,7 +479,7 @@ namespace IntuneTools.Pages
                     }
                 }
 
-                if (ContentList.Any(c => c.ContentType == "Windows Feature Update"))
+                if (CustomContentList.Any(c => c.ContentType == "Windows Feature Update"))
                 {
                     var windowsFeatureUpdateIDs = GetWindowsFeatureUpdateIDs();
                     if (windowsFeatureUpdateIDs.Count > 0)
@@ -482,7 +488,7 @@ namespace IntuneTools.Pages
                     }
                 }
 
-                if (ContentList.Any(c => c.ContentType == "Windows Quality Update Policy"))
+                if (CustomContentList.Any(c => c.ContentType == "Windows Quality Update Policy"))
                 {
                     var windowsQualityUpdatePolicyIDs = GetWindowsQualityUpdatePolicyIDs();
                     if (windowsQualityUpdatePolicyIDs.Count > 0)
@@ -491,7 +497,7 @@ namespace IntuneTools.Pages
                     }
                 }
 
-                if (ContentList.Any(c => c.ContentType == "Windows Quality Update Profile"))
+                if (CustomContentList.Any(c => c.ContentType == "Windows Quality Update Profile"))
                 {
                     var windowsQualityUpdateProfileIDs = GetWindowsQualityUpdateProfileIDs();
                     if (windowsQualityUpdateProfileIDs.Count > 0)
@@ -500,7 +506,7 @@ namespace IntuneTools.Pages
                     }
                 }
 
-                if (ContentList.Any(c => c.ContentType == "Assignment Filter"))
+                if (CustomContentList.Any(c => c.ContentType == "Assignment Filter"))
                 {
                     var assignmentFilterIDs = GetAssignmentFilterIDs();
                     if (assignmentFilterIDs.Count > 0)
@@ -509,12 +515,20 @@ namespace IntuneTools.Pages
                     }
                 }
 
-                if (ContentList.Any(c => c.ContentType == "Entra Group"))
+                if (CustomContentList.Any(c => c.ContentType == "Entra Group"))
                 {
                     var entraGroupIDs = GetEntraGroupIDs();
                     if (entraGroupIDs.Count > 0)
                     {
                         await RenameEntraGroups(entraGroupIDs, prefix);
+                    }
+                }
+                if (CustomContentList.Any(c => UserInterfaceHelper.IsApplicationContentType(c.ContentType)))
+                {
+                    var applicationIDs = GetApplicationIDs();
+                    if (applicationIDs.Count > 0)
+                    {
+                        await RenameApplications(applicationIDs, prefix);
                     }
                 }
                 AppendToDetailsRichTextBlock($"Renamed {contentIDs.Count} items with prefix '{prefix}'.");
@@ -542,6 +556,31 @@ namespace IntuneTools.Pages
                 catch (Exception ex)
                 {
                     AppendToDetailsRichTextBlock($"Error renaming Apple BYOD Enrollment Profile with ID {id}: {ex.Message}");
+                }
+            }
+        }
+
+        private List<string> GetApplicationIDs()
+        {
+            return CustomContentList
+                .Where(c => UserInterfaceHelper.IsApplicationContentType(c.ContentType))
+                .Select(c => c.ContentId ?? string.Empty)
+                .ToList();
+        }
+
+        private async Task RenameApplications(List<string> appIDs, string prefix)
+        {
+            foreach (var id in appIDs)
+            {
+                try
+                {
+                    await RenameApplication(sourceGraphServiceClient, id, prefix);
+                    AppendToDetailsRichTextBlock($"Updated Application with ID '{id}' with '{prefix}'.");
+                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
+                }
+                catch (Exception ex)
+                {
+                    AppendToDetailsRichTextBlock($"Error updating Application with ID {id}: {ex.Message}");
                 }
             }
         }
@@ -761,40 +800,25 @@ namespace IntuneTools.Pages
         /// </summary>
         private async Task LoadAllSettingsCatalogPoliciesAsync()
         {
-            var policies = await GetAllSettingsCatalogPolicies(sourceGraphServiceClient);
-            foreach (var policy in policies)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = policy.Name,
-                    ContentType = "Settings Catalog",
-                    ContentPlatform = TranslatePolicyPlatformName(policy.Platforms.ToString()),
-                    ContentId = policy.Id,
-                    ContentDescription = policy.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Loaded {policies.Count()} settings catalog policies.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await GetAllSettingsCatalogContentAsync(sourceGraphServiceClient));
+
+            AppendToDetailsRichTextBlock($"Loaded {count} settings catalog policies.");
         }
+
         private async Task SearchForSettingsCatalogPoliciesAsync(string searchQuery)
         {
-            var policies = await SearchForSettingsCatalog(sourceGraphServiceClient, searchQuery);
-            foreach (var policy in policies)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = policy.Name,
-                    ContentType = "Settings Catalog",
-                    ContentPlatform = TranslatePolicyPlatformName(policy.Platforms.ToString()),
-                    ContentId = policy.Id,
-                    ContentDescription = policy.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Found {policies.Count()} settings catalog policies matching '{searchQuery}'.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await SearchSettingsCatalogContentAsync(sourceGraphServiceClient, searchQuery));
+
+            AppendToDetailsRichTextBlock($"Found {count} settings catalog policies matching '{searchQuery}'.");
         }
         private List<string> GetSettingsCatalogIDs()
         {
-            // This method retrieves the IDs of all settings catalog policies in ContentList
-            return ContentList
+            // This method retrieves the IDs of all settings catalog policies in CustomContentList
+            return CustomContentList
                 .Where(c => c.ContentType == "Settings Catalog")
                 .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
@@ -827,42 +851,26 @@ namespace IntuneTools.Pages
 
         private async Task LoadAllDeviceCompliancePoliciesAsync()
         {
-            var policies = await GetAllDeviceCompliancePolicies(sourceGraphServiceClient);
-            foreach (var policy in policies)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = policy.DisplayName,
-                    ContentType = "Device Compliance Policy",
-                    ContentPlatform = TranslatePolicyPlatformName(policy.OdataType.ToString()),
-                    ContentId = policy.Id,
-                    ContentDescription = policy.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Loaded {policies.Count()} device compliance policies.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await GetAllDeviceComplianceContentAsync(sourceGraphServiceClient));
+
+            AppendToDetailsRichTextBlock($"Loaded {count} device compliance policies.");
         }
         private async Task SearchForDeviceCompliancePoliciesAsync(string searchQuery)
         {
-            var policies = await SearchForDeviceCompliancePolicies(sourceGraphServiceClient, searchQuery);
-            foreach (var policy in policies)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = policy.DisplayName,
-                    ContentType = "Device Compliance Policy",
-                    ContentPlatform = TranslatePolicyPlatformName(policy.OdataType.ToString()),
-                    ContentId = policy.Id,
-                    ContentDescription = policy.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Found {policies.Count()} device compliance policies matching '{searchQuery}'.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await SearchDeviceComplianceContentAsync(sourceGraphServiceClient, searchQuery));
+
+            AppendToDetailsRichTextBlock($"Found {count} device compliance policies matching '{searchQuery}'.");
         }
         private List<string> GetDeviceCompliancePolicyIDs()
         {
-            // This method retrieves the IDs of all device compliance policies in ContentList
-            return ContentList
+            // This method retrieves the IDs of all device compliance policies in CustomContentList
+            return CustomContentList
                 .Where(c => c.ContentType == "Device Compliance Policy")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
+                .Select(c => c.ContentId ?? string.Empty)
                 .ToList();
         }
 
@@ -893,42 +901,28 @@ namespace IntuneTools.Pages
 
         private async Task LoadAllDeviceConfigurationPoliciesAsync()
         {
-            var policies = await GetAllDeviceConfigurations(sourceGraphServiceClient);
-            foreach (var policy in policies)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = policy.DisplayName,
-                    ContentType = "Device Configuration Policy",
-                    ContentPlatform = TranslatePolicyPlatformName(policy.OdataType.ToString()),
-                    ContentId = policy.Id,
-                    ContentDescription = policy.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Loaded {policies.Count()} device configuration policies.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await GetAllDeviceConfigurationContentAsync(sourceGraphServiceClient));
+
+            AppendToDetailsRichTextBlock($"Loaded {count} device configuration policies.");
         }
+
         private async Task SearchForDeviceConfigurationPoliciesAsync(string searchQuery)
         {
-            var policies = await SearchForDeviceConfigurations(sourceGraphServiceClient, searchQuery);
-            foreach (var policy in policies)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = policy.DisplayName,
-                    ContentType = "Device Configuration Policy",
-                    ContentPlatform = TranslatePolicyPlatformName(policy.OdataType.ToString()),
-                    ContentId = policy.Id,
-                    ContentDescription = policy.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Found {policies.Count()} device configuration policies matching '{searchQuery}'.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await SearchDeviceConfigurationContentAsync(sourceGraphServiceClient, searchQuery));
+
+            AppendToDetailsRichTextBlock($"Found {count} device configuration policies matching '{searchQuery}'.");
         }
+
         private List<string> GetDeviceConfigurationPolicyIDs()
         {
-            // This method retrieves the IDs of all device configuration policies in ContentList
-            return ContentList
+            // This method retrieves the IDs of all device configuration policies in CustomContentList
+            return CustomContentList
                 .Where(c => c.ContentType == "Device Configuration Policy")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
+                .Select(c => c.ContentId ?? string.Empty)
                 .ToList();
         }
 
@@ -959,40 +953,42 @@ namespace IntuneTools.Pages
 
         private async Task LoadAllAppleBYODEnrollmentProfilesAsync()
         {
-            var profiles = await GetAllAppleBYODEnrollmentProfiles(sourceGraphServiceClient);
-            foreach (var profile in profiles)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = profile.DisplayName,
-                    ContentType = "Apple BYOD Enrollment Profile",
-                    ContentPlatform = TranslatePolicyPlatformName(profile.Platform.ToString()),
-                    ContentId = profile.Id,
-                    ContentDescription = profile.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Loaded {profiles.Count()} Apple BYOD enrollment profiles.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await GetAllAppleBYODEnrollmentContentAsync(sourceGraphServiceClient));
+
+            AppendToDetailsRichTextBlock($"Loaded {count} Apple BYOD enrollment profiles.");
+        }
+
+        private async Task LoadAllApplicationsAsync()
+        {
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await GetAllApplicationContentAsync(sourceGraphServiceClient));
+
+            AppendToDetailsRichTextBlock($"Loaded {count} applications.");
         }
         private async Task SearchForAppleBYODEnrollmentProfilesAsync(string searchQuery)
         {
-            var profiles = await SearchForAppleBYODEnrollmentProfiles(sourceGraphServiceClient, searchQuery);
-            foreach (var profile in profiles)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = profile.DisplayName,
-                    ContentType = "Apple BYOD Enrollment Profile",
-                    ContentPlatform = TranslatePolicyPlatformName(profile.Platform.ToString()),
-                    ContentId = profile.Id,
-                    ContentDescription = profile.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Found {profiles.Count()} Apple BYOD enrollment profiles matching '{searchQuery}'.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await SearchAppleBYODEnrollmentContentAsync(sourceGraphServiceClient, searchQuery));
+
+            AppendToDetailsRichTextBlock($"Found {count} Apple BYOD enrollment profiles matching '{searchQuery}'.");
+        }
+
+        private async Task SearchForApplicationsAsync(string searchQuery)
+        {
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await SearchApplicationContentAsync(sourceGraphServiceClient, searchQuery));
+
+            AppendToDetailsRichTextBlock($"Found {count} applications matching '{searchQuery}'.");
         }
         private List<string> GetAppleBYODEnrollmentProfileIDs()
         {
-            // This method retrieves the IDs of all Apple BYOD enrollment profiles in ContentList
-            return ContentList
+            // This method retrieves the IDs of all Apple BYOD enrollment profiles in CustomContentList
+            return CustomContentList
                 .Where(c => c.ContentType == "Apple BYOD Enrollment Profile")
                 .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
@@ -1004,40 +1000,24 @@ namespace IntuneTools.Pages
 
         private async Task LoadAllAssignmentFiltersAsync()
         {
-            var filters = await GetAllAssignmentFilters(sourceGraphServiceClient);
-            foreach (var filter in filters)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = filter.DisplayName,
-                    ContentType = "Assignment Filter",
-                    ContentPlatform = TranslatePolicyPlatformName(filter.Platform.ToString()),
-                    ContentId = filter.Id,
-                    ContentDescription = filter.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Loaded {filters.Count()} assignment filters.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await GetAllAssignmentFilterContentAsync(sourceGraphServiceClient));
+
+            AppendToDetailsRichTextBlock($"Loaded {count} assignment filters.");
         }
         private async Task SearchForAssignmentFiltersAsync(string searchQuery)
         {
-            var filters = await SearchForAssignmentFilters(sourceGraphServiceClient, searchQuery);
-            foreach (var filter in filters)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = filter.DisplayName,
-                    ContentType = "Assignment Filter",
-                    ContentPlatform = TranslatePolicyPlatformName(filter.Platform.ToString()),
-                    ContentId = filter.Id,
-                    ContentDescription = filter.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Found {filters.Count()} assignment filters matching '{searchQuery}'.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await SearchAssignmentFilterContentAsync(sourceGraphServiceClient, searchQuery));
+
+            AppendToDetailsRichTextBlock($"Found {count} assignment filters matching '{searchQuery}'.");
         }
         private List<string> GetAssignmentFilterIDs()
         {
-            // This method retrieves the IDs of all assignment filters in ContentList
-            return ContentList
+            // This method retrieves the IDs of all assignment filters in CustomContentList
+            return CustomContentList
                 .Where(c => c.ContentType == "Assignment Filter")
                 .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
@@ -1049,40 +1029,24 @@ namespace IntuneTools.Pages
 
         private async Task LoadAllEntraGroupsAsync()
         {
-            var groups = await GetAllGroups(sourceGraphServiceClient);
-            foreach (var group in groups)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = group.DisplayName,
-                    ContentType = "Entra Group",
-                    ContentPlatform = "Entra group",
-                    ContentId = group.Id,
-                    ContentDescription = group.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Loaded {groups.Count()} Entra groups.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await GetAllGroupContentAsync(sourceGraphServiceClient));
+
+            AppendToDetailsRichTextBlock($"Loaded {count} Entra groups.");
         }
         private async Task SearchForEntraGroupsAsync(string searchQuery)
         {
-            var groups = await SearchForGroups(sourceGraphServiceClient, searchQuery);
-            foreach (var group in groups)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = group.DisplayName,
-                    ContentType = "Entra Group",
-                    ContentPlatform = "Entra group",
-                    ContentId = group.Id,
-                    ContentDescription = group.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Found {groups.Count()} Entra groups matching '{searchQuery}'.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await SearchGroupContentAsync(sourceGraphServiceClient, searchQuery));
+
+            AppendToDetailsRichTextBlock($"Found {count} Entra groups matching '{searchQuery}'.");
         }
         private List<string> GetEntraGroupIDs()
         {
-            // This method retrieves the IDs of all Entra groups in ContentList
-            return ContentList
+            // This method retrieves the IDs of all Entra groups in CustomContentList
+            return CustomContentList
                 .Where(c => c.ContentType == "Entra Group")
                 .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
@@ -1094,40 +1058,24 @@ namespace IntuneTools.Pages
 
         private async Task LoadAllPowerShellScriptsAsync()
         {
-            var scripts = await GetAllPowerShellScripts(sourceGraphServiceClient);
-            foreach (var script in scripts)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = script.DisplayName,
-                    ContentType = "PowerShell Script",
-                    ContentPlatform = "Windows",
-                    ContentId = script.Id,
-                    ContentDescription = script.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Loaded {scripts.Count()} PowerShell scripts.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await GetAllPowerShellScriptContentAsync(sourceGraphServiceClient));
+
+            AppendToDetailsRichTextBlock($"Loaded {count} PowerShell scripts.");
         }
         private async Task SearchForPowerShellScriptsAsync(string searchQuery)
         {
-            var scripts = await SearchForPowerShellScripts(sourceGraphServiceClient, searchQuery);
-            foreach (var script in scripts)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = script.DisplayName,
-                    ContentType = "PowerShell Script",
-                    ContentPlatform = "Windows",
-                    ContentId = script.Id,
-                    ContentDescription = script.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Found {scripts.Count()} PowerShell scripts matching '{searchQuery}'.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await SearchPowerShellScriptContentAsync(sourceGraphServiceClient, searchQuery));
+
+            AppendToDetailsRichTextBlock($"Found {count} PowerShell scripts matching '{searchQuery}'.");
         }
         private List<string> GetPowerShellScriptIDs()
         {
-            // This method retrieves the IDs of all PowerShell scripts in ContentList
-            return ContentList
+            // This method retrieves the IDs of all PowerShell scripts in CustomContentList
+            return CustomContentList
                 .Where(c => c.ContentType == "PowerShell Script")
                 .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
@@ -1139,40 +1087,24 @@ namespace IntuneTools.Pages
 
         private async Task LoadAllProactiveRemediationsAsync()
         {
-            var scripts = await GetAllProactiveRemediations(sourceGraphServiceClient);
-            foreach (var script in scripts)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = script.DisplayName,
-                    ContentType = "Proactive Remediation",
-                    ContentPlatform = "Windows",
-                    ContentId = script.Id,
-                    ContentDescription = script.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Loaded {scripts.Count()} proactive remediations.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await GetAllProactiveRemediationContentAsync(sourceGraphServiceClient));
+
+            AppendToDetailsRichTextBlock($"Loaded {count} proactive remediations.");
         }
         private async Task SearchForProactiveRemediationsAsync(string searchQuery)
         {
-            var scripts = await SearchForProactiveRemediations(sourceGraphServiceClient, searchQuery);
-            foreach (var script in scripts)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = script.DisplayName,
-                    ContentType = "Proactive Remediation",
-                    ContentPlatform = "Windows",
-                    ContentId = script.Id,
-                    ContentDescription = script.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Found {scripts.Count()} proactive remediations matching '{searchQuery}'.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await SearchProactiveRemediationContentAsync(sourceGraphServiceClient, searchQuery));
+
+            AppendToDetailsRichTextBlock($"Found {count} proactive remediations matching '{searchQuery}'.");
         }
         private List<string> GetProactiveRemediationIDs()
         {
-            // This method retrieves the IDs of all proactive remediations in ContentList
-            return ContentList
+            // This method retrieves the IDs of all proactive remediations in CustomContentList
+            return CustomContentList
                 .Where(c => c.ContentType == "Proactive Remediation")
                 .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
@@ -1184,40 +1116,24 @@ namespace IntuneTools.Pages
 
         private async Task LoadAllMacOSShellScriptsAsync()
         {
-            var scripts = await GetAllmacOSShellScripts(sourceGraphServiceClient);
-            foreach (var script in scripts)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = script.DisplayName,
-                    ContentType = "MacOS Shell Script",
-                    ContentPlatform = "macOS",
-                    ContentId = script.Id,
-                    ContentDescription = script.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Loaded {scripts.Count()} MacOS shell scripts.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await GetAllMacOSShellScriptContentAsync(sourceGraphServiceClient));
+
+            AppendToDetailsRichTextBlock($"Loaded {count} MacOS shell scripts.");
         }
         private async Task SearchForMacOSShellScriptsAsync(string searchQuery)
         {
-            var scripts = await SearchForShellScriptmacOS(sourceGraphServiceClient, searchQuery);
-            foreach (var script in scripts)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = script.DisplayName,
-                    ContentType = "MacOS Shell Script",
-                    ContentPlatform = "macOS",
-                    ContentId = script.Id,
-                    ContentDescription = script.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Found {scripts.Count()} MacOS shell scripts matching '{searchQuery}'.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await SearchMacOSShellScriptContentAsync(sourceGraphServiceClient, searchQuery));
+
+            AppendToDetailsRichTextBlock($"Found {count} MacOS shell scripts matching '{searchQuery}'.");
         }
         private List<string> GetMacOSShellScriptIDs()
         {
-            // This method retrieves the IDs of all MacOS shell scripts in ContentList
-            return ContentList
+            // This method retrieves the IDs of all MacOS shell scripts in CustomContentList
+            return CustomContentList
                 .Where(c => c.ContentType == "MacOS Shell Script")
                 .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
@@ -1229,40 +1145,24 @@ namespace IntuneTools.Pages
 
         private async Task LoadAllWindowsAutoPilotProfilesAsync()
         {
-            var profiles = await GetAllWindowsAutoPilotProfiles(sourceGraphServiceClient);
-            foreach (var profile in profiles)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = profile.DisplayName,
-                    ContentType = "Windows AutoPilot Profile",
-                    ContentPlatform = "Windows",
-                    ContentId = profile.Id,
-                    ContentDescription = profile.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Loaded {profiles.Count()} Windows AutoPilot profiles.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await GetAllWindowsAutoPilotContentAsync(sourceGraphServiceClient));
+
+            AppendToDetailsRichTextBlock($"Loaded {count} Windows AutoPilot profiles.");
         }
         private async Task SearchForWindowsAutoPilotProfilesAsync(string searchQuery)
         {
-            var profiles = await SearchForWindowsAutoPilotProfiles(sourceGraphServiceClient, searchQuery);
-            foreach (var profile in profiles)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = profile.DisplayName,
-                    ContentType = "Windows AutoPilot Profile",
-                    ContentPlatform = "Windows",
-                    ContentId = profile.Id,
-                    ContentDescription = profile.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Found {profiles.Count()} Windows AutoPilot profiles matching '{searchQuery}'.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await SearchWindowsAutoPilotContentAsync(sourceGraphServiceClient, searchQuery));
+
+            AppendToDetailsRichTextBlock($"Found {count} Windows AutoPilot profiles matching '{searchQuery}'.");
         }
         private List<string> GetWindowsAutoPilotProfileIDs()
         {
-            // This method retrieves the IDs of all Windows AutoPilot profiles in ContentList
-            return ContentList
+            // This method retrieves the IDs of all Windows AutoPilot profiles in CustomContentList
+            return CustomContentList
                 .Where(c => c.ContentType == "Windows AutoPilot Profile")
                 .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
@@ -1273,40 +1173,24 @@ namespace IntuneTools.Pages
         /// </summary>
         private async Task LoadAllWindowsDriverUpdatesAsync()
         {
-            var updates = await GetAllDriverProfiles(sourceGraphServiceClient);
-            foreach (var update in updates)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = update.DisplayName,
-                    ContentType = "Windows Driver Update",
-                    ContentPlatform = "Windows",
-                    ContentId = update.Id,
-                    ContentDescription = update.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Loaded {updates.Count()} Windows driver updates.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await GetAllWindowsDriverUpdateContentAsync(sourceGraphServiceClient));
+
+            AppendToDetailsRichTextBlock($"Loaded {count} Windows driver updates.");
         }
         private async Task SearchForWindowsDriverUpdatesAsync(string searchQuery)
         {
-            var updates = await SearchForDriverProfiles(sourceGraphServiceClient, searchQuery);
-            foreach (var update in updates)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = update.DisplayName,
-                    ContentType = "Windows Driver Update",
-                    ContentPlatform = "Windows",
-                    ContentId = update.Id,
-                    ContentDescription = update.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Found {updates.Count()} Windows driver updates matching '{searchQuery}'.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await SearchWindowsDriverUpdateContentAsync(sourceGraphServiceClient, searchQuery));
+
+            AppendToDetailsRichTextBlock($"Found {count} Windows driver updates matching '{searchQuery}'.");
         }
         private List<string> GetWindowsDriverUpdateIDs()
         {
-            // This method retrieves the IDs of all Windows driver updates in ContentList
-            return ContentList
+            // This method retrieves the IDs of all Windows driver updates in CustomContentList
+            return CustomContentList
                 .Where(c => c.ContentType == "Windows Driver Update")
                 .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
@@ -1318,40 +1202,24 @@ namespace IntuneTools.Pages
 
         private async Task LoadAllWindowsFeatureUpdatesAsync()
         {
-            var updates = await GetAllWindowsFeatureUpdateProfiles(sourceGraphServiceClient);
-            foreach (var update in updates)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = update.DisplayName,
-                    ContentType = "Windows Feature Update",
-                    ContentPlatform = "Windows",
-                    ContentId = update.Id,
-                    ContentDescription = update.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Loaded {updates.Count()} Windows feature updates.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await GetAllWindowsFeatureUpdateContentAsync(sourceGraphServiceClient));
+
+            AppendToDetailsRichTextBlock($"Loaded {count} Windows feature updates.");
         }
         private async Task SearchForWindowsFeatureUpdatesAsync(string searchQuery)
         {
-            var updates = await SearchForWindowsFeatureUpdateProfiles(sourceGraphServiceClient, searchQuery);
-            foreach (var update in updates)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = update.DisplayName,
-                    ContentType = "Windows Feature Update",
-                    ContentPlatform = "Windows",
-                    ContentId = update.Id,
-                    ContentDescription = update.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Found {updates.Count()} Windows feature updates matching '{searchQuery}'.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await SearchWindowsFeatureUpdateContentAsync(sourceGraphServiceClient, searchQuery));
+
+            AppendToDetailsRichTextBlock($"Found {count} Windows feature updates matching '{searchQuery}'.");
         }
         private List<string> GetWindowsFeatureUpdateIDs()
         {
-            // This method retrieves the IDs of all Windows feature updates in ContentList
-            return ContentList
+            // This method retrieves the IDs of all Windows feature updates in CustomContentList
+            return CustomContentList
                 .Where(c => c.ContentType == "Windows Feature Update")
                 .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
@@ -1363,40 +1231,24 @@ namespace IntuneTools.Pages
 
         private async Task LoadAllWindowsQualityUpdatePoliciesAsync()
         {
-            var policies = await GetAllWindowsQualityUpdatePolicies(sourceGraphServiceClient);
-            foreach (var policy in policies)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = policy.DisplayName,
-                    ContentType = "Windows Quality Update Policy",
-                    ContentPlatform = "Windows",
-                    ContentId = policy.Id,
-                    ContentDescription = policy.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Loaded {policies.Count()} Windows quality update policies.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await GetAllWindowsQualityUpdatePolicyContentAsync(sourceGraphServiceClient));
+
+            AppendToDetailsRichTextBlock($"Loaded {count} Windows quality update policies.");
         }
         private async Task SearchForWindowsQualityUpdatePoliciesAsync(string searchQuery)
         {
-            var policies = await SearchForWindowsQualityUpdatePolicies(sourceGraphServiceClient, searchQuery);
-            foreach (var policy in policies)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = policy.DisplayName,
-                    ContentType = "Windows Quality Update Policy",
-                    ContentPlatform = "Windows",
-                    ContentId = policy.Id,
-                    ContentDescription = policy.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Found {policies.Count()} Windows quality update policies matching '{searchQuery}'.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await SearchWindowsQualityUpdatePolicyContentAsync(sourceGraphServiceClient, searchQuery));
+
+            AppendToDetailsRichTextBlock($"Found {count} Windows quality update policies matching '{searchQuery}'.");
         }
         private List<string> GetWindowsQualityUpdatePolicyIDs()
         {
-            // This method retrieves the IDs of all Windows quality update policies in ContentList
-            return ContentList
+            // This method retrieves the IDs of all Windows quality update policies in CustomContentList
+            return CustomContentList
                 .Where(c => c.ContentType == "Windows Quality Update Policy")
                 .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
@@ -1408,40 +1260,24 @@ namespace IntuneTools.Pages
 
         private async Task LoadAllWindowsQualityUpdateProfilesAsync()
         {
-            var profiles = await GetAllWindowsQualityUpdateProfiles(sourceGraphServiceClient);
-            foreach (var profile in profiles)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = profile.DisplayName,
-                    ContentType = "Windows Quality Update Profile",
-                    ContentPlatform = "Windows",
-                    ContentId = profile.Id,
-                    ContentDescription = profile.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Loaded {profiles.Count()} Windows quality update profiles.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await GetAllWindowsQualityUpdateProfileContentAsync(sourceGraphServiceClient));
+
+            AppendToDetailsRichTextBlock($"Loaded {count} Windows quality update profiles.");
         }
         private async Task SearchForWindowsQualityUpdateProfilesAsync(string searchQuery)
         {
-            var profiles = await SearchForWindowsQualityUpdateProfiles(sourceGraphServiceClient, searchQuery);
-            foreach (var profile in profiles)
-            {
-                ContentList.Add(new ContentInfo
-                {
-                    ContentName = profile.DisplayName,
-                    ContentType = "Windows Quality Update Profile",
-                    ContentPlatform = "Windows",
-                    ContentId = profile.Id,
-                    ContentDescription = profile.Description
-                });
-            }
-            AppendToDetailsRichTextBlock($"Found {profiles.Count()} Windows quality update profiles matching '{searchQuery}'.");
+            var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                CustomContentList,
+                async () => await SearchWindowsQualityUpdateProfileContentAsync(sourceGraphServiceClient, searchQuery));
+
+            AppendToDetailsRichTextBlock($"Found {count} Windows quality update profiles matching '{searchQuery}'.");
         }
         private List<string> GetWindowsQualityUpdateProfileIDs()
         {
-            // This method retrieves the IDs of all Windows quality update profiles in ContentList
-            return ContentList
+            // This method retrieves the IDs of all Windows quality update profiles in CustomContentList
+            return CustomContentList
                 .Where(c => c.ContentType == "Windows Quality Update Profile")
                 .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
                 .ToList();
@@ -1475,15 +1311,15 @@ namespace IntuneTools.Pages
 
         private void ClearAllButton_Click(object sender, RoutedEventArgs e)
         {
-            ContentList.Clear();
+            CustomContentList.Clear();
             RenamingDataGrid.ItemsSource = null;
-            RenamingDataGrid.ItemsSource = ContentList;
+            RenamingDataGrid.ItemsSource = CustomContentList;
             AppendToDetailsRichTextBlock("All items cleared from the list.");
         }
 
         private void ClearSelectedButton_Click(object sender, RoutedEventArgs e)
         {
-            var selectedItems = RenamingDataGrid.SelectedItems?.Cast<ContentInfo>().ToList();
+            var selectedItems = RenamingDataGrid.SelectedItems?.Cast<CustomContentInfo>().ToList();
             if (selectedItems == null || selectedItems.Count == 0)
             {
                 AppendToDetailsRichTextBlock("No items selected to clear.");
@@ -1491,10 +1327,10 @@ namespace IntuneTools.Pages
             }
             foreach (var item in selectedItems)
             {
-                ContentList.Remove(item);
+                CustomContentList.Remove(item);
             }
             RenamingDataGrid.ItemsSource = null;
-            RenamingDataGrid.ItemsSource = ContentList;
+            RenamingDataGrid.ItemsSource = CustomContentList;
             AppendToDetailsRichTextBlock($"Cleared {selectedItems.Count} selected item(s) from the list.");
         }
 
@@ -1534,7 +1370,7 @@ namespace IntuneTools.Pages
         }
         private async void RenameButton_Click(object sender, RoutedEventArgs e)
         {
-            var itemsToRename = ContentList.ToList();
+            var itemsToRename = CustomContentList.ToList();
             var renameMode = GetSelectedRenameMode();
 
             if (itemsToRename == null || itemsToRename.Count == 0)

@@ -1,4 +1,5 @@
-﻿using Microsoft.Graph;
+﻿using IntuneTools.Utilities;
+using Microsoft.Graph;
 using Microsoft.Graph.Beta.Models.ODataErrors;
 using System;
 using System.Collections.Generic;
@@ -267,6 +268,46 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 LogToFunctionFile(appFunction.Main, "An error occurred while renaming assignment filter", LogLevels.Warning);
                 LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
+        }
+
+        public static async Task<List<CustomContentInfo>> GetAllAssignmentFilterContentAsync(GraphServiceClient graphServiceClient)
+        {
+            var filters = await GetAllAssignmentFilters(graphServiceClient);
+            var content = new List<CustomContentInfo>();
+
+            foreach (var filter in filters)
+            {
+                content.Add(new CustomContentInfo
+                {
+                    ContentName = filter.DisplayName,
+                    ContentType = PolicyType,
+                    ContentPlatform = HelperClass.TranslatePolicyPlatformName(filter.Platform?.ToString() ?? string.Empty),
+                    ContentId = filter.Id,
+                    ContentDescription = filter.Description
+                });
+            }
+
+            return content;
+        }
+
+        public static async Task<List<CustomContentInfo>> SearchAssignmentFilterContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
+        {
+            var filters = await SearchForAssignmentFilters(graphServiceClient, searchQuery);
+            var content = new List<CustomContentInfo>();
+
+            foreach (var filter in filters)
+            {
+                content.Add(new CustomContentInfo
+                {
+                    ContentName = filter.DisplayName,
+                    ContentType = PolicyType,
+                    ContentPlatform = HelperClass.TranslatePolicyPlatformName(filter.Platform?.ToString() ?? string.Empty),
+                    ContentId = filter.Id,
+                    ContentDescription = filter.Description
+                });
+            }
+
+            return content;
         }
     }
 }

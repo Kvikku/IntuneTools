@@ -1,4 +1,5 @@
-﻿using Microsoft.Graph;
+﻿using IntuneTools.Utilities;
+using Microsoft.Graph;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -382,6 +383,46 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 LogToFunctionFile(appFunction.Main, "An error occurred while renaming Windows Feature Update profile", LogLevels.Warning);
                 LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
+        }
+
+        public static async Task<List<CustomContentInfo>> GetAllWindowsFeatureUpdateContentAsync(GraphServiceClient graphServiceClient)
+        {
+            var profiles = await GetAllWindowsFeatureUpdateProfiles(graphServiceClient);
+            var content = new List<CustomContentInfo>();
+
+            foreach (var profile in profiles)
+            {
+                content.Add(new CustomContentInfo
+                {
+                    ContentName = profile.DisplayName,
+                    ContentType = "Windows Feature Update",
+                    ContentPlatform = "Windows",
+                    ContentId = profile.Id,
+                    ContentDescription = profile.Description
+                });
+            }
+
+            return content;
+        }
+
+        public static async Task<List<CustomContentInfo>> SearchWindowsFeatureUpdateContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
+        {
+            var profiles = await SearchForWindowsFeatureUpdateProfiles(graphServiceClient, searchQuery);
+            var content = new List<CustomContentInfo>();
+
+            foreach (var profile in profiles)
+            {
+                content.Add(new CustomContentInfo
+                {
+                    ContentName = profile.DisplayName,
+                    ContentType = "Windows Feature Update",
+                    ContentPlatform = "Windows",
+                    ContentId = profile.Id,
+                    ContentDescription = profile.Description
+                });
+            }
+
+            return content;
         }
     }
 }
