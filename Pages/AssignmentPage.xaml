@@ -31,6 +31,26 @@
                      IsClosable="False"
                      IsOpen="False"
                      Margin="0,8,0,0"/>
+            <!-- Operation Status Bar - provides visual feedback during bulk operations -->
+            <InfoBar x:Name="OperationStatusBar"
+                     Severity="Informational"
+                     IsClosable="True"
+                     IsOpen="False"
+                     Margin="0,8,0,0">
+                <InfoBar.Content>
+                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                        <ProgressRing x:Name="OperationProgressRing"
+                                      IsActive="False"
+                                      Width="20"
+                                      Height="20"
+                                      Visibility="Collapsed"/>
+                        <ProgressBar x:Name="OperationProgressBar"
+                                     Width="200"
+                                     IsIndeterminate="False"
+                                     Visibility="Collapsed"/>
+                    </StackPanel>
+                </InfoBar.Content>
+            </InfoBar>
         </StackPanel>
 
         <!-- Action Row -->

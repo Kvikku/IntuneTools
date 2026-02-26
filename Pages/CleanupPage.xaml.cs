@@ -36,6 +36,12 @@ namespace IntuneTools.Pages
     /// </summary>
     public sealed partial class CleanupPage : BaseDataOperationPage
     {
+        // Progress tracking for delete operations
+        private int _deleteTotal;
+        private int _deleteCurrent;
+        private int _deleteSuccessCount;
+        private int _deleteErrorCount;
+
         protected override string UnauthenticatedMessage => "You must authenticate with a tenant before using cleanup features.";
 
         protected override IEnumerable<string> GetManagedControlNames() => new[]
@@ -75,6 +81,20 @@ namespace IntuneTools.Pages
 
         private async Task DeleteContent()
         {
+            // Initialize progress tracking - count total items across all content types
+            _deleteTotal = ContentList.Count;
+            _deleteCurrent = 0;
+            _deleteSuccessCount = 0;
+            _deleteErrorCount = 0;
+
+            if (_deleteTotal == 0)
+            {
+                AppendToDetailsRichTextBlock("No content to delete.");
+                return;
+            }
+
+            ShowOperationProgress("Preparing to delete items...", 0, _deleteTotal);
+
             await DeleteSettingsCatalogsAsync();
             await DeleteDeviceCompliancePoliciesAsync();
             await DeleteDeviceConfigurationPoliciesAsync();
@@ -89,6 +109,16 @@ namespace IntuneTools.Pages
             await DeleteWindowsFeatureUpdatesAsync();
             await DeleteWindowsQualityUpdatePoliciesAsync();
             await DeleteWindowsQualityUpdateProfilesAsync();
+
+            // Show final status
+            if (_deleteErrorCount == 0)
+            {
+                ShowOperationSuccess($"Successfully deleted {_deleteSuccessCount} items");
+            }
+            else
+            {
+                ShowOperationError($"Completed with {_deleteErrorCount} error(s). {_deleteSuccessCount} items deleted successfully.");
+            }
 
             AppendToDetailsRichTextBlock("Content deletion completed.");
         }

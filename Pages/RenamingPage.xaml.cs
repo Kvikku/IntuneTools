@@ -40,6 +40,12 @@ namespace IntuneTools.Pages
         /// </summary>
         private ObservableCollection<CustomContentInfo> CustomContentList => ContentList;
 
+        // Progress tracking for rename operations
+        private int _renameTotal;
+        private int _renameCurrent;
+        private int _renameSuccessCount;
+        private int _renameErrorCount;
+
         protected override string UnauthenticatedMessage => "You must authenticate with a tenant before using renaming features.";
 
         protected override IEnumerable<string> GetManagedControlNames() => new[]
@@ -257,6 +263,14 @@ namespace IntuneTools.Pages
 
             try
             {
+                // Initialize progress tracking
+                _renameTotal = contentIDs.Count;
+                _renameCurrent = 0;
+                _renameSuccessCount = 0;
+                _renameErrorCount = 0;
+
+                ShowOperationProgress("Preparing to rename items...", 0, _renameTotal);
+
                 if (HasContentType(ContentTypes.SettingsCatalog))
                 {
                     var ids = GetContentIdsByType(ContentTypes.SettingsCatalog);
@@ -362,10 +376,20 @@ namespace IntuneTools.Pages
                         await RenameApplications(ids, prefix);
                 }
 
-                AppendToDetailsRichTextBlock($"Renamed {contentIDs.Count} items with prefix '{prefix}'.");
+                // Show final success/error status
+                if (_renameErrorCount == 0)
+                {
+                    ShowOperationSuccess($"Successfully renamed {_renameSuccessCount} items");
+                }
+                else
+                {
+                    ShowOperationError($"Completed with {_renameErrorCount} error(s). {_renameSuccessCount} items renamed successfully.");
+                }
+                AppendToDetailsRichTextBlock($"Renamed {_renameSuccessCount} items with prefix '{prefix}'.");
             }
             catch (Exception ex)
             {
+                ShowOperationError($"Rename operation failed: {ex.Message}");
                 AppendToDetailsRichTextBlock($"Error during renaming: {ex.Message}");
             }
         }
@@ -374,6 +398,8 @@ namespace IntuneTools.Pages
         {
             foreach (var id in profileIDs)
             {
+                _renameCurrent++;
+                ShowOperationProgress($"Renaming Apple BYOD Enrollment Profile", _renameCurrent, _renameTotal);
                 try
                 {
                     var profile = await sourceGraphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[id].GetAsync((requestConfiguration) =>
@@ -383,9 +409,11 @@ namespace IntuneTools.Pages
                     await RenameAppleBYODEnrollmentProfile(sourceGraphServiceClient, id, prefix);
                     AppendToDetailsRichTextBlock($"Updated Apple BYOD Enrollment Profile '{profile.DisplayName}' with '{prefix}'.");
                     UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
+                    _renameSuccessCount++;
                 }
                 catch (Exception ex)
                 {
+                    _renameErrorCount++;
                     AppendToDetailsRichTextBlock($"Error renaming Apple BYOD Enrollment Profile with ID {id}: {ex.Message}");
                 }
             }
@@ -395,14 +423,18 @@ namespace IntuneTools.Pages
         {
             foreach (var id in appIDs)
             {
+                _renameCurrent++;
+                ShowOperationProgress($"Renaming Application", _renameCurrent, _renameTotal);
                 try
                 {
                     await RenameApplication(sourceGraphServiceClient, id, prefix);
                     AppendToDetailsRichTextBlock($"Updated Application with ID '{id}' with '{prefix}'.");
                     UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
+                    _renameSuccessCount++;
                 }
                 catch (Exception ex)
                 {
+                    _renameErrorCount++;
                     AppendToDetailsRichTextBlock($"Error updating Application with ID {id}: {ex.Message}");
                 }
             }
@@ -412,6 +444,8 @@ namespace IntuneTools.Pages
         {
             foreach (var id in scriptIDs)
             {
+                _renameCurrent++;
+                ShowOperationProgress($"Renaming macOS Shell Script", _renameCurrent, _renameTotal);
                 try
                 {
                     var script = await sourceGraphServiceClient.DeviceManagement.DeviceShellScripts[id].GetAsync((requestConfiguration) =>
@@ -421,9 +455,11 @@ namespace IntuneTools.Pages
                     await RenameMacOSShellScript(sourceGraphServiceClient, id, prefix);
                     AppendToDetailsRichTextBlock($"Updated MacOS Shell Script '{script.DisplayName}' with '{prefix}'.");
                     UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
+                    _renameSuccessCount++;
                 }
                 catch (Exception ex)
                 {
+                    _renameErrorCount++;
                     AppendToDetailsRichTextBlock($"Error renaming MacOS Shell Script with ID {id}: {ex.Message}");
                 }
             }
@@ -433,6 +469,8 @@ namespace IntuneTools.Pages
         {
             foreach (var id in scriptIDs)
             {
+                _renameCurrent++;
+                ShowOperationProgress($"Renaming PowerShell Script", _renameCurrent, _renameTotal);
                 try
                 {
                     var script = await sourceGraphServiceClient.DeviceManagement.DeviceManagementScripts[id].GetAsync((requestConfiguration) =>
@@ -442,9 +480,11 @@ namespace IntuneTools.Pages
                     await RenamePowerShellScript(sourceGraphServiceClient, id, prefix);
                     AppendToDetailsRichTextBlock($"Updated PowerShell Script '{script.DisplayName}' with '{prefix}'.");
                     UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
+                    _renameSuccessCount++;
                 }
                 catch (Exception ex)
                 {
+                    _renameErrorCount++;
                     AppendToDetailsRichTextBlock($"Error renaming PowerShell Script with ID {id}: {ex.Message}");
                 }
             }
@@ -454,6 +494,8 @@ namespace IntuneTools.Pages
         {
             foreach (var id in scriptIDs)
             {
+                _renameCurrent++;
+                ShowOperationProgress($"Renaming Proactive Remediation", _renameCurrent, _renameTotal);
                 try
                 {
                     var remediation = await sourceGraphServiceClient.DeviceManagement.DeviceHealthScripts[id].GetAsync((requestConfiguration) =>
@@ -463,9 +505,11 @@ namespace IntuneTools.Pages
                     await RenameProactiveRemediation(sourceGraphServiceClient, id, prefix);
                     AppendToDetailsRichTextBlock($"Updated Proactive Remediation '{remediation.DisplayName}' with '{prefix}'.");
                     UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
+                    _renameSuccessCount++;
                 }
                 catch (Exception ex)
                 {
+                    _renameErrorCount++;
                     AppendToDetailsRichTextBlock($"Error renaming Proactive Remediation with ID {id}: {ex.Message}");
                 }
             }
@@ -475,6 +519,8 @@ namespace IntuneTools.Pages
         {
             foreach (var id in profileIDs)
             {
+                _renameCurrent++;
+                ShowOperationProgress($"Renaming Windows AutoPilot Profile", _renameCurrent, _renameTotal);
                 try
                 {
                     var profile = await sourceGraphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[id].GetAsync((requestConfiguration) =>
@@ -484,9 +530,11 @@ namespace IntuneTools.Pages
                     await RenameWindowsAutoPilotProfile(sourceGraphServiceClient, id, prefix);
                     AppendToDetailsRichTextBlock($"Updated Windows AutoPilot Profile '{profile.DisplayName}' with '{prefix}'.");
                     UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
+                    _renameSuccessCount++;
                 }
                 catch (Exception ex)
                 {
+                    _renameErrorCount++;
                     AppendToDetailsRichTextBlock($"Error renaming Windows AutoPilot Profile with ID {id}: {ex.Message}");
                 }
             }
@@ -496,6 +544,8 @@ namespace IntuneTools.Pages
         {
             foreach (var id in profileIDs)
             {
+                _renameCurrent++;
+                ShowOperationProgress($"Renaming Windows Driver Update", _renameCurrent, _renameTotal);
                 try
                 {
                     var update = await sourceGraphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[id].GetAsync((requestConfiguration) =>
@@ -505,9 +555,11 @@ namespace IntuneTools.Pages
                     await RenameDriverProfile(sourceGraphServiceClient, id, prefix);
                     AppendToDetailsRichTextBlock($"Updated Windows Driver Update '{update.DisplayName}' with '{prefix}'.");
                     UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
+                    _renameSuccessCount++;
                 }
                 catch (Exception ex)
                 {
+                    _renameErrorCount++;
                     AppendToDetailsRichTextBlock($"Error renaming Windows Driver Update with ID {id}: {ex.Message}");
                 }
             }
@@ -517,6 +569,8 @@ namespace IntuneTools.Pages
         {
             foreach (var id in profileIDs)
             {
+                _renameCurrent++;
+                ShowOperationProgress($"Renaming Windows Feature Update", _renameCurrent, _renameTotal);
                 try
                 {
                     var update = await sourceGraphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[id].GetAsync((requestConfiguration) =>
@@ -526,9 +580,11 @@ namespace IntuneTools.Pages
                     await RenameWindowsFeatureUpdateProfile(sourceGraphServiceClient, id, prefix);
                     AppendToDetailsRichTextBlock($"Updated Windows Feature Update '{update.DisplayName}' with '{prefix}'.");
                     UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
+                    _renameSuccessCount++;
                 }
                 catch (Exception ex)
                 {
+                    _renameErrorCount++;
                     AppendToDetailsRichTextBlock($"Error renaming Windows Feature Update with ID {id}: {ex.Message}");
                 }
             }
@@ -538,6 +594,8 @@ namespace IntuneTools.Pages
         {
             foreach (var id in policyIDs)
             {
+                _renameCurrent++;
+                ShowOperationProgress($"Renaming Windows Quality Update Policy", _renameCurrent, _renameTotal);
                 try
                 {
                     var policy = await sourceGraphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[id].GetAsync((requestConfiguration) =>
@@ -547,9 +605,11 @@ namespace IntuneTools.Pages
                     await RenameWindowsQualityUpdatePolicy(sourceGraphServiceClient, id, prefix);
                     AppendToDetailsRichTextBlock($"Updated Windows Quality Update Policy '{policy.DisplayName}' with '{prefix}'.");
                     UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
+                    _renameSuccessCount++;
                 }
                 catch (Exception ex)
                 {
+                    _renameErrorCount++;
                     AppendToDetailsRichTextBlock($"Error renaming Windows Quality Update Policy with ID {id}: {ex.Message}");
                 }
             }
@@ -559,6 +619,8 @@ namespace IntuneTools.Pages
         {
             foreach (var id in profileIDs)
             {
+                _renameCurrent++;
+                ShowOperationProgress($"Renaming Windows Quality Update Profile", _renameCurrent, _renameTotal);
                 try
                 {
                     var profile = await sourceGraphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[id].GetAsync((requestConfiguration) =>
@@ -568,9 +630,11 @@ namespace IntuneTools.Pages
                     await RenameWindowsQualityUpdateProfile(sourceGraphServiceClient, id, prefix);
                     AppendToDetailsRichTextBlock($"Updated Windows Quality Update Profile '{profile.DisplayName}' with '{prefix}'.");
                     UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
+                    _renameSuccessCount++;
                 }
                 catch (Exception ex)
                 {
+                    _renameErrorCount++;
                     AppendToDetailsRichTextBlock($"Error renaming Windows Quality Update Profile with ID {id}: {ex.Message}");
                 }
             }
@@ -580,6 +644,8 @@ namespace IntuneTools.Pages
         {
             foreach (var id in filterIDs)
             {
+                _renameCurrent++;
+                ShowOperationProgress($"Renaming Assignment Filter", _renameCurrent, _renameTotal);
                 try
                 {
                     var filter = await sourceGraphServiceClient.DeviceManagement.AssignmentFilters[id].GetAsync((requestConfiguration) =>
@@ -589,9 +655,11 @@ namespace IntuneTools.Pages
                     await RenameAssignmentFilter(sourceGraphServiceClient, id, prefix);
                     AppendToDetailsRichTextBlock($"Updated Assignment Filter '{filter.DisplayName}' with '{prefix}'.");
                     UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
+                    _renameSuccessCount++;
                 }
                 catch (Exception ex)
                 {
+                    _renameErrorCount++;
                     AppendToDetailsRichTextBlock($"Error renaming Assignment Filter with ID {id}: {ex.Message}");
                 }
             }
@@ -601,6 +669,8 @@ namespace IntuneTools.Pages
         {
             foreach (var id in groupIDs)
             {
+                _renameCurrent++;
+                ShowOperationProgress($"Renaming Entra Group", _renameCurrent, _renameTotal);
                 try
                 {
                     var group = await sourceGraphServiceClient.Groups[id].GetAsync((requestConfiguration) =>
@@ -610,9 +680,11 @@ namespace IntuneTools.Pages
                     await RenameGroup(sourceGraphServiceClient, id, prefix);
                     AppendToDetailsRichTextBlock($"Updated Entra Group '{group.DisplayName}' with '{prefix}'.");
                     UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
+                    _renameSuccessCount++;
                 }
                 catch (Exception ex)
                 {
+                    _renameErrorCount++;
                     AppendToDetailsRichTextBlock($"Error renaming Entra Group with ID {id}: {ex.Message}");
                 }
             }
@@ -643,6 +715,8 @@ namespace IntuneTools.Pages
         {
             foreach (var id in settingsCatalogIDs)
             {
+                _renameCurrent++;
+                ShowOperationProgress($"Renaming Settings Catalog", _renameCurrent, _renameTotal);
                 try
                 {
                     var policy = await sourceGraphServiceClient.DeviceManagement.ConfigurationPolicies[id].GetAsync((requestConfiguration) =>
@@ -654,9 +728,11 @@ namespace IntuneTools.Pages
 
                     AppendToDetailsRichTextBlock($"Updated Settings Catalog '{policy.Name}' with '{prefix}'.");
                     UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
+                    _renameSuccessCount++;
                 }
                 catch (Exception ex)
                 {
+                    _renameErrorCount++;
                     AppendToDetailsRichTextBlock($"Error updating Settings Catalog with ID {id}: {ex.Message}");
                 }
             }
@@ -685,6 +761,8 @@ namespace IntuneTools.Pages
         {
             foreach (var id in deviceCompliancePolicyIDs)
             {
+                _renameCurrent++;
+                ShowOperationProgress($"Renaming Device Compliance Policy", _renameCurrent, _renameTotal);
                 try
                 {
                     var policyName = await sourceGraphServiceClient.DeviceManagement.DeviceCompliancePolicies[id].GetAsync((requestConfiguration) =>
@@ -694,9 +772,11 @@ namespace IntuneTools.Pages
                     await RenameDeviceCompliancePolicy(sourceGraphServiceClient, id, prefix);
                     AppendToDetailsRichTextBlock($"Updated Device Compliance Policy '{policyName.DisplayName}' with '{prefix}'.");
                     UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
+                    _renameSuccessCount++;
                 }
                 catch (Exception ex)
                 {
+                    _renameErrorCount++;
                     AppendToDetailsRichTextBlock($"Error renaming Device Compliance Policy with ID {id}: {ex.Message}");
                 }
             }
@@ -728,6 +808,8 @@ namespace IntuneTools.Pages
         {
             foreach (var id in deviceConfigurationPolicyIDs)
             {
+                _renameCurrent++;
+                ShowOperationProgress($"Renaming Device Configuration Policy", _renameCurrent, _renameTotal);
                 try
                 {
                     var policy = await sourceGraphServiceClient.DeviceManagement.DeviceConfigurations[id].GetAsync((requestConfiguration) =>
@@ -737,9 +819,11 @@ namespace IntuneTools.Pages
                     await RenameDeviceConfigurationPolicy(sourceGraphServiceClient, id, prefix);
                     AppendToDetailsRichTextBlock($"Renamed Device Configuration Policy '{policy.DisplayName}' with '{prefix}'.");
                     UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
+                    _renameSuccessCount++;
                 }
                 catch (Exception ex)
                 {
+                    _renameErrorCount++;
                     AppendToDetailsRichTextBlock($"Error renaming Device Configuration Policy with ID {id}: {ex.Message}");
                 }
             }
