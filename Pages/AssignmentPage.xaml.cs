@@ -200,7 +200,7 @@ namespace IntuneTools.Pages
 
                 foreach (var item in content)
                 {
-                    if (item.Value.ContentType == "Device Compliance")
+                    if (item.Value.ContentType == "Device Compliance Policy")
                     {
                         await AssignGroupsToSingleDeviceCompliance(item.Value.ContentId, groupList, sourceGraphServiceClient);
                     }
@@ -209,11 +209,11 @@ namespace IntuneTools.Pages
                     {
                         await AssignGroupsToSingleSettingsCatalog(item.Value.ContentId, groupList, sourceGraphServiceClient);
                     }
-                    if (item.Value.ContentType == "Device Configuration")
+                    if (item.Value.ContentType == "Device Configuration Policy")
                     {
                         await AssignGroupsToSingleDeviceConfiguration(item.Value.ContentId, groupList, sourceGraphServiceClient);
                     }
-                    if (item.Value.ContentType == "macOS Shell Script")
+                    if (item.Value.ContentType == "MacOS Shell Script")
                     {
                         await AssignGroupsToSingleShellScriptmacOS(item.Value.ContentId, groupList, sourceGraphServiceClient);
                     }
@@ -221,19 +221,19 @@ namespace IntuneTools.Pages
                     {
                         await AssignGroupsToSinglePowerShellScript(item.Value.ContentId, groupList, sourceGraphServiceClient);
                     }
-                    if (item.Value.ContentType == "Proactive Remediation Script")
+                    if (item.Value.ContentType == "Proactive Remediation")
                     {
                         await AssignGroupsToSingleProactiveRemediation(item.Value.ContentId, groupList, sourceGraphServiceClient);
                     }
-                    if (item.Value.ContentType == "Windows Autopilot Profile")
+                    if (item.Value.ContentType == "Windows AutoPilot Profile")
                     {
                         await AssignGroupsToSingleWindowsAutoPilotProfile(item.Value.ContentId, groupList, sourceGraphServiceClient);
                     }
-                    if (item.Value.ContentType == "Windows Driver Update Profile")
+                    if (item.Value.ContentType == "Windows Driver Update")
                     {
                         await AssignGroupsToSingleDriverProfile(item.Value.ContentId, groupList, sourceGraphServiceClient);
                     }
-                    if (item.Value.ContentType == "Windows Feature Update Profile")
+                    if (item.Value.ContentType == "Windows Feature Update")
                     {
                         await AssignGroupsToSingleWindowsFeatureUpdateProfile(item.Value.ContentId, groupList, sourceGraphServiceClient);
                     }
