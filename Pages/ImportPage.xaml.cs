@@ -32,14 +32,6 @@ using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHe
 namespace IntuneTools.Pages
 {
 
-    public class ContentInfo
-    {
-        public string? ContentName { get; set; }
-        public string? ContentPlatform { get; set; }
-        public string? ContentType { get; set; }
-        public string? ContentId { get; set; }
-    }
-
     public class GroupInfo
     {
         public string? GroupName { get; set; }
@@ -52,7 +44,7 @@ namespace IntuneTools.Pages
 
     public sealed partial class ImportPage : Page
     {
-        public ObservableCollection<ContentInfo> ContentList { get; set; } = new ObservableCollection<ContentInfo>();
+        public ObservableCollection<CustomContentInfo> ContentList { get; set; } = new ObservableCollection<CustomContentInfo>();
         public ObservableCollection<GroupInfo> GroupList { get; set; } = new ObservableCollection<GroupInfo>();
         public ObservableCollection<FilterInfo> FilterList { get; set; } = new ObservableCollection<FilterInfo>();
         public ObservableCollection<string> FilterOptions { get; set; } = new ObservableCollection<string>();
@@ -456,19 +448,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading settings catalog policies from Microsoft Graph...");
             try
             {
-                // Retrieve all settings catalog policies
-                var policies = await GetAllSettingsCatalogPolicies(sourceGraphServiceClient);
-                // Update ContentList for DataGrid
-                foreach (var policy in policies)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = policy.Name,
-                        ContentType = "Settings Catalog",
-                        ContentPlatform = policy.Platforms?.ToString() ?? string.Empty,
-                        ContentId = policy.Id
-                    });
-                }
+                var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                    ContentList,
+                    async () => await GetAllSettingsCatalogContentAsync(sourceGraphServiceClient));
+
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
             }
@@ -483,19 +466,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading settings catalog policies from Microsoft Graph...");
             try
             {
-                // Retrieve all settings catalog policies
-                var policies = await SearchForSettingsCatalog(sourceGraphServiceClient, searchQuery);
-                // Update ContentList for DataGrid
-                foreach (var policy in policies)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = policy.Name,
-                        ContentType = "Settings Catalog",
-                        ContentPlatform = policy.Platforms?.ToString() ?? string.Empty,
-                        ContentId = policy.Id
-                    });
-                }
+                var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                    ContentList,
+                    async () => await SearchSettingsCatalogContentAsync(sourceGraphServiceClient, searchQuery));
+
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
             }
@@ -523,19 +497,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading device configuration policies from Microsoft Graph...");
             try
             {
-                // Retrieve all device configuration policies
-                var policies = await GetAllDeviceConfigurations(sourceGraphServiceClient);
-                // Update ContentList for DataGrid
-                foreach (var policy in policies)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = policy.DisplayName,
-                        ContentType = "Device Configuration Policy",
-                        ContentPlatform = policy.OdataType?.ToString() ?? string.Empty,
-                        ContentId = policy.Id
-                    });
-                }
+                var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                    ContentList,
+                    async () => await GetAllDeviceConfigurationContentAsync(sourceGraphServiceClient));
+
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
             }
@@ -550,19 +515,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading settings catalog policies from Microsoft Graph...");
             try
             {
-                // Retrieve all settings catalog policies
-                var policies = await SearchForDeviceConfigurations(sourceGraphServiceClient, searchQuery);
-                // Update ContentList for DataGrid
-                foreach (var policy in policies)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = policy.DisplayName,
-                        ContentType = "Device Configuration",
-                        ContentPlatform = policy.OdataType?.ToString() ?? string.Empty,
-                        ContentId = policy.Id
-                    });
-                }
+                var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                    ContentList,
+                    async () => await SearchDeviceConfigurationContentAsync(sourceGraphServiceClient, searchQuery));
+
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
             }
@@ -590,19 +546,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading device compliance policies from Microsoft Graph...");
             try
             {
-                // Retrieve all device compliance policies
-                var policies = await GetAllDeviceCompliancePolicies(sourceGraphServiceClient);
-                // Update ContentList for DataGrid
-                foreach (var policy in policies)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = policy.DisplayName,
-                        ContentType = "Device Compliance Policy",
-                        ContentPlatform = policy.OdataType?.ToString() ?? string.Empty,
-                        ContentId = policy.Id
-                    });
-                }
+                var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                    ContentList,
+                    async () => await GetAllDeviceComplianceContentAsync(sourceGraphServiceClient));
+
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
             }
@@ -616,19 +563,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading settings catalog policies from Microsoft Graph...");
             try
             {
-                // Retrieve all settings catalog policies
-                var policies = await SearchForDeviceCompliancePolicies(sourceGraphServiceClient, searchQuery);
-                // Update ContentList for DataGrid
-                foreach (var policy in policies)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = policy.DisplayName,
-                        ContentType = "Device Compliance",
-                        ContentPlatform = policy.OdataType?.ToString() ?? string.Empty,
-                        ContentId = policy.Id
-                    });
-                }
+                var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                    ContentList,
+                    async () => await SearchDeviceComplianceContentAsync(sourceGraphServiceClient, searchQuery));
+
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
             }
@@ -655,19 +593,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading Apple BYOD Enrollment Profiles from Microsoft Graph...");
             try
             {
-                // Retrieve all Apple BYOD Enrollment Profiles
-                var profiles = await GetAllAppleBYODEnrollmentProfiles(sourceGraphServiceClient);
-                // Update ContentList for DataGrid
-                foreach (var profile in profiles)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = profile.DisplayName,
-                        ContentType = "Apple BYOD Enrollment Profile",
-                        ContentPlatform = "iOS",
-                        ContentId = profile.Id
-                    });
-                }
+                var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                    ContentList,
+                    async () => await GetAllAppleBYODEnrollmentContentAsync(sourceGraphServiceClient));
+
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
             }
@@ -681,19 +610,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading Apple BYOD Enrollment Profiles from Microsoft Graph...");
             try
             {
-                // Retrieve all Apple BYOD Enrollment Profiles
-                var profiles = await SearchForAppleBYODEnrollmentProfiles(sourceGraphServiceClient, searchQuery);
-                // Update ContentList for DataGrid
-                foreach (var profile in profiles)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = profile.DisplayName,
-                        ContentType = "Apple BYOD Enrollment Profile",
-                        ContentPlatform = "iOS",
-                        ContentId = profile.Id
-                    });
-                }
+                var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                    ContentList,
+                    async () => await SearchAppleBYODEnrollmentContentAsync(sourceGraphServiceClient, searchQuery));
+
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
             }
@@ -721,19 +641,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading PowerShell scripts from Microsoft Graph...");
             try
             {
-                // Retrieve all PowerShell scripts
-                var scripts = await GetAllPowerShellScripts(sourceGraphServiceClient);
-                // Update ContentList for DataGrid
-                foreach (var script in scripts)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = script.DisplayName,
-                        ContentType = "PowerShell Script",
-                        ContentPlatform = "Windows",
-                        ContentId = script.Id
-                    });
-                }
+                var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                    ContentList,
+                    async () => await GetAllPowerShellScriptContentAsync(sourceGraphServiceClient));
+
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
             }
@@ -748,19 +659,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading PowerShell scripts from Microsoft Graph...");
             try
             {
-                // Retrieve all PowerShell scripts
-                var scripts = await SearchForPowerShellScripts(sourceGraphServiceClient, searchQuery);
-                // Update ContentList for DataGrid
-                foreach (var script in scripts)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = script.DisplayName,
-                        ContentType = "PowerShell Script",
-                        ContentPlatform = "Windows",
-                        ContentId = script.Id
-                    });
-                }
+                var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                    ContentList,
+                    async () => await SearchPowerShellScriptContentAsync(sourceGraphServiceClient, searchQuery));
+
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
             }
@@ -787,19 +689,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading proactive remediations from Microsoft Graph...");
             try
             {
-                // Retrieve all proactive remediations
-                var scripts = await GetAllProactiveRemediations(sourceGraphServiceClient);
-                // Update ContentList for DataGrid
-                foreach (var script in scripts)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = script.DisplayName,
-                        ContentType = "Proactive Remediation",
-                        ContentPlatform = "Windows",
-                        ContentId = script.Id
-                    });
-                }
+                var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                    ContentList,
+                    async () => await GetAllProactiveRemediationContentAsync(sourceGraphServiceClient));
+
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
             }
@@ -813,19 +706,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading proactive remediations from Microsoft Graph...");
             try
             {
-                // Retrieve all proactive remediations
-                var scripts = await SearchForProactiveRemediations(sourceGraphServiceClient, searchQuery);
-                // Update ContentList for DataGrid
-                foreach (var script in scripts)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = script.DisplayName,
-                        ContentType = "Proactive Remediation",
-                        ContentPlatform = "Windows",
-                        ContentId = script.Id
-                    });
-                }
+                var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                    ContentList,
+                    async () => await SearchProactiveRemediationContentAsync(sourceGraphServiceClient, searchQuery));
+
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
             }
@@ -853,19 +737,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading macOS shell scripts from Microsoft Graph...");
             try
             {
-                // Retrieve all macOS shell scripts
-                var scripts = await GetAllmacOSShellScripts(sourceGraphServiceClient);
-                // Update ContentList for DataGrid
-                foreach (var script in scripts)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = script.DisplayName,
-                        ContentType = "macOS Shell Script",
-                        ContentPlatform = "macOS",
-                        ContentId = script.Id
-                    });
-                }
+                var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                    ContentList,
+                    async () => await GetAllMacOSShellScriptContentAsync(sourceGraphServiceClient));
+
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
             }
@@ -879,19 +754,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading macOS shell scripts from Microsoft Graph...");
             try
             {
-                // Retrieve all macOS shell scripts
-                var scripts = await SearchForShellScriptmacOS(sourceGraphServiceClient, searchQuery);
-                // Update ContentList for DataGrid
-                foreach (var script in scripts)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = script.DisplayName,
-                        ContentType = "macOS Shell Script",
-                        ContentPlatform = "macOS",
-                        ContentId = script.Id
-                    });
-                }
+                var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                    ContentList,
+                    async () => await SearchMacOSShellScriptContentAsync(sourceGraphServiceClient, searchQuery));
+
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
             }
@@ -919,19 +785,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading Windows AutoPilot profiles from Microsoft Graph...");
             try
             {
-                // Retrieve all Windows AutoPilot profiles
-                var profiles = await GetAllWindowsAutoPilotProfiles(sourceGraphServiceClient);
-                // Update ContentList for DataGrid
-                foreach (var profile in profiles)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = profile.DisplayName,
-                        ContentType = "Windows AutoPilot Profile",
-                        ContentPlatform = "Windows",
-                        ContentId = profile.Id
-                    });
-                }
+                var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                    ContentList,
+                    async () => await GetAllWindowsAutoPilotContentAsync(sourceGraphServiceClient));
+
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
             }
@@ -945,19 +802,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading Windows AutoPilot profiles from Microsoft Graph...");
             try
             {
-                // Retrieve all Windows AutoPilot profiles
-                var profiles = await SearchForWindowsAutoPilotProfiles(sourceGraphServiceClient, searchQuery);
-                // Update ContentList for DataGrid
-                foreach (var profile in profiles)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = profile.DisplayName,
-                        ContentType = "Windows AutoPilot Profile",
-                        ContentPlatform = "Windows",
-                        ContentId = profile.Id
-                    });
-                }
+                var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                    ContentList,
+                    async () => await SearchWindowsAutoPilotContentAsync(sourceGraphServiceClient, searchQuery));
+
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
             }
@@ -985,19 +833,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading Windows Driver Updates from Microsoft Graph...");
             try
             {
-                // Retrieve all Windows Driver Updates
-                var updates = await GetAllDriverProfiles(sourceGraphServiceClient);
-                // Update ContentList for DataGrid
-                foreach (var update in updates)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = update.DisplayName,
-                        ContentType = "Windows Driver Update",
-                        ContentPlatform = "Windows",
-                        ContentId = update.Id
-                    });
-                }
+                var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                    ContentList,
+                    async () => await GetAllWindowsDriverUpdateContentAsync(sourceGraphServiceClient));
+
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
             }
@@ -1011,19 +850,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading Windows Driver Updates from Microsoft Graph...");
             try
             {
-                // Retrieve all Windows Driver Updates
-                var updates = await SearchForDriverProfiles(sourceGraphServiceClient, searchQuery);
-                // Update ContentList for DataGrid
-                foreach (var update in updates)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = update.DisplayName,
-                        ContentType = "Windows Driver Update",
-                        ContentPlatform = "Windows",
-                        ContentId = update.Id
-                    });
-                }
+                var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                    ContentList,
+                    async () => await SearchWindowsDriverUpdateContentAsync(sourceGraphServiceClient, searchQuery));
+
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
             }
@@ -1051,19 +881,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading Windows Feature Updates from Microsoft Graph...");
             try
             {
-                // Retrieve all Windows Feature Updates
-                var updates = await GetAllWindowsFeatureUpdateProfiles(sourceGraphServiceClient);
-                // Update ContentList for DataGrid
-                foreach (var update in updates)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = update.DisplayName,
-                        ContentType = "Windows Feature Update",
-                        ContentPlatform = "Windows",
-                        ContentId = update.Id
-                    });
-                }
+                var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                    ContentList,
+                    async () => await GetAllWindowsFeatureUpdateContentAsync(sourceGraphServiceClient));
+
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
             }
@@ -1077,19 +898,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading Windows Feature Updates from Microsoft Graph...");
             try
             {
-                // Retrieve all Windows Feature Updates
-                var updates = await SearchForWindowsFeatureUpdateProfiles(sourceGraphServiceClient, searchQuery);
-                // Update ContentList for DataGrid
-                foreach (var update in updates)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = update.DisplayName,
-                        ContentType = "Windows Feature Update",
-                        ContentPlatform = "Windows",
-                        ContentId = update.Id
-                    });
-                }
+                var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                    ContentList,
+                    async () => await SearchWindowsFeatureUpdateContentAsync(sourceGraphServiceClient, searchQuery));
+
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
             }
@@ -1118,19 +930,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading Windows Quality Update policies from Microsoft Graph...");
             try
             {
-                // Retrieve all Windows Quality Update policies
-                var policies = await GetAllWindowsQualityUpdatePolicies(sourceGraphServiceClient);
-                // Update ContentList for DataGrid
-                foreach (var policy in policies)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = policy.DisplayName,
-                        ContentType = "Windows Quality Update Policy",
-                        ContentPlatform = "Windows",
-                        ContentId = policy.Id
-                    });
-                }
+                var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                    ContentList,
+                    async () => await GetAllWindowsQualityUpdatePolicyContentAsync(sourceGraphServiceClient));
+
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
             }
@@ -1144,19 +947,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading Windows Quality Update policies from Microsoft Graph...");
             try
             {
-                // Retrieve all Windows Quality Update policies
-                var policies = await SearchForWindowsQualityUpdatePolicies(sourceGraphServiceClient, searchQuery);
-                // Update ContentList for DataGrid
-                foreach (var policy in policies)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = policy.DisplayName,
-                        ContentType = "Windows Quality Update Policy",
-                        ContentPlatform = "Windows",
-                        ContentId = policy.Id
-                    });
-                }
+                var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                    ContentList,
+                    async () => await SearchWindowsQualityUpdatePolicyContentAsync(sourceGraphServiceClient, searchQuery));
+
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
             }
@@ -1185,19 +979,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading Windows Quality Update profiles from Microsoft Graph...");
             try
             {
-                // Retrieve all Windows Quality Update profiles
-                var profiles = await GetAllWindowsQualityUpdateProfiles(sourceGraphServiceClient);
-                // Update ContentList for DataGrid
-                foreach (var profile in profiles)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = profile.DisplayName,
-                        ContentType = "Windows Quality Update Profile",
-                        ContentPlatform = "Windows",
-                        ContentId = profile.Id
-                    });
-                }
+                var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                    ContentList,
+                    async () => await GetAllWindowsQualityUpdateProfileContentAsync(sourceGraphServiceClient));
+
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
             }
@@ -1211,19 +996,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading Windows Quality Update profiles from Microsoft Graph...");
             try
             {
-                // Retrieve all Windows Quality Update profiles
-                var profiles = await SearchForWindowsQualityUpdateProfiles(sourceGraphServiceClient, searchQuery);
-                // Update ContentList for DataGrid
-                foreach (var profile in profiles)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = profile.DisplayName,
-                        ContentType = "Windows Quality Update Profile",
-                        ContentPlatform = "Windows",
-                        ContentId = profile.Id
-                    });
-                }
+                var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                    ContentList,
+                    async () => await SearchWindowsQualityUpdateProfileContentAsync(sourceGraphServiceClient, searchQuery));
+
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
             }
@@ -1253,19 +1029,11 @@ namespace IntuneTools.Pages
             {
                 // Clear the GroupList before loading new data
                 GroupList.Clear();
-                // Load all groups from Graph API
-                var groups = await GetAllGroups(sourceGraphServiceClient);
-                // Update GroupList for DataGrid
-                foreach (var group in groups)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentId = group.Id,
-                        ContentName = group.DisplayName,
-                        ContentType = "Entra Group",
-                        ContentPlatform = group.GroupTypes != null && group.GroupTypes.Contains("Unified") ? "Microsoft 365 Group" : "Security Group"
-                    });
-                }
+
+                var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                    ContentList,
+                    async () => await GetAllGroupContentAsync(sourceGraphServiceClient));
+
                 // Bind to DataGrid
                 GroupDataGrid.ItemsSource = GroupList;
             }
@@ -1281,19 +1049,11 @@ namespace IntuneTools.Pages
             {
                 // Clear the GroupList before loading new data
                 GroupList.Clear();
-                // Search for groups using the provided query
-                var groups = await SearchForGroups(sourceGraphServiceClient, searchQuery);
-                // Update GroupList for DataGrid
-                foreach (var group in groups)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentId = group.Id,
-                        ContentName = group.DisplayName,
-                        ContentType = "Entra Group",
-                        ContentPlatform = group.GroupTypes != null && group.GroupTypes.Contains("Unified") ? "Microsoft 365 Group" : "Security Group"
-                    });
-                }
+
+                var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                    ContentList,
+                    async () => await SearchGroupContentAsync(sourceGraphServiceClient, searchQuery));
+
                 // Bind to DataGrid
                 GroupDataGrid.ItemsSource = GroupList;
             }
@@ -1380,19 +1140,10 @@ namespace IntuneTools.Pages
             {
                 // Clear existing filter options
                 FilterOptions.Clear();
-                // Retrieve all assignment filters
-                var filters = await GetAllAssignmentFilters(sourceGraphServiceClient);
-                // Update FilterOptions for ComboBox
-                foreach (var filter in filters)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = filter.DisplayName,
-                        ContentType = "Assignment filter",
-                        ContentPlatform = filter.Platform.ToString() ?? string.Empty,
-                        ContentId = filter.Id
-                    });
-                }
+
+                var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                    ContentList,
+                    async () => await GetAllAssignmentFilterContentAsync(sourceGraphServiceClient));
 
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
@@ -1411,19 +1162,11 @@ namespace IntuneTools.Pages
             {
                 // Clear existing filter options
                 FilterOptions.Clear();
-                // Retrieve all assignment filters
-                var filters = await SearchForAssignmentFilters(sourceGraphServiceClient, searchQuery);
-                // Update FilterOptions for ComboBox
-                foreach (var filter in filters)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = filter.DisplayName,
-                        ContentType = "Assignment filter",
-                        ContentPlatform = filter.Platform.ToString() ?? string.Empty,
-                        ContentId = filter.Id
-                    });
-                }
+
+                var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                    ContentList,
+                    async () => await SearchAssignmentFilterContentAsync(sourceGraphServiceClient, searchQuery));
+
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
             }
@@ -1799,7 +1542,7 @@ namespace IntuneTools.Pages
             if (ContentDataGrid.SelectedItems != null && ContentDataGrid.SelectedItems.Count > 0)
             {
                 // To avoid modifying the collection while iterating, copy selected items to a list
-                var itemsToRemove = ContentDataGrid.SelectedItems.Cast<ContentInfo>().ToList();
+                var itemsToRemove = ContentDataGrid.SelectedItems.Cast<CustomContentInfo>().ToList();
                 foreach (var item in itemsToRemove)
                 {
                     ContentList.Remove(item);
@@ -2019,7 +1762,7 @@ namespace IntuneTools.Pages
             }
 
             // Check if property exists on ContentInfo
-            var propInfo = typeof(ContentInfo).GetProperty(sortProperty);
+            var propInfo = typeof(CustomContentInfo).GetProperty(sortProperty);
             if (propInfo == null)
             {
                 AppendToDetailsRichTextBlock($"Sorting error: Property '{sortProperty}' not found on ContentInfo.");
@@ -2035,7 +1778,7 @@ namespace IntuneTools.Pages
                 direction = ListSortDirection.Ascending;
 
             // Sort the ContentList in place
-            List<ContentInfo> sorted;
+            List<CustomContentInfo> sorted;
             try
             {
                 if (direction == ListSortDirection.Ascending)
