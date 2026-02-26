@@ -3,7 +3,6 @@ using IntuneTools.Utilities;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
@@ -32,12 +31,23 @@ using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHe
 namespace IntuneTools.Pages
 {
     /// <summary>
-    /// An empty page that can be used on its own or navigated to within a Frame.
+    /// Page for renaming Intune content with prefix, suffix, or description updates.
     /// </summary>
-    public sealed partial class RenamingPage : Page
+    public sealed partial class RenamingPage : BaseDataOperationPage
     {
-        
-        public ObservableCollection<CustomContentInfo> CustomContentList { get; set; } = new ObservableCollection<CustomContentInfo>();
+        /// <summary>
+        /// Alias for ContentList to maintain backward compatibility with existing code.
+        /// </summary>
+        private ObservableCollection<CustomContentInfo> CustomContentList => ContentList;
+
+        protected override string UnauthenticatedMessage => "You must authenticate with a tenant before using renaming features.";
+
+        protected override IEnumerable<string> GetManagedControlNames() => new[]
+        {
+            "SearchQueryTextBox", "SearchButton", "ListAllButton", "ClearSelectedButton",
+            "ClearAllButton", "NewNameTextBox", "PrefixButton", "RenameButton",
+            "RenamingDataGrid", "ClearLogButton", "RenameModeComboBox"
+        };
 
 
         public RenamingPage()
@@ -46,167 +56,31 @@ namespace IntuneTools.Pages
             RightClickMenu.AttachDataGridContextMenu(RenamingDataGrid);
         }
 
-        /// <summary>
-        ///  Local helper methods
-        /// </summary>
-
-        protected override void OnNavigatedTo(NavigationEventArgs e)
-        {
-            base.OnNavigatedTo(e);
-
-            if (string.Equals(Variables.sourceTenantName, string.Empty))
-            {
-                TenantInfoBar.Title = "Authentication Required";
-                TenantInfoBar.Message = "You must authenticate with a tenant before using renaming features.";
-                TenantInfoBar.Severity = InfoBarSeverity.Warning;
-                TenantInfoBar.IsOpen = true;
-
-                // Disable controls until authenticated
-                SearchQueryTextBox.IsEnabled = false;
-                SearchButton.IsEnabled = false;
-                ListAllButton.IsEnabled = false;
-                ClearSelectedButton.IsEnabled = false;
-                ClearAllButton.IsEnabled = false;
-                NewNameTextBox.IsEnabled = false;
-                PrefixButton.IsEnabled = false;
-                RenameButton.IsEnabled = false;
-                RenamingDataGrid.IsEnabled = false;
-                ClearLogButton.IsEnabled = false;
-                RenameModeComboBox.IsEnabled = false;
-            }
-            else
-            {
-                TenantInfoBar.Title = "Authenticated Tenant";
-                TenantInfoBar.Message = Variables.sourceTenantName;
-                TenantInfoBar.Severity = InfoBarSeverity.Informational;
-                TenantInfoBar.IsOpen = true;
-
-                // Enable controls
-                SearchQueryTextBox.IsEnabled = true;
-                SearchButton.IsEnabled = true;
-                ListAllButton.IsEnabled = true;
-                ClearSelectedButton.IsEnabled = true;
-                ClearAllButton.IsEnabled = true;
-                NewNameTextBox.IsEnabled = true;
-                PrefixButton.IsEnabled = true;
-                RenameButton.IsEnabled = true;
-                RenamingDataGrid.IsEnabled = true;
-                ClearLogButton.IsEnabled = true;
-                RenameModeComboBox.IsEnabled = true;
-            }
-        }
-
-        // Add this event handler to your RenamingPage class
+        // DataGrid sorting handler - delegates to base class
         private void RenamingDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
         {
-            var dataGrid = sender as DataGrid;
-            if (CustomContentList == null || CustomContentList.Count == 0)
-                return;
-
-            var textColumn = e.Column as DataGridTextColumn;
-            var binding = textColumn?.Binding as Binding;
-            string sortProperty = binding?.Path?.Path;
-            if (string.IsNullOrEmpty(sortProperty))
-            {
-                AppendToDetailsRichTextBlock("Sorting error: Unable to determine property name from column binding.");
-                return;
-            }
-
-            var propInfo = typeof(CustomContentInfo).GetProperty(sortProperty);
-            if (propInfo == null)
-            {
-                AppendToDetailsRichTextBlock($"Sorting error: Property '{sortProperty}' not found on CustomContentInfo.");
-                return;
-            }
-
-            ListSortDirection direction;
-            if (e.Column.SortDirection.HasValue && e.Column.SortDirection.Value == DataGridSortDirection.Ascending)
-            {
-                direction = ListSortDirection.Descending;
-            }
-            else
-            {
-                direction = ListSortDirection.Ascending;
-            }
-
-            List<CustomContentInfo> sorted;
-            try
-            {
-                if (direction == ListSortDirection.Ascending)
-                {
-                    sorted = CustomContentList.OrderBy(x => propInfo.GetValue(x, null) ?? string.Empty).ToList();
-                }
-                else
-                {
-                    sorted = CustomContentList.OrderByDescending(x => propInfo.GetValue(x, null) ?? string.Empty).ToList();
-                }
-            }
-            catch (Exception ex)
-            {
-                AppendToDetailsRichTextBlock($"Sorting error: {ex.Message}");
-                return;
-            }
-
-            CustomContentList.Clear();
-            foreach (var item in sorted)
-                CustomContentList.Add(item);
-
-            foreach (var col in dataGrid.Columns)
-                col.SortDirection = null;
-            e.Column.SortDirection = direction == ListSortDirection.Ascending
-                ? DataGridSortDirection.Ascending
-                : DataGridSortDirection.Descending;
-
-            // Prevent default sort
-            // e.Handled = true; // Removed as per workaround
-
+            HandleDataGridSorting(sender, e);
         }
 
-        private void ShowLoading(string message = "Loading data from Microsoft Graph...")
+        protected override void ShowLoading(string message = "Loading data from Microsoft Graph...")
         {
-            LoadingStatusText.Text = message;
-            LoadingOverlay.Visibility = Visibility.Visible;
-            LoadingProgressRing.IsActive = true;
-
-            // Optionally disable buttons during loading
+            base.ShowLoading(message);
+            // Disable specific buttons during loading
             ListAllButton.IsEnabled = false;
             SearchButton.IsEnabled = false;
         }
-        private void HideLoading()
-        {
-            LoadingOverlay.Visibility = Visibility.Collapsed;
-            LoadingProgressRing.IsActive = false;
 
+        protected override void HideLoading()
+        {
+            base.HideLoading();
             // Re-enable buttons
             ListAllButton.IsEnabled = true;
             SearchButton.IsEnabled = true;
         }
-        private void AppendToDetailsRichTextBlock(string text)
-        {
-            // Append log text to the LogConsole RichTextBlock
-            Paragraph paragraph;
-            if (LogConsole.Blocks.Count == 0)
-            {
-                paragraph = new Paragraph();
-                LogConsole.Blocks.Add(paragraph);
-            }
-            else
-            {
-                paragraph = LogConsole.Blocks.First() as Paragraph;
-                if (paragraph == null)
-                {
-                    paragraph = new Paragraph();
-                    LogConsole.Blocks.Add(paragraph);
-                }
-            }
-            if (paragraph.Inlines.Count > 0)
-            {
-                paragraph.Inlines.Add(new LineBreak());
-            }
-            paragraph.Inlines.Add(new Run { Text = text });
 
-            ScrollLogToEnd();
-        }
+        // Convenience method for logging - calls base class AppendToLog
+        private void AppendToDetailsRichTextBlock(string text) => AppendToLog(text);
+
         private async Task ListAllOrchestrator(GraphServiceClient graphServiceClient)
         {
             ShowLoading("Loading data from Microsoft Graph...");
@@ -383,139 +257,111 @@ namespace IntuneTools.Pages
 
             try
             {
-                if (CustomContentList.Any(c => c.ContentType == "Settings Catalog"))
+                if (HasContentType(ContentTypes.SettingsCatalog))
                 {
-                    var settingsCatalogIDs = GetSettingsCatalogIDs();
-                    if (settingsCatalogIDs.Count > 0)
-                    {
-                        await RenameSettingsCatalogs(settingsCatalogIDs, prefix);
-                    }
+                    var ids = GetContentIdsByType(ContentTypes.SettingsCatalog);
+                    if (ids.Count > 0)
+                        await RenameSettingsCatalogs(ids, prefix);
                 }
 
-                if (CustomContentList.Any(c => c.ContentType == "Device Compliance Policy"))
+                if (HasContentType(ContentTypes.DeviceCompliancePolicy))
                 {
-                    var deviceCompliancePolicyIDs = GetDeviceCompliancePolicyIDs();
-                    if (deviceCompliancePolicyIDs.Count > 0)
-                    {
-                        await RenameDeviceCompliancePolicies(deviceCompliancePolicyIDs, prefix);
-                    }
+                    var ids = GetContentIdsByType(ContentTypes.DeviceCompliancePolicy);
+                    if (ids.Count > 0)
+                        await RenameDeviceCompliancePolicies(ids, prefix);
                 }
 
-                if (CustomContentList.Any(c => c.ContentType == "Device Configuration Policy"))
+                if (HasContentType(ContentTypes.DeviceConfigurationPolicy))
                 {
-                    var deviceConfigurationPolicyIDs = GetDeviceConfigurationPolicyIDs();
-                    if (deviceConfigurationPolicyIDs.Count > 0)
-                    {
-                        await RenameDeviceConfigurationPolicies(deviceConfigurationPolicyIDs, prefix);
-                    }
+                    var ids = GetContentIdsByType(ContentTypes.DeviceConfigurationPolicy);
+                    if (ids.Count > 0)
+                        await RenameDeviceConfigurationPolicies(ids, prefix);
                 }
 
-                if (CustomContentList.Any(c => c.ContentType == "Apple BYOD Enrollment Profile"))
+                if (HasContentType(ContentTypes.AppleBYODEnrollmentProfile))
                 {
-                    var appleBYODProfileIDs = GetAppleBYODEnrollmentProfileIDs();
-                    if (appleBYODProfileIDs.Count > 0)
-                    {
-                        await RenameAppleBYODEnrollmentProfiles(appleBYODProfileIDs, prefix);
-                    }
+                    var ids = GetContentIdsByType(ContentTypes.AppleBYODEnrollmentProfile);
+                    if (ids.Count > 0)
+                        await RenameAppleBYODEnrollmentProfiles(ids, prefix);
                 }
 
-                if (CustomContentList.Any(c => c.ContentType == "MacOS Shell Script"))
+                if (HasContentType(ContentTypes.MacOSShellScript))
                 {
-                    var macOSShellScriptIDs = GetMacOSShellScriptIDs();
-                    if (macOSShellScriptIDs.Count > 0)
-                    {
-                        await RenameMacOSShellScripts(macOSShellScriptIDs, prefix);
-                    }
+                    var ids = GetContentIdsByType(ContentTypes.MacOSShellScript);
+                    if (ids.Count > 0)
+                        await RenameMacOSShellScripts(ids, prefix);
                 }
 
-                if (CustomContentList.Any(c => c.ContentType == "PowerShell Script"))
+                if (HasContentType(ContentTypes.PowerShellScript))
                 {
-                    var powerShellScriptIDs = GetPowerShellScriptIDs();
-                    if (powerShellScriptIDs.Count > 0)
-                    {
-                        await RenamePowerShellScripts(powerShellScriptIDs, prefix);
-                    }
+                    var ids = GetContentIdsByType(ContentTypes.PowerShellScript);
+                    if (ids.Count > 0)
+                        await RenamePowerShellScripts(ids, prefix);
                 }
 
-                if (CustomContentList.Any(c => c.ContentType == "Proactive Remediation"))
+                if (HasContentType(ContentTypes.ProactiveRemediation))
                 {
-                    var proactiveRemediationIDs = GetProactiveRemediationIDs();
-                    if (proactiveRemediationIDs.Count > 0)
-                    {
-                        await RenameProactiveRemediations(proactiveRemediationIDs, prefix);
-                    }
+                    var ids = GetContentIdsByType(ContentTypes.ProactiveRemediation);
+                    if (ids.Count > 0)
+                        await RenameProactiveRemediations(ids, prefix);
                 }
 
-                if (CustomContentList.Any(c => c.ContentType == "Windows AutoPilot Profile"))
+                if (HasContentType(ContentTypes.WindowsAutoPilotProfile))
                 {
-                    var windowsAutoPilotProfileIDs = GetWindowsAutoPilotProfileIDs();
-                    if (windowsAutoPilotProfileIDs.Count > 0)
-                    {
-                        await RenameWindowsAutoPilotProfiles(windowsAutoPilotProfileIDs, prefix);
-                    }
+                    var ids = GetContentIdsByType(ContentTypes.WindowsAutoPilotProfile);
+                    if (ids.Count > 0)
+                        await RenameWindowsAutoPilotProfiles(ids, prefix);
                 }
 
-                if (CustomContentList.Any(c => c.ContentType == "Windows Driver Update"))
+                if (HasContentType(ContentTypes.WindowsDriverUpdate))
                 {
-                    var windowsDriverUpdateIDs = GetWindowsDriverUpdateIDs();
-                    if (windowsDriverUpdateIDs.Count > 0)
-                    {
-                        await RenameWindowsDriverUpdates(windowsDriverUpdateIDs, prefix);
-                    }
+                    var ids = GetContentIdsByType(ContentTypes.WindowsDriverUpdate);
+                    if (ids.Count > 0)
+                        await RenameWindowsDriverUpdates(ids, prefix);
                 }
 
-                if (CustomContentList.Any(c => c.ContentType == "Windows Feature Update"))
+                if (HasContentType(ContentTypes.WindowsFeatureUpdate))
                 {
-                    var windowsFeatureUpdateIDs = GetWindowsFeatureUpdateIDs();
-                    if (windowsFeatureUpdateIDs.Count > 0)
-                    {
-                        await RenameWindowsFeatureUpdates(windowsFeatureUpdateIDs, prefix);
-                    }
+                    var ids = GetContentIdsByType(ContentTypes.WindowsFeatureUpdate);
+                    if (ids.Count > 0)
+                        await RenameWindowsFeatureUpdates(ids, prefix);
                 }
 
-                if (CustomContentList.Any(c => c.ContentType == "Windows Quality Update Policy"))
+                if (HasContentType(ContentTypes.WindowsQualityUpdatePolicy))
                 {
-                    var windowsQualityUpdatePolicyIDs = GetWindowsQualityUpdatePolicyIDs();
-                    if (windowsQualityUpdatePolicyIDs.Count > 0)
-                    {
-                        await RenameWindowsQualityUpdatePolicies(windowsQualityUpdatePolicyIDs, prefix);
-                    }
+                    var ids = GetContentIdsByType(ContentTypes.WindowsQualityUpdatePolicy);
+                    if (ids.Count > 0)
+                        await RenameWindowsQualityUpdatePolicies(ids, prefix);
                 }
 
-                if (CustomContentList.Any(c => c.ContentType == "Windows Quality Update Profile"))
+                if (HasContentType(ContentTypes.WindowsQualityUpdateProfile))
                 {
-                    var windowsQualityUpdateProfileIDs = GetWindowsQualityUpdateProfileIDs();
-                    if (windowsQualityUpdateProfileIDs.Count > 0)
-                    {
-                        await RenameWindowsQualityUpdateProfiles(windowsQualityUpdateProfileIDs, prefix);
-                    }
+                    var ids = GetContentIdsByType(ContentTypes.WindowsQualityUpdateProfile);
+                    if (ids.Count > 0)
+                        await RenameWindowsQualityUpdateProfiles(ids, prefix);
                 }
 
-                if (CustomContentList.Any(c => c.ContentType == "Assignment Filter"))
+                if (HasContentType(ContentTypes.AssignmentFilter))
                 {
-                    var assignmentFilterIDs = GetAssignmentFilterIDs();
-                    if (assignmentFilterIDs.Count > 0)
-                    {
-                        await RenameAssignmentFilters(assignmentFilterIDs, prefix);
-                    }
+                    var ids = GetContentIdsByType(ContentTypes.AssignmentFilter);
+                    if (ids.Count > 0)
+                        await RenameAssignmentFilters(ids, prefix);
                 }
 
-                if (CustomContentList.Any(c => c.ContentType == "Entra Group"))
+                if (HasContentType(ContentTypes.EntraGroup))
                 {
-                    var entraGroupIDs = GetEntraGroupIDs();
-                    if (entraGroupIDs.Count > 0)
-                    {
-                        await RenameEntraGroups(entraGroupIDs, prefix);
-                    }
+                    var ids = GetContentIdsByType(ContentTypes.EntraGroup);
+                    if (ids.Count > 0)
+                        await RenameEntraGroups(ids, prefix);
                 }
-                if (CustomContentList.Any(c => UserInterfaceHelper.IsApplicationContentType(c.ContentType)))
+
+                if (HasApplicationContent())
                 {
-                    var applicationIDs = GetApplicationIDs();
-                    if (applicationIDs.Count > 0)
-                    {
-                        await RenameApplications(applicationIDs, prefix);
-                    }
+                    var ids = GetApplicationContentIds();
+                    if (ids.Count > 0)
+                        await RenameApplications(ids, prefix);
                 }
+
                 AppendToDetailsRichTextBlock($"Renamed {contentIDs.Count} items with prefix '{prefix}'.");
             }
             catch (Exception ex)
@@ -543,14 +389,6 @@ namespace IntuneTools.Pages
                     AppendToDetailsRichTextBlock($"Error renaming Apple BYOD Enrollment Profile with ID {id}: {ex.Message}");
                 }
             }
-        }
-
-        private List<string> GetApplicationIDs()
-        {
-            return CustomContentList
-                .Where(c => UserInterfaceHelper.IsApplicationContentType(c.ContentType))
-                .Select(c => c.ContentId ?? string.Empty)
-                .ToList();
         }
 
         private async Task RenameApplications(List<string> appIDs, string prefix)
@@ -800,14 +638,6 @@ namespace IntuneTools.Pages
 
             AppendToDetailsRichTextBlock($"Found {count} settings catalog policies matching '{searchQuery}'.");
         }
-        private List<string> GetSettingsCatalogIDs()
-        {
-            // This method retrieves the IDs of all settings catalog policies in CustomContentList
-            return CustomContentList
-                .Where(c => c.ContentType == "Settings Catalog")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
 
         private async Task RenameSettingsCatalogs(List<string> settingsCatalogIDs, string prefix)
         {
@@ -849,14 +679,6 @@ namespace IntuneTools.Pages
                 async () => await SearchDeviceComplianceContentAsync(sourceGraphServiceClient, searchQuery));
 
             AppendToDetailsRichTextBlock($"Found {count} device compliance policies matching '{searchQuery}'.");
-        }
-        private List<string> GetDeviceCompliancePolicyIDs()
-        {
-            // This method retrieves the IDs of all device compliance policies in CustomContentList
-            return CustomContentList
-                .Where(c => c.ContentType == "Device Compliance Policy")
-                .Select(c => c.ContentId ?? string.Empty)
-                .ToList();
         }
 
         private async Task RenameDeviceCompliancePolicies(List<string> deviceCompliancePolicyIDs, string prefix)
@@ -900,15 +722,6 @@ namespace IntuneTools.Pages
                 async () => await SearchDeviceConfigurationContentAsync(sourceGraphServiceClient, searchQuery));
 
             AppendToDetailsRichTextBlock($"Found {count} device configuration policies matching '{searchQuery}'.");
-        }
-
-        private List<string> GetDeviceConfigurationPolicyIDs()
-        {
-            // This method retrieves the IDs of all device configuration policies in CustomContentList
-            return CustomContentList
-                .Where(c => c.ContentType == "Device Configuration Policy")
-                .Select(c => c.ContentId ?? string.Empty)
-                .ToList();
         }
 
         private async Task RenameDeviceConfigurationPolicies(List<string> deviceConfigurationPolicyIDs, string prefix)
@@ -970,14 +783,6 @@ namespace IntuneTools.Pages
 
             AppendToDetailsRichTextBlock($"Found {count} applications matching '{searchQuery}'.");
         }
-        private List<string> GetAppleBYODEnrollmentProfileIDs()
-        {
-            // This method retrieves the IDs of all Apple BYOD enrollment profiles in CustomContentList
-            return CustomContentList
-                .Where(c => c.ContentType == "Apple BYOD Enrollment Profile")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
 
         /// <summary>
         /// Assignment Filters
@@ -998,14 +803,6 @@ namespace IntuneTools.Pages
                 async () => await SearchAssignmentFilterContentAsync(sourceGraphServiceClient, searchQuery));
 
             AppendToDetailsRichTextBlock($"Found {count} assignment filters matching '{searchQuery}'.");
-        }
-        private List<string> GetAssignmentFilterIDs()
-        {
-            // This method retrieves the IDs of all assignment filters in CustomContentList
-            return CustomContentList
-                .Where(c => c.ContentType == "Assignment Filter")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
         }
 
         /// <summary>
@@ -1028,14 +825,6 @@ namespace IntuneTools.Pages
 
             AppendToDetailsRichTextBlock($"Found {count} Entra groups matching '{searchQuery}'.");
         }
-        private List<string> GetEntraGroupIDs()
-        {
-            // This method retrieves the IDs of all Entra groups in CustomContentList
-            return CustomContentList
-                .Where(c => c.ContentType == "Entra Group")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
 
         /// <summary>
         /// Powershell Scripts
@@ -1056,14 +845,6 @@ namespace IntuneTools.Pages
                 async () => await SearchPowerShellScriptContentAsync(sourceGraphServiceClient, searchQuery));
 
             AppendToDetailsRichTextBlock($"Found {count} PowerShell scripts matching '{searchQuery}'.");
-        }
-        private List<string> GetPowerShellScriptIDs()
-        {
-            // This method retrieves the IDs of all PowerShell scripts in CustomContentList
-            return CustomContentList
-                .Where(c => c.ContentType == "PowerShell Script")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
         }
 
         /// <summary>
@@ -1086,14 +867,6 @@ namespace IntuneTools.Pages
 
             AppendToDetailsRichTextBlock($"Found {count} proactive remediations matching '{searchQuery}'.");
         }
-        private List<string> GetProactiveRemediationIDs()
-        {
-            // This method retrieves the IDs of all proactive remediations in CustomContentList
-            return CustomContentList
-                .Where(c => c.ContentType == "Proactive Remediation")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
 
         /// <summary>
         /// MacOS shell scripts
@@ -1114,14 +887,6 @@ namespace IntuneTools.Pages
                 async () => await SearchMacOSShellScriptContentAsync(sourceGraphServiceClient, searchQuery));
 
             AppendToDetailsRichTextBlock($"Found {count} MacOS shell scripts matching '{searchQuery}'.");
-        }
-        private List<string> GetMacOSShellScriptIDs()
-        {
-            // This method retrieves the IDs of all MacOS shell scripts in CustomContentList
-            return CustomContentList
-                .Where(c => c.ContentType == "MacOS Shell Script")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
         }
 
         /// <summary>
@@ -1144,14 +909,6 @@ namespace IntuneTools.Pages
 
             AppendToDetailsRichTextBlock($"Found {count} Windows AutoPilot profiles matching '{searchQuery}'.");
         }
-        private List<string> GetWindowsAutoPilotProfileIDs()
-        {
-            // This method retrieves the IDs of all Windows AutoPilot profiles in CustomContentList
-            return CustomContentList
-                .Where(c => c.ContentType == "Windows AutoPilot Profile")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
 
         /// <summary>
         /// Windows Driver Updates
@@ -1171,14 +928,6 @@ namespace IntuneTools.Pages
                 async () => await SearchWindowsDriverUpdateContentAsync(sourceGraphServiceClient, searchQuery));
 
             AppendToDetailsRichTextBlock($"Found {count} Windows driver updates matching '{searchQuery}'.");
-        }
-        private List<string> GetWindowsDriverUpdateIDs()
-        {
-            // This method retrieves the IDs of all Windows driver updates in CustomContentList
-            return CustomContentList
-                .Where(c => c.ContentType == "Windows Driver Update")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
         }
 
         /// <summary>
@@ -1201,14 +950,6 @@ namespace IntuneTools.Pages
 
             AppendToDetailsRichTextBlock($"Found {count} Windows feature updates matching '{searchQuery}'.");
         }
-        private List<string> GetWindowsFeatureUpdateIDs()
-        {
-            // This method retrieves the IDs of all Windows feature updates in CustomContentList
-            return CustomContentList
-                .Where(c => c.ContentType == "Windows Feature Update")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
 
         /// <summary>
         /// Windows Quality Update Policy
@@ -1230,14 +971,6 @@ namespace IntuneTools.Pages
 
             AppendToDetailsRichTextBlock($"Found {count} Windows quality update policies matching '{searchQuery}'.");
         }
-        private List<string> GetWindowsQualityUpdatePolicyIDs()
-        {
-            // This method retrieves the IDs of all Windows quality update policies in CustomContentList
-            return CustomContentList
-                .Where(c => c.ContentType == "Windows Quality Update Policy")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
 
         /// <summary>
         /// Windows Quality Update Profile
@@ -1258,14 +991,6 @@ namespace IntuneTools.Pages
                 async () => await SearchWindowsQualityUpdateProfileContentAsync(sourceGraphServiceClient, searchQuery));
 
             AppendToDetailsRichTextBlock($"Found {count} Windows quality update profiles matching '{searchQuery}'.");
-        }
-        private List<string> GetWindowsQualityUpdateProfileIDs()
-        {
-            // This method retrieves the IDs of all Windows quality update profiles in CustomContentList
-            return CustomContentList
-                .Where(c => c.ContentType == "Windows Quality Update Profile")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
         }
 
         /// <summary>
@@ -1334,25 +1059,6 @@ namespace IntuneTools.Pages
             await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
         }
 
-        // Handler for the 'Clear Log' button
-        private async void ClearLogButton_Click(object sender, RoutedEventArgs e)
-        {
-            var dialog = new ContentDialog
-            {
-                Title = "Clear Log Console?",
-                Content = "Are you sure you want to clear all log console text? This action cannot be undone.",
-                PrimaryButtonText = "Clear",
-                CloseButtonText = "Cancel",
-                DefaultButton = ContentDialogButton.Close,
-                XamlRoot = this.XamlRoot
-            };
-
-            var result = await dialog.ShowAsync().AsTask();
-            if (result == ContentDialogResult.Primary)
-            {
-                LogConsole.Blocks.Clear();
-            }
-        }
         private async void RenameButton_Click(object sender, RoutedEventArgs e)
         {
             var itemsToRename = CustomContentList.ToList();
@@ -1402,17 +1108,6 @@ namespace IntuneTools.Pages
         private int GetSelectedRenameModeIndex()
         {
             return (int)GetSelectedRenameMode();
-        }
-
-        // Call this after appending to LogConsole
-        private void ScrollLogToEnd()
-        {
-            // Ensure measure is up-to-date before scrolling
-            LogConsole.UpdateLayout();
-            LogScrollViewer.UpdateLayout();
-
-            // Scroll to the bottom
-            LogScrollViewer.ChangeView(null, LogScrollViewer.ScrollableHeight, null, true);
         }
 
         private void RenameModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)

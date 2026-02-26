@@ -3,8 +3,6 @@ using IntuneTools.Utilities;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Documents;
-using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -34,106 +32,47 @@ using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHe
 namespace IntuneTools.Pages
 {
     /// <summary>
-    /// An empty page that can be used on its own or navigated to within a Frame.
+    /// Page for cleaning up (deleting) Intune content.
     /// </summary>
-    public sealed partial class CleanupPage : Page
+    public sealed partial class CleanupPage : BaseDataOperationPage
     {
+        protected override string UnauthenticatedMessage => "You must authenticate with a tenant before using cleanup features.";
+
+        protected override IEnumerable<string> GetManagedControlNames() => new[]
+        {
+            "InputTextBox", "SearchButton", "ListAllButton", "ClearSelectedButton",
+            "ClearAllButton", "DeleteButton", "CleanupDataGrid", "ClearLogButton"
+        };
+
         public CleanupPage()
         {
             InitializeComponent();
             RightClickMenu.AttachDataGridContextMenu(CleanupDataGrid);
         }
 
-
-        protected override void OnNavigatedTo(NavigationEventArgs e)
+        // DataGrid sorting handler - delegates to base class
+        private void CleanupDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
         {
-            base.OnNavigatedTo(e);
-
-            if (string.Equals(Variables.sourceTenantName, string.Empty, StringComparison.Ordinal))
-            {
-                TenantInfoBar.Title = "Authentication Required";
-                TenantInfoBar.Message = "You must authenticate with a tenant before using cleanup features.";
-                TenantInfoBar.Severity = InfoBarSeverity.Warning;
-                TenantInfoBar.IsOpen = true;
-
-                // Disable controls until authenticated
-                InputTextBox.IsEnabled = false;
-                SearchButton.IsEnabled = false;
-                ListAllButton.IsEnabled = false;
-                ClearSelectedButton.IsEnabled = false;
-                ClearAllButton.IsEnabled = false;
-                DeleteButton.IsEnabled = false;
-                CleanupDataGrid.IsEnabled = false;
-                ClearLogButton.IsEnabled = false;
-            }
-            else
-            {
-                TenantInfoBar.Title = "Authenticated Tenant";
-                TenantInfoBar.Message = Variables.sourceTenantName;
-                TenantInfoBar.Severity = InfoBarSeverity.Informational;
-                TenantInfoBar.IsOpen = true;
-
-                // Enable controls
-                InputTextBox.IsEnabled = true;
-                SearchButton.IsEnabled = true;
-                ListAllButton.IsEnabled = true;
-                ClearSelectedButton.IsEnabled = true;
-                ClearAllButton.IsEnabled = true;
-                DeleteButton.IsEnabled = true;
-                CleanupDataGrid.IsEnabled = true;
-                ClearLogButton.IsEnabled = true;
-            }
+            HandleDataGridSorting(sender, e);
         }
-        public ObservableCollection<CustomContentInfo> ContentList { get; set; } = new ObservableCollection<CustomContentInfo>();
 
-
-        /// <summary>
-        /// Data Grid methods
-        /// </summary>
-
-        private void ShowLoading(string message = "Loading data from Microsoft Graph...")
+        protected override void ShowLoading(string message = "Loading data from Microsoft Graph...")
         {
-            LoadingStatusText.Text = message;
-            LoadingOverlay.Visibility = Visibility.Visible;
-            LoadingProgressRing.IsActive = true;
-
-            // Optionally disable buttons during loading
+            base.ShowLoading(message);
             ListAllButton.IsEnabled = false;
             SearchButton.IsEnabled = false;
         }
-        private void HideLoading()
-        {
-            LoadingOverlay.Visibility = Visibility.Collapsed;
-            LoadingProgressRing.IsActive = false;
 
-            // Re-enable buttons
+        protected override void HideLoading()
+        {
+            base.HideLoading();
             ListAllButton.IsEnabled = true;
             SearchButton.IsEnabled = true;
         }
-        private void AppendToDetailsRichTextBlock(string text)
-        {
-            // Append log text to the LogConsole RichTextBlock
-            Paragraph paragraph;
-            if (LogConsole.Blocks.Count == 0)
-            {
-                paragraph = new Paragraph();
-                LogConsole.Blocks.Add(paragraph);
-            }
-            else
-            {
-                paragraph = LogConsole.Blocks.First() as Paragraph;
-                if (paragraph == null)
-                {
-                    paragraph = new Paragraph();
-                    LogConsole.Blocks.Add(paragraph);
-                }
-            }
-            if (paragraph.Inlines.Count > 0)
-            {
-                paragraph.Inlines.Add(new LineBreak());
-            }
-            paragraph.Inlines.Add(new Run { Text = text });
-        }
+
+        // Convenience method for logging - calls base class AppendToLog
+        private void AppendToDetailsRichTextBlock(string text) => AppendToLog(text);
+
         private async Task DeleteContent()
         {
             await DeleteSettingsCatalogsAsync();
@@ -249,14 +188,7 @@ namespace IntuneTools.Pages
                 async () => await SearchSettingsCatalogContentAsync(sourceGraphServiceClient, searchQuery));
             AppendToDetailsRichTextBlock($"Found {count} settings catalog policies matching '{searchQuery}'.");
         }
-        private List<string> GetSettingsCatalogIDs()
-        {
-            // This method retrieves the IDs of all settings catalog policies in ContentList
-            return ContentList
-                .Where(c => c.ContentType == "Settings Catalog")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
+
         private async Task DeleteSettingsCatalogsAsync()
         {
             int count = 0;
@@ -264,7 +196,7 @@ namespace IntuneTools.Pages
             try
             {
                 // Get all settings catalog IDs
-                var settingsCatalogIDs = GetSettingsCatalogIDs();
+                var settingsCatalogIDs = GetContentIdsByType(ContentTypes.SettingsCatalog);
                 if (settingsCatalogIDs.Count == 0)
                 {
                     LogToFunctionFile(appFunction.Main, "No settings catalog policies found to delete.");
@@ -313,14 +245,7 @@ namespace IntuneTools.Pages
                 async () => await SearchDeviceComplianceContentAsync(sourceGraphServiceClient, searchQuery));
             AppendToDetailsRichTextBlock($"Found {count} device compliance policies matching '{searchQuery}'.");
         }
-        private List<string> GetDeviceCompliancePolicyIDs()
-        {
-            // This method retrieves the IDs of all device compliance policies in ContentList
-            return ContentList
-                .Where(c => c.ContentType == "Device Compliance Policy")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
+
         private async Task DeleteDeviceCompliancePoliciesAsync()
         {
             int count = 0;
@@ -328,7 +253,7 @@ namespace IntuneTools.Pages
             try
             {
                 // Get all device compliance policy IDs
-                var deviceCompliancePolicyIDs = GetDeviceCompliancePolicyIDs();
+                var deviceCompliancePolicyIDs = GetContentIdsByType(ContentTypes.DeviceCompliancePolicy);
                 if (deviceCompliancePolicyIDs.Count == 0)
                 {
                     LogToFunctionFile(appFunction.Main, "No device compliance policies found to delete.");
@@ -372,14 +297,6 @@ namespace IntuneTools.Pages
                 async () => await SearchDeviceConfigurationContentAsync(sourceGraphServiceClient, searchQuery));
             AppendToDetailsRichTextBlock($"Found {count} device configuration policies matching '{searchQuery}'.");
         }
-        private List<string> GetDeviceConfigurationPolicyIDs()
-        {
-            // This method retrieves the IDs of all device configuration policies in ContentList
-            return ContentList
-                .Where(c => c.ContentType == "Device Configuration Policy")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
         private async Task DeleteDeviceConfigurationPoliciesAsync()
         {
             int count = 0;
@@ -387,7 +304,7 @@ namespace IntuneTools.Pages
             try
             {
                 // Get all device configuration policy IDs
-                var deviceConfigurationPolicyIDs = GetDeviceConfigurationPolicyIDs();
+                var deviceConfigurationPolicyIDs = GetContentIdsByType(ContentTypes.DeviceConfigurationPolicy);
                 if (deviceConfigurationPolicyIDs.Count == 0)
                 {
                     LogToFunctionFile(appFunction.Main, "No device configuration policies found to delete.");
@@ -431,14 +348,6 @@ namespace IntuneTools.Pages
                 async () => await SearchAppleBYODEnrollmentContentAsync(sourceGraphServiceClient, searchQuery));
             AppendToDetailsRichTextBlock($"Found {count} Apple BYOD enrollment profiles matching '{searchQuery}'.");
         }
-        private List<string> GetAppleBYODEnrollmentProfileIDs()
-        {
-            // This method retrieves the IDs of all Apple BYOD enrollment profiles in ContentList
-            return ContentList
-                .Where(c => c.ContentType == "Apple BYOD Enrollment Profile")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
         private async Task DeleteAppleBYODEnrollmentProfilesAsync()
         {
             int count = 0;
@@ -446,7 +355,7 @@ namespace IntuneTools.Pages
             try
             {
                 // Get all Apple BYOD enrollment profile IDs
-                var appleBYODEnrollmentProfileIDs = GetAppleBYODEnrollmentProfileIDs();
+                var appleBYODEnrollmentProfileIDs = GetContentIdsByType(ContentTypes.AppleBYODEnrollmentProfile);
                 if (appleBYODEnrollmentProfileIDs.Count == 0)
                 {
                     LogToFunctionFile(appFunction.Main, "No Apple BYOD enrollment profiles found to delete.");
@@ -490,14 +399,6 @@ namespace IntuneTools.Pages
                 async () => await SearchAssignmentFilterContentAsync(sourceGraphServiceClient, searchQuery));
             AppendToDetailsRichTextBlock($"Found {count} assignment filters matching '{searchQuery}'.");
         }
-        private List<string> GetAssignmentFilterIDs()
-        {
-            // This method retrieves the IDs of all assignment filters in ContentList
-            return ContentList
-                .Where(c => c.ContentType == "Assignment Filter")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
         private async Task DeleteAssignmentFiltersAsync()
         {
             int count = 0;
@@ -505,7 +406,7 @@ namespace IntuneTools.Pages
             try
             {
                 // Get all assignment filter IDs
-                var assignmentFilterIDs = GetAssignmentFilterIDs();
+                var assignmentFilterIDs = GetContentIdsByType(ContentTypes.AssignmentFilter);
                 if (assignmentFilterIDs.Count == 0)
                 {
                     LogToFunctionFile(appFunction.Main, "No assignment filters found to delete.");
@@ -549,14 +450,6 @@ namespace IntuneTools.Pages
                 async () => await SearchGroupContentAsync(sourceGraphServiceClient, searchQuery));
             AppendToDetailsRichTextBlock($"Found {count} Entra groups matching '{searchQuery}'.");
         }
-        private List<string> GetEntraGroupIDs()
-        {
-            // This method retrieves the IDs of all Entra groups in ContentList
-            return ContentList
-                .Where(c => c.ContentType == "Entra Group")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
         private async Task DeleteEntraGroupsAsync()
         {
             int count = 0;
@@ -564,7 +457,7 @@ namespace IntuneTools.Pages
             try
             {
                 // Get all Entra group IDs
-                var entraGroupIDs = GetEntraGroupIDs();
+                var entraGroupIDs = GetContentIdsByType(ContentTypes.EntraGroup);
                 if (entraGroupIDs.Count == 0)
                 {
                     LogToFunctionFile(appFunction.Main, "No Entra groups found to delete.");
@@ -608,14 +501,6 @@ namespace IntuneTools.Pages
                 async () => await SearchPowerShellScriptContentAsync(sourceGraphServiceClient, searchQuery));
             AppendToDetailsRichTextBlock($"Found {count} PowerShell scripts matching '{searchQuery}'.");
         }
-        private List<string> GetPowerShellScriptIDs()
-        {
-            // This method retrieves the IDs of all PowerShell scripts in ContentList
-            return ContentList
-                .Where(c => c.ContentType == "PowerShell Script")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
         private async Task DeletePowerShellScriptsAsync()
         {
             int count = 0;
@@ -623,7 +508,7 @@ namespace IntuneTools.Pages
             try
             {
                 // Get all PowerShell script IDs
-                var powerShellScriptIDs = GetPowerShellScriptIDs();
+                var powerShellScriptIDs = GetContentIdsByType(ContentTypes.PowerShellScript);
                 if (powerShellScriptIDs.Count == 0)
                 {
                     LogToFunctionFile(appFunction.Main, "No PowerShell scripts found to delete.");
@@ -667,14 +552,6 @@ namespace IntuneTools.Pages
                 async () => await SearchProactiveRemediationContentAsync(sourceGraphServiceClient, searchQuery));
             AppendToDetailsRichTextBlock($"Found {count} proactive remediations matching '{searchQuery}'.");
         }
-        private List<string> GetProactiveRemediationIDs()
-        {
-            // This method retrieves the IDs of all proactive remediations in ContentList
-            return ContentList
-                .Where(c => c.ContentType == "Proactive Remediation")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
         private async Task DeleteProactiveRemediationsAsync()
         {
             int count = 0;
@@ -682,7 +559,7 @@ namespace IntuneTools.Pages
             try
             {
                 // Get all proactive remediation IDs
-                var proactiveRemediationIDs = GetProactiveRemediationIDs();
+                var proactiveRemediationIDs = GetContentIdsByType(ContentTypes.ProactiveRemediation);
                 if (proactiveRemediationIDs.Count == 0)
                 {
                     LogToFunctionFile(appFunction.Main, "No proactive remediations found to delete.");
@@ -726,14 +603,6 @@ namespace IntuneTools.Pages
                 async () => await SearchMacOSShellScriptContentAsync(sourceGraphServiceClient, searchQuery));
             AppendToDetailsRichTextBlock($"Found {count} MacOS shell scripts matching '{searchQuery}'.");
         }
-        private List<string> GetMacOSShellScriptIDs()
-        {
-            // This method retrieves the IDs of all MacOS shell scripts in ContentList
-            return ContentList
-                .Where(c => c.ContentType == "MacOS Shell Script")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
         private async Task DeleteMacOSShellScriptsAsync()
         {
             int count = 0;
@@ -741,7 +610,7 @@ namespace IntuneTools.Pages
             try
             {
                 // Get all MacOS shell script IDs
-                var macOSShellScriptIDs = GetMacOSShellScriptIDs();
+                var macOSShellScriptIDs = GetContentIdsByType(ContentTypes.MacOSShellScript);
                 if (macOSShellScriptIDs.Count == 0)
                 {
                     LogToFunctionFile(appFunction.Main, "No MacOS shell scripts found to delete.");
@@ -785,14 +654,6 @@ namespace IntuneTools.Pages
                 async () => await SearchWindowsAutoPilotContentAsync(sourceGraphServiceClient, searchQuery));
             AppendToDetailsRichTextBlock($"Found {count} Windows AutoPilot profiles matching '{searchQuery}'.");
         }
-        private List<string> GetWindowsAutoPilotProfileIDs()
-        {
-            // This method retrieves the IDs of all Windows AutoPilot profiles in ContentList
-            return ContentList
-                .Where(c => c.ContentType == "Windows AutoPilot Profile")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
         private async Task DeleteWindowsAutoPilotProfilesAsync()
 
         {
@@ -801,7 +662,7 @@ namespace IntuneTools.Pages
             try
             {
                 // Get all Windows AutoPilot profile IDs
-                var windowsAutoPilotProfileIDs = GetWindowsAutoPilotProfileIDs();
+                var windowsAutoPilotProfileIDs = GetContentIdsByType(ContentTypes.WindowsAutoPilotProfile);
                 if (windowsAutoPilotProfileIDs.Count == 0)
                 {
                     LogToFunctionFile(appFunction.Main, "No Windows AutoPilot profiles found to delete.");
@@ -882,14 +743,6 @@ namespace IntuneTools.Pages
                 async () => await SearchWindowsDriverUpdateContentAsync(sourceGraphServiceClient, searchQuery));
             AppendToDetailsRichTextBlock($"Found {count} Windows driver updates matching '{searchQuery}'.");
         }
-        private List<string> GetWindowsDriverUpdateIDs()
-        {
-            // This method retrieves the IDs of all Windows driver updates in ContentList
-            return ContentList
-                .Where(c => c.ContentType == "Windows Driver Update")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
         private async Task DeleteWindowsDriverUpdatesAsync()
         {
             int count = 0;
@@ -897,7 +750,7 @@ namespace IntuneTools.Pages
             try
             {
                 // Get all Windows driver update IDs
-                var windowsDriverUpdateIDs = GetWindowsDriverUpdateIDs();
+                var windowsDriverUpdateIDs = GetContentIdsByType(ContentTypes.WindowsDriverUpdate);
                 if (windowsDriverUpdateIDs.Count == 0)
                 {
                     LogToFunctionFile(appFunction.Main, "No Windows driver updates found to delete.");
@@ -941,14 +794,6 @@ namespace IntuneTools.Pages
                 async () => await SearchWindowsFeatureUpdateContentAsync(sourceGraphServiceClient, searchQuery));
             AppendToDetailsRichTextBlock($"Found {count} Windows feature updates matching '{searchQuery}'.");
         }
-        private List<string> GetWindowsFeatureUpdateIDs()
-        {
-            // This method retrieves the IDs of all Windows feature updates in ContentList
-            return ContentList
-                .Where(c => c.ContentType == "Windows Feature Update")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
         private async Task DeleteWindowsFeatureUpdatesAsync()
         {
             int count = 0;
@@ -956,7 +801,7 @@ namespace IntuneTools.Pages
             try
             {
                 // Get all Windows feature update IDs
-                var windowsFeatureUpdateIDs = GetWindowsFeatureUpdateIDs();
+                var windowsFeatureUpdateIDs = GetContentIdsByType(ContentTypes.WindowsFeatureUpdate);
                 if (windowsFeatureUpdateIDs.Count == 0)
                 {
                     LogToFunctionFile(appFunction.Main, "No Windows feature updates found to delete.");
@@ -1000,14 +845,6 @@ namespace IntuneTools.Pages
                 async () => await SearchWindowsQualityUpdatePolicyContentAsync(sourceGraphServiceClient, searchQuery));
             AppendToDetailsRichTextBlock($"Found {count} Windows quality update policies matching '{searchQuery}'.");
         }
-        private List<string> GetWindowsQualityUpdatePolicyIDs()
-        {
-            // This method retrieves the IDs of all Windows quality update policies in ContentList
-            return ContentList
-                .Where(c => c.ContentType == "Windows Quality Update Policy")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
         private async Task DeleteWindowsQualityUpdatePoliciesAsync()
         {
             int count = 0;
@@ -1015,7 +852,7 @@ namespace IntuneTools.Pages
             try
             {
                 // Get all Windows quality update IDs
-                var windowsQualityUpdateIDs = GetWindowsQualityUpdatePolicyIDs();
+                var windowsQualityUpdateIDs = GetContentIdsByType(ContentTypes.WindowsQualityUpdatePolicy);
                 if (windowsQualityUpdateIDs.Count == 0)
                 {
                     LogToFunctionFile(appFunction.Main, "No Windows quality updates found to delete.");
@@ -1059,14 +896,6 @@ namespace IntuneTools.Pages
                 async () => await SearchWindowsQualityUpdateProfileContentAsync(sourceGraphServiceClient, searchQuery));
             AppendToDetailsRichTextBlock($"Found {count} Windows quality update profiles matching '{searchQuery}'.");
         }
-        private List<string> GetWindowsQualityUpdateProfileIDs()
-        {
-            // This method retrieves the IDs of all Windows quality update profiles in ContentList
-            return ContentList
-                .Where(c => c.ContentType == "Windows Quality Update Profile")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
         private async Task DeleteWindowsQualityUpdateProfilesAsync()
         {
             int count = 0;
@@ -1074,7 +903,7 @@ namespace IntuneTools.Pages
             try
             {
                 // Get all Windows quality update profile IDs
-                var windowsQualityUpdateProfileIDs = GetWindowsQualityUpdateProfileIDs();
+                var windowsQualityUpdateProfileIDs = GetContentIdsByType(ContentTypes.WindowsQualityUpdateProfile);
                 if (windowsQualityUpdateProfileIDs.Count == 0)
                 {
                     LogToFunctionFile(appFunction.Main, "No Windows quality update profiles found to delete.");
@@ -1189,73 +1018,7 @@ namespace IntuneTools.Pages
             CleanupDataGrid.ItemsSource = ContentList;
             AppendToDetailsRichTextBlock($"Cleared {selectedItems.Count} selected item(s) from the list.");
         }
-
-        private void CleanupDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
-        {
-            var dataGrid = sender as DataGrid;
-            if (ContentList == null || ContentList.Count == 0)
-                return;
-
-            // Get the property name from the column binding
-            var textColumn = e.Column as DataGridTextColumn;
-            var binding = textColumn?.Binding as Binding;
-            string sortProperty = binding?.Path?.Path;
-            if (string.IsNullOrEmpty(sortProperty))
-            {
-                AppendToDetailsRichTextBlock("Sorting error: Unable to determine property name from column binding.");
-                return;
-            }
-
-            // Check if property exists on CustomContentInfo
-            var propInfo = typeof(CustomContentInfo).GetProperty(sortProperty);
-            if (propInfo == null)
-            {
-                AppendToDetailsRichTextBlock($"Sorting error: Property '{sortProperty}' not found on CustomContentInfo.");
-                return;
-            }
-
-            // Toggle sort direction
-            ListSortDirection direction;
-            if (e.Column.SortDirection.HasValue && e.Column.SortDirection.Value == DataGridSortDirection.Ascending)
-            {
-                direction = ListSortDirection.Descending;
-            }
-            else
-            {
-                direction = ListSortDirection.Ascending;
-            }
-
-            // Sort the ContentList in place
-            List<CustomContentInfo> sorted;
-            try
-            {
-                if (direction == ListSortDirection.Ascending)
-                {
-                    sorted = ContentList.OrderBy(x => propInfo.GetValue(x, null) ?? string.Empty).ToList();
-                }
-                else
-                {
-                    sorted = ContentList.OrderByDescending(x => propInfo.GetValue(x, null) ?? string.Empty).ToList();
-                }
-            }
-            catch (Exception ex)
-            {
-                AppendToDetailsRichTextBlock($"Sorting error: {ex.Message}");
-                return;
-            }
-
-            // Update ContentList
-            ContentList.Clear();
-            foreach (var item in sorted)
-                ContentList.Add(item);
-
-            // Update sort direction indicator
-            foreach (var col in dataGrid.Columns)
-                col.SortDirection = null;
-            e.Column.SortDirection = direction == ListSortDirection.Ascending ? DataGridSortDirection.Ascending : DataGridSortDirection.Descending;
-
-            // Prevent default sort
-            //e.Handled = true;
-        }
     }
 }
+
+
