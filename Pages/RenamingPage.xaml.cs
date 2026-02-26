@@ -523,7 +523,7 @@ namespace IntuneTools.Pages
                         await RenameEntraGroups(entraGroupIDs, prefix);
                     }
                 }
-                if (CustomContentList.Any(c => c.ContentType != null && (c.ContentType.StartsWith("App", StringComparison.OrdinalIgnoreCase) || c.ContentType.Equals("Application", StringComparison.OrdinalIgnoreCase))))
+                if (CustomContentList.Any(c => UserInterfaceHelper.IsApplicationContentType(c.ContentType)))
                 {
                     var applicationIDs = GetApplicationIDs();
                     if (applicationIDs.Count > 0)
@@ -563,7 +563,7 @@ namespace IntuneTools.Pages
         private List<string> GetApplicationIDs()
         {
             return CustomContentList
-                .Where(c => c.ContentType != null && (c.ContentType.StartsWith("App", StringComparison.OrdinalIgnoreCase) || c.ContentType.Equals("Application", StringComparison.OrdinalIgnoreCase)))
+                .Where(c => UserInterfaceHelper.IsApplicationContentType(c.ContentType))
                 .Select(c => c.ContentId ?? string.Empty)
                 .ToList();
         }
