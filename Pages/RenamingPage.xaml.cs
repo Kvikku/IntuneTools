@@ -36,14 +36,16 @@ namespace IntuneTools.Pages
     /// </summary>
     public sealed partial class RenamingPage : Page
     {
-        public class ContentInfo
-        {
-            public string? ContentName { get; set; }
-            public string? ContentPlatform { get; set; }
-            public string? ContentType { get; set; }
-            public string? ContentId { get; set; }
-            public string? ContentDescription { get; set; }
-        }
+        
+        // old class
+        //public class ContentInfo
+        //{
+        //    public string? ContentName { get; set; }
+        //    public string? ContentPlatform { get; set; }
+        //    public string? ContentType { get; set; }
+        //    public string? ContentId { get; set; }
+        //    public string? ContentDescription { get; set; }
+        //}
 
         // old list
         //public ObservableCollection<ContentInfo> ContentList { get; set; } = new ObservableCollection<ContentInfo>();
