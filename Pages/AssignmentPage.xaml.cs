@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.WinUI.UI.Controls;
+using CommunityToolkit.WinUI.UI.Controls;
 using IntuneTools.Graph.IntuneHelperClasses;
 using IntuneTools.Utilities;
 using Microsoft.UI.Xaml;
@@ -41,7 +41,7 @@ namespace IntuneTools.Pages
         public string? FilterName { get; set; }
     }
 
-    public sealed partial class AssignmentPage : Page
+    public sealed partial class AssignmentPage : BaseMultiTenantPage
     {
         #region Variables and Properties
         public static ObservableCollection<CustomContentInfo> AssignmentList { get; } = new();
@@ -98,92 +98,14 @@ namespace IntuneTools.Pages
             // Removed direct logging call here to avoid NullReference due to control construction order.
         }
 
-        protected override void OnNavigatedTo(NavigationEventArgs e)
+        protected override string[] GetManagedControlNames() => new[]
         {
-            base.OnNavigatedTo(e);
-
-            if (string.Equals(Variables.sourceTenantName, string.Empty))
-            {
-                TenantInfoBar.Title = "Authentication Required";
-                TenantInfoBar.Message = "You must authenticate with a tenant before using assignment features.";
-                TenantInfoBar.Severity = InfoBarSeverity.Warning;
-                TenantInfoBar.IsOpen = true;
-
-                // Disable main controls
-                ContentSearchBox.IsEnabled = false;
-                ListAllButton.IsEnabled = false;
-                RemoveSelectedButton.IsEnabled = false;
-                RemoveAllButton.IsEnabled = false;
-                AssignButton.IsEnabled = false;
-                GroupSearchTextBox.IsEnabled = false;
-                GroupSearchButton.IsEnabled = false;
-                GroupListAllButton.IsEnabled = false;
-                AppDataGrid.IsEnabled = false;
-                GroupDataGrid.IsEnabled = false;
-                FilterToggle.IsEnabled = false;
-                FilterSelectionComboBox.IsEnabled = false;
-                FilterModeToggle.IsEnabled = false;
-                //OptionsPanel.IsEnabled = false;
-                OptionsAllCheckBox.IsEnabled = false;
-                ClearLogButton.IsEnabled = false;
-                OptionsAllCheckBox.IsEnabled = false;
-                ContentTypesButton.IsEnabled = false;
-                IntentToggle.IsEnabled = false;
-            }
-            else
-            {
-                TenantInfoBar.Title = "Authenticated Tenant";
-                TenantInfoBar.Message = Variables.sourceTenantName;
-                TenantInfoBar.Severity = InfoBarSeverity.Informational;
-                TenantInfoBar.IsOpen = true;
-
-                // Enable main controls
-                ContentSearchBox.IsEnabled = true;
-                ListAllButton.IsEnabled = true;
-                RemoveSelectedButton.IsEnabled = true;
-                RemoveAllButton.IsEnabled = true;
-                AssignButton.IsEnabled = true;
-                GroupSearchTextBox.IsEnabled = true;
-                GroupSearchButton.IsEnabled = true;
-                GroupListAllButton.IsEnabled = true;
-                AppDataGrid.IsEnabled = true;
-                GroupDataGrid.IsEnabled = true;
-                FilterToggle.IsEnabled = true;
-                FilterSelectionComboBox.IsEnabled = true;
-                FilterModeToggle.IsEnabled = true;
-                //OptionsPanel.IsEnabled = true;
-                OptionsAllCheckBox.IsEnabled = true;
-                ClearLogButton.IsEnabled = true;
-                OptionsAllCheckBox.IsEnabled = true;
-                ContentTypesButton.IsEnabled = true;
-                IntentToggle.IsEnabled = true;
-            }
-        }
-
-        #region Loading Overlay
-        private void ShowLoading(string message = "Loading data from Microsoft Graph...")
-        {
-            LoadingStatusText.Text = message;
-            LoadingOverlay.Visibility = Visibility.Visible;
-            LoadingProgressRing.IsActive = true;
-
-            ContentSearchBox.IsEnabled = false;
-            ListAllButton.IsEnabled = false;
-            RemoveSelectedButton.IsEnabled = false;
-            AssignButton.IsEnabled = false;
-        }
-
-        private void HideLoading()
-        {
-            LoadingOverlay.Visibility = Visibility.Collapsed;
-            LoadingProgressRing.IsActive = false;
-
-            ContentSearchBox.IsEnabled = true;
-            ListAllButton.IsEnabled = true;
-            RemoveSelectedButton.IsEnabled = true;
-            AssignButton.IsEnabled = true;
-        }
-        #endregion
+            "ContentSearchBox", "ListAllButton", "RemoveSelectedButton", "RemoveAllButton",
+            "AssignButton", "GroupSearchTextBox", "GroupSearchButton", "GroupListAllButton",
+            "AppDataGrid", "GroupDataGrid", "FilterToggle", "FilterSelectionComboBox",
+            "FilterModeToggle", "OptionsAllCheckBox", "ClearLogButton", "ContentTypesButton",
+            "IntentToggle"
+        };
 
         #region Orchestrators
 
@@ -208,8 +130,8 @@ namespace IntuneTools.Pages
             var selectedGroups = GroupDataGrid.SelectedItems?.Cast<AssignmentGroupInfo>().ToList();
             if (selectedGroups == null || selectedGroups.Count == 0)
             {
-                AppendToDetailsRichTextBlock("No groups selected for assignment.");
-                AppendToDetailsRichTextBlock("Please select at least one group and try again.");
+                AppendToLog("No groups selected for assignment.");
+                AppendToLog("Please select at least one group and try again.");
                 return;
             }
 
@@ -222,7 +144,7 @@ namespace IntuneTools.Pages
             }
 
             // Log the filter
-            AppendToDetailsRichTextBlock("Filter: " + _selectedFilterName);
+            AppendToLog("Filter: " + _selectedFilterName);
 
 
             // Check if FilterToggle is enabled, otherwise set filter type to None
@@ -255,7 +177,7 @@ namespace IntuneTools.Pages
             var result = await confirmDialog.ShowAsync();
             if (result != ContentDialogResult.Primary)
             {
-                AppendToDetailsRichTextBlock("Assignment cancelled by user.");
+                AppendToLog("Assignment cancelled by user.");
                 return;
             }
 
@@ -263,7 +185,7 @@ namespace IntuneTools.Pages
 
             if (deploymentOptions == false)
             {
-                AppendToDetailsRichTextBlock("Assignment cancelled by user during deployment options selection.");
+                AppendToLog("Assignment cancelled by user during deployment options selection.");
                 return;
             }
 
@@ -271,7 +193,7 @@ namespace IntuneTools.Pages
             ShowLoading("Assigning content to groups...");
             try
             {
-                AppendToDetailsRichTextBlock($"Starting assignment of {content.Count} item(s) to {selectedGroups.Count} group(s)...");
+                AppendToLog($"Starting assignment of {content.Count} item(s) to {selectedGroups.Count} group(s)...");
 
                 int successCount = 0;
                 int failureCount = 0;
@@ -341,21 +263,21 @@ namespace IntuneTools.Pages
                     {
                         try
                         {
-                            AppendToDetailsRichTextBlock(
+                            AppendToLog(
                                 $"Assigning '{item.Value.ContentName}' to group '{group.GroupName}'.");
                             successCount++;
                         }
                         catch (Exception ex)
                         {
-                            AppendToDetailsRichTextBlock(
-                                $"❌ Failed to assign '{item.Value.ContentName}' (ID: {item.Key}) to '{group.GroupName}': {ex.Message}");
+                            AppendToLog(
+                                $"? Failed to assign '{item.Value.ContentName}' (ID: {item.Key}) to '{group.GroupName}': {ex.Message}");
                             failureCount++;
                         }
                     }
                 }
 
 
-                AppendToDetailsRichTextBlock($"Assignment completed: {successCount} successful, {failureCount} failed.");
+                AppendToLog($"Assignment completed: {successCount} successful, {failureCount} failed.");
 
                 // Show completion dialog
                 await ShowValidationDialogAsync("Assignment Complete",
@@ -363,7 +285,7 @@ namespace IntuneTools.Pages
             }
             catch (Exception ex)
             {
-                AppendToDetailsRichTextBlock($"❌ Assignment operation failed: {ex.Message}");
+                AppendToLog($"? Assignment operation failed: {ex.Message}");
                 await ShowValidationDialogAsync("Assignment Error",
                     $"An error occurred during assignment:\n{ex.Message}");
             }
@@ -383,12 +305,12 @@ namespace IntuneTools.Pages
             var selectedContent = GetCheckedOptionNames();
             if (selectedContent.Count == 0)
             {
-                AppendToDetailsRichTextBlock("No content types selected for import.");
-                AppendToDetailsRichTextBlock("Please select at least one content type and try again.");
+                AppendToLog("No content types selected for import.");
+                AppendToLog("Please select at least one content type and try again.");
                 return;
             }
 
-            AppendToDetailsRichTextBlock("Listing all content.");
+            AppendToLog("Listing all content.");
             ShowLoading("Loading assignment data...");
             try
             {
@@ -399,7 +321,7 @@ namespace IntuneTools.Pages
                         try { await loader(); }
                         catch (Exception ex)
                         {
-                            AppendToDetailsRichTextBlock($"Failed loading assignments for '{option}': {ex.Message}");
+                            AppendToLog($"Failed loading assignments for '{option}': {ex.Message}");
                         }
                     }
                 }
@@ -427,7 +349,7 @@ namespace IntuneTools.Pages
                 content[item.ContentId] = item;
             }
 
-            AppendToDetailsRichTextBlock($"Gathered {content.Count} items from DataGrid.");
+            AppendToLog($"Gathered {content.Count} items from DataGrid.");
             return content;
         }
 
@@ -682,17 +604,17 @@ namespace IntuneTools.Pages
                 if (Enum.TryParse(intent, out InstallIntent parsedIntent))
                 {
                     _selectedInstallIntent = parsedIntent;
-                    AppendToDetailsRichTextBlock($"Intent: {_selectedInstallIntent}");
+                    AppendToLog($"Intent: {_selectedInstallIntent}");
                 }
                 else
                 {
-                    AppendToDetailsRichTextBlock($"Warning: Could not parse assignment intent '{intent}'. Defaulting to 'Required'.");
+                    AppendToLog($"Warning: Could not parse assignment intent '{intent}'. Defaulting to 'Required'.");
                     _selectedInstallIntent = InstallIntent.Required;
                 }
             }
             else
             {
-                AppendToDetailsRichTextBlock("Warning: No assignment intent selected. Defaulting to 'Required'.");
+                AppendToLog("Warning: No assignment intent selected. Defaulting to 'Required'.");
                 _selectedInstallIntent = InstallIntent.Required;
             }
         }
@@ -780,7 +702,7 @@ namespace IntuneTools.Pages
                 {
                     AssignmentList.Add(item);
                 }
-                AppendToDetailsRichTextBlock("Search cleared. Displaying all items.");
+                AppendToLog("Search cleared. Displaying all items.");
             }
             else
             {
@@ -796,7 +718,7 @@ namespace IntuneTools.Pages
                 {
                     AssignmentList.Add(item);
                 }
-                AppendToDetailsRichTextBlock($"Search for '{query}' found {filtered.Count} item(s).");
+                AppendToLog($"Search for '{query}' found {filtered.Count} item(s).");
             }
         }
 
@@ -828,11 +750,11 @@ namespace IntuneTools.Pages
                     AssignmentList.Remove(item);
                     _allAssignments.Remove(item);
                 }
-                AppendToDetailsRichTextBlock($"Removed {selectedItems.Count} selected item(s).");
+                AppendToLog($"Removed {selectedItems.Count} selected item(s).");
             }
             else
             {
-                AppendToDetailsRichTextBlock("No items selected to remove.");
+                AppendToLog("No items selected to remove.");
             }
         }
 
@@ -840,7 +762,7 @@ namespace IntuneTools.Pages
         {
             if (AssignmentList.Count == 0)
             {
-                AppendToDetailsRichTextBlock("The list is already empty.");
+                AppendToLog("The list is already empty.");
                 return;
             }
 
@@ -860,11 +782,11 @@ namespace IntuneTools.Pages
                 var count = AssignmentList.Count;
                 AssignmentList.Clear();
                 _allAssignments.Clear();
-                AppendToDetailsRichTextBlock($"Removed all {count} items from the list.");
+                AppendToLog($"Removed all {count} items from the list.");
             }
             else
             {
-                AppendToDetailsRichTextBlock("Operation to remove all items was cancelled.");
+                AppendToLog("Operation to remove all items was cancelled.");
             }
         }
 
@@ -886,25 +808,6 @@ namespace IntuneTools.Pages
         private async void FilterCheckBoxClick(object sender, RoutedEventArgs e)
         {
 
-        }
-
-        private async void ClearLogButton_Click(object sender, RoutedEventArgs e)
-        {
-            var dialog = new ContentDialog
-            {
-                Title = "Clear Log Console?",
-                Content = "Are you sure you want to clear all log console text? This action cannot be undone.",
-                PrimaryButtonText = "Clear",
-                CloseButtonText = "Cancel",
-                DefaultButton = ContentDialogButton.Close,
-                XamlRoot = this.XamlRoot
-            };
-
-            var result = await dialog.ShowAsync().AsTask();
-            if (result == ContentDialogResult.Primary)
-            {
-                LogConsole.Blocks.Clear();
-            }
         }
 
         private async Task ShowValidationDialogAsync(string title, string message)
@@ -997,7 +900,7 @@ namespace IntuneTools.Pages
                     }
                     _selectedFilterMode = "Include";
                     IsFilterSelected = !string.IsNullOrWhiteSpace(SelectedFilterID);
-                    AppendToDetailsRichTextBlock("Assignment filter enabled.");
+                    AppendToLog("Assignment filter enabled.");
                 }
                 else
                 {
@@ -1014,7 +917,7 @@ namespace IntuneTools.Pages
                     SelectedFilterID = null;
                     IsFilterSelected = false;
                     deviceAndAppManagementAssignmentFilterType = DeviceAndAppManagementAssignmentFilterType.None;
-                    AppendToDetailsRichTextBlock("Assignment filter disabled.");
+                    AppendToLog("Assignment filter disabled.");
                 }
             }
         }
@@ -1026,7 +929,7 @@ namespace IntuneTools.Pages
             if (sender is ToggleSwitch ts)
             {
                 _selectedFilterMode = ts.IsOn ? "Include" : "Exclude";
-                AppendToDetailsRichTextBlock($"Filter mode set to '{_selectedFilterMode}'.");
+                AppendToLog($"Filter mode set to '{_selectedFilterMode}'.");
             }
         }
 
@@ -1036,7 +939,7 @@ namespace IntuneTools.Pages
             if (sender is ToggleSwitch ts)
             {
                 _selectedInstallIntent = ts.IsOn ? InstallIntent.Required : InstallIntent.Available;
-                AppendToDetailsRichTextBlock($"Assignment intent set to '{_selectedInstallIntent}'.");
+                AppendToLog($"Assignment intent set to '{_selectedInstallIntent}'.");
             }
         }
 
@@ -1047,7 +950,7 @@ namespace IntuneTools.Pages
         {
             _uiInitialized = true; // UI now safe for logging
             AutoCheckAllOptions();
-            AppendToDetailsRichTextBlock("Assignment page loaded.");
+            AppendToLog("Assignment page loaded.");
         }
 
         private void AutoCheckAllOptions()
@@ -1062,32 +965,6 @@ namespace IntuneTools.Pages
             _suppressSelectAllEvents = true;
             OptionsAllCheckBox.IsChecked = true;
             _suppressSelectAllEvents = false;
-        }
-
-        private void AppendToDetailsRichTextBlock(string text)
-        {
-            // Guard against null LogConsole (early calls) or not yet initialized UI
-            if (LogConsole == null || !_uiInitialized) return;
-
-            Paragraph paragraph;
-            if (LogConsole.Blocks.Count == 0)
-            {
-                paragraph = new Paragraph();
-                LogConsole.Blocks.Add(paragraph);
-            }
-            else
-            {
-                paragraph = LogConsole.Blocks.First() as Paragraph ?? new Paragraph();
-                if (!LogConsole.Blocks.Contains(paragraph))
-                    LogConsole.Blocks.Add(paragraph);
-            }
-            if (paragraph.Inlines.Count > 0)
-            {
-                paragraph.Inlines.Add(new LineBreak());
-            }
-            paragraph.Inlines.Add(new Run { Text = text });
-
-            ScrollLogToEnd();
         }
 
         public List<string> GetCheckedOptionNames()
@@ -1156,17 +1033,6 @@ namespace IntuneTools.Pages
             _suppressSelectAllEvents = false;
         }
 
-        private void ScrollLogToEnd()
-        {
-            // Use DispatcherQueue to ensure layout updates are processed
-            DispatcherQueue.TryEnqueue(() =>
-            {
-                LogConsole.UpdateLayout();
-                LogScrollViewer.UpdateLayout();
-                LogScrollViewer.ChangeView(null, LogScrollViewer.ScrollableHeight, null, true);
-            });
-        }
-
         private void AppDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
         {
             var dataGrid = sender as DataGrid;
@@ -1179,7 +1045,7 @@ namespace IntuneTools.Pages
             string sortProperty = binding?.Path?.Path;
             if (string.IsNullOrEmpty(sortProperty))
             {
-                AppendToDetailsRichTextBlock("Sorting error: Unable to determine property name from column binding.");
+                AppendToLog("Sorting error: Unable to determine property name from column binding.");
                 return;
             }
 
@@ -1187,7 +1053,7 @@ namespace IntuneTools.Pages
             var propInfo = typeof(CustomContentInfo).GetProperty(sortProperty);
             if (propInfo == null)
             {
-                AppendToDetailsRichTextBlock($"Sorting error: Property '{sortProperty}' not found on AssignmentInfo.");
+                AppendToLog($"Sorting error: Property '{sortProperty}' not found on AssignmentInfo.");
                 return;
             }
 
@@ -1214,7 +1080,7 @@ namespace IntuneTools.Pages
             }
             catch (Exception ex)
             {
-                AppendToDetailsRichTextBlock($"Sorting error: {ex.Message}");
+                AppendToLog($"Sorting error: {ex.Message}");
                 return;
             }
 
@@ -1281,11 +1147,11 @@ namespace IntuneTools.Pages
 
 
                     // Log the selected options
-                    AppendToDetailsRichTextBlock("Application Deployment Options Configured:");
-                    AppendToDetailsRichTextBlock($" • Intent: {_selectedInstallIntent}");
-                    AppendToDetailsRichTextBlock($" • Group Mode: {_selectedDeploymentMode}");
-                    AppendToDetailsRichTextBlock($" • Notifications: {_selectedNotificationSetting}");
-                    AppendToDetailsRichTextBlock($" • Delivery Opt: {_selectedDeliveryOptimizationPriority}");
+                    AppendToLog("Application Deployment Options Configured:");
+                    AppendToLog($" � Intent: {_selectedInstallIntent}");
+                    AppendToLog($" � Group Mode: {_selectedDeploymentMode}");
+                    AppendToLog($" � Notifications: {_selectedNotificationSetting}");
+                    AppendToLog($" � Delivery Opt: {_selectedDeliveryOptimizationPriority}");
 
                     return true;
                 }
@@ -1302,7 +1168,7 @@ namespace IntuneTools.Pages
             }
             catch (Exception ex)
             {
-                AppendToDetailsRichTextBlock($"Error showing app options dialog: {ex.Message}");
+                AppendToLog($"Error showing app options dialog: {ex.Message}");
                 return false;
             }
         }
@@ -1323,7 +1189,7 @@ namespace IntuneTools.Pages
             string sortProperty = binding?.Path?.Path;
             if (string.IsNullOrEmpty(sortProperty))
             {
-                AppendToDetailsRichTextBlock("Sorting error: Unable to determine property name from column binding.");
+                AppendToLog("Sorting error: Unable to determine property name from column binding.");
                 return;
             }
 
@@ -1331,7 +1197,7 @@ namespace IntuneTools.Pages
             var propInfo = typeof(AssignmentGroupInfo).GetProperty(sortProperty);
             if (propInfo == null)
             {
-                AppendToDetailsRichTextBlock($"Sorting error: Property '{sortProperty}' not found on AssignmentGroupInfo.");
+                AppendToLog($"Sorting error: Property '{sortProperty}' not found on AssignmentGroupInfo.");
                 return;
             }
 
@@ -1358,7 +1224,7 @@ namespace IntuneTools.Pages
             }
             catch (Exception ex)
             {
-                AppendToDetailsRichTextBlock($"Sorting error: {ex.Message}");
+                AppendToLog($"Sorting error: {ex.Message}");
                 return;
             }
 

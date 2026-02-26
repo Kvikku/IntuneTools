@@ -1,4 +1,4 @@
-<Page
+<utilities:BaseMultiTenantPage
     x:Class="IntuneTools.Pages.AssignmentPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -6,6 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:controls="using:CommunityToolkit.WinUI.UI.Controls"
+    xmlns:utilities="using:IntuneTools.Utilities"
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
@@ -157,10 +158,10 @@
                                    CanUserReorderColumns="False"
                                    Sorting="AppDataGrid_Sorting">
                     <controls:DataGrid.Columns>
-                        <controls:DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*"/>
-                        <controls:DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="*"/>
-                        <controls:DataGridTextColumn Header="Platform" Binding="{Binding Platform}" Width="*"/>
-                        <controls:DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="*"/>
+                        <controls:DataGridTextColumn Header="Name" Binding="{Binding ContentName}" Width="*"/>
+                        <controls:DataGridTextColumn Header="Type" Binding="{Binding ContentType}" Width="*"/>
+                        <controls:DataGridTextColumn Header="Platform" Binding="{Binding ContentPlatform}" Width="*"/>
+                        <controls:DataGridTextColumn Header="ID" Binding="{Binding ContentId}" Width="*"/>
                     </controls:DataGrid.Columns>
                 </controls:DataGrid>
 
@@ -394,4 +395,4 @@
             </Grid>
         </ContentDialog>
     </Grid>
-</Page>
+</utilities:BaseMultiTenantPage>
