@@ -52,6 +52,12 @@ namespace IntuneTools.Pages
         private bool _suppressOptionEvents = false;
         private bool _suppressSelectAllEvents = false;
 
+        // Progress tracking for import operations
+        private int _importTotal;
+        private int _importCurrent;
+        private int _importSuccessCount;
+        private int _importErrorCount;
+
         public ImportPage()
         {
             this.InitializeComponent();
@@ -1073,7 +1079,29 @@ namespace IntuneTools.Pages
                 return;
             }
 
+            // Initialize progress tracking
+            _importCurrent = 0;
+            _importSuccessCount = 0;
+            _importErrorCount = 0;
 
+            // Count total content types to import
+            _importTotal = 0;
+            if (HasContentType(ContentTypes.EntraGroup)) _importTotal++;
+            if (HasContentType(ContentTypes.SettingsCatalog)) _importTotal++;
+            if (HasContentType(ContentTypes.DeviceCompliancePolicy)) _importTotal++;
+            if (HasContentType(ContentTypes.DeviceConfigurationPolicy)) _importTotal++;
+            if (HasContentType(ContentTypes.AppleBYODEnrollmentProfile)) _importTotal++;
+            if (HasContentType(ContentTypes.AssignmentFilter)) _importTotal++;
+            if (HasContentType(ContentTypes.PowerShellScript)) _importTotal++;
+            if (HasContentType(ContentTypes.ProactiveRemediation)) _importTotal++;
+            if (HasContentType(ContentTypes.MacOSShellScript)) _importTotal++;
+            if (HasContentType(ContentTypes.WindowsAutoPilotProfile)) _importTotal++;
+            if (HasContentType(ContentTypes.WindowsDriverUpdate)) _importTotal++;
+            if (HasContentType(ContentTypes.WindowsFeatureUpdate)) _importTotal++;
+            if (HasContentType(ContentTypes.WindowsQualityUpdatePolicy)) _importTotal++;
+            if (HasContentType(ContentTypes.WindowsQualityUpdateProfile)) _importTotal++;
+
+            ShowOperationProgress($"Starting import... (0/{_importTotal} content types)", 0, _importTotal);
 
             // Log the start of the import process
             LogToFunctionFile(appFunction.Main, "Starting import process...", LogLevels.Info);
@@ -1108,129 +1136,307 @@ namespace IntuneTools.Pages
 
             if (HasContentType(ContentTypes.EntraGroup))
             {
-                // Import Entra Groups
-                AppendToLog("Importing Entra Groups...\n");
-                LogToFunctionFile(appFunction.Main, "Importing Entra Groups...", LogLevels.Info);
-                var groups = GetContentIdsByType(ContentTypes.EntraGroup);
-                await ImportMultipleGroups(sourceGraphServiceClient, destinationGraphServiceClient, groups);
-                AppendToLog("Entra Groups imported successfully.\n");
+                _importCurrent++;
+                ShowOperationProgress($"Importing Entra Groups... ({_importCurrent}/{_importTotal})", _importCurrent, _importTotal);
+                try
+                {
+                    // Import Entra Groups
+                    AppendToLog("Importing Entra Groups...\n");
+                    LogToFunctionFile(appFunction.Main, "Importing Entra Groups...", LogLevels.Info);
+                    var groups = GetContentIdsByType(ContentTypes.EntraGroup);
+                    await ImportMultipleGroups(sourceGraphServiceClient, destinationGraphServiceClient, groups);
+                    AppendToLog("Entra Groups imported successfully.\n");
+                    _importSuccessCount++;
+                }
+                catch (Exception ex)
+                {
+                    AppendToLog($"Error importing Entra Groups: {ex.Message}\n");
+                    LogToFunctionFile(appFunction.Main, $"Error importing Entra Groups: {ex.Message}", LogLevels.Error);
+                    _importErrorCount++;
+                }
             }
             if (HasContentType(ContentTypes.SettingsCatalog))
             {
-                // Import Settings Catalog policies
-                AppendToLog("Importing Settings Catalog policies...\n");
-                LogToFunctionFile(appFunction.Main, "Importing Settings Catalog policies...", LogLevels.Info);
-                var policies = GetContentIdsByType(ContentTypes.SettingsCatalog);
-                await ImportMultipleSettingsCatalog(sourceGraphServiceClient, destinationGraphServiceClient, policies, IsGroupSelected, IsFilterSelected, groupIDs);
-                AppendToLog("Settings Catalog policies imported successfully.\n");
+                _importCurrent++;
+                ShowOperationProgress($"Importing Settings Catalog... ({_importCurrent}/{_importTotal})", _importCurrent, _importTotal);
+                try
+                {
+                    // Import Settings Catalog policies
+                    AppendToLog("Importing Settings Catalog policies...\n");
+                    LogToFunctionFile(appFunction.Main, "Importing Settings Catalog policies...", LogLevels.Info);
+                    var policies = GetContentIdsByType(ContentTypes.SettingsCatalog);
+                    await ImportMultipleSettingsCatalog(sourceGraphServiceClient, destinationGraphServiceClient, policies, IsGroupSelected, IsFilterSelected, groupIDs);
+                    AppendToLog("Settings Catalog policies imported successfully.\n");
+                    _importSuccessCount++;
+                }
+                catch (Exception ex)
+                {
+                    AppendToLog($"Error importing Settings Catalog: {ex.Message}\n");
+                    LogToFunctionFile(appFunction.Main, $"Error importing Settings Catalog: {ex.Message}", LogLevels.Error);
+                    _importErrorCount++;
+                }
             }
             if (HasContentType(ContentTypes.DeviceCompliancePolicy))
             {
-                // Import Device Compliance policies
-                AppendToLog("Importing Device Compliance policies...\n");
-                LogToFunctionFile(appFunction.Main, "Importing Device Compliance policies...", LogLevels.Info);
-                var policies = GetContentIdsByType(ContentTypes.DeviceCompliancePolicy);
-                await ImportMultipleDeviceCompliancePolicies(sourceGraphServiceClient, destinationGraphServiceClient, policies, IsGroupSelected, IsFilterSelected, groupIDs);
-                AppendToLog("Device Compliance policies imported successfully.\n");
+                _importCurrent++;
+                ShowOperationProgress($"Importing Device Compliance Policies... ({_importCurrent}/{_importTotal})", _importCurrent, _importTotal);
+                try
+                {
+                    // Import Device Compliance policies
+                    AppendToLog("Importing Device Compliance policies...\n");
+                    LogToFunctionFile(appFunction.Main, "Importing Device Compliance policies...", LogLevels.Info);
+                    var policies = GetContentIdsByType(ContentTypes.DeviceCompliancePolicy);
+                    await ImportMultipleDeviceCompliancePolicies(sourceGraphServiceClient, destinationGraphServiceClient, policies, IsGroupSelected, IsFilterSelected, groupIDs);
+                    AppendToLog("Device Compliance policies imported successfully.\n");
+                    _importSuccessCount++;
+                }
+                catch (Exception ex)
+                {
+                    AppendToLog($"Error importing Device Compliance Policies: {ex.Message}\n");
+                    LogToFunctionFile(appFunction.Main, $"Error importing Device Compliance Policies: {ex.Message}", LogLevels.Error);
+                    _importErrorCount++;
+                }
             }
             if (HasContentType(ContentTypes.DeviceConfigurationPolicy))
             {
-                // Import Device Configuration policies
-                AppendToLog("Importing Device Configuration policies...\n");
-                LogToFunctionFile(appFunction.Main, "Importing Device Configuration policies...", LogLevels.Info);
-                var policies = GetContentIdsByType(ContentTypes.DeviceConfigurationPolicy);
-                await ImportMultipleDeviceConfigurations(sourceGraphServiceClient, destinationGraphServiceClient, policies, IsGroupSelected, IsFilterSelected, groupIDs);
-                AppendToLog("Device Configuration policies imported successfully.\n");
+                _importCurrent++;
+                ShowOperationProgress($"Importing Device Configuration Policies... ({_importCurrent}/{_importTotal})", _importCurrent, _importTotal);
+                try
+                {
+                    // Import Device Configuration policies
+                    AppendToLog("Importing Device Configuration policies...\n");
+                    LogToFunctionFile(appFunction.Main, "Importing Device Configuration policies...", LogLevels.Info);
+                    var policies = GetContentIdsByType(ContentTypes.DeviceConfigurationPolicy);
+                    await ImportMultipleDeviceConfigurations(sourceGraphServiceClient, destinationGraphServiceClient, policies, IsGroupSelected, IsFilterSelected, groupIDs);
+                    AppendToLog("Device Configuration policies imported successfully.\n");
+                    _importSuccessCount++;
+                }
+                catch (Exception ex)
+                {
+                    AppendToLog($"Error importing Device Configuration Policies: {ex.Message}\n");
+                    LogToFunctionFile(appFunction.Main, $"Error importing Device Configuration Policies: {ex.Message}", LogLevels.Error);
+                    _importErrorCount++;
+                }
             }
             if (HasContentType(ContentTypes.AppleBYODEnrollmentProfile))
             {
-                // Import Apple BYOD Enrollment Profiles
-                AppendToLog("Importing Apple BYOD Enrollment Profiles...\n");
-                LogToFunctionFile(appFunction.Main, "Importing Apple BYOD Enrollment Profiles...", LogLevels.Info);
-                var profiles = GetContentIdsByType(ContentTypes.AppleBYODEnrollmentProfile);
-                await ImportMultipleAppleBYODEnrollmentProfiles(sourceGraphServiceClient, destinationGraphServiceClient, profiles, IsGroupSelected, IsFilterSelected, groupIDs);
-                AppendToLog("Apple BYOD Enrollment Profiles imported successfully.\n");
+                _importCurrent++;
+                ShowOperationProgress($"Importing Apple BYOD Enrollment Profiles... ({_importCurrent}/{_importTotal})", _importCurrent, _importTotal);
+                try
+                {
+                    // Import Apple BYOD Enrollment Profiles
+                    AppendToLog("Importing Apple BYOD Enrollment Profiles...\n");
+                    LogToFunctionFile(appFunction.Main, "Importing Apple BYOD Enrollment Profiles...", LogLevels.Info);
+                    var profiles = GetContentIdsByType(ContentTypes.AppleBYODEnrollmentProfile);
+                    await ImportMultipleAppleBYODEnrollmentProfiles(sourceGraphServiceClient, destinationGraphServiceClient, profiles, IsGroupSelected, IsFilterSelected, groupIDs);
+                    AppendToLog("Apple BYOD Enrollment Profiles imported successfully.\n");
+                    _importSuccessCount++;
+                }
+                catch (Exception ex)
+                {
+                    AppendToLog($"Error importing Apple BYOD Enrollment Profiles: {ex.Message}\n");
+                    LogToFunctionFile(appFunction.Main, $"Error importing Apple BYOD Enrollment Profiles: {ex.Message}", LogLevels.Error);
+                    _importErrorCount++;
+                }
             }
             if (HasContentType(ContentTypes.AssignmentFilter))
             {
-                // Import Assignment Filters
-                AppendToLog("Importing Assignment Filters...\n");
-                LogToFunctionFile(appFunction.Main, "Importing Assignment Filters...", LogLevels.Info);
-                var filters = GetContentIdsByType(ContentTypes.AssignmentFilter);
-                await ImportMultipleAssignmentFilters(sourceGraphServiceClient, destinationGraphServiceClient, filters);
-                AppendToLog("Assignment Filters imported successfully.\n");
+                _importCurrent++;
+                ShowOperationProgress($"Importing Assignment Filters... ({_importCurrent}/{_importTotal})", _importCurrent, _importTotal);
+                try
+                {
+                    // Import Assignment Filters
+                    AppendToLog("Importing Assignment Filters...\n");
+                    LogToFunctionFile(appFunction.Main, "Importing Assignment Filters...", LogLevels.Info);
+                    var filters = GetContentIdsByType(ContentTypes.AssignmentFilter);
+                    await ImportMultipleAssignmentFilters(sourceGraphServiceClient, destinationGraphServiceClient, filters);
+                    AppendToLog("Assignment Filters imported successfully.\n");
+                    _importSuccessCount++;
+                }
+                catch (Exception ex)
+                {
+                    AppendToLog($"Error importing Assignment Filters: {ex.Message}\n");
+                    LogToFunctionFile(appFunction.Main, $"Error importing Assignment Filters: {ex.Message}", LogLevels.Error);
+                    _importErrorCount++;
+                }
             }
             if (HasContentType(ContentTypes.PowerShellScript))
             {
-                // Import PowerShell Scripts
-                AppendToLog("Importing PowerShell Scripts...\n");
-                LogToFunctionFile(appFunction.Main, "Importing PowerShell Scripts...", LogLevels.Info);
-                var scripts = GetContentIdsByType(ContentTypes.PowerShellScript);
-                await ImportMultiplePowerShellScripts(sourceGraphServiceClient, destinationGraphServiceClient, scripts, IsGroupSelected, IsFilterSelected, groupIDs);
-                AppendToLog("PowerShell Scripts imported successfully.\n");
+                _importCurrent++;
+                ShowOperationProgress($"Importing PowerShell Scripts... ({_importCurrent}/{_importTotal})", _importCurrent, _importTotal);
+                try
+                {
+                    // Import PowerShell Scripts
+                    AppendToLog("Importing PowerShell Scripts...\n");
+                    LogToFunctionFile(appFunction.Main, "Importing PowerShell Scripts...", LogLevels.Info);
+                    var scripts = GetContentIdsByType(ContentTypes.PowerShellScript);
+                    await ImportMultiplePowerShellScripts(sourceGraphServiceClient, destinationGraphServiceClient, scripts, IsGroupSelected, IsFilterSelected, groupIDs);
+                    AppendToLog("PowerShell Scripts imported successfully.\n");
+                    _importSuccessCount++;
+                }
+                catch (Exception ex)
+                {
+                    AppendToLog($"Error importing PowerShell Scripts: {ex.Message}\n");
+                    LogToFunctionFile(appFunction.Main, $"Error importing PowerShell Scripts: {ex.Message}", LogLevels.Error);
+                    _importErrorCount++;
+                }
             }
             if (HasContentType(ContentTypes.ProactiveRemediation))
             {
-                // Import Proactive Remediations
-                AppendToLog("Importing Proactive Remediations...\n");
-                LogToFunctionFile(appFunction.Main, "Importing Proactive Remediations...", LogLevels.Info);
-                var scripts = GetContentIdsByType(ContentTypes.ProactiveRemediation);
-                await ImportMultipleProactiveRemediations(sourceGraphServiceClient, destinationGraphServiceClient, scripts, IsGroupSelected, IsFilterSelected, groupIDs);
-                AppendToLog("Proactive Remediations imported successfully.\n");
+                _importCurrent++;
+                ShowOperationProgress($"Importing Proactive Remediations... ({_importCurrent}/{_importTotal})", _importCurrent, _importTotal);
+                try
+                {
+                    // Import Proactive Remediations
+                    AppendToLog("Importing Proactive Remediations...\n");
+                    LogToFunctionFile(appFunction.Main, "Importing Proactive Remediations...", LogLevels.Info);
+                    var scripts = GetContentIdsByType(ContentTypes.ProactiveRemediation);
+                    await ImportMultipleProactiveRemediations(sourceGraphServiceClient, destinationGraphServiceClient, scripts, IsGroupSelected, IsFilterSelected, groupIDs);
+                    AppendToLog("Proactive Remediations imported successfully.\n");
+                    _importSuccessCount++;
+                }
+                catch (Exception ex)
+                {
+                    AppendToLog($"Error importing Proactive Remediations: {ex.Message}\n");
+                    LogToFunctionFile(appFunction.Main, $"Error importing Proactive Remediations: {ex.Message}", LogLevels.Error);
+                    _importErrorCount++;
+                }
             }
             if (HasContentType(ContentTypes.MacOSShellScript))
             {
-                // Import macOS Shell Scripts
-                AppendToLog("Importing macOS Shell Scripts...\n");
-                LogToFunctionFile(appFunction.Main, "Importing macOS Shell Scripts...", LogLevels.Info);
-                var scripts = GetContentIdsByType(ContentTypes.MacOSShellScript);
-                await ImportMultiplemacOSShellScripts(sourceGraphServiceClient, destinationGraphServiceClient, scripts, IsGroupSelected, IsFilterSelected, groupIDs);
-                AppendToLog("macOS Shell Scripts imported successfully.\n");
+                _importCurrent++;
+                ShowOperationProgress($"Importing macOS Shell Scripts... ({_importCurrent}/{_importTotal})", _importCurrent, _importTotal);
+                try
+                {
+                    // Import macOS Shell Scripts
+                    AppendToLog("Importing macOS Shell Scripts...\n");
+                    LogToFunctionFile(appFunction.Main, "Importing macOS Shell Scripts...", LogLevels.Info);
+                    var scripts = GetContentIdsByType(ContentTypes.MacOSShellScript);
+                    await ImportMultiplemacOSShellScripts(sourceGraphServiceClient, destinationGraphServiceClient, scripts, IsGroupSelected, IsFilterSelected, groupIDs);
+                    AppendToLog("macOS Shell Scripts imported successfully.\n");
+                    _importSuccessCount++;
+                }
+                catch (Exception ex)
+                {
+                    AppendToLog($"Error importing macOS Shell Scripts: {ex.Message}\n");
+                    LogToFunctionFile(appFunction.Main, $"Error importing macOS Shell Scripts: {ex.Message}", LogLevels.Error);
+                    _importErrorCount++;
+                }
             }
             if (HasContentType(ContentTypes.WindowsAutoPilotProfile))
             {
-                // Import Windows AutoPilot Profiles
-                AppendToLog("Importing Windows AutoPilot Profiles...\n");
-                LogToFunctionFile(appFunction.Main, "Importing Windows AutoPilot Profiles...", LogLevels.Info);
-                var profiles = GetContentIdsByType(ContentTypes.WindowsAutoPilotProfile);
-                await ImportMultipleWindowsAutoPilotProfiles(sourceGraphServiceClient, destinationGraphServiceClient, profiles, IsGroupSelected, IsFilterSelected, groupIDs);
-                AppendToLog("Windows AutoPilot Profiles imported successfully.\n");
+                _importCurrent++;
+                ShowOperationProgress($"Importing Windows AutoPilot Profiles... ({_importCurrent}/{_importTotal})", _importCurrent, _importTotal);
+                try
+                {
+                    // Import Windows AutoPilot Profiles
+                    AppendToLog("Importing Windows AutoPilot Profiles...\n");
+                    LogToFunctionFile(appFunction.Main, "Importing Windows AutoPilot Profiles...", LogLevels.Info);
+                    var profiles = GetContentIdsByType(ContentTypes.WindowsAutoPilotProfile);
+                    await ImportMultipleWindowsAutoPilotProfiles(sourceGraphServiceClient, destinationGraphServiceClient, profiles, IsGroupSelected, IsFilterSelected, groupIDs);
+                    AppendToLog("Windows AutoPilot Profiles imported successfully.\n");
+                    _importSuccessCount++;
+                }
+                catch (Exception ex)
+                {
+                    AppendToLog($"Error importing Windows AutoPilot Profiles: {ex.Message}\n");
+                    LogToFunctionFile(appFunction.Main, $"Error importing Windows AutoPilot Profiles: {ex.Message}", LogLevels.Error);
+                    _importErrorCount++;
+                }
             }
             if (HasContentType(ContentTypes.WindowsDriverUpdate))
             {
-                // Import Windows Driver Updates
-                AppendToLog("Importing Windows Driver Updates...\n");
-                LogToFunctionFile(appFunction.Main, "Importing Windows Driver Updates...", LogLevels.Info);
-                var updates = GetContentIdsByType(ContentTypes.WindowsDriverUpdate);
-                await ImportMultipleDriverProfiles(sourceGraphServiceClient, destinationGraphServiceClient, updates, IsGroupSelected, IsFilterSelected, groupIDs);
-                AppendToLog("Windows Driver Updates imported successfully.\n");
+                _importCurrent++;
+                ShowOperationProgress($"Importing Windows Driver Updates... ({_importCurrent}/{_importTotal})", _importCurrent, _importTotal);
+                try
+                {
+                    // Import Windows Driver Updates
+                    AppendToLog("Importing Windows Driver Updates...\n");
+                    LogToFunctionFile(appFunction.Main, "Importing Windows Driver Updates...", LogLevels.Info);
+                    var updates = GetContentIdsByType(ContentTypes.WindowsDriverUpdate);
+                    await ImportMultipleDriverProfiles(sourceGraphServiceClient, destinationGraphServiceClient, updates, IsGroupSelected, IsFilterSelected, groupIDs);
+                    AppendToLog("Windows Driver Updates imported successfully.\n");
+                    _importSuccessCount++;
+                }
+                catch (Exception ex)
+                {
+                    AppendToLog($"Error importing Windows Driver Updates: {ex.Message}\n");
+                    LogToFunctionFile(appFunction.Main, $"Error importing Windows Driver Updates: {ex.Message}", LogLevels.Error);
+                    _importErrorCount++;
+                }
             }
             if (HasContentType(ContentTypes.WindowsFeatureUpdate))
             {
-                // Import Windows Feature Updates
-                AppendToLog("Importing Windows Feature Updates...\n");
-                LogToFunctionFile(appFunction.Main, "Importing Windows Feature Updates...", LogLevels.Info);
-                var updates = GetContentIdsByType(ContentTypes.WindowsFeatureUpdate);
-                await ImportMultipleWindowsFeatureUpdateProfiles(sourceGraphServiceClient, destinationGraphServiceClient, updates, IsGroupSelected, IsFilterSelected, groupIDs);
-                AppendToLog("Windows Feature Updates imported successfully.\n");
+                _importCurrent++;
+                ShowOperationProgress($"Importing Windows Feature Updates... ({_importCurrent}/{_importTotal})", _importCurrent, _importTotal);
+                try
+                {
+                    // Import Windows Feature Updates
+                    AppendToLog("Importing Windows Feature Updates...\n");
+                    LogToFunctionFile(appFunction.Main, "Importing Windows Feature Updates...", LogLevels.Info);
+                    var updates = GetContentIdsByType(ContentTypes.WindowsFeatureUpdate);
+                    await ImportMultipleWindowsFeatureUpdateProfiles(sourceGraphServiceClient, destinationGraphServiceClient, updates, IsGroupSelected, IsFilterSelected, groupIDs);
+                    AppendToLog("Windows Feature Updates imported successfully.\n");
+                    _importSuccessCount++;
+                }
+                catch (Exception ex)
+                {
+                    AppendToLog($"Error importing Windows Feature Updates: {ex.Message}\n");
+                    LogToFunctionFile(appFunction.Main, $"Error importing Windows Feature Updates: {ex.Message}", LogLevels.Error);
+                    _importErrorCount++;
+                }
             }
             if (HasContentType(ContentTypes.WindowsQualityUpdatePolicy))
             {
-                // Import Windows Quality Update Policies
-                AppendToLog("Importing Windows Quality Update Policies...\n");
-                LogToFunctionFile(appFunction.Main, "Importing Windows Quality Update Policies...", LogLevels.Info);
-                var policies = GetContentIdsByType(ContentTypes.WindowsQualityUpdatePolicy);
-                await ImportMultipleWindowsQualityUpdatePolicies(sourceGraphServiceClient, destinationGraphServiceClient, policies, IsGroupSelected, IsFilterSelected, groupIDs);
-                AppendToLog("Windows Quality Update Policies imported successfully.\n");
+                _importCurrent++;
+                ShowOperationProgress($"Importing Windows Quality Update Policies... ({_importCurrent}/{_importTotal})", _importCurrent, _importTotal);
+                try
+                {
+                    // Import Windows Quality Update Policies
+                    AppendToLog("Importing Windows Quality Update Policies...\n");
+                    LogToFunctionFile(appFunction.Main, "Importing Windows Quality Update Policies...", LogLevels.Info);
+                    var policies = GetContentIdsByType(ContentTypes.WindowsQualityUpdatePolicy);
+                    await ImportMultipleWindowsQualityUpdatePolicies(sourceGraphServiceClient, destinationGraphServiceClient, policies, IsGroupSelected, IsFilterSelected, groupIDs);
+                    AppendToLog("Windows Quality Update Policies imported successfully.\n");
+                    _importSuccessCount++;
+                }
+                catch (Exception ex)
+                {
+                    AppendToLog($"Error importing Windows Quality Update Policies: {ex.Message}\n");
+                    LogToFunctionFile(appFunction.Main, $"Error importing Windows Quality Update Policies: {ex.Message}", LogLevels.Error);
+                    _importErrorCount++;
+                }
             }
             if (HasContentType(ContentTypes.WindowsQualityUpdateProfile))
             {
-                // Import Windows Quality Update Profiles
-                AppendToLog("Importing Windows Quality Update Profiles...\n");
-                LogToFunctionFile(appFunction.Main, "Importing Windows Quality Update Profiles...", LogLevels.Info);
-                var profiles = GetContentIdsByType(ContentTypes.WindowsQualityUpdateProfile);
-                await ImportMultipleWindowsQualityUpdateProfiles(sourceGraphServiceClient, destinationGraphServiceClient, profiles, IsGroupSelected, IsFilterSelected, groupIDs);
-                AppendToLog("Windows Quality Update Profiles imported successfully.\n");
+                _importCurrent++;
+                ShowOperationProgress($"Importing Windows Quality Update Profiles... ({_importCurrent}/{_importTotal})", _importCurrent, _importTotal);
+                try
+                {
+                    // Import Windows Quality Update Profiles
+                    AppendToLog("Importing Windows Quality Update Profiles...\n");
+                    LogToFunctionFile(appFunction.Main, "Importing Windows Quality Update Profiles...", LogLevels.Info);
+                    var profiles = GetContentIdsByType(ContentTypes.WindowsQualityUpdateProfile);
+                    await ImportMultipleWindowsQualityUpdateProfiles(sourceGraphServiceClient, destinationGraphServiceClient, profiles, IsGroupSelected, IsFilterSelected, groupIDs);
+                    AppendToLog("Windows Quality Update Profiles imported successfully.\n");
+                    _importSuccessCount++;
+                }
+                catch (Exception ex)
+                {
+                    AppendToLog($"Error importing Windows Quality Update Profiles: {ex.Message}\n");
+                    LogToFunctionFile(appFunction.Main, $"Error importing Windows Quality Update Profiles: {ex.Message}", LogLevels.Error);
+                    _importErrorCount++;
+                }
+            }
+
+            // Show final status
+            if (_importErrorCount == 0)
+            {
+                ShowOperationSuccess($"Import completed: {_importSuccessCount} content type(s) imported successfully");
+            }
+            else
+            {
+                ShowOperationError($"Import completed with errors: {_importSuccessCount} succeeded, {_importErrorCount} failed");
             }
 
             AppendToLog("Import process finished.\n");
