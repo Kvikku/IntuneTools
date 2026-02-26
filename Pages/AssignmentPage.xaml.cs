@@ -30,14 +30,6 @@ using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHe
 
 namespace IntuneTools.Pages
 {
-    public class AssignmentInfo
-    {
-        public string Name { get; set; }
-        public string Id { get; set; }
-        public string Type { get; set; }
-        public string Platform { get; set; }
-    }
-
     public class AssignmentGroupInfo
     {
         public string? GroupName { get; set; }
@@ -52,11 +44,11 @@ namespace IntuneTools.Pages
     public sealed partial class AssignmentPage : Page
     {
         #region Variables and Properties
-        public static ObservableCollection<AssignmentInfo> AssignmentList { get; } = new();
+        public static ObservableCollection<CustomContentInfo> AssignmentList { get; } = new();
         public ObservableCollection<AssignmentGroupInfo> GroupList { get; } = new();
         public ObservableCollection<DeviceAndAppManagementAssignmentFilter> FilterOptions { get; } = new();
 
-        private List<AssignmentInfo> _allAssignments = new();
+        private List<CustomContentInfo> _allAssignments = new();
         private bool _suppressOptionEvents = false;
         private bool _suppressSelectAllEvents = false;
 
@@ -286,56 +278,56 @@ namespace IntuneTools.Pages
 
                 foreach (var item in content)
                 {
-                    if (item.Value.Type == "Device Compliance")
+                    if (item.Value.ContentType == "Device Compliance")
                     {
-                        await AssignGroupsToSingleDeviceCompliance(item.Value.Id, groupList, sourceGraphServiceClient);
+                        await AssignGroupsToSingleDeviceCompliance(item.Value.ContentId, groupList, sourceGraphServiceClient);
                     }
 
-                    if (item.Value.Type == "Settings Catalog")
+                    if (item.Value.ContentType == "Settings Catalog")
                     {
-                        await AssignGroupsToSingleSettingsCatalog(item.Value.Id, groupList, sourceGraphServiceClient);
+                        await AssignGroupsToSingleSettingsCatalog(item.Value.ContentId, groupList, sourceGraphServiceClient);
                     }
-                    if (item.Value.Type == "Device Configuration")
+                    if (item.Value.ContentType == "Device Configuration")
                     {
-                        await AssignGroupsToSingleDeviceConfiguration(item.Value.Id, groupList, sourceGraphServiceClient);
+                        await AssignGroupsToSingleDeviceConfiguration(item.Value.ContentId, groupList, sourceGraphServiceClient);
                     }
-                    if (item.Value.Type == "macOS Shell Script")
+                    if (item.Value.ContentType == "macOS Shell Script")
                     {
-                        await AssignGroupsToSingleShellScriptmacOS(item.Value.Id, groupList, sourceGraphServiceClient);
+                        await AssignGroupsToSingleShellScriptmacOS(item.Value.ContentId, groupList, sourceGraphServiceClient);
                     }
-                    if (item.Value.Type == "PowerShell Script")
+                    if (item.Value.ContentType == "PowerShell Script")
                     {
-                        await AssignGroupsToSinglePowerShellScript(item.Value.Id, groupList, sourceGraphServiceClient);
+                        await AssignGroupsToSinglePowerShellScript(item.Value.ContentId, groupList, sourceGraphServiceClient);
                     }
-                    if (item.Value.Type == "Proactive Remediation Script")
+                    if (item.Value.ContentType == "Proactive Remediation Script")
                     {
-                        await AssignGroupsToSingleProactiveRemediation(item.Value.Id, groupList, sourceGraphServiceClient);
+                        await AssignGroupsToSingleProactiveRemediation(item.Value.ContentId, groupList, sourceGraphServiceClient);
                     }
-                    if (item.Value.Type == "Windows Autopilot Profile")
+                    if (item.Value.ContentType == "Windows Autopilot Profile")
                     {
-                        await AssignGroupsToSingleWindowsAutoPilotProfile(item.Value.Id, groupList, sourceGraphServiceClient);
+                        await AssignGroupsToSingleWindowsAutoPilotProfile(item.Value.ContentId, groupList, sourceGraphServiceClient);
                     }
-                    if (item.Value.Type == "Windows Driver Update Profile")
+                    if (item.Value.ContentType == "Windows Driver Update Profile")
                     {
-                        await AssignGroupsToSingleDriverProfile(item.Value.Id, groupList, sourceGraphServiceClient);
+                        await AssignGroupsToSingleDriverProfile(item.Value.ContentId, groupList, sourceGraphServiceClient);
                     }
-                    if (item.Value.Type == "Windows Feature Update Profile")
+                    if (item.Value.ContentType == "Windows Feature Update Profile")
                     {
-                        await AssignGroupsToSingleWindowsFeatureUpdateProfile(item.Value.Id, groupList, sourceGraphServiceClient);
+                        await AssignGroupsToSingleWindowsFeatureUpdateProfile(item.Value.ContentId, groupList, sourceGraphServiceClient);
                     }
-                    if (item.Value.Type == "Windows Quality Update Policy")
+                    if (item.Value.ContentType == "Windows Quality Update Policy")
                     {
-                        await AssignGroupsToSingleWindowsQualityUpdatePolicy(item.Value.Id, groupList, sourceGraphServiceClient);
+                        await AssignGroupsToSingleWindowsQualityUpdatePolicy(item.Value.ContentId, groupList, sourceGraphServiceClient);
                     }
-                    if (item.Value.Type == "Windows Quality Update Profile")
+                    if (item.Value.ContentType == "Windows Quality Update Profile")
                     {
-                        await AssignGroupsToSingleWindowsQualityUpdateProfile(item.Value.Id, groupList, sourceGraphServiceClient);
+                        await AssignGroupsToSingleWindowsQualityUpdateProfile(item.Value.ContentId, groupList, sourceGraphServiceClient);
                     }
-                    if (item.Value.Type == "Apple BYOD Enrollment Profile")
+                    if (item.Value.ContentType == "Apple BYOD Enrollment Profile")
                     {
-                        await AssignGroupsToSingleAppleBYODEnrollmentProfile(item.Value.Id, groupList, sourceGraphServiceClient);
+                        await AssignGroupsToSingleAppleBYODEnrollmentProfile(item.Value.ContentId, groupList, sourceGraphServiceClient);
                     }
-                    if (item.Value.Type.StartsWith("App - "))
+                    if (item.Value.ContentType.StartsWith("App - "))
                     {
                         // Must first handle the app type
                         await PrepareApplicationForAssignment(item, groupList, sourceGraphServiceClient);
@@ -350,13 +342,13 @@ namespace IntuneTools.Pages
                         try
                         {
                             AppendToDetailsRichTextBlock(
-                                $"Assigning '{item.Value.Name}' to group '{group.GroupName}'.");
+                                $"Assigning '{item.Value.ContentName}' to group '{group.GroupName}'.");
                             successCount++;
                         }
                         catch (Exception ex)
                         {
                             AppendToDetailsRichTextBlock(
-                                $"❌ Failed to assign '{item.Value.Name}' (ID: {item.Key}) to '{group.GroupName}': {ex.Message}");
+                                $"❌ Failed to assign '{item.Value.ContentName}' (ID: {item.Key}) to '{group.GroupName}': {ex.Message}");
                             failureCount++;
                         }
                     }
@@ -424,15 +416,15 @@ namespace IntuneTools.Pages
 
         #region Content loaders
 
-        private Dictionary<string, AssignmentInfo> GetAllContentFromDatagrid()
+        private Dictionary<string, CustomContentInfo> GetAllContentFromDatagrid()
         {
             // Gather all content (full objects) from the datagrid and send to orchestrator
-            var content = new Dictionary<string, AssignmentInfo>();
+            var content = new Dictionary<string, CustomContentInfo>();
 
             foreach (var item in AssignmentList)
             {
-                // Key = Id, Value = full AssignmentInfo (includes Name, Type, Platform)
-                content[item.Id] = item;
+                // Key = Id, Value = full CustomContentInfo (includes ContentName, ContentType, ContentPlatform)
+                content[item.ContentId] = item;
             }
 
             AppendToDetailsRichTextBlock($"Gathered {content.Count} items from DataGrid.");
@@ -445,17 +437,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading settings catalog policies from Microsoft Graph...");
             try
             {
-                var policies = await GetAllSettingsCatalogPolicies(sourceGraphServiceClient);
-                foreach (var policy in policies)
+                var contentList = await GetAllSettingsCatalogContentAsync(sourceGraphServiceClient);
+                foreach (var content in contentList)
                 {
-                    var assignmentInfo = new AssignmentInfo
-                    {
-                        Name = policy.Name,
-                        Type = "Settings Catalog",
-                        Platform = policy.Platforms?.ToString() ?? string.Empty,
-                        Id = policy.Id
-                    };
-                    AssignmentList.Add(assignmentInfo);
+                    AssignmentList.Add(content);
                 }
                 AppDataGrid.ItemsSource = AssignmentList;
             }
@@ -470,19 +455,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading device compliance policies from Microsoft Graph...");
             try
             {
-                var policies = await GetAllDeviceCompliancePolicies(sourceGraphServiceClient);
-                foreach (var policy in policies)
+                var contentList = await GetAllDeviceComplianceContentAsync(sourceGraphServiceClient);
+                foreach (var content in contentList)
                 {
-                    var platform = TranslatePolicyPlatformName(policy.OdataType);
-
-                    var assignmentInfo = new AssignmentInfo
-                    {
-                        Name = policy.DisplayName,
-                        Type = "Device Compliance",
-                        Platform = platform,
-                        Id = policy.Id
-                    };
-                    AssignmentList.Add(assignmentInfo);
+                    AssignmentList.Add(content);
                 }
                 AppDataGrid.ItemsSource = AssignmentList;
             }
@@ -497,19 +473,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading device configuration policies from Microsoft Graph...");
             try
             {
-                var policies = await GetAllDeviceConfigurations(sourceGraphServiceClient);
-                foreach (var policy in policies)
+                var contentList = await GetAllDeviceConfigurationContentAsync(sourceGraphServiceClient);
+                foreach (var content in contentList)
                 {
-                    var platform = TranslatePolicyPlatformName(policy.OdataType);
-
-                    var assignmentInfo = new AssignmentInfo
-                    {
-                        Name = policy.DisplayName,
-                        Type = "Device Configuration",
-                        Platform = platform,
-                        Id = policy.Id
-                    };
-                    AssignmentList.Add(assignmentInfo);
+                    AssignmentList.Add(content);
                 }
                 AppDataGrid.ItemsSource = AssignmentList;
             }
@@ -524,17 +491,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading macOS shell scripts from Microsoft Graph...");
             try
             {
-                var scripts = await GetAllmacOSShellScripts(sourceGraphServiceClient);
-                foreach (var script in scripts)
+                var contentList = await GetAllMacOSShellScriptContentAsync(sourceGraphServiceClient);
+                foreach (var content in contentList)
                 {
-                    var assignmentInfo = new AssignmentInfo
-                    {
-                        Name = script.DisplayName,
-                        Type = "macOS Shell Script",
-                        Platform = "macOS",
-                        Id = script.Id
-                    };
-                    AssignmentList.Add(assignmentInfo);
+                    AssignmentList.Add(content);
                 }
                 AppDataGrid.ItemsSource = AssignmentList;
             }
@@ -549,17 +509,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading PowerShell scripts from Microsoft Graph...");
             try
             {
-                var scripts = await GetAllPowerShellScripts(sourceGraphServiceClient);
-                foreach (var script in scripts)
+                var contentList = await GetAllPowerShellScriptContentAsync(sourceGraphServiceClient);
+                foreach (var content in contentList)
                 {
-                    var assignmentInfo = new AssignmentInfo
-                    {
-                        Name = script.DisplayName,
-                        Type = "PowerShell Script",
-                        Platform = "Windows",
-                        Id = script.Id
-                    };
-                    AssignmentList.Add(assignmentInfo);
+                    AssignmentList.Add(content);
                 }
                 AppDataGrid.ItemsSource = AssignmentList;
             }
@@ -574,17 +527,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading proactive remediation scripts from Microsoft Graph...");
             try
             {
-                var scripts = await GetAllProactiveRemediations(sourceGraphServiceClient);
-                foreach (var script in scripts)
+                var contentList = await GetAllProactiveRemediationContentAsync(sourceGraphServiceClient);
+                foreach (var content in contentList)
                 {
-                    var assignmentInfo = new AssignmentInfo
-                    {
-                        Name = script.DisplayName,
-                        Type = "Proactive Remediation Script",
-                        Platform = "Windows",
-                        Id = script.Id
-                    };
-                    AssignmentList.Add(assignmentInfo);
+                    AssignmentList.Add(content);
                 }
                 AppDataGrid.ItemsSource = AssignmentList;
             }
@@ -599,17 +545,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading Windows Autopilot profiles from Microsoft Graph...");
             try
             {
-                var profiles = await GetAllWindowsAutoPilotProfiles(sourceGraphServiceClient);
-                foreach (var profile in profiles)
+                var contentList = await GetAllWindowsAutoPilotContentAsync(sourceGraphServiceClient);
+                foreach (var content in contentList)
                 {
-                    var assignmentInfo = new AssignmentInfo
-                    {
-                        Name = profile.DisplayName,
-                        Type = "Windows Autopilot Profile",
-                        Platform = "Windows",
-                        Id = profile.Id
-                    };
-                    AssignmentList.Add(assignmentInfo);
+                    AssignmentList.Add(content);
                 }
                 AppDataGrid.ItemsSource = AssignmentList;
             }
@@ -625,17 +564,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading Windows Driver Update profiles from Microsoft Graph...");
             try
             {
-                var profiles = await GetAllDriverProfiles(sourceGraphServiceClient);
-                foreach (var profile in profiles)
+                var contentList = await GetAllWindowsDriverUpdateContentAsync(sourceGraphServiceClient);
+                foreach (var content in contentList)
                 {
-                    var assignmentInfo = new AssignmentInfo
-                    {
-                        Name = profile.DisplayName,
-                        Type = "Windows Driver Update Profile",
-                        Platform = "Windows",
-                        Id = profile.Id
-                    };
-                    AssignmentList.Add(assignmentInfo);
+                    AssignmentList.Add(content);
                 }
                 AppDataGrid.ItemsSource = AssignmentList;
             }
@@ -650,17 +582,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading Windows Feature Update profiles from Microsoft Graph...");
             try
             {
-                var profiles = await GetAllWindowsFeatureUpdateProfiles(sourceGraphServiceClient);
-                foreach (var profile in profiles)
+                var contentList = await GetAllWindowsFeatureUpdateContentAsync(sourceGraphServiceClient);
+                foreach (var content in contentList)
                 {
-                    var assignmentInfo = new AssignmentInfo
-                    {
-                        Name = profile.DisplayName,
-                        Type = "Windows Feature Update Profile",
-                        Platform = "Windows",
-                        Id = profile.Id
-                    };
-                    AssignmentList.Add(assignmentInfo);
+                    AssignmentList.Add(content);
                 }
                 AppDataGrid.ItemsSource = AssignmentList;
             }
@@ -675,17 +600,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading Windows Quality Update policies from Microsoft Graph...");
             try
             {
-                var profiles = await GetAllWindowsQualityUpdatePolicies(sourceGraphServiceClient);
-                foreach (var profile in profiles)
+                var contentList = await GetAllWindowsQualityUpdatePolicyContentAsync(sourceGraphServiceClient);
+                foreach (var content in contentList)
                 {
-                    var assignmentInfo = new AssignmentInfo
-                    {
-                        Name = profile.DisplayName,
-                        Type = "Windows Quality Update Policy",
-                        Platform = "Windows",
-                        Id = profile.Id
-                    };
-                    AssignmentList.Add(assignmentInfo);
+                    AssignmentList.Add(content);
                 }
                 AppDataGrid.ItemsSource = AssignmentList;
             }
@@ -700,17 +618,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading Windows Quality Update profiles from Microsoft Graph...");
             try
             {
-                var profiles = await GetAllWindowsQualityUpdateProfiles(sourceGraphServiceClient);
-                foreach (var profile in profiles)
+                var contentList = await GetAllWindowsQualityUpdateProfileContentAsync(sourceGraphServiceClient);
+                foreach (var content in contentList)
                 {
-                    var assignmentInfo = new AssignmentInfo
-                    {
-                        Name = profile.DisplayName,
-                        Type = "Windows Quality Update Profile",
-                        Platform = "Windows",
-                        Id = profile.Id
-                    };
-                    AssignmentList.Add(assignmentInfo);
+                    AssignmentList.Add(content);
                 }
                 AppDataGrid.ItemsSource = AssignmentList;
             }
@@ -725,17 +636,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading Apple BYOD enrollment profiles from Microsoft Graph...");
             try
             {
-                var profiles = await GetAllAppleBYODEnrollmentProfiles(sourceGraphServiceClient);
-                foreach (var profile in profiles)
+                var contentList = await GetAllAppleBYODEnrollmentContentAsync(sourceGraphServiceClient);
+                foreach (var content in contentList)
                 {
-                    var assignmentInfo = new AssignmentInfo
-                    {
-                        Name = profile.DisplayName,
-                        Type = "Apple BYOD Enrollment Profile",
-                        Platform = "iOS",
-                        Id = profile.Id
-                    };
-                    AssignmentList.Add(assignmentInfo);
+                    AssignmentList.Add(content);
                 }
                 AppDataGrid.ItemsSource = AssignmentList;
             }
@@ -750,17 +654,10 @@ namespace IntuneTools.Pages
             ShowLoading("Loading applications from Microsoft Graph...");
             try
             {
-                var applications = await ApplicationHelper.GetAllMobileApps(sourceGraphServiceClient);
-                foreach (var app in applications)
+                var contentList = await GetAllApplicationContentAsync(sourceGraphServiceClient);
+                foreach (var content in contentList)
                 {
-                    var assignmentInfo = new AssignmentInfo
-                    {
-                        Name = app.DisplayName,
-                        Type = TranslateApplicationType(app.OdataType),
-                        Platform = TranslatePolicyPlatformName(app.OdataType),
-                        Id = app.Id
-                    };
-                    AssignmentList.Add(assignmentInfo);
+                    AssignmentList.Add(content);
                 }
                 AppDataGrid.ItemsSource = AssignmentList;
             }
@@ -889,9 +786,9 @@ namespace IntuneTools.Pages
             {
                 // Perform search
                 var filtered = _allAssignments.Where(item =>
-                    item.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                    item.Type.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                    item.Platform.Contains(query, StringComparison.OrdinalIgnoreCase))
+                    item.ContentName.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                    item.ContentType.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                    item.ContentPlatform.Contains(query, StringComparison.OrdinalIgnoreCase))
                     .ToList();
 
                 AssignmentList.Clear();
@@ -925,7 +822,7 @@ namespace IntuneTools.Pages
         {
             if (AppDataGrid.SelectedItems.Count > 0)
             {
-                var selectedItems = AppDataGrid.SelectedItems.Cast<AssignmentInfo>().ToList();
+                var selectedItems = AppDataGrid.SelectedItems.Cast<CustomContentInfo>().ToList();
                 foreach (var item in selectedItems)
                 {
                     AssignmentList.Remove(item);
@@ -1287,7 +1184,7 @@ namespace IntuneTools.Pages
             }
 
             // Check if property exists on AssignmentInfo
-            var propInfo = typeof(AssignmentInfo).GetProperty(sortProperty);
+            var propInfo = typeof(CustomContentInfo).GetProperty(sortProperty);
             if (propInfo == null)
             {
                 AppendToDetailsRichTextBlock($"Sorting error: Property '{sortProperty}' not found on AssignmentInfo.");
@@ -1303,7 +1200,7 @@ namespace IntuneTools.Pages
                 direction = ListSortDirection.Ascending;
 
             // Sort the AssignmentList in place
-            List<AssignmentInfo> sorted;
+            List<CustomContentInfo> sorted;
             try
             {
                 if (direction == ListSortDirection.Ascending)
