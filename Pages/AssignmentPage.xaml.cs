@@ -61,9 +61,11 @@ namespace IntuneTools.Pages
         // New: Include / Exclude filter mode (default Include)
         private string _selectedFilterMode = "Include";
 
-
-
-
+        // Progress tracking for assignment operations
+        private int _assignTotal;
+        private int _assignCurrent;
+        private int _assignSuccessCount;
+        private int _assignErrorCount;
 
         // UI initialization flag to prevent early event handlers from using null controls (e.g., LogConsole)
         private bool _uiInitialized = false;
@@ -195,24 +197,37 @@ namespace IntuneTools.Pages
             {
                 AppendToLog($"Starting assignment of {content.Count} item(s) to {selectedGroups.Count} group(s)...");
 
+                // Initialize progress tracking
+                _assignTotal = content.Count;
+                _assignCurrent = 0;
+                _assignSuccessCount = 0;
+                _assignErrorCount = 0;
+
+                ShowOperationProgress("Starting assignment...", 0, _assignTotal);
+
                 int successCount = 0;
                 int failureCount = 0;
 
                 foreach (var item in content)
                 {
-                    if (item.Value.ContentType == "Device Compliance Policy")
-                    {
-                        await AssignGroupsToSingleDeviceCompliance(item.Value.ContentId, groupList, sourceGraphServiceClient);
-                    }
+                    _assignCurrent++;
+                    ShowOperationProgress($"Assigning '{item.Value.ContentName}'...", _assignCurrent, _assignTotal);
 
-                    if (item.Value.ContentType == "Settings Catalog")
+                    try
                     {
-                        await AssignGroupsToSingleSettingsCatalog(item.Value.ContentId, groupList, sourceGraphServiceClient);
-                    }
-                    if (item.Value.ContentType == "Device Configuration Policy")
-                    {
-                        await AssignGroupsToSingleDeviceConfiguration(item.Value.ContentId, groupList, sourceGraphServiceClient);
-                    }
+                        if (item.Value.ContentType == "Device Compliance Policy")
+                        {
+                            await AssignGroupsToSingleDeviceCompliance(item.Value.ContentId, groupList, sourceGraphServiceClient);
+                        }
+
+                        if (item.Value.ContentType == "Settings Catalog")
+                        {
+                            await AssignGroupsToSingleSettingsCatalog(item.Value.ContentId, groupList, sourceGraphServiceClient);
+                        }
+                        if (item.Value.ContentType == "Device Configuration Policy")
+                        {
+                            await AssignGroupsToSingleDeviceConfiguration(item.Value.ContentId, groupList, sourceGraphServiceClient);
+                        }
                     if (item.Value.ContentType == "MacOS Shell Script")
                     {
                         await AssignGroupsToSingleShellScriptmacOS(item.Value.ContentId, groupList, sourceGraphServiceClient);
@@ -258,26 +273,35 @@ namespace IntuneTools.Pages
 
                     }
 
-
-                    foreach (var group in selectedGroups)
-                    {
-                        try
+                        _assignSuccessCount++;
+                        foreach (var group in selectedGroups)
                         {
                             AppendToLog(
                                 $"Assigning '{item.Value.ContentName}' to group '{group.GroupName}'.");
                             successCount++;
                         }
-                        catch (Exception ex)
-                        {
-                            AppendToLog(
-                                $"? Failed to assign '{item.Value.ContentName}' (ID: {item.Key}) to '{group.GroupName}': {ex.Message}");
-                            failureCount++;
-                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _assignErrorCount++;
+                        AppendToLog(
+                            $"Failed to assign '{item.Value.ContentName}' (ID: {item.Key}): {ex.Message}");
+                        failureCount++;
                     }
                 }
 
 
                 AppendToLog($"Assignment completed: {successCount} successful, {failureCount} failed.");
+
+                // Show final status
+                if (_assignErrorCount == 0)
+                {
+                    ShowOperationSuccess($"Assignment completed: {_assignSuccessCount} item(s) assigned successfully");
+                }
+                else
+                {
+                    ShowOperationError($"Assignment completed with errors: {_assignSuccessCount} succeeded, {_assignErrorCount} failed");
+                }
 
                 // Show completion dialog
                 await ShowValidationDialogAsync("Assignment Complete",

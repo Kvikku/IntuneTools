@@ -1101,7 +1101,7 @@ namespace IntuneTools.Pages
             if (HasContentType(ContentTypes.WindowsQualityUpdatePolicy)) _importTotal++;
             if (HasContentType(ContentTypes.WindowsQualityUpdateProfile)) _importTotal++;
 
-            ShowOperationProgress($"Starting import... (0/{_importTotal} content types)", 0, _importTotal);
+            ShowOperationProgress("Starting import...", 0, _importTotal);
 
             // Log the start of the import process
             LogToFunctionFile(appFunction.Main, "Starting import process...", LogLevels.Info);
@@ -1137,7 +1137,7 @@ namespace IntuneTools.Pages
             if (HasContentType(ContentTypes.EntraGroup))
             {
                 _importCurrent++;
-                ShowOperationProgress($"Importing Entra Groups... ({_importCurrent}/{_importTotal})", _importCurrent, _importTotal);
+                ShowOperationProgress("Importing Entra Groups...", _importCurrent, _importTotal);
                 try
                 {
                     // Import Entra Groups
@@ -1158,7 +1158,7 @@ namespace IntuneTools.Pages
             if (HasContentType(ContentTypes.SettingsCatalog))
             {
                 _importCurrent++;
-                ShowOperationProgress($"Importing Settings Catalog... ({_importCurrent}/{_importTotal})", _importCurrent, _importTotal);
+                ShowOperationProgress("Importing Settings Catalog...", _importCurrent, _importTotal);
                 try
                 {
                     // Import Settings Catalog policies
@@ -1179,7 +1179,7 @@ namespace IntuneTools.Pages
             if (HasContentType(ContentTypes.DeviceCompliancePolicy))
             {
                 _importCurrent++;
-                ShowOperationProgress($"Importing Device Compliance Policies... ({_importCurrent}/{_importTotal})", _importCurrent, _importTotal);
+                ShowOperationProgress("Importing Device Compliance Policies...", _importCurrent, _importTotal);
                 try
                 {
                     // Import Device Compliance policies
@@ -1200,7 +1200,7 @@ namespace IntuneTools.Pages
             if (HasContentType(ContentTypes.DeviceConfigurationPolicy))
             {
                 _importCurrent++;
-                ShowOperationProgress($"Importing Device Configuration Policies... ({_importCurrent}/{_importTotal})", _importCurrent, _importTotal);
+                ShowOperationProgress("Importing Device Configuration Policies...", _importCurrent, _importTotal);
                 try
                 {
                     // Import Device Configuration policies
@@ -1221,7 +1221,7 @@ namespace IntuneTools.Pages
             if (HasContentType(ContentTypes.AppleBYODEnrollmentProfile))
             {
                 _importCurrent++;
-                ShowOperationProgress($"Importing Apple BYOD Enrollment Profiles... ({_importCurrent}/{_importTotal})", _importCurrent, _importTotal);
+                ShowOperationProgress("Importing Apple BYOD Enrollment Profiles...", _importCurrent, _importTotal);
                 try
                 {
                     // Import Apple BYOD Enrollment Profiles
@@ -1242,7 +1242,7 @@ namespace IntuneTools.Pages
             if (HasContentType(ContentTypes.AssignmentFilter))
             {
                 _importCurrent++;
-                ShowOperationProgress($"Importing Assignment Filters... ({_importCurrent}/{_importTotal})", _importCurrent, _importTotal);
+                ShowOperationProgress("Importing Assignment Filters...", _importCurrent, _importTotal);
                 try
                 {
                     // Import Assignment Filters
@@ -1263,7 +1263,7 @@ namespace IntuneTools.Pages
             if (HasContentType(ContentTypes.PowerShellScript))
             {
                 _importCurrent++;
-                ShowOperationProgress($"Importing PowerShell Scripts... ({_importCurrent}/{_importTotal})", _importCurrent, _importTotal);
+                ShowOperationProgress("Importing PowerShell Scripts...", _importCurrent, _importTotal);
                 try
                 {
                     // Import PowerShell Scripts
@@ -1284,7 +1284,7 @@ namespace IntuneTools.Pages
             if (HasContentType(ContentTypes.ProactiveRemediation))
             {
                 _importCurrent++;
-                ShowOperationProgress($"Importing Proactive Remediations... ({_importCurrent}/{_importTotal})", _importCurrent, _importTotal);
+                ShowOperationProgress("Importing Proactive Remediations...", _importCurrent, _importTotal);
                 try
                 {
                     // Import Proactive Remediations
@@ -1305,7 +1305,7 @@ namespace IntuneTools.Pages
             if (HasContentType(ContentTypes.MacOSShellScript))
             {
                 _importCurrent++;
-                ShowOperationProgress($"Importing macOS Shell Scripts... ({_importCurrent}/{_importTotal})", _importCurrent, _importTotal);
+                ShowOperationProgress("Importing macOS Shell Scripts...", _importCurrent, _importTotal);
                 try
                 {
                     // Import macOS Shell Scripts
@@ -1326,7 +1326,7 @@ namespace IntuneTools.Pages
             if (HasContentType(ContentTypes.WindowsAutoPilotProfile))
             {
                 _importCurrent++;
-                ShowOperationProgress($"Importing Windows AutoPilot Profiles... ({_importCurrent}/{_importTotal})", _importCurrent, _importTotal);
+                ShowOperationProgress("Importing Windows AutoPilot Profiles...", _importCurrent, _importTotal);
                 try
                 {
                     // Import Windows AutoPilot Profiles
@@ -1347,7 +1347,7 @@ namespace IntuneTools.Pages
             if (HasContentType(ContentTypes.WindowsDriverUpdate))
             {
                 _importCurrent++;
-                ShowOperationProgress($"Importing Windows Driver Updates... ({_importCurrent}/{_importTotal})", _importCurrent, _importTotal);
+                ShowOperationProgress("Importing Windows Driver Updates...", _importCurrent, _importTotal);
                 try
                 {
                     // Import Windows Driver Updates
@@ -1368,7 +1368,7 @@ namespace IntuneTools.Pages
             if (HasContentType(ContentTypes.WindowsFeatureUpdate))
             {
                 _importCurrent++;
-                ShowOperationProgress($"Importing Windows Feature Updates... ({_importCurrent}/{_importTotal})", _importCurrent, _importTotal);
+                ShowOperationProgress("Importing Windows Feature Updates...", _importCurrent, _importTotal);
                 try
                 {
                     // Import Windows Feature Updates
@@ -1389,7 +1389,7 @@ namespace IntuneTools.Pages
             if (HasContentType(ContentTypes.WindowsQualityUpdatePolicy))
             {
                 _importCurrent++;
-                ShowOperationProgress($"Importing Windows Quality Update Policies... ({_importCurrent}/{_importTotal})", _importCurrent, _importTotal);
+                ShowOperationProgress("Importing Windows Quality Update Policies...", _importCurrent, _importTotal);
                 try
                 {
                     // Import Windows Quality Update Policies
@@ -1410,7 +1410,7 @@ namespace IntuneTools.Pages
             if (HasContentType(ContentTypes.WindowsQualityUpdateProfile))
             {
                 _importCurrent++;
-                ShowOperationProgress($"Importing Windows Quality Update Profiles... ({_importCurrent}/{_importTotal})", _importCurrent, _importTotal);
+                ShowOperationProgress("Importing Windows Quality Update Profiles...", _importCurrent, _importTotal);
                 try
                 {
                     // Import Windows Quality Update Profiles
