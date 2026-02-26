@@ -64,5 +64,12 @@ namespace IntuneTools.Utilities
 
             return count;
         }
+
+        public static bool IsApplicationContentType(string? contentType)
+        {
+            return contentType != null && 
+                   (contentType.StartsWith("App", StringComparison.OrdinalIgnoreCase) || 
+                    contentType.Equals("Application", StringComparison.OrdinalIgnoreCase));
+        }
     }
 }
