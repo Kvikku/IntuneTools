@@ -64,6 +64,7 @@
     <ProjectCapability Include="Msix" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="CommunityToolkit.WinUI.Controls.Sizers" Version="8.2.251219" />
     <PackageReference Include="CommunityToolkit.WinUI.UI.Controls.DataGrid" Version="7.1.2" />
     <PackageReference Include="Microsoft.Graph.Beta" Version="5.114.0-preview" />
     <PackageReference Include="Microsoft.Identity.Client" Version="4.73.1" />
