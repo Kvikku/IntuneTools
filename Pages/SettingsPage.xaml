@@ -18,7 +18,7 @@
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="32"/>
+            <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
@@ -77,6 +77,19 @@
                 </StackPanel>
             </StackPanel>
         </Border>
+
+        <!-- Swap Tenants button (between cards) -->
+        <Button x:Name="SwapTenantsButton"
+                Grid.Row="2" Grid.Column="1"
+                Click="SwapTenantsButton_Click"
+                ToolTipService.ToolTip="Swap source and destination tenants"
+                VerticalAlignment="Center"
+                Margin="16,0">
+            <StackPanel Orientation="Vertical" Spacing="4">
+                <FontIcon Glyph="&#xE8AB;" FontSize="20"/>
+                <TextBlock Text="Swap" FontSize="11"/>
+            </StackPanel>
+        </Button>
 
         <!-- Destination Tenant card -->
         <Border Grid.Row="2" Grid.Column="2"

@@ -153,6 +153,35 @@ namespace IntuneTools.Pages
             }
         }
 
+        /// <summary>
+        /// Swaps the source and destination tenant credentials (GraphServiceClients, tenant names, and IDs).
+        /// Useful when user accidentally logged into the wrong tenant.
+        /// </summary>
+        private void SwapTenants()
+        {
+            // Swap GraphServiceClients (via global using static)
+            (sourceGraphServiceClient, destinationGraphServiceClient) = 
+                (destinationGraphServiceClient, sourceGraphServiceClient);
+
+            // Swap tenant names (via global using static - these ARE Variables.*)
+            (sourceTenantName, destinationTenantName) = 
+                (destinationTenantName, sourceTenantName);
+
+            // Swap tenant IDs
+            (sourceTenantID, destinationTenantID) = 
+                (destinationTenantID, sourceTenantID);
+
+            // Swap client IDs
+            (sourceClientID, destinationClientID) = 
+                (destinationClientID, sourceClientID);
+
+            // Update UI to reflect the swap
+            RefreshLoginStatusUI();
+
+            LogToFunctionFile(appFunction.Main, 
+                $"Swapped tenants. Source is now '{sourceTenantName}', Destination is now '{destinationTenantName}'.");
+        }
+
         #endregion
 
         #region Event Handlers
@@ -185,6 +214,11 @@ namespace IntuneTools.Pages
             {
                 LogToFunctionFile(appFunction.Main, $"Invalid log file folder path: {folderToOpen}");
             }
+        }
+
+        private void SwapTenantsButton_Click(object sender, RoutedEventArgs e)
+        {
+            SwapTenants();
         }
 
         private async void SourceClearTokenButton_Click(object sender, RoutedEventArgs e)
