@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace IntuneTools.Utilities
 {
@@ -61,6 +62,70 @@ namespace IntuneTools.Utilities
         protected bool HasApplicationContent()
         {
             return ContentList.Any(c => UserInterfaceHelper.IsApplicationContentType(c.ContentType));
+        }
+
+        /// <summary>
+        /// Loads all content types using the registry. Call this instead of individual LoadAll*Async methods.
+        /// </summary>
+        /// <param name="client">The Graph service client</param>
+        /// <param name="log">Action to log messages (e.g., AppendToLog)</param>
+        protected async Task LoadAllContentTypesAsync(GraphServiceClient client, Action<string> log)
+        {
+            foreach (var op in ContentTypeRegistry.All)
+            {
+                var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                    ContentList, async () => await op.LoadAll(client));
+                log($"Loaded {count} {op.DisplayNamePlural}.");
+            }
+        }
+
+        /// <summary>
+        /// Searches all content types using the registry. Call this instead of individual SearchFor*Async methods.
+        /// </summary>
+        /// <param name="client">The Graph service client</param>
+        /// <param name="searchQuery">The search query</param>
+        /// <param name="log">Action to log messages (e.g., AppendToLog)</param>
+        protected async Task SearchAllContentTypesAsync(GraphServiceClient client, string searchQuery, Action<string> log)
+        {
+            foreach (var op in ContentTypeRegistry.All)
+            {
+                var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                    ContentList, async () => await op.Search(client, searchQuery));
+                log($"Found {count} {op.DisplayNamePlural} matching '{searchQuery}'.");
+            }
+        }
+
+        /// <summary>
+        /// Loads specific content types using the registry.
+        /// </summary>
+        /// <param name="client">The Graph service client</param>
+        /// <param name="contentTypes">The content types to load</param>
+        /// <param name="log">Action to log messages</param>
+        protected async Task LoadContentTypesAsync(GraphServiceClient client, IEnumerable<string> contentTypes, Action<string> log)
+        {
+            foreach (var op in ContentTypeRegistry.GetMany(contentTypes))
+            {
+                var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                    ContentList, async () => await op.LoadAll(client));
+                log($"Loaded {count} {op.DisplayNamePlural}.");
+            }
+        }
+
+        /// <summary>
+        /// Searches specific content types using the registry.
+        /// </summary>
+        /// <param name="client">The Graph service client</param>
+        /// <param name="searchQuery">The search query</param>
+        /// <param name="contentTypes">The content types to search</param>
+        /// <param name="log">Action to log messages</param>
+        protected async Task SearchContentTypesAsync(GraphServiceClient client, string searchQuery, IEnumerable<string> contentTypes, Action<string> log)
+        {
+            foreach (var op in ContentTypeRegistry.GetMany(contentTypes))
+            {
+                var count = await UserInterfaceHelper.PopulateCollectionAsync(
+                    ContentList, async () => await op.Search(client, searchQuery));
+                log($"Found {count} {op.DisplayNamePlural} matching '{searchQuery}'.");
+            }
         }
 
         /// <summary>
@@ -193,5 +258,6 @@ namespace IntuneTools.Utilities
         public const string WindowsFeatureUpdate = "Windows Feature Update";
         public const string WindowsQualityUpdatePolicy = "Windows Quality Update Policy";
         public const string WindowsQualityUpdateProfile = "Windows Quality Update Profile";
+        public const string Application = "Application";
     }
 }

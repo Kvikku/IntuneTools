@@ -130,74 +130,33 @@ namespace IntuneTools.Pages
             AppendToDetailsRichTextBlock("Starting to load all content. This could take a while...");
             try
             {
-                // Clear the CustomContentList before loading new data
                 CustomContentList.Clear();
-
-                await LoadAllSettingsCatalogPoliciesAsync();
-                await LoadAllDeviceCompliancePoliciesAsync();
-                await LoadAllDeviceConfigurationPoliciesAsync();
-                await LoadAllWindowsAutoPilotProfilesAsync();
-                await LoadAllWindowsDriverUpdatesAsync();
-                await LoadAllWindowsFeatureUpdatesAsync();
-                await LoadAllWindowsQualityUpdatePoliciesAsync();
-                await LoadAllWindowsQualityUpdateProfilesAsync();
-                await LoadAllPowerShellScriptsAsync();
-                await LoadAllProactiveRemediationsAsync();
-                await LoadAllMacOSShellScriptsAsync();
-                await LoadAllAppleBYODEnrollmentProfilesAsync();
-                await LoadAllApplicationsAsync();
-                await LoadAllAssignmentFiltersAsync();
-                await LoadAllEntraGroupsAsync();
-
-                // Bind the combined list to the grid once
-                //RenamingDataGrid.ItemsSource = ContentList;
-
-                // New list
+                await LoadAllContentTypesAsync(graphServiceClient, AppendToDetailsRichTextBlock);
                 RenamingDataGrid.ItemsSource = CustomContentList;
             }
             catch (Exception ex)
             {
                 AppendToDetailsRichTextBlock($"Error during loading: {ex.Message}");
-                HideLoading();
-                return;
             }
             finally
             {
                 HideLoading();
             }
         }
+
         private async Task SearchOrchestrator(GraphServiceClient graphServiceClient, string searchQuery)
         {
             ShowLoading("Searching content in Microsoft Graph...");
             AppendToDetailsRichTextBlock($"Searching for content matching '{searchQuery}'. This may take a while...");
             try
             {
-                // Clear the CustomContentList before loading new data
                 CustomContentList.Clear();
-                await SearchForSettingsCatalogPoliciesAsync(searchQuery);
-                await SearchForDeviceCompliancePoliciesAsync(searchQuery);
-                await SearchForDeviceConfigurationPoliciesAsync(searchQuery);
-                await SearchForAppleBYODEnrollmentProfilesAsync(searchQuery);
-                await SearchForAssignmentFiltersAsync(searchQuery);
-                await SearchForEntraGroupsAsync(searchQuery);
-                await SearchForPowerShellScriptsAsync(searchQuery);
-                await SearchForProactiveRemediationsAsync(searchQuery);
-                await SearchForMacOSShellScriptsAsync(searchQuery);
-                await SearchForWindowsAutoPilotProfilesAsync(searchQuery);
-                await SearchForWindowsDriverUpdatesAsync(searchQuery);
-                await SearchForWindowsFeatureUpdatesAsync(searchQuery);
-                await SearchForWindowsQualityUpdatePoliciesAsync(searchQuery);
-                await SearchForWindowsQualityUpdateProfilesAsync(searchQuery);
-                await SearchForApplicationsAsync(searchQuery);
-
-                // Bind the combined list to the grid once
+                await SearchAllContentTypesAsync(graphServiceClient, searchQuery, AppendToDetailsRichTextBlock);
                 RenamingDataGrid.ItemsSource = CustomContentList;
             }
             catch (Exception ex)
             {
                 AppendToDetailsRichTextBlock($"Error during search: {ex.Message}");
-                HideLoading();
-                return;
             }
             finally
             {
@@ -479,51 +438,11 @@ namespace IntuneTools.Pages
                 async id => (await sourceGraphServiceClient.Groups[id]
                     .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName);
 
-        /// <summary>
-        ///  Settings catalog
-        /// </summary>
-        private async Task LoadAllSettingsCatalogPoliciesAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await GetAllSettingsCatalogContentAsync(sourceGraphServiceClient));
-
-            AppendToDetailsRichTextBlock($"Loaded {count} settings catalog policies.");
-        }
-
-        private async Task SearchForSettingsCatalogPoliciesAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await SearchSettingsCatalogContentAsync(sourceGraphServiceClient, searchQuery));
-
-            AppendToDetailsRichTextBlock($"Found {count} settings catalog policies matching '{searchQuery}'.");
-        }
-
         private Task RenameSettingsCatalogs(List<string> settingsCatalogIDs, string prefix) =>
             RenameItemsAsync(settingsCatalogIDs, prefix, "Settings Catalog",
                 async (id, p) => await RenameSettingsCatalogPolicy(sourceGraphServiceClient, id, p),
                 async id => (await sourceGraphServiceClient.DeviceManagement.ConfigurationPolicies[id]
                     .GetAsync(r => r.QueryParameters.Select = new[] { "name" }))?.Name);
-
-
-
-        private async Task LoadAllDeviceCompliancePoliciesAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await GetAllDeviceComplianceContentAsync(sourceGraphServiceClient));
-
-            AppendToDetailsRichTextBlock($"Loaded {count} device compliance policies.");
-        }
-        private async Task SearchForDeviceCompliancePoliciesAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await SearchDeviceComplianceContentAsync(sourceGraphServiceClient, searchQuery));
-
-            AppendToDetailsRichTextBlock($"Found {count} device compliance policies matching '{searchQuery}'.");
-        }
 
         private Task RenameDeviceCompliancePolicies(List<string> deviceCompliancePolicyIDs, string prefix) =>
             RenameItemsAsync(deviceCompliancePolicyIDs, prefix, "Device Compliance Policy",
@@ -531,281 +450,11 @@ namespace IntuneTools.Pages
                 async id => (await sourceGraphServiceClient.DeviceManagement.DeviceCompliancePolicies[id]
                     .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName);
 
-        /// <summary>
-        ///  Device configuration policies
-        /// </summary>
-
-        private async Task LoadAllDeviceConfigurationPoliciesAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await GetAllDeviceConfigurationContentAsync(sourceGraphServiceClient));
-
-            AppendToDetailsRichTextBlock($"Loaded {count} device configuration policies.");
-        }
-
-        private async Task SearchForDeviceConfigurationPoliciesAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await SearchDeviceConfigurationContentAsync(sourceGraphServiceClient, searchQuery));
-
-            AppendToDetailsRichTextBlock($"Found {count} device configuration policies matching '{searchQuery}'.");
-        }
-
         private Task RenameDeviceConfigurationPolicies(List<string> deviceConfigurationPolicyIDs, string prefix) =>
             RenameItemsAsync(deviceConfigurationPolicyIDs, prefix, "Device Configuration Policy",
                 async (id, p) => await RenameDeviceConfigurationPolicy(sourceGraphServiceClient, id, p),
                 async id => (await sourceGraphServiceClient.DeviceManagement.DeviceConfigurations[id]
                     .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName);
-
-        /// <summary>
-        /// Apple BYOD Enrollment Profiles
-        /// </summary>
-
-        private async Task LoadAllAppleBYODEnrollmentProfilesAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await GetAllAppleBYODEnrollmentContentAsync(sourceGraphServiceClient));
-
-            AppendToDetailsRichTextBlock($"Loaded {count} Apple BYOD enrollment profiles.");
-        }
-
-        private async Task LoadAllApplicationsAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await GetAllApplicationContentAsync(sourceGraphServiceClient));
-
-            AppendToDetailsRichTextBlock($"Loaded {count} applications.");
-        }
-        private async Task SearchForAppleBYODEnrollmentProfilesAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await SearchAppleBYODEnrollmentContentAsync(sourceGraphServiceClient, searchQuery));
-
-            AppendToDetailsRichTextBlock($"Found {count} Apple BYOD enrollment profiles matching '{searchQuery}'.");
-        }
-
-        private async Task SearchForApplicationsAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await SearchApplicationContentAsync(sourceGraphServiceClient, searchQuery));
-
-            AppendToDetailsRichTextBlock($"Found {count} applications matching '{searchQuery}'.");
-        }
-
-        /// <summary>
-        /// Assignment Filters
-        /// </summary>
-
-        private async Task LoadAllAssignmentFiltersAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await GetAllAssignmentFilterContentAsync(sourceGraphServiceClient));
-
-            AppendToDetailsRichTextBlock($"Loaded {count} assignment filters.");
-        }
-        private async Task SearchForAssignmentFiltersAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await SearchAssignmentFilterContentAsync(sourceGraphServiceClient, searchQuery));
-
-            AppendToDetailsRichTextBlock($"Found {count} assignment filters matching '{searchQuery}'.");
-        }
-
-        /// <summary>
-        /// Entra Groups
-        /// </summary>
-
-        private async Task LoadAllEntraGroupsAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await GetAllGroupContentAsync(sourceGraphServiceClient));
-
-            AppendToDetailsRichTextBlock($"Loaded {count} Entra groups.");
-        }
-        private async Task SearchForEntraGroupsAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await SearchGroupContentAsync(sourceGraphServiceClient, searchQuery));
-
-            AppendToDetailsRichTextBlock($"Found {count} Entra groups matching '{searchQuery}'.");
-        }
-
-        /// <summary>
-        /// Powershell Scripts
-        /// </summary>
-
-        private async Task LoadAllPowerShellScriptsAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await GetAllPowerShellScriptContentAsync(sourceGraphServiceClient));
-
-            AppendToDetailsRichTextBlock($"Loaded {count} PowerShell scripts.");
-        }
-        private async Task SearchForPowerShellScriptsAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await SearchPowerShellScriptContentAsync(sourceGraphServiceClient, searchQuery));
-
-            AppendToDetailsRichTextBlock($"Found {count} PowerShell scripts matching '{searchQuery}'.");
-        }
-
-        /// <summary>
-        /// Proactive Remediations
-        /// </summary>
-
-        private async Task LoadAllProactiveRemediationsAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await GetAllProactiveRemediationContentAsync(sourceGraphServiceClient));
-
-            AppendToDetailsRichTextBlock($"Loaded {count} proactive remediations.");
-        }
-        private async Task SearchForProactiveRemediationsAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await SearchProactiveRemediationContentAsync(sourceGraphServiceClient, searchQuery));
-
-            AppendToDetailsRichTextBlock($"Found {count} proactive remediations matching '{searchQuery}'.");
-        }
-
-        /// <summary>
-        /// MacOS shell scripts
-        /// </summary>
-
-        private async Task LoadAllMacOSShellScriptsAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await GetAllMacOSShellScriptContentAsync(sourceGraphServiceClient));
-
-            AppendToDetailsRichTextBlock($"Loaded {count} MacOS shell scripts.");
-        }
-        private async Task SearchForMacOSShellScriptsAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await SearchMacOSShellScriptContentAsync(sourceGraphServiceClient, searchQuery));
-
-            AppendToDetailsRichTextBlock($"Found {count} MacOS shell scripts matching '{searchQuery}'.");
-        }
-
-        /// <summary>
-        /// Windows AutoPilot Profiles
-        /// </summary>
-
-        private async Task LoadAllWindowsAutoPilotProfilesAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await GetAllWindowsAutoPilotContentAsync(sourceGraphServiceClient));
-
-            AppendToDetailsRichTextBlock($"Loaded {count} Windows AutoPilot profiles.");
-        }
-        private async Task SearchForWindowsAutoPilotProfilesAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await SearchWindowsAutoPilotContentAsync(sourceGraphServiceClient, searchQuery));
-
-            AppendToDetailsRichTextBlock($"Found {count} Windows AutoPilot profiles matching '{searchQuery}'.");
-        }
-
-        /// <summary>
-        /// Windows Driver Updates
-        /// </summary>
-        private async Task LoadAllWindowsDriverUpdatesAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await GetAllWindowsDriverUpdateContentAsync(sourceGraphServiceClient));
-
-            AppendToDetailsRichTextBlock($"Loaded {count} Windows driver updates.");
-        }
-        private async Task SearchForWindowsDriverUpdatesAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await SearchWindowsDriverUpdateContentAsync(sourceGraphServiceClient, searchQuery));
-
-            AppendToDetailsRichTextBlock($"Found {count} Windows driver updates matching '{searchQuery}'.");
-        }
-
-        /// <summary>
-        /// Windows Feature Updates
-        /// </summary>
-
-        private async Task LoadAllWindowsFeatureUpdatesAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await GetAllWindowsFeatureUpdateContentAsync(sourceGraphServiceClient));
-
-            AppendToDetailsRichTextBlock($"Loaded {count} Windows feature updates.");
-        }
-        private async Task SearchForWindowsFeatureUpdatesAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await SearchWindowsFeatureUpdateContentAsync(sourceGraphServiceClient, searchQuery));
-
-            AppendToDetailsRichTextBlock($"Found {count} Windows feature updates matching '{searchQuery}'.");
-        }
-
-        /// <summary>
-        /// Windows Quality Update Policy
-        /// </summary>
-
-        private async Task LoadAllWindowsQualityUpdatePoliciesAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await GetAllWindowsQualityUpdatePolicyContentAsync(sourceGraphServiceClient));
-
-            AppendToDetailsRichTextBlock($"Loaded {count} Windows quality update policies.");
-        }
-        private async Task SearchForWindowsQualityUpdatePoliciesAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await SearchWindowsQualityUpdatePolicyContentAsync(sourceGraphServiceClient, searchQuery));
-
-            AppendToDetailsRichTextBlock($"Found {count} Windows quality update policies matching '{searchQuery}'.");
-        }
-
-        /// <summary>
-        /// Windows Quality Update Profile
-        /// </summary>
-
-        private async Task LoadAllWindowsQualityUpdateProfilesAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await GetAllWindowsQualityUpdateProfileContentAsync(sourceGraphServiceClient));
-
-            AppendToDetailsRichTextBlock($"Loaded {count} Windows quality update profiles.");
-        }
-        private async Task SearchForWindowsQualityUpdateProfilesAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await SearchWindowsQualityUpdateProfileContentAsync(sourceGraphServiceClient, searchQuery));
-
-            AppendToDetailsRichTextBlock($"Found {count} Windows quality update profiles matching '{searchQuery}'.");
-        }
 
         /// <summary>
         /// Returns the value of the selected radio button in the OptionsExpander.
