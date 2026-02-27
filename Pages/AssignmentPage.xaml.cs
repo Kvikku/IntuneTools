@@ -52,7 +52,40 @@ namespace IntuneTools.Pages
         private bool _suppressOptionEvents = false;
         private bool _suppressSelectAllEvents = false;
 
-        private readonly Dictionary<string, Func<Task>> _assignmentLoaders;
+        /// <summary>
+        /// Maps checkbox names to ContentTypes constants for registry lookup.
+        /// </summary>
+        private static readonly Dictionary<string, string> CheckboxToContentType = new()
+        {
+            ["SettingsCatalog"] = ContentTypes.SettingsCatalog,
+            ["DeviceCompliance"] = ContentTypes.DeviceCompliancePolicy,
+            ["DeviceConfiguration"] = ContentTypes.DeviceConfigurationPolicy,
+            ["macOSShellScript"] = ContentTypes.MacOSShellScript,
+            ["PowerShellScript"] = ContentTypes.PowerShellScript,
+            ["ProactiveRemediation"] = ContentTypes.ProactiveRemediation,
+            ["WindowsAutopilot"] = ContentTypes.WindowsAutoPilotProfile,
+            ["WindowsDriverUpdate"] = ContentTypes.WindowsDriverUpdate,
+            ["WindowsFeatureUpdate"] = ContentTypes.WindowsFeatureUpdate,
+            ["WindowsQualityUpdatePolicy"] = ContentTypes.WindowsQualityUpdatePolicy,
+            ["WindowsQualityUpdateProfile"] = ContentTypes.WindowsQualityUpdateProfile,
+            ["AppleBYODEnrollmentProfile"] = ContentTypes.AppleBYODEnrollmentProfile,
+            ["Application"] = ContentTypes.Application,
+        };
+
+        /// <summary>
+        /// Gets the selected ContentTypes based on checked checkboxes.
+        /// </summary>
+        private IEnumerable<string> GetSelectedContentTypes()
+        {
+            var checkedNames = GetCheckedOptionNames();
+            foreach (var name in checkedNames)
+            {
+                if (CheckboxToContentType.TryGetValue(name, out var contentType))
+                {
+                    yield return contentType;
+                }
+            }
+        }
 
         private DeviceAndAppManagementAssignmentFilter? _selectedFilterID;
         private string _selectedFilterName;
@@ -75,29 +108,11 @@ namespace IntuneTools.Pages
         {
             this.InitializeComponent();
 
-            _assignmentLoaders = new Dictionary<string, Func<Task>>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["SettingsCatalog"] = async () => await LoadAllSettingsCatalogPoliciesAsync(),
-                ["DeviceCompliance"] = async () => await LoadAllDeviceCompliancePoliciesAsync(),
-                ["DeviceConfiguration"] = async () => await LoadAllDeviceConfigurationPoliciesAsync(),
-                ["macOSShellScript"] = async () => await LoadAllmacOSShellScriptsAsync(),
-                ["PowerShellScript"] = async () => await LoadAllPowershellScriptsAsync(),
-                ["ProactiveRemediation"] = async () => await LoadAllProactiveRemediationScriptsAsync(),
-                ["WindowsAutopilot"] = async () => await LoadAllWindowsAutopilotProfilesAsync(),
-                ["WindowsDriverUpdate"] = async () => await LoadAllWindowsDriverUpdateProfilesAsync(),
-                ["WindowsFeatureUpdate"] = async () => await LoadAllWindowsFeatureUpdateProfilesAsync(),
-                ["WindowsQualityUpdatePolicy"] = async () => await LoadAllWindowsQualityUpdatePoliciesAsync(),
-                ["WindowsQualityUpdateProfile"] = async () => await LoadAllWindowsQualityUpdateProfilesAsync(),
-                ["AppleBYODEnrollmentProfile"] = async () => await LoadAllAppleBYODEnrollmentProfilesAsync(),
-                ["Application"] = async () => await LoadAllApplicationsAsync()
-            };
-
             _allAssignments.AddRange(AssignmentList);
             AppDataGrid.ItemsSource = AssignmentList;
 
             this.Loaded += AssignmentPage_Loaded;
             RightClickMenu.AttachDataGridContextMenu(AppDataGrid);
-            // Removed direct logging call here to avoid NullReference due to control construction order.
         }
 
         protected override string[] GetManagedControlNames() => new[]
@@ -325,11 +340,10 @@ namespace IntuneTools.Pages
             AssignmentList.Clear();
             _allAssignments.Clear();
 
-
-            var selectedContent = GetCheckedOptionNames();
-            if (selectedContent.Count == 0)
+            var selectedContentTypes = GetSelectedContentTypes().ToList();
+            if (selectedContentTypes.Count == 0)
             {
-                AppendToLog("No content types selected for import.");
+                AppendToLog("No content types selected.");
                 AppendToLog("Please select at least one content type and try again.");
                 return;
             }
@@ -338,18 +352,28 @@ namespace IntuneTools.Pages
             ShowLoading("Loading assignment data...");
             try
             {
-                foreach (var option in selectedContent)
+                foreach (var contentType in selectedContentTypes)
                 {
-                    if (_assignmentLoaders.TryGetValue(option, out var loader))
+                    var op = ContentTypeRegistry.Get(contentType);
+                    if (op != null)
                     {
-                        try { await loader(); }
+                        try
+                        {
+                            var items = await op.LoadAll(graphServiceClient);
+                            foreach (var item in items)
+                            {
+                                AssignmentList.Add(item);
+                            }
+                            AppendToLog($"Loaded {items.Count()} {op.DisplayNamePlural}.");
+                        }
                         catch (Exception ex)
                         {
-                            AppendToLog($"Failed loading assignments for '{option}': {ex.Message}");
+                            AppendToLog($"Failed loading {op.DisplayNamePlural}: {ex.Message}");
                         }
                     }
                 }
                 _allAssignments.AddRange(AssignmentList);
+                AppDataGrid.ItemsSource = AssignmentList;
             }
             finally
             {
@@ -375,247 +399,6 @@ namespace IntuneTools.Pages
 
             AppendToLog($"Gathered {content.Count} items from DataGrid.");
             return content;
-        }
-
-
-        private async Task LoadAllSettingsCatalogPoliciesAsync()
-        {
-            ShowLoading("Loading settings catalog policies from Microsoft Graph...");
-            try
-            {
-                var contentList = await GetAllSettingsCatalogContentAsync(sourceGraphServiceClient);
-                foreach (var content in contentList)
-                {
-                    AssignmentList.Add(content);
-                }
-                AppDataGrid.ItemsSource = AssignmentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private async Task LoadAllDeviceCompliancePoliciesAsync()
-        {
-            ShowLoading("Loading device compliance policies from Microsoft Graph...");
-            try
-            {
-                var contentList = await GetAllDeviceComplianceContentAsync(sourceGraphServiceClient);
-                foreach (var content in contentList)
-                {
-                    AssignmentList.Add(content);
-                }
-                AppDataGrid.ItemsSource = AssignmentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private async Task LoadAllDeviceConfigurationPoliciesAsync()
-        {
-            ShowLoading("Loading device configuration policies from Microsoft Graph...");
-            try
-            {
-                var contentList = await GetAllDeviceConfigurationContentAsync(sourceGraphServiceClient);
-                foreach (var content in contentList)
-                {
-                    AssignmentList.Add(content);
-                }
-                AppDataGrid.ItemsSource = AssignmentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private async Task LoadAllmacOSShellScriptsAsync()
-        {
-            ShowLoading("Loading macOS shell scripts from Microsoft Graph...");
-            try
-            {
-                var contentList = await GetAllMacOSShellScriptContentAsync(sourceGraphServiceClient);
-                foreach (var content in contentList)
-                {
-                    AssignmentList.Add(content);
-                }
-                AppDataGrid.ItemsSource = AssignmentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private async Task LoadAllPowershellScriptsAsync()
-        {
-            ShowLoading("Loading PowerShell scripts from Microsoft Graph...");
-            try
-            {
-                var contentList = await GetAllPowerShellScriptContentAsync(sourceGraphServiceClient);
-                foreach (var content in contentList)
-                {
-                    AssignmentList.Add(content);
-                }
-                AppDataGrid.ItemsSource = AssignmentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private async Task LoadAllProactiveRemediationScriptsAsync()
-        {
-            ShowLoading("Loading proactive remediation scripts from Microsoft Graph...");
-            try
-            {
-                var contentList = await GetAllProactiveRemediationContentAsync(sourceGraphServiceClient);
-                foreach (var content in contentList)
-                {
-                    AssignmentList.Add(content);
-                }
-                AppDataGrid.ItemsSource = AssignmentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private async Task LoadAllWindowsAutopilotProfilesAsync()
-        {
-            ShowLoading("Loading Windows Autopilot profiles from Microsoft Graph...");
-            try
-            {
-                var contentList = await GetAllWindowsAutoPilotContentAsync(sourceGraphServiceClient);
-                foreach (var content in contentList)
-                {
-                    AssignmentList.Add(content);
-                }
-                AppDataGrid.ItemsSource = AssignmentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-
-        private async Task LoadAllWindowsDriverUpdateProfilesAsync()
-        {
-            ShowLoading("Loading Windows Driver Update profiles from Microsoft Graph...");
-            try
-            {
-                var contentList = await GetAllWindowsDriverUpdateContentAsync(sourceGraphServiceClient);
-                foreach (var content in contentList)
-                {
-                    AssignmentList.Add(content);
-                }
-                AppDataGrid.ItemsSource = AssignmentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private async Task LoadAllWindowsFeatureUpdateProfilesAsync()
-        {
-            ShowLoading("Loading Windows Feature Update profiles from Microsoft Graph...");
-            try
-            {
-                var contentList = await GetAllWindowsFeatureUpdateContentAsync(sourceGraphServiceClient);
-                foreach (var content in contentList)
-                {
-                    AssignmentList.Add(content);
-                }
-                AppDataGrid.ItemsSource = AssignmentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private async Task LoadAllWindowsQualityUpdatePoliciesAsync()
-        {
-            ShowLoading("Loading Windows Quality Update policies from Microsoft Graph...");
-            try
-            {
-                var contentList = await GetAllWindowsQualityUpdatePolicyContentAsync(sourceGraphServiceClient);
-                foreach (var content in contentList)
-                {
-                    AssignmentList.Add(content);
-                }
-                AppDataGrid.ItemsSource = AssignmentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private async Task LoadAllWindowsQualityUpdateProfilesAsync()
-        {
-            ShowLoading("Loading Windows Quality Update profiles from Microsoft Graph...");
-            try
-            {
-                var contentList = await GetAllWindowsQualityUpdateProfileContentAsync(sourceGraphServiceClient);
-                foreach (var content in contentList)
-                {
-                    AssignmentList.Add(content);
-                }
-                AppDataGrid.ItemsSource = AssignmentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private async Task LoadAllAppleBYODEnrollmentProfilesAsync()
-        {
-            ShowLoading("Loading Apple BYOD enrollment profiles from Microsoft Graph...");
-            try
-            {
-                var contentList = await GetAllAppleBYODEnrollmentContentAsync(sourceGraphServiceClient);
-                foreach (var content in contentList)
-                {
-                    AssignmentList.Add(content);
-                }
-                AppDataGrid.ItemsSource = AssignmentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private async Task LoadAllApplicationsAsync()
-        {
-            ShowLoading("Loading applications from Microsoft Graph...");
-            try
-            {
-                var contentList = await GetAllApplicationContentAsync(sourceGraphServiceClient);
-                foreach (var content in contentList)
-                {
-                    AssignmentList.Add(content);
-                }
-                AppDataGrid.ItemsSource = AssignmentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private async Task SearchForApplicationsAsync()
-        {
-            // Implement search logic if needed
         }
 
         #endregion
