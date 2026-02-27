@@ -1,13 +1,11 @@
 using CommunityToolkit.WinUI.UI.Controls;
 using IntuneTools.Utilities;
-using Microsoft.UI.Xaml; // Added for RoutedEventArgs
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Documents; // Added for Paragraph and Run
-using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel; // Add this for ObservableCollection
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -102,9 +100,7 @@ namespace IntuneTools.Pages
         {
             this.InitializeComponent();
             SelectAll_Checked(LoadingOverlay, null); // Initialize the 'Select all' checkbox to checked state
-            // Ensure the new controls panel is not visible by default
             NewControlsPanel.Visibility = Visibility.Collapsed;
-            //LoadFilterOptions();
             AppendToLog("Console output");
             RightClickMenu.AttachDataGridContextMenu(ContentDataGrid);
         }
@@ -157,10 +153,6 @@ namespace IntuneTools.Pages
         #endregion
 
         #region Core Operations
-
-        /// Graph API Methods ///
-        /// These methods should handle the actual API calls to Microsoft Graph.
-        /// 
 
         private async Task ListAllOrchestrator(GraphServiceClient graphServiceClient)
         {
@@ -242,14 +234,10 @@ namespace IntuneTools.Pages
 
         private async Task SearchForGroupsAsync(string searchQuery)
         {
-            // Clear the GroupList before loading new data
             GroupList.Clear();
-
             ShowLoading("Searching for groups in Microsoft Graph...");
             try
             {
-                // Clear the GroupList before loading new data
-                GroupList.Clear();
                 // Search for groups using the provided query
                 var groups = await SearchForGroups(destinationGraphServiceClient, searchQuery);
                 // Update GroupList for DataGrid
@@ -596,14 +584,148 @@ namespace IntuneTools.Pages
 
         #region Event Handlers
 
-        /// BUTTON HANDLERS ///
-        /// Buttons should be defined in the XAML file and linked to these methods.
-        /// Buttons should call other methods to perform specific actions.
-        /// Buttons should not directly perform actions themselves.
+        private void ClearAllButton_Click(object sender, RoutedEventArgs e)
+        {
+            ContentList.Clear();
+        }
+
+        private void ClearSelectedButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (ContentDataGrid.SelectedItems != null && ContentDataGrid.SelectedItems.Count > 0)
+            {
+                var itemsToRemove = ContentDataGrid.SelectedItems.Cast<CustomContentInfo>().ToList();
+                foreach (var item in itemsToRemove)
+                {
+                    ContentList.Remove(item);
+                }
+            }
+        }
+
+        private void ContentDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
+        {
+            HandleDataGridSorting(sender, e);
+        }
+
+        private void FilterSelectionComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // Handle filter selection change - placeholder for future logic
+        }
+
+        private void FiltersCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            FilterSelectionComboBox.Visibility = Visibility.Visible;
+        }
+
+        private async void FiltersCheckBox_Click(object sender, RoutedEventArgs e)
+        {
+            await LoadAllAssignmentFiltersAsync();
+            NewControlsPanel.Visibility = Visibility.Visible;
+            GroupsCheckBox.IsChecked = true;
+        }
+
+        private void FiltersCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            FilterSelectionComboBox.Visibility = Visibility.Collapsed;
+        }
+
+        private void GroupDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
+        {
+            var dataGrid = sender as DataGrid;
+            if (GroupList == null || GroupList.Count == 0)
+                return;
+
+            var textColumn = e.Column as DataGridTextColumn;
+            var binding = textColumn?.Binding as Binding;
+            string sortProperty = binding?.Path?.Path;
+            if (string.IsNullOrEmpty(sortProperty))
+            {
+                AppendToLog("Sorting error: Unable to determine property name from column binding.");
+                return;
+            }
+
+            var propInfo = typeof(GroupInfo).GetProperty(sortProperty);
+            if (propInfo == null)
+            {
+                AppendToLog($"Sorting error: Property '{sortProperty}' not found on GroupInfo.");
+                return;
+            }
+
+            DataGridSortDirection? currentDirection = e.Column.SortDirection;
+            ListSortDirection direction;
+            if (currentDirection.HasValue && currentDirection.Value == DataGridSortDirection.Ascending)
+                direction = ListSortDirection.Descending;
+            else
+                direction = ListSortDirection.Ascending;
+
+            List<GroupInfo> sorted;
+            try
+            {
+                if (direction == ListSortDirection.Ascending)
+                    sorted = GroupList.OrderBy(x => propInfo.GetValue(x, null) ?? string.Empty).ToList();
+                else
+                    sorted = GroupList.OrderByDescending(x => propInfo.GetValue(x, null) ?? string.Empty).ToList();
+            }
+            catch (Exception ex)
+            {
+                AppendToLog($"Sorting error: {ex.Message}");
+                return;
+            }
+
+            GroupList.Clear();
+            foreach (var item in sorted)
+                GroupList.Add(item);
+
+            foreach (var col in dataGrid.Columns)
+                col.SortDirection = null;
+            e.Column.SortDirection = direction == ListSortDirection.Ascending
+                ? DataGridSortDirection.Ascending
+                : DataGridSortDirection.Descending;
+        }
+
+        private async void GroupListAllButton_Click(object sender, RoutedEventArgs e)
+        {
+            await LoadAllGroupsAsync();
+        }
+
+        private async void GroupSearchButton_Click(object sender, RoutedEventArgs e)
+        {
+            await SearchForGroupsAsync(GroupSearchTextBox.Text?.Trim() ?? string.Empty);
+        }
+
+        private void GroupsCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            NewControlsPanel.Visibility = Visibility.Visible;
+            Option_Checked(sender, e);
+        }
+
+        private void GroupsCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            NewControlsPanel.Visibility = Visibility.Collapsed;
+            Option_Unchecked(sender, e);
+        }
+
         private async void ImportButton_Click(object sender, RoutedEventArgs e)
         {
             await MainImportProcess();
         }
+
+        private async void ListAllButton_Click(object sender, RoutedEventArgs e)
+        {
+            await ListAllOrchestrator(sourceGraphServiceClient);
+        }
+
+        private void Option_Checked(object sender, RoutedEventArgs e)
+        {
+            if (_suppressOptionEvents) return;
+            UpdateSelectAllCheckBox();
+        }
+
+        private void Option_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (_suppressOptionEvents) return;
+            UpdateSelectAllCheckBox();
+        }
+
         private async void SearchButton_Click(object sender, RoutedEventArgs e)
         {
             var searchQuery = SearchQueryTextBox.Text?.Trim();
@@ -616,53 +738,7 @@ namespace IntuneTools.Pages
                 AppendToLog("Search query cannot be empty.");
             }
         }
-        private async void ListAllButton_Click(object sender, RoutedEventArgs e)
-        {
-            // This method is called when the "List All" button is clicked
-            await ListAllOrchestrator(sourceGraphServiceClient);
-        }
 
-        private async void GroupListAllButton_Click(object sender, RoutedEventArgs e)
-        {
-            // This method is called when the "List All Groups" button is clicked
-            await LoadAllGroupsAsync();
-        }
-
-        private async void GroupSearchButton_Click(object sender, RoutedEventArgs e)
-        {
-            // This method is called when the "Search Groups" button is clicked
-            await SearchForGroupsAsync(GroupSearchTextBox.Text?.Trim() ?? string.Empty);
-        }
-
-        private async void FiltersCheckBox_Click(object sender, RoutedEventArgs e)
-        {
-            // This method is called when the "List All Assignment Filters" button is clicked
-            await LoadAllAssignmentFiltersAsync();
-            NewControlsPanel.Visibility = Visibility.Visible;
-            GroupsCheckBox.IsChecked = true;
-        }
-
-        private void ClearAllButton_Click(object sender, RoutedEventArgs e)
-        {
-            // Clear all items from ContentList, which will update the DataGrid
-            ContentList.Clear();
-        }
-
-        private void ClearSelectedButton_Click(object sender, RoutedEventArgs e)
-        {
-            // Remove only the selected items from ContentList
-            if (ContentDataGrid.SelectedItems != null && ContentDataGrid.SelectedItems.Count > 0)
-            {
-                // To avoid modifying the collection while iterating, copy selected items to a list
-                var itemsToRemove = ContentDataGrid.SelectedItems.Cast<CustomContentInfo>().ToList();
-                foreach (var item in itemsToRemove)
-                {
-                    ContentList.Remove(item);
-                }
-            }
-        }
-
-        // Handler for the 'Select all' checkbox Checked event
         private void SelectAll_Checked(object sender, RoutedEventArgs e)
         {
             if (_suppressSelectAllEvents) return;
@@ -677,7 +753,11 @@ namespace IntuneTools.Pages
             _suppressOptionEvents = false;
         }
 
-        // Handler for the 'Select all' checkbox Unchecked event
+        private void SelectAll_Indeterminate(object sender, RoutedEventArgs e)
+        {
+            // Do nothing - indeterminate state is handled by UpdateSelectAllCheckBox
+        }
+
         private void SelectAll_Unchecked(object sender, RoutedEventArgs e)
         {
             if (_suppressSelectAllEvents) return;
@@ -692,30 +772,6 @@ namespace IntuneTools.Pages
             _suppressOptionEvents = false;
         }
 
-        // Handler for the 'Select all' checkbox Indeterminate event
-        private void SelectAll_Indeterminate(object sender, RoutedEventArgs e)
-        {
-            // Do nothing, or optionally set all to null if you want
-            // Option1CheckBox.IsChecked = null;
-            // Option2CheckBox.IsChecked = null;
-            // Option3CheckBox.IsChecked = null;
-        }
-
-        // Handler for individual option checkbox Checked event
-        private void Option_Checked(object sender, RoutedEventArgs e)
-        {
-            if (_suppressOptionEvents) return;
-            UpdateSelectAllCheckBox();
-        }
-
-        // Handler for individual option checkbox Unchecked event
-        private void Option_Unchecked(object sender, RoutedEventArgs e)
-        {
-            if (_suppressOptionEvents) return;
-            UpdateSelectAllCheckBox();
-        }
-
-        // Helper to update the 'Select all' checkbox state based on options
         private void UpdateSelectAllCheckBox()
         {
             var optionCheckBoxes = OptionsPanel.Children.OfType<CheckBox>().Where(cb => cb.Name != "OptionsAllCheckBox").ToList();
@@ -733,114 +789,6 @@ namespace IntuneTools.Pages
             else
                 OptionsAllCheckBox.IsChecked = null;
             _suppressSelectAllEvents = false;
-        }
-
-        private void GroupsCheckBox_Checked(object sender, RoutedEventArgs e)
-        {
-            NewControlsPanel.Visibility = Visibility.Visible;
-            // Call the general Option_Checked handler if needed for other logic (like updating SelectAllCheckBox)
-            Option_Checked(sender, e);
-        }
-
-        private void GroupsCheckBox_Unchecked(object sender, RoutedEventArgs e)
-        {
-            NewControlsPanel.Visibility = Visibility.Collapsed;
-            // Call the general Option_Unchecked handler if needed for other logic
-            Option_Unchecked(sender, e);
-        }
-
-        private void FiltersCheckBox_Checked(object sender, RoutedEventArgs e)
-        {
-            FilterSelectionComboBox.Visibility = Visibility.Visible;
-
-        }
-
-        private void FiltersCheckBox_Unchecked(object sender, RoutedEventArgs e)
-        {
-            FilterSelectionComboBox.Visibility = Visibility.Collapsed;
-        }
-
-        private void FilterSelectionComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            // Handle filter selection change
-            // For now, just a placeholder
-            if (FilterSelectionComboBox.SelectedItem != null)
-            {
-                string selectedFilter = FilterSelectionComboBox.SelectedItem.ToString();
-                // You can add logic here to use the selectedFilter
-            }
-        }
-
-        private void GroupDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
-        {
-            var dataGrid = sender as DataGrid;
-            if (GroupList == null || GroupList.Count == 0)
-                return;
-
-            // Get the property name from the column binding
-            var textColumn = e.Column as DataGridTextColumn;
-            var binding = textColumn?.Binding as Binding;
-            string sortProperty = binding?.Path?.Path;
-            if (string.IsNullOrEmpty(sortProperty))
-            {
-                AppendToLog("Sorting error: Unable to determine property name from column binding.");
-                return;
-            }
-
-            // Check if property exists on GroupInfo
-            var propInfo = typeof(GroupInfo).GetProperty(sortProperty);
-            if (propInfo == null)
-            {
-                AppendToLog($"Sorting error: Property '{sortProperty}' not found on GroupInfo.");
-                return;
-            }
-
-            // Toggle sort direction
-            DataGridSortDirection? currentDirection = e.Column.SortDirection;
-            ListSortDirection direction;
-            if (currentDirection.HasValue && currentDirection.Value == DataGridSortDirection.Ascending)
-                direction = ListSortDirection.Descending;
-            else
-                direction = ListSortDirection.Ascending;
-
-            // Sort the GroupList in place
-            List<GroupInfo> sorted;
-            try
-            {
-                if (direction == ListSortDirection.Ascending)
-                {
-                    sorted = GroupList.OrderBy(x => propInfo.GetValue(x, null) ?? string.Empty).ToList();
-                }
-                else
-                {
-                    sorted = GroupList.OrderByDescending(x => propInfo.GetValue(x, null) ?? string.Empty).ToList();
-                }
-            }
-            catch (Exception ex)
-            {
-                AppendToLog($"Sorting error: {ex.Message}");
-                return;
-            }
-
-            // Update GroupList
-            GroupList.Clear();
-            foreach (var item in sorted)
-                GroupList.Add(item);
-
-            // Update sort direction indicator
-            foreach (var col in dataGrid.Columns)
-                col.SortDirection = null;
-            e.Column.SortDirection = direction == ListSortDirection.Ascending
-                ? DataGridSortDirection.Ascending
-                : DataGridSortDirection.Descending;
-
-            // Prevent default sort
-            // e.Handled = true; // Uncomment if needed for your toolkit version
-        }
-
-        private void ContentDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
-        {
-            HandleDataGridSorting(sender, e);
         }
 
         #endregion
