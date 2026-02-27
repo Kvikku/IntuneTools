@@ -58,6 +58,42 @@ namespace IntuneTools.Pages
         private int _importSuccessCount;
         private int _importErrorCount;
 
+        /// <summary>
+        /// Maps checkbox names to ContentTypes constants.
+        /// </summary>
+        private static readonly Dictionary<string, string> CheckboxToContentType = new()
+        {
+            ["SettingsCatalog"] = ContentTypes.SettingsCatalog,
+            ["DeviceCompliance"] = ContentTypes.DeviceCompliancePolicy,
+            ["DeviceConfiguration"] = ContentTypes.DeviceConfigurationPolicy,
+            ["AppleBYODEnrollmentProfile"] = ContentTypes.AppleBYODEnrollmentProfile,
+            ["PowerShellScript"] = ContentTypes.PowerShellScript,
+            ["ProactiveRemediation"] = ContentTypes.ProactiveRemediation,
+            ["macOSShellScript"] = ContentTypes.MacOSShellScript,
+            ["WindowsAutopilot"] = ContentTypes.WindowsAutoPilotProfile,
+            ["WindowsDriverUpdate"] = ContentTypes.WindowsDriverUpdate,
+            ["WindowsFeatureUpdate"] = ContentTypes.WindowsFeatureUpdate,
+            ["WindowsQualityUpdatePolicy"] = ContentTypes.WindowsQualityUpdatePolicy,
+            ["WindowsQualityUpdateProfile"] = ContentTypes.WindowsQualityUpdateProfile,
+            ["Filters"] = ContentTypes.AssignmentFilter,
+            ["EntraGroups"] = ContentTypes.EntraGroup,
+        };
+
+        /// <summary>
+        /// Gets the selected ContentTypes based on checked checkboxes.
+        /// </summary>
+        private IEnumerable<string> GetSelectedContentTypes()
+        {
+            var checkedNames = GetCheckedOptionNames();
+            foreach (var name in checkedNames)
+            {
+                if (CheckboxToContentType.TryGetValue(name, out var contentType))
+                {
+                    yield return contentType;
+                }
+            }
+        }
+
         public ImportPage()
         {
             this.InitializeComponent();
@@ -112,99 +148,25 @@ namespace IntuneTools.Pages
                 // Clear the ContentList before loading new data
                 ContentList.Clear();
 
+                // Get the selected content types
+                var selectedContentTypes = GetSelectedContentTypes().ToList();
 
-                // Get the names of checked options
-                var selectedContent = GetCheckedOptionNames();
-
-                if (selectedContent.Count == 0)
+                if (selectedContentTypes.Count == 0)
                 {
                     // If no options are selected, show a message and return
                     AppendToLog("No content types selected for import.");
                     return;
                 }
 
-                if (selectedContent.Contains("SettingsCatalog"))
-                {
-                    // Load Settings Catalog policies
-                    await LoadAllSettingsCatalogPoliciesAsync();
-                }
-                if (selectedContent.Contains("DeviceCompliance"))
-                {
-                    // Load Device Compliance policies
-                    await LoadAllDeviceCompliancePoliciesAsync();
-                }
-                if (selectedContent.Contains("DeviceConfiguration"))
-                {
-                    // Load Device Configuration policies
-                    await LoadAllDeviceConfigurationPoliciesAsync();
-                }
-                if (selectedContent.Contains("AppleBYODEnrollmentProfile"))
-                {
-                    // Load Apple BYOD Enrollment Profiles
-                    await LoadAllAppleBYODEnrollmentProfilesAsync();
-                }
-                if (selectedContent.Contains("PowerShellScript"))
-                {
-                    // Load PowerShell Scripts
-                    await LoadAllPowerShellScriptsAsync();
-                }
-                if (selectedContent.Contains("ProactiveRemediation"))
-                {
-                    // Load Proactive Remediations
-                    await LoadAllProactiveRemediationsAsync();
-                }
-                if (selectedContent.Contains("macOSShellScript"))
-                {
-                    // Load macOS Shell Scripts
-                    await LoadAllmacOSShellScriptsAsync();
-                }
-                if (selectedContent.Contains("WindowsAutopilot"))
-                {
-                    // Load Windows AutoPilot Profiles
-                    await LoadAllWindowsAutoPilotProfilesAsync();
-                }
-                if (selectedContent.Contains("WindowsDriverUpdate"))
-                {
-                    // Load Windows Driver Updates
-                    await LoadAllWindowsDriverUpdatesAsync();
-                }
-                if (selectedContent.Contains("WindowsFeatureUpdate"))
-                {
-                    // Load Windows Feature Updates
-                    await LoadAllWindowsFeatureUpdatesAsync();
-                }
-                if (selectedContent.Contains("WindowsQualityUpdatePolicy"))
-                {
-                    // Load Windows Quality Update policies
-                    await LoadAllWindowsQualityUpdatePoliciesAsync();
-                }
-                if (selectedContent.Contains("WindowsQualityUpdateProfile"))
-                {
-                    // Load Windows Quality Update profiles
-                    await LoadAllWindowsQualityUpdateProfilesAsync();
-                }
-                if (selectedContent.Contains("Filters"))
-                {
-                    // Load Assignment Filters
-                    await LoadAllAssignmentFiltersToBeImportedAsync();
-                }
-                if (selectedContent.Contains("EntraGroups"))
-                {
-                    // Load Entra Groups
-                    await LoadGroupsOrchestrator();
-                }
-
-
-                // TODO - method to clean up ContentList if needed
+                // Load all selected content types using the registry
+                await LoadContentTypesAsync(graphServiceClient, selectedContentTypes, AppendToLog);
 
                 // Clean up content platform value (operating system names) in ContentList
                 foreach (var content in ContentList)
                 {
-                    var cleanedValue = TranslatePolicyPlatformName(content?.ContentPlatform); // Use the method to clean up the platform name
-                    content.ContentPlatform = cleanedValue ?? string.Empty; // Ensure no null values
-
+                    var cleanedValue = TranslatePolicyPlatformName(content?.ContentPlatform);
+                    content.ContentPlatform = cleanedValue ?? string.Empty;
                 }
-                // More cleanup as needed
 
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
@@ -223,99 +185,25 @@ namespace IntuneTools.Pages
                 // Clear the ContentList before loading new data
                 ContentList.Clear();
 
+                // Get the selected content types
+                var selectedContentTypes = GetSelectedContentTypes().ToList();
 
-                // Get the names of checked options
-                var selectedContent = GetCheckedOptionNames();
-
-                if (selectedContent.Count == 0)
+                if (selectedContentTypes.Count == 0)
                 {
                     // If no options are selected, show a message and return
                     AppendToLog("No content types selected for import.");
                     return;
                 }
 
-                if (selectedContent.Contains("SettingsCatalog"))
-                {
-                    // Load Settings Catalog policies
-                    await SearchForSettingsCatalogPoliciesAsync(searchQuery);
-                }
-                if (selectedContent.Contains("DeviceCompliance"))
-                {
-                    // Load Device Compliance policies
-                    await SearchForDeviceCompliancePoliciesAsync(searchQuery);
-                }
-                if (selectedContent.Contains("DeviceConfiguration"))
-                {
-                    // Load Device Configuration policies
-                    await SearchForDeviceConfigurationAsync(searchQuery);
-                }
-                if (selectedContent.Contains("AppleBYODEnrollmentProfile"))
-                {
-                    // Load Apple BYOD Enrollment Profiles
-                    await SearchForAppleBYODEnrollmentProfilesAsync(searchQuery);
-                }
-                if (selectedContent.Contains("PowerShellScript"))
-                {
-                    // Load PowerShell Scripts
-                    await SearchForPowerShellScriptsAsync(searchQuery);
-                }
-                if (selectedContent.Contains("ProactiveRemediation"))
-                {
-                    // Load Proactive Remediations
-                    await SearchForProactiveRemediationsAsync(searchQuery);
-                }
-                if (selectedContent.Contains("macOSShellScript"))
-                {
-                    // Load macOS Shell Scripts
-                    await SearchFormacOSShellScriptsAsync(searchQuery);
-                }
-                if (selectedContent.Contains("WindowsAutopilot"))
-                {
-                    // Load Windows AutoPilot Profiles
-                    await SearchForWindowsAutoPilotProfilesAsync(searchQuery);
-                }
-                if (selectedContent.Contains("WindowsDriverUpdate"))
-                {
-                    // Load Windows Driver Updates
-                    await SearchForWindowsDriverUpdatesAsync(searchQuery);
-                }
-                if (selectedContent.Contains("WindowsFeatureUpdate"))
-                {
-                    // Load Windows Feature Updates
-                    await SearchForWindowsFeatureUpdatesAsync(searchQuery);
-                }
-                if (selectedContent.Contains("WindowsQualityUpdatePolicy"))
-                {
-                    // Load Windows Quality Update policies
-                    await SearchForWindowsQualityUpdatePoliciesAsync(searchQuery);
-                }
-                if (selectedContent.Contains("WindowsQualityUpdateProfile"))
-                {
-                    // Load Windows Quality Update profiles
-                    await SearchForWindowsQualityUpdateProfilesAsync(searchQuery);
-                }
-                if (selectedContent.Contains("Filters"))
-                {
-                    // Load Assignment Filters
-                    await SearchForAssignmentFiltersAsync(searchQuery);
-                }
-                if (selectedContent.Contains("EntraGroups"))
-                {
-                    // Load Entra Groups
-                    await SearchForGroupsOrchestrator(searchQuery);
-                }
-
-
-                // TODO - method to clean up ContentList if needed
+                // Search all selected content types using the registry
+                await SearchContentTypesAsync(graphServiceClient, searchQuery, selectedContentTypes, AppendToLog);
 
                 // Clean up content platform value (operating system names) in ContentList
                 foreach (var content in ContentList)
                 {
-                    var cleanedValue = TranslatePolicyPlatformName(content?.ContentPlatform); // Use the method to clean up the platform name
-                    content.ContentPlatform = cleanedValue ?? string.Empty; // Ensure no null values
-
+                    var cleanedValue = TranslatePolicyPlatformName(content?.ContentPlatform);
+                    content.ContentPlatform = cleanedValue ?? string.Empty;
                 }
-                // More cleanup as needed
 
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
@@ -326,518 +214,10 @@ namespace IntuneTools.Pages
             }
         }
 
-        /// <summary>
-        ///  Settings catalog
-        /// </summary>
-        private async Task LoadAllSettingsCatalogPoliciesAsync()
-        {
-            ShowLoading("Loading settings catalog policies from Microsoft Graph...");
-            try
-            {
-                var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                    ContentList,
-                    async () => await GetAllSettingsCatalogContentAsync(sourceGraphServiceClient));
+        // Note: LoadAllGroupsAsync, SearchForGroupsAsync, and LoadAllAssignmentFiltersAsync
+        // are kept because they are used for the secondary group/filter assignment controls
+        // and use destinationGraphServiceClient.
 
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private async Task SearchForSettingsCatalogPoliciesAsync(string searchQuery)
-        {
-            ShowLoading("Loading settings catalog policies from Microsoft Graph...");
-            try
-            {
-                var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                    ContentList,
-                    async () => await SearchSettingsCatalogContentAsync(sourceGraphServiceClient, searchQuery));
-
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        /// <summary>
-        /// Device Configuration policies
-        /// </summary>
-
-        private async Task LoadAllDeviceConfigurationPoliciesAsync()
-        {
-            ShowLoading("Loading device configuration policies from Microsoft Graph...");
-            try
-            {
-                var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                    ContentList,
-                    async () => await GetAllDeviceConfigurationContentAsync(sourceGraphServiceClient));
-
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private async Task SearchForDeviceConfigurationAsync(string searchQuery)
-        {
-            ShowLoading("Loading settings catalog policies from Microsoft Graph...");
-            try
-            {
-                var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                    ContentList,
-                    async () => await SearchDeviceConfigurationContentAsync(sourceGraphServiceClient, searchQuery));
-
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        /// <summary>
-        ///  Device compliance policies
-        /// </summary>
-        private async Task LoadAllDeviceCompliancePoliciesAsync()
-        {
-            ShowLoading("Loading device compliance policies from Microsoft Graph...");
-            try
-            {
-                var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                    ContentList,
-                    async () => await GetAllDeviceComplianceContentAsync(sourceGraphServiceClient));
-
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-        private async Task SearchForDeviceCompliancePoliciesAsync(string searchQuery)
-        {
-            ShowLoading("Loading settings catalog policies from Microsoft Graph...");
-            try
-            {
-                var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                    ContentList,
-                    async () => await SearchDeviceComplianceContentAsync(sourceGraphServiceClient, searchQuery));
-
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-        /// <summary>
-        /// Apple BYOD Enrollment Profiles
-        /// </summary>
-
-        private async Task LoadAllAppleBYODEnrollmentProfilesAsync()
-        {
-            ShowLoading("Loading Apple BYOD Enrollment Profiles from Microsoft Graph...");
-            try
-            {
-                var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                    ContentList,
-                    async () => await GetAllAppleBYODEnrollmentContentAsync(sourceGraphServiceClient));
-
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-        private async Task SearchForAppleBYODEnrollmentProfilesAsync(string searchQuery)
-        {
-            ShowLoading("Loading Apple BYOD Enrollment Profiles from Microsoft Graph...");
-            try
-            {
-                var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                    ContentList,
-                    async () => await SearchAppleBYODEnrollmentContentAsync(sourceGraphServiceClient, searchQuery));
-
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-        /// <summary>
-        /// PowerShell Scripts
-        /// </summary>
-
-        private async Task LoadAllPowerShellScriptsAsync()
-        {
-            ShowLoading("Loading PowerShell scripts from Microsoft Graph...");
-            try
-            {
-                var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                    ContentList,
-                    async () => await GetAllPowerShellScriptContentAsync(sourceGraphServiceClient));
-
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private async Task SearchForPowerShellScriptsAsync(string searchQuery)
-        {
-            ShowLoading("Loading PowerShell scripts from Microsoft Graph...");
-            try
-            {
-                var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                    ContentList,
-                    async () => await SearchPowerShellScriptContentAsync(sourceGraphServiceClient, searchQuery));
-
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-        /// <summary>
-        /// Proactive Remediations
-        /// </summary>
-
-        private async Task LoadAllProactiveRemediationsAsync()
-        {
-            ShowLoading("Loading proactive remediations from Microsoft Graph...");
-            try
-            {
-                var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                    ContentList,
-                    async () => await GetAllProactiveRemediationContentAsync(sourceGraphServiceClient));
-
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-        private async Task SearchForProactiveRemediationsAsync(string searchQuery)
-        {
-            ShowLoading("Loading proactive remediations from Microsoft Graph...");
-            try
-            {
-                var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                    ContentList,
-                    async () => await SearchProactiveRemediationContentAsync(sourceGraphServiceClient, searchQuery));
-
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        /// <summary>
-        /// macOS Shell Scripts
-        /// </summary>
-
-        private async Task LoadAllmacOSShellScriptsAsync()
-        {
-            ShowLoading("Loading macOS shell scripts from Microsoft Graph...");
-            try
-            {
-                var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                    ContentList,
-                    async () => await GetAllMacOSShellScriptContentAsync(sourceGraphServiceClient));
-
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-        private async Task SearchFormacOSShellScriptsAsync(string searchQuery)
-        {
-            ShowLoading("Loading macOS shell scripts from Microsoft Graph...");
-            try
-            {
-                var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                    ContentList,
-                    async () => await SearchMacOSShellScriptContentAsync(sourceGraphServiceClient, searchQuery));
-
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        /// <summary>
-        /// Windows AutoPilot
-        /// </summary>
-
-        private async Task LoadAllWindowsAutoPilotProfilesAsync()
-        {
-            ShowLoading("Loading Windows AutoPilot profiles from Microsoft Graph...");
-            try
-            {
-                var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                    ContentList,
-                    async () => await GetAllWindowsAutoPilotContentAsync(sourceGraphServiceClient));
-
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-        private async Task SearchForWindowsAutoPilotProfilesAsync(string searchQuery)
-        {
-            ShowLoading("Loading Windows AutoPilot profiles from Microsoft Graph...");
-            try
-            {
-                var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                    ContentList,
-                    async () => await SearchWindowsAutoPilotContentAsync(sourceGraphServiceClient, searchQuery));
-
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        /// <summary>
-        /// Windows Driver Updates
-        /// </summary>
-
-        private async Task LoadAllWindowsDriverUpdatesAsync()
-        {
-            ShowLoading("Loading Windows Driver Updates from Microsoft Graph...");
-            try
-            {
-                var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                    ContentList,
-                    async () => await GetAllWindowsDriverUpdateContentAsync(sourceGraphServiceClient));
-
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-        private async Task SearchForWindowsDriverUpdatesAsync(string searchQuery)
-        {
-            ShowLoading("Loading Windows Driver Updates from Microsoft Graph...");
-            try
-            {
-                var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                    ContentList,
-                    async () => await SearchWindowsDriverUpdateContentAsync(sourceGraphServiceClient, searchQuery));
-
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        /// <summary>
-        /// Windows Feature Updates
-        /// </summary>
-
-        private async Task LoadAllWindowsFeatureUpdatesAsync()
-        {
-            ShowLoading("Loading Windows Feature Updates from Microsoft Graph...");
-            try
-            {
-                var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                    ContentList,
-                    async () => await GetAllWindowsFeatureUpdateContentAsync(sourceGraphServiceClient));
-
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-        private async Task SearchForWindowsFeatureUpdatesAsync(string searchQuery)
-        {
-            ShowLoading("Loading Windows Feature Updates from Microsoft Graph...");
-            try
-            {
-                var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                    ContentList,
-                    async () => await SearchWindowsFeatureUpdateContentAsync(sourceGraphServiceClient, searchQuery));
-
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        /// <summary>
-        /// Windows Quality Update policies
-        /// Must not be confused with Windows quality update profiles AKA expedite
-        /// </summary>
-
-        private async Task LoadAllWindowsQualityUpdatePoliciesAsync()
-        {
-            ShowLoading("Loading Windows Quality Update policies from Microsoft Graph...");
-            try
-            {
-                var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                    ContentList,
-                    async () => await GetAllWindowsQualityUpdatePolicyContentAsync(sourceGraphServiceClient));
-
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-        private async Task SearchForWindowsQualityUpdatePoliciesAsync(string searchQuery)
-        {
-            ShowLoading("Loading Windows Quality Update policies from Microsoft Graph...");
-            try
-            {
-                var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                    ContentList,
-                    async () => await SearchWindowsQualityUpdatePolicyContentAsync(sourceGraphServiceClient, searchQuery));
-
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        /// <summary
-        /// Windows Quality Update profiles
-        /// Must not be confused with Windows quality update policies AKA hotpatch
-        /// </summary>
-
-        private async Task LoadAllWindowsQualityUpdateProfilesAsync()
-        {
-            ShowLoading("Loading Windows Quality Update profiles from Microsoft Graph...");
-            try
-            {
-                var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                    ContentList,
-                    async () => await GetAllWindowsQualityUpdateProfileContentAsync(sourceGraphServiceClient));
-
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-        private async Task SearchForWindowsQualityUpdateProfilesAsync(string searchQuery)
-        {
-            ShowLoading("Loading Windows Quality Update profiles from Microsoft Graph...");
-            try
-            {
-                var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                    ContentList,
-                    async () => await SearchWindowsQualityUpdateProfileContentAsync(sourceGraphServiceClient, searchQuery));
-
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        /// <summary
-        /// Groups
-        /// </summary>
-
-        private async Task LoadGroupsOrchestrator()
-        {
-            ShowLoading("Loading groups from Microsoft Graph...");
-            try
-            {
-                // Clear the GroupList before loading new data
-                GroupList.Clear();
-
-                var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                    ContentList,
-                    async () => await GetAllGroupContentAsync(sourceGraphServiceClient));
-
-                // Bind to DataGrid
-                GroupDataGrid.ItemsSource = GroupList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-        private async Task SearchForGroupsOrchestrator(string searchQuery)
-        {
-            ShowLoading("Searching for groups in Microsoft Graph...");
-            try
-            {
-                // Clear the GroupList before loading new data
-                GroupList.Clear();
-
-                var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                    ContentList,
-                    async () => await SearchGroupContentAsync(sourceGraphServiceClient, searchQuery));
-
-                // Bind to DataGrid
-                GroupDataGrid.ItemsSource = GroupList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
         private async Task SearchForGroupsAsync(string searchQuery)
         {
             // Clear the GroupList before loading new data
@@ -896,54 +276,9 @@ namespace IntuneTools.Pages
 
 
         /// <summary>
-        /// Assignment filters
+        /// Assignment filters for the destination tenant filter selection.
+        /// This is separate from the source content loading and uses destinationGraphServiceClient.
         /// </summary>
-
-        private async Task LoadAllAssignmentFiltersToBeImportedAsync()
-        {
-            // Clear the dictionary for filter names and IDs
-            filterNameAndID.Clear();
-            ShowLoading("Loading assignment filters from Microsoft Graph...");
-            try
-            {
-                // Clear existing filter options
-                FilterOptions.Clear();
-
-                var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                    ContentList,
-                    async () => await GetAllAssignmentFilterContentAsync(sourceGraphServiceClient));
-
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-        private async Task SearchForAssignmentFiltersAsync(string searchQuery)
-        {
-            // Clear the dictionary for filter names and IDs
-            filterNameAndID.Clear();
-            ShowLoading("Searching for assignment filters in Microsoft Graph...");
-            try
-            {
-                // Clear existing filter options
-                FilterOptions.Clear();
-
-                var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                    ContentList,
-                    async () => await SearchAssignmentFilterContentAsync(sourceGraphServiceClient, searchQuery));
-
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
         private async Task LoadAllAssignmentFiltersAsync()
         {
             // Clear the dictionary for filter names and IDs
