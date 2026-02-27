@@ -381,9 +381,20 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].PatchAsync(policy);
                     LogToFunctionFile(appFunction.Main, $"Updated description for {policyID} to {newName}");
                 }
+                else if (selectedRenameMode == "RemovePrefix")
+                {
+                    var existingPolicy = await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].GetAsync();
 
+                    var name = RemovePrefixFromPolicyName(existingPolicy.Name);
 
+                    var policy = new DeviceManagementConfigurationPolicy
+                    {
+                        Name = name
+                    };
 
+                    await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].PatchAsync(policy);
+                    LogToFunctionFile(appFunction.Main, $"Removed prefix from policy {policyID}, new name: {name}");
+                }
             }
             catch (Exception ex)
             {

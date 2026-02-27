@@ -68,14 +68,14 @@
                     <AppBarButton x:Name="ClearAllButton" Icon="Clear" Label="Clear All" Click="ClearAllButton_Click" ToolTipService.ToolTip="Clear all items from staging area."/>
                     <AppBarSeparator/>
                     <ComboBox x:Name="RenameModeComboBox"
-                              Width="120"
+                              Width="140"
                               VerticalAlignment="Bottom"
                               SelectedIndex="0"
                               ToolTipService.ToolTip="Choose the rename mode."
                               SelectionChanged="RenameModeComboBox_SelectionChanged">
-                        <ComboBoxItem Content="Prefix"/>
-                        <!--<ComboBoxItem Content="Suffix"/>-->
+                        <ComboBoxItem Content="Add Prefix"/>
                         <ComboBoxItem Content="Description"/>
+                        <ComboBoxItem Content="Remove Prefix"/>
                     </ComboBox>
                     <TextBox x:Name="NewNameTextBox"
                              PlaceholderText="Enter text"

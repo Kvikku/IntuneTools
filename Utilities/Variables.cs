@@ -24,8 +24,8 @@ namespace IntuneTools.Utilities
         public enum RenameMode
         {
             Prefix = 0,
-            Suffix = 2,
-            Description = 1
+            Description = 1,
+            RemovePrefix = 2
         }
 
         public enum appFunction

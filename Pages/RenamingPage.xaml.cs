@@ -201,7 +201,9 @@ namespace IntuneTools.Pages
                 AppendToDetailsRichTextBlock("No content IDs provided for renaming.");
                 return false;
             }
-            if (string.IsNullOrWhiteSpace(newName))
+
+            // RemovePrefix mode doesn't require a new name input
+            if (selectedRenameMode != "RemovePrefix" && string.IsNullOrWhiteSpace(newName))
             {
                 AppendToDetailsRichTextBlock("New name cannot be empty.");
                 return false;
@@ -218,7 +220,7 @@ namespace IntuneTools.Pages
         }
 
         /// <summary>
-        /// Prepares the rename operation based on mode (Prefix/Suffix/Description).
+        /// Prepares the rename operation based on mode (Prefix/RemovePrefix/Description).
         /// Shows confirmation dialog and returns the text to apply, or null if cancelled.
         /// </summary>
         private async Task<string?> PrepareRenameOperation(List<string> contentIDs, string newName)
@@ -226,7 +228,7 @@ namespace IntuneTools.Pages
             return selectedRenameMode switch
             {
                 "Prefix" => await PreparePrefixRename(contentIDs, newName),
-                "Suffix" => await PrepareSuffixRename(contentIDs, newName),
+                "RemovePrefix" => await PrepareRemovePrefixRename(contentIDs),
                 "Description" => await PrepareDescriptionUpdate(newName),
                 _ => null
             };
@@ -260,12 +262,50 @@ namespace IntuneTools.Pages
             return confirmed ? prefix : null;
         }
 
-        private async Task<string?> PrepareSuffixRename(List<string> contentIDs, string newName)
+        /// <summary>
+        /// Prepares the Remove Prefix operation by showing a preview of names without prefixes.
+        /// </summary>
+        private async Task<string?> PrepareRemovePrefixRename(List<string> contentIDs)
         {
-            // TODO: Implement suffix rename logic similar to prefix
-            // For now, return null (not implemented)
-            await Task.CompletedTask;
-            return null;
+            // Build preview of new names (without prefixes)
+            var previewNames = contentIDs
+                .Select(id => CustomContentList.FirstOrDefault(c => c.ContentId == id))
+                .Where(c => c != null)
+                .Select(c => new
+                {
+                    Original = c!.ContentName,
+                    NewName = RemovePrefixFromPolicyName(c.ContentName)
+                })
+                .ToList();
+
+            if (previewNames.Count == 0)
+            {
+                AppendToDetailsRichTextBlock("No content names found for the provided IDs.");
+                return null;
+            }
+
+            // Check if any items actually have prefixes to remove
+            var itemsWithPrefixes = previewNames.Where(p => p.Original != p.NewName).ToList();
+            if (itemsWithPrefixes.Count == 0)
+            {
+                AppendToDetailsRichTextBlock("No items have prefixes to remove.");
+                return null;
+            }
+
+            // Build preview string showing before → after
+            var previewText = string.Join("\n", itemsWithPrefixes.Take(10).Select(p => $"{p.Original}  →  {p.NewName}"));
+            if (itemsWithPrefixes.Count > 10)
+            {
+                previewText += $"\n... and {itemsWithPrefixes.Count - 10} more items";
+            }
+
+            var confirmed = await ShowConfirmationDialog(
+                "Confirm Removing Prefixes",
+                $"The following {itemsWithPrefixes.Count} item(s) will have their prefixes removed:\n\n{previewText}",
+                "Remove Prefixes");
+
+            // Return a marker value to indicate this is a RemovePrefix operation
+            return confirmed ? "__REMOVE_PREFIX__" : null;
         }
 
         private async Task<string?> PrepareDescriptionUpdate(string newDescription)
@@ -512,7 +552,8 @@ namespace IntuneTools.Pages
 
             string newName = NewNameTextBox.Text.Trim();
 
-            if (string.IsNullOrEmpty(newName))
+            // RemovePrefix mode doesn't require text input
+            if (renameMode != RenameMode.RemovePrefix && string.IsNullOrEmpty(newName))
             {
                 AppendToDetailsRichTextBlock("Please enter a new name.");
                 return;
@@ -520,18 +561,16 @@ namespace IntuneTools.Pages
 
             var prefixSymbol = GetSelectedPrefixOption();
 
-            if (prefixSymbol == null && renameMode != RenameMode.Description)
+            // Prefix symbol only required for Add Prefix mode
+            if (prefixSymbol == null && renameMode == RenameMode.Prefix)
             {
                 AppendToDetailsRichTextBlock("Please select a prefix option.");
                 return;
             }
 
-
-
             selectedRenameMode = renameMode.ToString();
 
             await RenameContent(itemsToRename.Select(i => i.ContentId).Where(id => !string.IsNullOrEmpty(id)).ToList(), newName);
-
         }
 
         private RenameMode GetSelectedRenameMode()
@@ -554,14 +593,18 @@ namespace IntuneTools.Pages
         {
             var selectionMode = GetSelectedRenameMode();
 
-            if (PrefixButton is null) return;
+            if (PrefixButton is null || NewNameTextBox is null) return;
 
-            PrefixButton.IsEnabled = selectionMode != RenameMode.Description;
-            // Then again:
-            if (selectionMode == RenameMode.Description)
-                PrefixButton.IsEnabled = false;
-            else
-                PrefixButton.IsEnabled = true;
+            // Enable/disable controls based on selected mode
+            // Add Prefix mode: needs text input and prefix symbol selection
+            // Description mode: needs text input only
+            // Remove Prefix mode: doesn't need text input or prefix symbol
+            var needsTextInput = selectionMode != RenameMode.RemovePrefix;
+            var needsPrefixSymbol = selectionMode == RenameMode.Prefix;
+
+            PrefixButton.IsEnabled = needsPrefixSymbol;
+            NewNameTextBox.IsEnabled = needsTextInput;
+            NewNameTextBox.PlaceholderText = needsTextInput ? "Enter text" : "Not required for Remove Prefix";
         }
     }
 

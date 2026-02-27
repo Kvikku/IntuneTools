@@ -474,6 +474,19 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     await graphServiceClient.DeviceAppManagement.MobileApps[appId].PatchAsync(app);
                     LogToFunctionFile(appFunction.Main, $"Updated description for application {appId} to '{newName}'");
                 }
+                else if (selectedRenameMode == "RemovePrefix")
+                {
+                    var name = RemovePrefixFromPolicyName(existingApp.DisplayName);
+
+                    var app = new MobileApp
+                    {
+                        OdataType = existingApp.OdataType,
+                        DisplayName = name
+                    };
+
+                    await graphServiceClient.DeviceAppManagement.MobileApps[appId].PatchAsync(app);
+                    LogToFunctionFile(appFunction.Main, $"Removed prefix from application {appId}, new name: '{name}'");
+                }
             }
             catch (Exception ex)
             {
