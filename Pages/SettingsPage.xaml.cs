@@ -1,26 +1,21 @@
 using IntuneTools.Graph;
 using IntuneTools.Utilities;
-using Microsoft.UI.Xaml; // Added for RoutedEventArgs
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Navigation; // Added for NavigationEventArgs
+using Microsoft.UI.Xaml.Navigation;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
-
 namespace IntuneTools.Pages
 {
     /// <summary>
-    /// An empty page that can be used on its own or navigated to within a Frame.
+    /// Settings page for tenant authentication and application configuration.
     /// </summary>
     public sealed partial class SettingsPage : Page
     {
-        private Dictionary<string, Dictionary<string, string>>? _sourceTenantSettings;
-        private Dictionary<string, Dictionary<string, string>>? _destinationTenantSettings;
+        #region Constructor & Navigation
 
         public SettingsPage()
         {
@@ -30,88 +25,146 @@ namespace IntuneTools.Pages
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
+            RefreshLoginStatusUI();
+        }
 
-            // Reflect persisted variables in UI when arriving on the page.
-            // If you keep Graph clients alive elsewhere, you can also check those to decide the icon.
+        /// <summary>
+        /// Updates the login status UI for both source and destination tenants.
+        /// </summary>
+        private void RefreshLoginStatusUI()
+        {
             var sourceSignedIn = !string.IsNullOrWhiteSpace(Variables.sourceTenantName);
             var destinationSignedIn = !string.IsNullOrWhiteSpace(Variables.destinationTenantName);
 
-            // Source
-            if (SourceLoginStatusText != null)
+            UpdateTenantStatusUI(
+                isSource: true,
+                isSignedIn: sourceSignedIn,
+                tenantName: Variables.sourceTenantName);
+
+            UpdateTenantStatusUI(
+                isSource: false,
+                isSignedIn: destinationSignedIn,
+                tenantName: Variables.destinationTenantName);
+        }
+
+        /// <summary>
+        /// Updates the status UI elements for a specific tenant.
+        /// </summary>
+        private void UpdateTenantStatusUI(bool isSource, bool isSignedIn, string? tenantName)
+        {
+            var statusImage = isSource ? SourceLoginStatusImage : DestinationLoginStatusImage;
+            var statusText = isSource ? SourceLoginStatusText : DestinationLoginStatusText;
+
+            if (statusText != null)
             {
-                SourceLoginStatusText.Text = sourceSignedIn
-                    ? $"Signed in: {Variables.sourceTenantName}"
+                statusText.Text = isSignedIn
+                    ? $"Signed in: {tenantName}"
                     : "Not signed in";
             }
-            UpdateImage(SourceLoginStatusImage, sourceSignedIn ? "GreenCheck.png" : "RedCross.png");
 
-            // Destination
-            if (DestinationLoginStatusText != null)
-            {
-                DestinationLoginStatusText.Text = destinationSignedIn
-                    ? $"Signed in: {Variables.destinationTenantName}"
-                    : "Not signed in";
-            }
-            UpdateImage(DestinationLoginStatusImage, destinationSignedIn ? "GreenCheck.png" : "RedCross.png");
+            UpdateImage(statusImage, isSignedIn ? "GreenCheck.png" : "RedCross.png");
         }
 
+        #endregion
 
+        #region Authentication
 
-        private async void SourceLoginButton_Click(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// Authenticates to a tenant and updates the UI accordingly.
+        /// </summary>
+        /// <param name="isSource">True for source tenant, false for destination tenant.</param>
+        private async Task AuthenticateToTenantAsync(bool isSource)
         {
-            //await Utilities.HelperClass.ShowMessageBox("Source Tenant Login", "Authenticating to the source tenant. Please wait...","NO");
-            await AuthenticateToSourceTenant();
-        }
+            var client = isSource
+                ? await SourceUserAuthentication.GetGraphClientAsync()
+                : await DestinationUserAuthentication.GetGraphClientAsync();
 
-        private async Task AuthenticateToSourceTenant()
-        {
-            var Client = await SourceUserAuthentication.GetGraphClientAsync();
-            if (Client != null)
-            {
-                sourceGraphServiceClient = Client;
-                sourceTenantName = await GetAzureTenantName(Client);
-                Variables.sourceTenantName = sourceTenantName ?? string.Empty;
+            var tenantLabel = isSource ? "Source" : "Destination";
 
-                LogToFunctionFile(appFunction.Main, $"Source Tenant Name: {sourceTenantName}");
-                UpdateImage(SourceLoginStatusImage, "GreenCheck.png");
-                SourceLoginStatusText.Text = $"Signed in: {sourceTenantName}";
-            }
-            else
-            {
-                LogToFunctionFile(appFunction.Main, "Failed to authenticate to source tenant.");
-                UpdateImage(SourceLoginStatusImage, "RedCross.png");
-                SourceLoginStatusText.Text = "Not signed in";
-                Variables.sourceTenantName = string.Empty;
-            }
-        }
-
-        private void DestinationLoginButton_Click(object sender, RoutedEventArgs e)
-        {
-            // Add your logic here for handling the DestinationLoginButton click event.
-            // Example:
-            AuthenticateToDestinationTenant();
-        }
-
-        private async Task AuthenticateToDestinationTenant()
-        {
-            var client = await DestinationUserAuthentication.GetGraphClientAsync();
             if (client != null)
             {
-                destinationGraphServiceClient = client;
-                destinationTenantName = await GetAzureTenantName(client);
-                Variables.destinationTenantName = destinationTenantName ?? string.Empty;
+                var tenantName = await GetAzureTenantName(client);
 
-                LogToFunctionFile(appFunction.Main, $"Destination Tenant Name: {destinationTenantName}");
-                UpdateImage(DestinationLoginStatusImage, "GreenCheck.png");
-                DestinationLoginStatusText.Text = $"Signed in: {destinationTenantName}";
+                if (isSource)
+                {
+                    sourceGraphServiceClient = client;
+                    sourceTenantName = tenantName;
+                    Variables.sourceTenantName = tenantName ?? string.Empty;
+                }
+                else
+                {
+                    destinationGraphServiceClient = client;
+                    destinationTenantName = tenantName;
+                    Variables.destinationTenantName = tenantName ?? string.Empty;
+                }
+
+                LogToFunctionFile(appFunction.Main, $"{tenantLabel} Tenant Name: {tenantName}");
+                UpdateTenantStatusUI(isSource, isSignedIn: true, tenantName);
             }
             else
             {
-                LogToFunctionFile(appFunction.Main, "Failed to authenticate to destination tenant.");
-                UpdateImage(DestinationLoginStatusImage, "RedCross.png");
-                DestinationLoginStatusText.Text = "Not signed in";
-                Variables.destinationTenantName = string.Empty;
+                LogToFunctionFile(appFunction.Main, $"Failed to authenticate to {tenantLabel.ToLower()} tenant.");
+
+                if (isSource)
+                    Variables.sourceTenantName = string.Empty;
+                else
+                    Variables.destinationTenantName = string.Empty;
+
+                UpdateTenantStatusUI(isSource, isSignedIn: false, tenantName: null);
             }
+        }
+
+        /// <summary>
+        /// Clears the authentication session for a tenant.
+        /// </summary>
+        /// <param name="isSource">True for source tenant, false for destination tenant.</param>
+        private async Task ClearTenantSessionAsync(bool isSource)
+        {
+            var tenantLabel = isSource ? "Source" : "Destination";
+
+            try
+            {
+                var cleared = isSource
+                    ? await SourceUserAuthentication.ClearSessionAsync()
+                    : await DestinationUserAuthentication.ClearSessionAsync();
+
+                if (cleared)
+                {
+                    if (isSource)
+                    {
+                        sourceGraphServiceClient = null;
+                        sourceTenantName = null;
+                        Variables.sourceTenantName = string.Empty;
+                    }
+                    else
+                    {
+                        destinationGraphServiceClient = null;
+                        destinationTenantName = null;
+                        Variables.destinationTenantName = string.Empty;
+                    }
+
+                    UpdateTenantStatusUI(isSource, isSignedIn: false, tenantName: null);
+                    LogToFunctionFile(appFunction.Main, $"{tenantLabel} token/session cleared.");
+                }
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Failed to clear {tenantLabel.ToLower()} token: {ex.Message}");
+            }
+        }
+
+        #endregion
+
+        #region Event Handlers
+
+        private async void DestinationClearTokenButton_Click(object sender, RoutedEventArgs e)
+        {
+            await ClearTenantSessionAsync(isSource: false);
+        }
+
+        private async void DestinationLoginButton_Click(object sender, RoutedEventArgs e)
+        {
+            await AuthenticateToTenantAsync(isSource: false);
         }
 
         private void OpenLogFileLocation_Click(object sender, RoutedEventArgs e)
@@ -136,46 +189,14 @@ namespace IntuneTools.Pages
 
         private async void SourceClearTokenButton_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                var cleared = await SourceUserAuthentication.ClearSessionAsync();
-                if (cleared)
-                {
-                    sourceGraphServiceClient = null;
-                    sourceTenantName = null;
-                    Variables.sourceTenantName = string.Empty;
-
-                    UpdateImage(SourceLoginStatusImage, "RedCross.png");
-                    SourceLoginStatusText.Text = "Not signed in";
-                    LogToFunctionFile(appFunction.Main, "Source token/session cleared.");
-                }
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"Failed to clear source token: {ex.Message}");
-            }
+            await ClearTenantSessionAsync(isSource: true);
         }
 
-        private async void DestinationClearTokenButton_Click(object sender, RoutedEventArgs e)
+        private async void SourceLoginButton_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                var cleared = await DestinationUserAuthentication.ClearSessionAsync();
-                if (cleared)
-                {
-                    destinationGraphServiceClient = null;
-                    destinationTenantName = null;
-                    Variables.destinationTenantName = string.Empty;
-
-                    UpdateImage(DestinationLoginStatusImage, "RedCross.png");
-                    DestinationLoginStatusText.Text = "Not signed in";
-                    LogToFunctionFile(appFunction.Main, "Destination token/session cleared.");
-                }
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"Failed to clear destination token: {ex.Message}");
-            }
+            await AuthenticateToTenantAsync(isSource: true);
         }
+
+        #endregion
     }
 }
