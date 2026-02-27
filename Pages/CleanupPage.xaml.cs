@@ -42,6 +42,27 @@ namespace IntuneTools.Pages
         private int _deleteSuccessCount;
         private int _deleteErrorCount;
 
+        /// <summary>
+        /// Content types supported by CleanupPage (excludes Application since delete is not supported).
+        /// </summary>
+        private static readonly string[] SupportedContentTypes = new[]
+        {
+            ContentTypes.SettingsCatalog,
+            ContentTypes.DeviceCompliancePolicy,
+            ContentTypes.DeviceConfigurationPolicy,
+            ContentTypes.AppleBYODEnrollmentProfile,
+            ContentTypes.AssignmentFilter,
+            ContentTypes.EntraGroup,
+            ContentTypes.PowerShellScript,
+            ContentTypes.ProactiveRemediation,
+            ContentTypes.MacOSShellScript,
+            ContentTypes.WindowsAutoPilotProfile,
+            ContentTypes.WindowsDriverUpdate,
+            ContentTypes.WindowsFeatureUpdate,
+            ContentTypes.WindowsQualityUpdatePolicy,
+            ContentTypes.WindowsQualityUpdateProfile,
+        };
+
         protected override string UnauthenticatedMessage => "You must authenticate with a tenant before using cleanup features.";
 
         protected override IEnumerable<string> GetManagedControlNames() => new[]
@@ -129,32 +150,13 @@ namespace IntuneTools.Pages
             AppendToDetailsRichTextBlock("Starting to load all content. This could take a while...");
             try
             {
-                // Clear the ContentList before loading new data
                 ContentList.Clear();
-
-                await LoadAllDeviceCompliancePoliciesAsync();
-                await LoadAllSettingsCatalogPoliciesAsync();
-                await LoadAllDeviceConfigurationPoliciesAsync();
-                await LoadAllAppleBYODEnrollmentProfilesAsync();
-                await LoadAllAssignmentFiltersAsync();
-                await LoadAllEntraGroupsAsync();
-                await LoadAllPowerShellScriptsAsync();
-                await LoadAllProactiveRemediationsAsync();
-                await LoadAllMacOSShellScriptsAsync();
-                await LoadAllWindowsAutoPilotProfilesAsync();
-                await LoadAllWindowsDriverUpdatesAsync();
-                await LoadAllWindowsFeatureUpdatesAsync();
-                await LoadAllWindowsQualityUpdatePoliciesAsync();
-                await LoadAllWindowsQualityUpdateProfilesAsync();
-
-                // Bind the combined list to the grid once
+                await LoadContentTypesAsync(graphServiceClient, SupportedContentTypes, AppendToDetailsRichTextBlock);
                 CleanupDataGrid.ItemsSource = ContentList;
             }
             catch (Exception ex)
             {
                 AppendToDetailsRichTextBlock($"Error during loading: {ex.Message}");
-                HideLoading();
-                return;
             }
             finally
             {
@@ -168,31 +170,13 @@ namespace IntuneTools.Pages
             AppendToDetailsRichTextBlock($"Searching for content matching '{searchQuery}'. This may take a while...");
             try
             {
-                // Clear the ContentList before loading new data
                 ContentList.Clear();
-                await SearchForSettingsCatalogPoliciesAsync(searchQuery);
-                await SearchForDeviceCompliancePoliciesAsync(searchQuery);
-                await SearchForDeviceConfigurationPoliciesAsync(searchQuery);
-                await SearchForAppleBYODEnrollmentProfilesAsync(searchQuery);
-                await SearchForAssignmentFiltersAsync(searchQuery);
-                await SearchForEntraGroupsAsync(searchQuery);
-                await SearchForPowerShellScriptsAsync(searchQuery);
-                await SearchForProactiveRemediationsAsync(searchQuery);
-                await SearchForMacOSShellScriptsAsync(searchQuery);
-                await SearchForWindowsAutoPilotProfilesAsync(searchQuery);
-                await SearchForWindowsDriverUpdatesAsync(searchQuery);
-                await SearchForWindowsFeatureUpdatesAsync(searchQuery);
-                await SearchForWindowsQualityUpdatePoliciesAsync(searchQuery);
-                await SearchForWindowsQualityUpdateProfilesAsync(searchQuery);
-
-                // Bind the combined list to the grid once
+                await SearchContentTypesAsync(graphServiceClient, searchQuery, SupportedContentTypes, AppendToDetailsRichTextBlock);
                 CleanupDataGrid.ItemsSource = ContentList;
             }
             catch (Exception ex)
             {
                 AppendToDetailsRichTextBlock($"Error during search: {ex.Message}");
-                HideLoading();
-                return;
             }
             finally
             {
@@ -200,24 +184,6 @@ namespace IntuneTools.Pages
             }
         }
 
-
-        /// <summary>
-        ///  Settings catalog
-        /// </summary>
-        private async Task LoadAllSettingsCatalogPoliciesAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                ContentList,
-                async () => await GetAllSettingsCatalogContentAsync(sourceGraphServiceClient));
-            AppendToDetailsRichTextBlock($"Loaded {count} settings catalog policies.");
-        }
-        private async Task SearchForSettingsCatalogPoliciesAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                ContentList,
-                async () => await SearchSettingsCatalogContentAsync(sourceGraphServiceClient, searchQuery));
-            AppendToDetailsRichTextBlock($"Found {count} settings catalog policies matching '{searchQuery}'.");
-        }
 
         private async Task DeleteSettingsCatalogsAsync()
         {
@@ -259,25 +225,6 @@ namespace IntuneTools.Pages
             }
         }
 
-        /// <summary>
-        ///  Device Compliance Policies
-        /// </summary>
-
-        private async Task LoadAllDeviceCompliancePoliciesAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                ContentList,
-                async () => await GetAllDeviceComplianceContentAsync(sourceGraphServiceClient));
-            AppendToDetailsRichTextBlock($"Loaded {count} device compliance policies.");
-        }
-        private async Task SearchForDeviceCompliancePoliciesAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                ContentList,
-                async () => await SearchDeviceComplianceContentAsync(sourceGraphServiceClient, searchQuery));
-            AppendToDetailsRichTextBlock($"Found {count} device compliance policies matching '{searchQuery}'.");
-        }
-
         private async Task DeleteDeviceCompliancePoliciesAsync()
         {
             try
@@ -316,24 +263,6 @@ namespace IntuneTools.Pages
             }
         }
 
-        /// <summary>
-        ///  Device configuration policies
-        /// </summary>
-
-        private async Task LoadAllDeviceConfigurationPoliciesAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                ContentList,
-                async () => await GetAllDeviceConfigurationContentAsync(sourceGraphServiceClient));
-            AppendToDetailsRichTextBlock($"Loaded {count} device configuration policies.");
-        }
-        private async Task SearchForDeviceConfigurationPoliciesAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                ContentList,
-                async () => await SearchDeviceConfigurationContentAsync(sourceGraphServiceClient, searchQuery));
-            AppendToDetailsRichTextBlock($"Found {count} device configuration policies matching '{searchQuery}'.");
-        }
         private async Task DeleteDeviceConfigurationPoliciesAsync()
         {
             try
@@ -372,24 +301,6 @@ namespace IntuneTools.Pages
             }
         }
 
-        /// <summary>
-        /// Apple BYOD Enrollment Profiles
-        /// </summary>
-
-        private async Task LoadAllAppleBYODEnrollmentProfilesAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                ContentList,
-                async () => await GetAllAppleBYODEnrollmentContentAsync(sourceGraphServiceClient));
-            AppendToDetailsRichTextBlock($"Loaded {count} Apple BYOD enrollment profiles.");
-        }
-        private async Task SearchForAppleBYODEnrollmentProfilesAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                ContentList,
-                async () => await SearchAppleBYODEnrollmentContentAsync(sourceGraphServiceClient, searchQuery));
-            AppendToDetailsRichTextBlock($"Found {count} Apple BYOD enrollment profiles matching '{searchQuery}'.");
-        }
         private async Task DeleteAppleBYODEnrollmentProfilesAsync()
         {
             try
@@ -428,24 +339,6 @@ namespace IntuneTools.Pages
             }
         }
 
-        /// <summary>
-        /// Assignment Filters
-        /// </summary>
-
-        private async Task LoadAllAssignmentFiltersAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                ContentList,
-                async () => await GetAllAssignmentFilterContentAsync(sourceGraphServiceClient));
-            AppendToDetailsRichTextBlock($"Loaded {count} assignment filters.");
-        }
-        private async Task SearchForAssignmentFiltersAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                ContentList,
-                async () => await SearchAssignmentFilterContentAsync(sourceGraphServiceClient, searchQuery));
-            AppendToDetailsRichTextBlock($"Found {count} assignment filters matching '{searchQuery}'.");
-        }
         private async Task DeleteAssignmentFiltersAsync()
         {
             try
@@ -484,24 +377,6 @@ namespace IntuneTools.Pages
             }
         }
 
-        /// <summary>
-        /// Entra Groups
-        /// </summary>
-
-        private async Task LoadAllEntraGroupsAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                ContentList,
-                async () => await GetAllGroupContentAsync(sourceGraphServiceClient));
-            AppendToDetailsRichTextBlock($"Loaded {count} Entra groups.");
-        }
-        private async Task SearchForEntraGroupsAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                ContentList,
-                async () => await SearchGroupContentAsync(sourceGraphServiceClient, searchQuery));
-            AppendToDetailsRichTextBlock($"Found {count} Entra groups matching '{searchQuery}'.");
-        }
         private async Task DeleteEntraGroupsAsync()
         {
             try
@@ -540,24 +415,6 @@ namespace IntuneTools.Pages
             }
         }
 
-        /// <summary>
-        /// Powershell Scripts
-        /// </summary>
-
-        private async Task LoadAllPowerShellScriptsAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                ContentList,
-                async () => await GetAllPowerShellScriptContentAsync(sourceGraphServiceClient));
-            AppendToDetailsRichTextBlock($"Loaded {count} PowerShell scripts.");
-        }
-        private async Task SearchForPowerShellScriptsAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                ContentList,
-                async () => await SearchPowerShellScriptContentAsync(sourceGraphServiceClient, searchQuery));
-            AppendToDetailsRichTextBlock($"Found {count} PowerShell scripts matching '{searchQuery}'.");
-        }
         private async Task DeletePowerShellScriptsAsync()
         {
             try
@@ -596,24 +453,6 @@ namespace IntuneTools.Pages
             }
         }
 
-        /// <summary>
-        /// Proactive Remediations
-        /// </summary>
-
-        private async Task LoadAllProactiveRemediationsAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                ContentList,
-                async () => await GetAllProactiveRemediationContentAsync(sourceGraphServiceClient));
-            AppendToDetailsRichTextBlock($"Loaded {count} proactive remediations.");
-        }
-        private async Task SearchForProactiveRemediationsAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                ContentList,
-                async () => await SearchProactiveRemediationContentAsync(sourceGraphServiceClient, searchQuery));
-            AppendToDetailsRichTextBlock($"Found {count} proactive remediations matching '{searchQuery}'.");
-        }
         private async Task DeleteProactiveRemediationsAsync()
         {
             try
@@ -652,24 +491,6 @@ namespace IntuneTools.Pages
             }
         }
 
-        /// <summary>
-        /// MacOS shell scripts
-        /// </summary>
-
-        private async Task LoadAllMacOSShellScriptsAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                ContentList,
-                async () => await GetAllMacOSShellScriptContentAsync(sourceGraphServiceClient));
-            AppendToDetailsRichTextBlock($"Loaded {count} MacOS shell scripts.");
-        }
-        private async Task SearchForMacOSShellScriptsAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                ContentList,
-                async () => await SearchMacOSShellScriptContentAsync(sourceGraphServiceClient, searchQuery));
-            AppendToDetailsRichTextBlock($"Found {count} MacOS shell scripts matching '{searchQuery}'.");
-        }
         private async Task DeleteMacOSShellScriptsAsync()
         {
             try
@@ -708,24 +529,6 @@ namespace IntuneTools.Pages
             }
         }
 
-        /// <summary>
-        /// Windows AutoPilot Profiles
-        /// </summary>
-
-        private async Task LoadAllWindowsAutoPilotProfilesAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                ContentList,
-                async () => await GetAllWindowsAutoPilotContentAsync(sourceGraphServiceClient));
-            AppendToDetailsRichTextBlock($"Loaded {count} Windows AutoPilot profiles.");
-        }
-        private async Task SearchForWindowsAutoPilotProfilesAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                ContentList,
-                async () => await SearchWindowsAutoPilotContentAsync(sourceGraphServiceClient, searchQuery));
-            AppendToDetailsRichTextBlock($"Found {count} Windows AutoPilot profiles matching '{searchQuery}'.");
-        }
         private async Task DeleteWindowsAutoPilotProfilesAsync()
 
         {
@@ -811,23 +614,6 @@ namespace IntuneTools.Pages
             }
         }
 
-        /// <summary>
-        /// Windows Driver Updates
-        /// </summary>
-        private async Task LoadAllWindowsDriverUpdatesAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                ContentList,
-                async () => await GetAllWindowsDriverUpdateContentAsync(sourceGraphServiceClient));
-            AppendToDetailsRichTextBlock($"Loaded {count} Windows driver updates.");
-        }
-        private async Task SearchForWindowsDriverUpdatesAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                ContentList,
-                async () => await SearchWindowsDriverUpdateContentAsync(sourceGraphServiceClient, searchQuery));
-            AppendToDetailsRichTextBlock($"Found {count} Windows driver updates matching '{searchQuery}'.");
-        }
         private async Task DeleteWindowsDriverUpdatesAsync()
         {
             try
@@ -866,24 +652,6 @@ namespace IntuneTools.Pages
             }
         }
 
-        /// <summary>
-        /// Windows Feature Updates
-        /// </summary>
-
-        private async Task LoadAllWindowsFeatureUpdatesAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                ContentList,
-                async () => await GetAllWindowsFeatureUpdateContentAsync(sourceGraphServiceClient));
-            AppendToDetailsRichTextBlock($"Loaded {count} Windows feature updates.");
-        }
-        private async Task SearchForWindowsFeatureUpdatesAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                ContentList,
-                async () => await SearchWindowsFeatureUpdateContentAsync(sourceGraphServiceClient, searchQuery));
-            AppendToDetailsRichTextBlock($"Found {count} Windows feature updates matching '{searchQuery}'.");
-        }
         private async Task DeleteWindowsFeatureUpdatesAsync()
         {
             try
@@ -922,24 +690,6 @@ namespace IntuneTools.Pages
             }
         }
 
-        /// <summary>
-        /// Windows Quality Update Policy
-        /// </summary>
-
-        private async Task LoadAllWindowsQualityUpdatePoliciesAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                ContentList,
-                async () => await GetAllWindowsQualityUpdatePolicyContentAsync(sourceGraphServiceClient));
-            AppendToDetailsRichTextBlock($"Loaded {count} Windows quality update policies.");
-        }
-        private async Task SearchForWindowsQualityUpdatePoliciesAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                ContentList,
-                async () => await SearchWindowsQualityUpdatePolicyContentAsync(sourceGraphServiceClient, searchQuery));
-            AppendToDetailsRichTextBlock($"Found {count} Windows quality update policies matching '{searchQuery}'.");
-        }
         private async Task DeleteWindowsQualityUpdatePoliciesAsync()
         {
             try
@@ -978,24 +728,6 @@ namespace IntuneTools.Pages
             }
         }
 
-        /// <summary>
-        /// Windows Quality Update Profile
-        /// </summary>
-
-        private async Task LoadAllWindowsQualityUpdateProfilesAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                ContentList,
-                async () => await GetAllWindowsQualityUpdateProfileContentAsync(sourceGraphServiceClient));
-            AppendToDetailsRichTextBlock($"Loaded {count} Windows quality update profiles.");
-        }
-        private async Task SearchForWindowsQualityUpdateProfilesAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                ContentList,
-                async () => await SearchWindowsQualityUpdateProfileContentAsync(sourceGraphServiceClient, searchQuery));
-            AppendToDetailsRichTextBlock($"Found {count} Windows quality update profiles matching '{searchQuery}'.");
-        }
         private async Task DeleteWindowsQualityUpdateProfilesAsync()
         {
             try
