@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -41,6 +42,15 @@ namespace IntuneTools.Utilities
     /// </summary>
     public abstract class BaseMultiTenantPage : Page
     {
+        #region Logging Infrastructure
+
+        /// <summary>
+        /// Observable collection of log entries for binding to ListView.
+        /// </summary>
+        public ObservableCollection<LogEntry> LogEntries { get; } = new();
+
+        #endregion
+
         /// <summary>
         /// Override to specify controls that should be enabled/disabled based on authentication state.
         /// </summary>
@@ -260,61 +270,74 @@ namespace IntuneTools.Utilities
 
         #endregion
 
+        #region Logging Methods
+
         /// <summary>
-        /// Appends a log message to the LogConsole RichTextBlock.
+        /// Adds a log entry to the log console.
         /// </summary>
-        protected void AppendToLog(string text)
+        /// <param name="entry">The log entry to add.</param>
+        protected void AddLogEntry(LogEntry entry)
         {
-            if (!(FindName("LogConsole") is RichTextBlock logConsole)) return;
-
-            Paragraph paragraph;
-            if (logConsole.Blocks.Count == 0)
-            {
-                paragraph = new Paragraph();
-                logConsole.Blocks.Add(paragraph);
-            }
-            else
-            {
-                paragraph = logConsole.Blocks.First() as Paragraph;
-                if (paragraph == null)
-                {
-                    paragraph = new Paragraph();
-                    logConsole.Blocks.Add(paragraph);
-                }
-            }
-
-            if (paragraph.Inlines.Count > 0)
-            {
-                paragraph.Inlines.Add(new LineBreak());
-            }
-            paragraph.Inlines.Add(new Run { Text = text });
-
+            LogEntries.Add(entry);
             ScrollLogToEnd();
         }
 
         /// <summary>
-        /// Scrolls the log console to the end.
+        /// Logs an informational message.
+        /// </summary>
+        protected void LogInfo(string message) => AddLogEntry(LogEntry.Info(message));
+
+        /// <summary>
+        /// Logs a success message.
+        /// </summary>
+        protected void LogSuccess(string message) => AddLogEntry(LogEntry.Success(message));
+
+        /// <summary>
+        /// Logs a warning message.
+        /// </summary>
+        protected void LogWarning(string message) => AddLogEntry(LogEntry.Warning(message));
+
+        /// <summary>
+        /// Logs an error message.
+        /// </summary>
+        protected void LogError(string message) => AddLogEntry(LogEntry.Error(message));
+
+        /// <summary>
+        /// Appends a log message to the log console (backward compatibility).
+        /// Maps to LogInfo for existing code that uses this method.
+        /// </summary>
+        protected void AppendToLog(string text) => LogInfo(text);
+
+        /// <summary>
+        /// Scrolls the log console ListView to the end.
         /// </summary>
         protected void ScrollLogToEnd()
         {
-            var logConsole = FindName("LogConsole") as RichTextBlock;
-            var logScrollViewer = FindName("LogScrollViewer") as ScrollViewer;
+            // Try ListView first (new approach)
+            if (FindName("LogConsole") is ListView logListView && LogEntries.Count > 0)
+            {
+                logListView.UpdateLayout();
+                logListView.ScrollIntoView(LogEntries[^1]);
+                return;
+            }
 
+            // Fallback to ScrollViewer (for pages not yet migrated)
+            var logScrollViewer = FindName("LogScrollViewer") as ScrollViewer;
             if (logScrollViewer == null) return;
 
-            logConsole?.UpdateLayout();
             logScrollViewer.UpdateLayout();
             logScrollViewer.ChangeView(null, logScrollViewer.ScrollableHeight, null, true);
         }
 
         /// <summary>
-        /// Clears all text from the LogConsole.
+        /// Clears all entries from the log console.
         /// </summary>
         protected void ClearLog()
         {
-            if (FindName("LogConsole") is RichTextBlock logConsole)
-                logConsole.Blocks.Clear();
+            LogEntries.Clear();
         }
+
+        #endregion
 
         /// <summary>
         /// Executes an async operation with loading overlay and error handling.

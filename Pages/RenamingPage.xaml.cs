@@ -69,6 +69,7 @@ namespace IntuneTools.Pages
         {
             this.InitializeComponent();
             RightClickMenu.AttachDataGridContextMenu(RenamingDataGrid);
+            LogConsole.ItemsSource = LogEntries;
         }
 
         protected override string UnauthenticatedMessage => "You must authenticate with a tenant before using renaming features.";
@@ -98,9 +99,6 @@ namespace IntuneTools.Pages
             SearchButton.IsEnabled = true;
         }
 
-        // Convenience method for logging - calls base class AppendToLog
-        private void AppendToDetailsRichTextBlock(string text) => AppendToLog(text);
-
         #endregion
 
         #region Core Operations
@@ -108,16 +106,16 @@ namespace IntuneTools.Pages
         private async Task ListAllOrchestrator(GraphServiceClient graphServiceClient)
         {
             ShowLoading("Loading data from Microsoft Graph...");
-            AppendToDetailsRichTextBlock("Starting to load all content. This could take a while...");
+            LogInfo("Starting to load all content. This could take a while...");
             try
             {
                 CustomContentList.Clear();
-                await LoadAllContentTypesAsync(graphServiceClient, AppendToDetailsRichTextBlock);
+                await LoadAllContentTypesAsync(graphServiceClient, LogInfo);
                 RenamingDataGrid.ItemsSource = CustomContentList;
             }
             catch (Exception ex)
             {
-                AppendToDetailsRichTextBlock($"Error during loading: {ex.Message}");
+                LogError($"Error during loading: {ex.Message}");
             }
             finally
             {
@@ -128,16 +126,16 @@ namespace IntuneTools.Pages
         private async Task SearchOrchestrator(GraphServiceClient graphServiceClient, string searchQuery)
         {
             ShowLoading("Searching content in Microsoft Graph...");
-            AppendToDetailsRichTextBlock($"Searching for content matching '{searchQuery}'. This may take a while...");
+            LogInfo($"Searching for content matching '{searchQuery}'. This may take a while...");
             try
             {
                 CustomContentList.Clear();
-                await SearchAllContentTypesAsync(graphServiceClient, searchQuery, AppendToDetailsRichTextBlock);
+                await SearchAllContentTypesAsync(graphServiceClient, searchQuery, LogInfo);
                 RenamingDataGrid.ItemsSource = CustomContentList;
             }
             catch (Exception ex)
             {
-                AppendToDetailsRichTextBlock($"Error during search: {ex.Message}");
+                LogError($"Error during search: {ex.Message}");
             }
             finally
             {
@@ -185,7 +183,7 @@ namespace IntuneTools.Pages
             catch (Exception ex)
             {
                 ShowOperationError($"Rename operation failed: {ex.Message}");
-                AppendToDetailsRichTextBlock($"Error during renaming: {ex.Message}");
+                LogError($"Error during renaming: {ex.Message}");
             }
         }
 
@@ -213,14 +211,14 @@ namespace IntuneTools.Pages
                     await renameAction(id, prefix);
 
                     var logName = displayName ?? $"ID '{id}'";
-                    AppendToDetailsRichTextBlock($"Updated {contentTypeName} '{logName}' with '{prefix}'.");
+                    LogSuccess($"Updated {contentTypeName} '{logName}' with '{prefix}'.");
                     UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
                     _renameSuccessCount++;
                 }
                 catch (Exception ex)
                 {
                     _renameErrorCount++;
-                    AppendToDetailsRichTextBlock($"Error renaming {contentTypeName} with ID {id}: {ex.Message}");
+                    LogError($"Error renaming {contentTypeName} with ID {id}: {ex.Message}");
                 }
             }
         }
@@ -232,20 +230,20 @@ namespace IntuneTools.Pages
         {
             if (contentIDs == null || contentIDs.Count == 0)
             {
-                AppendToDetailsRichTextBlock("No content IDs provided for renaming.");
+                LogWarning("No content IDs provided for renaming.");
                 return false;
             }
 
             if (selectedRenameMode != "RemovePrefix" && string.IsNullOrWhiteSpace(newName))
             {
-                AppendToDetailsRichTextBlock("New name cannot be empty.");
+                LogWarning("New name cannot be empty.");
                 return false;
             }
 
             var prefixSymbol = GetSelectedPrefixOption();
             if (prefixSymbol == null && selectedRenameMode == "Prefix")
             {
-                AppendToDetailsRichTextBlock("Please select a prefix option.");
+                LogWarning("Please select a prefix option.");
                 return false;
             }
 
@@ -282,7 +280,7 @@ namespace IntuneTools.Pages
 
             if (contentNames.Count == 0)
             {
-                AppendToDetailsRichTextBlock("No content names found for the provided IDs.");
+                LogWarning("No content names found for the provided IDs.");
                 return null;
             }
 
@@ -308,14 +306,14 @@ namespace IntuneTools.Pages
 
             if (previewNames.Count == 0)
             {
-                AppendToDetailsRichTextBlock("No content names found for the provided IDs.");
+                LogWarning("No content names found for the provided IDs.");
                 return null;
             }
 
             var itemsWithPrefixes = previewNames.Where(p => p.Original != p.NewName).ToList();
             if (itemsWithPrefixes.Count == 0)
             {
-                AppendToDetailsRichTextBlock("No items have prefixes to remove.");
+                LogWarning("No items have prefixes to remove.");
                 return null;
             }
 
@@ -443,7 +441,7 @@ namespace IntuneTools.Pages
             var result = await dialog.ShowAsync();
             if (result != ContentDialogResult.Primary)
             {
-                AppendToDetailsRichTextBlock("Renaming operation cancelled.");
+                LogInfo("Renaming operation cancelled.");
                 return false;
             }
             return true;
@@ -485,7 +483,7 @@ namespace IntuneTools.Pages
             {
                 ShowOperationError($"Completed with {_renameErrorCount} error(s). {_renameSuccessCount} items renamed successfully.");
             }
-            AppendToDetailsRichTextBlock($"Renamed {_renameSuccessCount} items with '{operationText}'.");
+            LogSuccess($"Renamed {_renameSuccessCount} items with '{operationText}'.");
         }
 
         #endregion
@@ -497,7 +495,7 @@ namespace IntuneTools.Pages
             CustomContentList.Clear();
             RenamingDataGrid.ItemsSource = null;
             RenamingDataGrid.ItemsSource = CustomContentList;
-            AppendToDetailsRichTextBlock("All items cleared from the list.");
+            LogInfo("All items cleared from the list.");
         }
 
         private void ClearSelectedButton_Click(object sender, RoutedEventArgs e)
@@ -505,7 +503,7 @@ namespace IntuneTools.Pages
             var selectedItems = RenamingDataGrid.SelectedItems?.Cast<CustomContentInfo>().ToList();
             if (selectedItems == null || selectedItems.Count == 0)
             {
-                AppendToDetailsRichTextBlock("No items selected to clear.");
+                LogWarning("No items selected to clear.");
                 return;
             }
             foreach (var item in selectedItems)
@@ -514,7 +512,7 @@ namespace IntuneTools.Pages
             }
             RenamingDataGrid.ItemsSource = null;
             RenamingDataGrid.ItemsSource = CustomContentList;
-            AppendToDetailsRichTextBlock($"Cleared {selectedItems.Count} selected item(s) from the list.");
+            LogInfo($"Cleared {selectedItems.Count} selected item(s) from the list.");
         }
 
         private async void ListAllButton_Click(object sender, RoutedEventArgs e)
@@ -529,7 +527,7 @@ namespace IntuneTools.Pages
 
             if (itemsToRename == null || itemsToRename.Count == 0)
             {
-                AppendToDetailsRichTextBlock("No items in the grid to rename.");
+                LogWarning("No items in the grid to rename.");
                 return;
             }
 
@@ -537,7 +535,7 @@ namespace IntuneTools.Pages
 
             if (renameMode != RenameMode.RemovePrefix && string.IsNullOrEmpty(newName))
             {
-                AppendToDetailsRichTextBlock("Please enter a new name.");
+                LogWarning("Please enter a new name.");
                 return;
             }
 
@@ -545,7 +543,7 @@ namespace IntuneTools.Pages
 
             if (prefixSymbol == null && renameMode == RenameMode.Prefix)
             {
-                AppendToDetailsRichTextBlock("Please select a prefix option.");
+                LogWarning("Please select a prefix option.");
                 return;
             }
 
@@ -578,7 +576,7 @@ namespace IntuneTools.Pages
             string searchQuery = SearchQueryTextBox.Text.Trim();
             if (string.IsNullOrEmpty(searchQuery))
             {
-                AppendToDetailsRichTextBlock("Please enter a search query.");
+                LogWarning("Please enter a search query.");
                 return;
             }
             await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
