@@ -232,9 +232,12 @@ namespace IntuneTools.Pages
 
         #region Orchestrators
 
+        /// <summary>
+        /// Main orchestrator that validates selections, confirms with user, and performs
+        /// group assignments for all content items in the DataGrid.
+        /// </summary>
         private async Task MainOrchestrator(GraphServiceClient graphServiceClient)
         {
-            // Main orchestrator of assignment operations
 
 
             // Validate selections 
@@ -383,6 +386,10 @@ namespace IntuneTools.Pages
 
         }
 
+        /// <summary>
+        /// Loads all content items for the selected content types from Microsoft Graph
+        /// and populates the DataGrid.
+        /// </summary>
         private async Task ListAllOrchestrator(GraphServiceClient graphServiceClient)
         {
             AssignmentList.Clear();
@@ -434,6 +441,9 @@ namespace IntuneTools.Pages
 
         #region Content loaders
 
+        /// <summary>
+        /// Gathers all content items from the DataGrid into a dictionary keyed by ContentId.
+        /// </summary>
         private Dictionary<string, CustomContentInfo> GetAllContentFromDatagrid()
         {
             // Gather all content (full objects) from the datagrid and send to orchestrator
@@ -474,6 +484,9 @@ namespace IntuneTools.Pages
             }
         }
 
+        /// <summary>
+        /// Loads all Entra ID groups from Microsoft Graph into the GroupList.
+        /// </summary>
         private async Task LoadAllGroupsAsync()
         {
             GroupList.Clear();
@@ -497,6 +510,9 @@ namespace IntuneTools.Pages
             }
         }
 
+        /// <summary>
+        /// Searches for Entra ID groups matching the specified query.
+        /// </summary>
         private async Task SearchForGroupsAsync(string searchQuery)
         {
             GroupList.Clear();
@@ -520,6 +536,9 @@ namespace IntuneTools.Pages
             }
         }
 
+        /// <summary>
+        /// Loads all assignment filters from Microsoft Graph into the FilterOptions collection.
+        /// </summary>
         private async Task LoadAllAssignmentFiltersAsync()
         {
             ShowLoading("Loading assignment filters from Microsoft Graph...");
