@@ -117,7 +117,7 @@
                               Checked="FiltersCheckBox_Checked"
                               Unchecked="FiltersCheckBox_Unchecked"
                               IsChecked="False"
-                              Click="FilterCheckBoxClick"/>
+                              Click="FiltersCheckBox_Click"/>
                 </StackPanel>
             </CommandBar.Content>
             <CommandBar.PrimaryCommands>
@@ -239,7 +239,7 @@
                                  PlaceholderText="Search groups..."
                                  Width="130"/>
                         <Button x:Name="NewButton1"
-                                Click="GroupSearchClick"
+                                Click="GroupSearchButton_Click"
                                 ToolTipService.ToolTip="Search for a specific group.">
                             <FontIcon Glyph="&#xE721;" FontSize="14"/>
                         </Button>
@@ -247,7 +247,7 @@
 
                     <Button x:Name="NewButton2"
                             Content="List all groups"
-                            Click="GroupListAllClick"
+                            Click="GroupListAllButton_Click"
                             HorizontalAlignment="Left"
                             Margin="0,0,0,8"/>
 
