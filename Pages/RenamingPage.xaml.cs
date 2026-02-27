@@ -557,16 +557,11 @@ namespace IntuneTools.Pages
             if (PrefixButton is null) return;
 
             PrefixButton.IsEnabled = selectionMode != RenameMode.Description;
-
-
+            // Then again:
             if (selectionMode == RenameMode.Description)
-            {
                 PrefixButton.IsEnabled = false;
-            }
             else
-            {
                 PrefixButton.IsEnabled = true;
-            }
         }
     }
 
