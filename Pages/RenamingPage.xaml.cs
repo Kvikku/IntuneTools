@@ -35,6 +35,8 @@ namespace IntuneTools.Pages
     /// </summary>
     public sealed partial class RenamingPage : BaseDataOperationPage
     {
+        #region Fields & Types
+
         /// <summary>
         /// Alias for ContentList to maintain backward compatibility with existing code.
         /// </summary>
@@ -59,41 +61,14 @@ namespace IntuneTools.Pages
             Func<string, string, Task> RenameAsync,
             Func<string, Task<string?>>? GetDisplayNameAsync = null);
 
-        /// <summary>
-        /// Generic helper to rename items, reducing code duplication across all content types.
-        /// </summary>
-        /// <param name="ids">List of content IDs to rename.</param>
-        /// <param name="prefix">The prefix/suffix/description to apply.</param>
-        /// <param name="contentTypeName">Display name for logging (e.g., "Settings Catalog").</param>
-        /// <param name="renameAction">Async action that performs the actual rename for a single ID.</param>
-        /// <param name="getDisplayName">Optional async function to retrieve the item's display name for logging.</param>
-        private async Task RenameItemsAsync(
-            List<string> ids,
-            string prefix,
-            string contentTypeName,
-            Func<string, string, Task> renameAction,
-            Func<string, Task<string?>>? getDisplayName = null)
-        {
-            foreach (var id in ids)
-            {
-                _renameCurrent++;
-                ShowOperationProgress($"Renaming {contentTypeName}", _renameCurrent, _renameTotal);
-                try
-                {
-                    string? displayName = getDisplayName != null ? await getDisplayName(id) : null;
-                    await renameAction(id, prefix);
+        #endregion
 
-                    var logName = displayName ?? $"ID '{id}'";
-                    AppendToDetailsRichTextBlock($"Updated {contentTypeName} '{logName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
-                    _renameSuccessCount++;
-                }
-                catch (Exception ex)
-                {
-                    _renameErrorCount++;
-                    AppendToDetailsRichTextBlock($"Error renaming {contentTypeName} with ID {id}: {ex.Message}");
-                }
-            }
+        #region Constructor & Configuration
+
+        public RenamingPage()
+        {
+            this.InitializeComponent();
+            RightClickMenu.AttachDataGridContextMenu(RenamingDataGrid);
         }
 
         protected override string UnauthenticatedMessage => "You must authenticate with a tenant before using renaming features.";
@@ -105,23 +80,13 @@ namespace IntuneTools.Pages
             "RenamingDataGrid", "ClearLogButton", "RenameModeComboBox"
         };
 
+        #endregion
 
-        public RenamingPage()
-        {
-            this.InitializeComponent();
-            RightClickMenu.AttachDataGridContextMenu(RenamingDataGrid);
-        }
-
-        // DataGrid sorting handler - delegates to base class
-        private void RenamingDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
-        {
-            HandleDataGridSorting(sender, e);
-        }
+        #region Base Class Overrides
 
         protected override void ShowLoading(string message = "Loading data from Microsoft Graph...")
         {
             base.ShowLoading(message);
-            // Disable specific buttons during loading
             ListAllButton.IsEnabled = false;
             SearchButton.IsEnabled = false;
         }
@@ -129,13 +94,16 @@ namespace IntuneTools.Pages
         protected override void HideLoading()
         {
             base.HideLoading();
-            // Re-enable buttons
             ListAllButton.IsEnabled = true;
             SearchButton.IsEnabled = true;
         }
 
         // Convenience method for logging - calls base class AppendToLog
         private void AppendToDetailsRichTextBlock(string text) => AppendToLog(text);
+
+        #endregion
+
+        #region Core Operations
 
         private async Task ListAllOrchestrator(GraphServiceClient graphServiceClient)
         {
@@ -176,6 +144,7 @@ namespace IntuneTools.Pages
                 HideLoading();
             }
         }
+
         /// <summary>
         /// Main entry point for rename operations. Validates, prepares, and executes the rename.
         /// </summary>
@@ -192,6 +161,71 @@ namespace IntuneTools.Pages
         }
 
         /// <summary>
+        /// Executes rename operations for all content types present in the list.
+        /// </summary>
+        private async Task ExecuteRenameOperations(int totalItems, string operationText)
+        {
+            try
+            {
+                InitializeProgressTracking(totalItems);
+                ShowOperationProgress("Preparing to rename items...", 0, _renameTotal);
+
+                foreach (var definition in GetRenameTypeRegistry())
+                {
+                    var ids = GetContentIdsByType(definition.TypeKey);
+                    if (ids.Count > 0)
+                    {
+                        await RenameItemsAsync(ids, operationText, definition.DisplayName,
+                            definition.RenameAsync, definition.GetDisplayNameAsync);
+                    }
+                }
+
+                ReportRenameResults(operationText);
+            }
+            catch (Exception ex)
+            {
+                ShowOperationError($"Rename operation failed: {ex.Message}");
+                AppendToDetailsRichTextBlock($"Error during renaming: {ex.Message}");
+            }
+        }
+
+        #endregion
+
+        #region Rename Logic
+
+        /// <summary>
+        /// Generic helper to rename items, reducing code duplication across all content types.
+        /// </summary>
+        private async Task RenameItemsAsync(
+            List<string> ids,
+            string prefix,
+            string contentTypeName,
+            Func<string, string, Task> renameAction,
+            Func<string, Task<string?>>? getDisplayName = null)
+        {
+            foreach (var id in ids)
+            {
+                _renameCurrent++;
+                ShowOperationProgress($"Renaming {contentTypeName}", _renameCurrent, _renameTotal);
+                try
+                {
+                    string? displayName = getDisplayName != null ? await getDisplayName(id) : null;
+                    await renameAction(id, prefix);
+
+                    var logName = displayName ?? $"ID '{id}'";
+                    AppendToDetailsRichTextBlock($"Updated {contentTypeName} '{logName}' with '{prefix}'.");
+                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
+                    _renameSuccessCount++;
+                }
+                catch (Exception ex)
+                {
+                    _renameErrorCount++;
+                    AppendToDetailsRichTextBlock($"Error renaming {contentTypeName} with ID {id}: {ex.Message}");
+                }
+            }
+        }
+
+        /// <summary>
         /// Validates basic input requirements for rename operations.
         /// </summary>
         private bool ValidateRenameInputs(List<string> contentIDs, string newName)
@@ -202,7 +236,6 @@ namespace IntuneTools.Pages
                 return false;
             }
 
-            // RemovePrefix mode doesn't require a new name input
             if (selectedRenameMode != "RemovePrefix" && string.IsNullOrWhiteSpace(newName))
             {
                 AppendToDetailsRichTextBlock("New name cannot be empty.");
@@ -241,7 +274,6 @@ namespace IntuneTools.Pages
 
             var prefix = $"{prefixSymbol[0]}{newName}{prefixSymbol[1]}";
 
-            // Build preview of new names
             var contentNames = contentIDs
                 .Select(id => CustomContentList.FirstOrDefault(c => c.ContentId == id))
                 .Where(c => c != null)
@@ -262,12 +294,8 @@ namespace IntuneTools.Pages
             return confirmed ? prefix : null;
         }
 
-        /// <summary>
-        /// Prepares the Remove Prefix operation by showing a preview of names without prefixes.
-        /// </summary>
         private async Task<string?> PrepareRemovePrefixRename(List<string> contentIDs)
         {
-            // Build preview of new names (without prefixes)
             var previewNames = contentIDs
                 .Select(id => CustomContentList.FirstOrDefault(c => c.ContentId == id))
                 .Where(c => c != null)
@@ -284,7 +312,6 @@ namespace IntuneTools.Pages
                 return null;
             }
 
-            // Check if any items actually have prefixes to remove
             var itemsWithPrefixes = previewNames.Where(p => p.Original != p.NewName).ToList();
             if (itemsWithPrefixes.Count == 0)
             {
@@ -292,7 +319,6 @@ namespace IntuneTools.Pages
                 return null;
             }
 
-            // Build preview string showing before → after
             var previewText = string.Join("\n", itemsWithPrefixes.Take(10).Select(p => $"{p.Original}  →  {p.NewName}"));
             if (itemsWithPrefixes.Count > 10)
             {
@@ -304,7 +330,6 @@ namespace IntuneTools.Pages
                 $"The following {itemsWithPrefixes.Count} item(s) will have their prefixes removed:\n\n{previewText}",
                 "Remove Prefixes");
 
-            // Return a marker value to indicate this is a RemovePrefix operation
             return confirmed ? "__REMOVE_PREFIX__" : null;
         }
 
@@ -316,29 +341,6 @@ namespace IntuneTools.Pages
                 "Update");
 
             return confirmed ? newDescription : null;
-        }
-
-        /// <summary>
-        /// Shows a confirmation dialog and returns true if user confirmed.
-        /// </summary>
-        private async Task<bool> ShowConfirmationDialog(string title, string content, string confirmButtonText)
-        {
-            var dialog = new ContentDialog
-            {
-                Title = title,
-                Content = content,
-                PrimaryButtonText = confirmButtonText,
-                CloseButtonText = "Cancel",
-                XamlRoot = this.XamlRoot
-            };
-
-            var result = await dialog.ShowAsync();
-            if (result != ContentDialogResult.Primary)
-            {
-                AppendToDetailsRichTextBlock("Renaming operation cancelled.");
-                return false;
-            }
-            return true;
         }
 
         /// <summary>
@@ -420,34 +422,49 @@ namespace IntuneTools.Pages
                 async (id, p) => await RenameApplication(sourceGraphServiceClient, id, p)),
         ];
 
+        #endregion
+
+        #region UI Helpers
+
         /// <summary>
-        /// Executes rename operations for all content types present in the list.
+        /// Shows a confirmation dialog and returns true if user confirmed.
         /// </summary>
-        private async Task ExecuteRenameOperations(int totalItems, string operationText)
+        private async Task<bool> ShowConfirmationDialog(string title, string content, string confirmButtonText)
         {
-            try
+            var dialog = new ContentDialog
             {
-                InitializeProgressTracking(totalItems);
-                ShowOperationProgress("Preparing to rename items...", 0, _renameTotal);
+                Title = title,
+                Content = content,
+                PrimaryButtonText = confirmButtonText,
+                CloseButtonText = "Cancel",
+                XamlRoot = this.XamlRoot
+            };
 
-                // Process all content types from the registry
-                foreach (var definition in GetRenameTypeRegistry())
-                {
-                    var ids = GetContentIdsByType(definition.TypeKey);
-                    if (ids.Count > 0)
-                    {
-                        await RenameItemsAsync(ids, operationText, definition.DisplayName,
-                            definition.RenameAsync, definition.GetDisplayNameAsync);
-                    }
-                }
-
-                ReportRenameResults(operationText);
-            }
-            catch (Exception ex)
+            var result = await dialog.ShowAsync();
+            if (result != ContentDialogResult.Primary)
             {
-                ShowOperationError($"Rename operation failed: {ex.Message}");
-                AppendToDetailsRichTextBlock($"Error during renaming: {ex.Message}");
+                AppendToDetailsRichTextBlock("Renaming operation cancelled.");
+                return false;
             }
+            return true;
+        }
+
+        /// <summary>
+        /// Returns the value of the selected radio button in the OptionsExpander.
+        /// </summary>
+        public string? GetSelectedPrefixOption()
+        {
+            if (Parentheses.IsChecked == true) return "()";
+            if (SquareBrackets.IsChecked == true) return "[]";
+            if (CurlyBrackets.IsChecked == true) return "{}";
+            return null;
+        }
+
+        private RenameMode GetSelectedRenameMode()
+        {
+            var index = RenameModeComboBox?.SelectedIndex ?? 0;
+            if (index < 0 || index > 2) index = 0;
+            return (RenameMode)index;
         }
 
         private void InitializeProgressTracking(int totalItems)
@@ -471,33 +488,9 @@ namespace IntuneTools.Pages
             AppendToDetailsRichTextBlock($"Renamed {_renameSuccessCount} items with '{operationText}'.");
         }
 
+        #endregion
 
-
-        /// <summary>
-        /// Returns the value of the selected radio button in the OptionsExpander.
-        /// </summary>
-        public string? GetSelectedPrefixOption()
-        {
-            if (Parentheses.IsChecked == true)
-                return "()";
-            if (SquareBrackets.IsChecked == true)
-                return "[]";
-            if (CurlyBrackets.IsChecked == true)
-                return "{}";
-            return null;
-        }
-
-
-
-
-
-
-
-
-
-        /// <summary>
-        /// Button handlers
-        /// </summary>
+        #region Event Handlers
 
         private void ClearAllButton_Click(object sender, RoutedEventArgs e)
         {
@@ -528,16 +521,6 @@ namespace IntuneTools.Pages
         {
             await ListAllOrchestrator(sourceGraphServiceClient);
         }
-        private async void SearchButton_Click(object sender, RoutedEventArgs e)
-        {
-            string searchQuery = SearchQueryTextBox.Text.Trim();
-            if (string.IsNullOrEmpty(searchQuery))
-            {
-                AppendToDetailsRichTextBlock("Please enter a search query.");
-                return;
-            }
-            await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
-        }
 
         private async void RenameButton_Click(object sender, RoutedEventArgs e)
         {
@@ -552,7 +535,6 @@ namespace IntuneTools.Pages
 
             string newName = NewNameTextBox.Text.Trim();
 
-            // RemovePrefix mode doesn't require text input
             if (renameMode != RenameMode.RemovePrefix && string.IsNullOrEmpty(newName))
             {
                 AppendToDetailsRichTextBlock("Please enter a new name.");
@@ -561,7 +543,6 @@ namespace IntuneTools.Pages
 
             var prefixSymbol = GetSelectedPrefixOption();
 
-            // Prefix symbol only required for Add Prefix mode
             if (prefixSymbol == null && renameMode == RenameMode.Prefix)
             {
                 AppendToDetailsRichTextBlock("Please select a prefix option.");
@@ -573,32 +554,12 @@ namespace IntuneTools.Pages
             await RenameContent(itemsToRename.Select(i => i.ContentId).Where(id => !string.IsNullOrEmpty(id)).ToList(), newName);
         }
 
-        private RenameMode GetSelectedRenameMode()
-        {
-            // Defaults to Prefix if the ComboBox is not available yet.
-            var index = RenameModeComboBox?.SelectedIndex ?? 0;
-
-            // Clamp to valid range [0..2].
-            if (index < 0 || index > 2) index = 0;
-
-            return (RenameMode)index;
-        }
-
-        private int GetSelectedRenameModeIndex()
-        {
-            return (int)GetSelectedRenameMode();
-        }
-
         private void RenameModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             var selectionMode = GetSelectedRenameMode();
 
             if (PrefixButton is null || NewNameTextBox is null) return;
 
-            // Enable/disable controls based on selected mode
-            // Add Prefix mode: needs text input and prefix symbol selection
-            // Description mode: needs text input only
-            // Remove Prefix mode: doesn't need text input or prefix symbol
             var needsTextInput = selectionMode != RenameMode.RemovePrefix;
             var needsPrefixSymbol = selectionMode == RenameMode.Prefix;
 
@@ -606,6 +567,23 @@ namespace IntuneTools.Pages
             NewNameTextBox.IsEnabled = needsTextInput;
             NewNameTextBox.PlaceholderText = needsTextInput ? "Enter text" : "Not required for Remove Prefix";
         }
-    }
 
+        private void RenamingDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
+        {
+            HandleDataGridSorting(sender, e);
+        }
+
+        private async void SearchButton_Click(object sender, RoutedEventArgs e)
+        {
+            string searchQuery = SearchQueryTextBox.Text.Trim();
+            if (string.IsNullOrEmpty(searchQuery))
+            {
+                AppendToDetailsRichTextBlock("Please enter a search query.");
+                return;
+            }
+            await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
+        }
+
+        #endregion
+    }
 }
