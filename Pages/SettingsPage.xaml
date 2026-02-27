@@ -64,6 +64,10 @@
                             Content="Clear Token"
                             Width="120"
                             Click="SourceClearTokenButton_Click"/>
+                    <Button x:Name="SourceViewPermissionsButton"
+                            Content="View Permissions"
+                            Width="140"
+                            Click="SourceViewPermissionsButton_Click"/>
                     <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                         <Image x:Name="SourceLoginStatusImage"
                                Width="20"
@@ -119,6 +123,10 @@
                             Content="Clear Token"
                             Width="120"
                             Click="DestinationClearTokenButton_Click"/>
+                    <Button x:Name="DestinationViewPermissionsButton"
+                            Content="View Permissions"
+                            Width="140"
+                            Click="DestinationViewPermissionsButton_Click"/>
                     <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                         <Image x:Name="DestinationLoginStatusImage"
                                Width="20"

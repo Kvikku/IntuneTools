@@ -1,11 +1,14 @@
 using IntuneTools.Graph;
 using IntuneTools.Utilities;
+using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace IntuneTools.Pages
@@ -229,6 +232,158 @@ namespace IntuneTools.Pages
         private async void SourceLoginButton_Click(object sender, RoutedEventArgs e)
         {
             await AuthenticateToTenantAsync(isSource: true);
+        }
+
+        private async void SourceViewPermissionsButton_Click(object sender, RoutedEventArgs e)
+        {
+            await ShowPermissionsDialogAsync(isSource: true);
+        }
+
+        private async void DestinationViewPermissionsButton_Click(object sender, RoutedEventArgs e)
+        {
+            await ShowPermissionsDialogAsync(isSource: false);
+        }
+
+        #endregion
+
+        #region Permissions
+
+        /// <summary>
+        /// Shows a dialog displaying the granted vs required permissions for a tenant.
+        /// </summary>
+        private async Task ShowPermissionsDialogAsync(bool isSource)
+        {
+            var tenantLabel = isSource ? "Source" : "Destination";
+            var tenantName = isSource ? sourceTenantName : destinationTenantName;
+            var requiredScopes = isSource 
+                ? SourceUserAuthentication.DefaultScopes 
+                : DestinationUserAuthentication.DefaultScopes;
+
+            // Create dialog controls programmatically
+            var infoBar = new InfoBar
+            {
+                IsOpen = true,
+                IsClosable = false,
+                Margin = new Thickness(0, 0, 0, 12)
+            };
+
+            var permissionsPanel = new StackPanel { Spacing = 4 };
+
+            var scrollViewer = new ScrollViewer
+            {
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                MaxHeight = 300,
+                Content = permissionsPanel
+            };
+
+            var contentGrid = new Grid
+            {
+                MinWidth = 500,
+                MaxHeight = 400,
+                RowDefinitions =
+                {
+                    new RowDefinition { Height = GridLength.Auto },
+                    new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }
+                }
+            };
+
+            Grid.SetRow(infoBar, 0);
+            Grid.SetRow(scrollViewer, 1);
+            contentGrid.Children.Add(infoBar);
+            contentGrid.Children.Add(scrollViewer);
+
+            var dialog = new ContentDialog
+            {
+                Title = $"{tenantLabel} Tenant Permissions",
+                CloseButtonText = "Close",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot,
+                Content = contentGrid
+            };
+
+            // Check if authenticated
+            if (string.IsNullOrWhiteSpace(tenantName))
+            {
+                infoBar.Severity = InfoBarSeverity.Warning;
+                infoBar.Title = "Not Authenticated";
+                infoBar.Message = $"Please sign in to the {tenantLabel.ToLower()} tenant first.";
+                await dialog.ShowAsync();
+                return;
+            }
+
+            // Get granted scopes
+            string[] grantedScopes;
+            try
+            {
+                grantedScopes = isSource
+                    ? await SourceUserAuthentication.GetGrantedScopesAsync()
+                    : await DestinationUserAuthentication.GetGrantedScopesAsync();
+            }
+            catch (Exception ex)
+            {
+                infoBar.Severity = InfoBarSeverity.Error;
+                infoBar.Title = "Error";
+                infoBar.Message = $"Failed to retrieve permissions: {ex.Message}";
+                await dialog.ShowAsync();
+                return;
+            }
+
+            // Build permissions list
+            var grantedSet = grantedScopes.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            
+            // Filter out non-permission scopes for display
+            var relevantScopes = requiredScopes
+                .Where(s => !s.Equals("openid", StringComparison.OrdinalIgnoreCase) 
+                         && !s.Equals("offline_access", StringComparison.OrdinalIgnoreCase))
+                .OrderBy(s => s)
+                .ToList();
+
+            int grantedCount = 0;
+            int missingCount = 0;
+
+            foreach (var scope in relevantScopes)
+            {
+                var isGranted = grantedSet.Contains(scope);
+                if (isGranted) grantedCount++; else missingCount++;
+
+                var itemPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+                
+                var icon = new FontIcon
+                {
+                    Glyph = isGranted ? "\uE73E" : "\uE711", // Checkmark or X
+                    FontSize = 14,
+                    Foreground = new SolidColorBrush(isGranted ? Colors.Green : Colors.Red)
+                };
+                
+                var text = new TextBlock
+                {
+                    Text = scope,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Foreground = new SolidColorBrush(isGranted ? Colors.Green : Colors.Red)
+                };
+
+                itemPanel.Children.Add(icon);
+                itemPanel.Children.Add(text);
+                permissionsPanel.Children.Add(itemPanel);
+            }
+
+            // Update dialog header
+            dialog.Title = $"{tenantLabel} Tenant Permissions - {tenantName}";
+            
+            if (missingCount == 0)
+            {
+                infoBar.Severity = InfoBarSeverity.Success;
+                infoBar.Title = "All Permissions Granted";
+                infoBar.Message = $"{grantedCount} of {grantedCount} required permissions are granted.";
+            }
+            else
+            {
+                infoBar.Severity = InfoBarSeverity.Warning;
+                infoBar.Title = "Missing Permissions";
+                infoBar.Message = $"{grantedCount} granted, {missingCount} missing. Some features may not work correctly.";
+            }
+
+            await dialog.ShowAsync();
         }
 
         #endregion
