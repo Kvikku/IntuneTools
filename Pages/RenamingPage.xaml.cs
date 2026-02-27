@@ -46,6 +46,43 @@ namespace IntuneTools.Pages
         private int _renameSuccessCount;
         private int _renameErrorCount;
 
+        /// <summary>
+        /// Generic helper to rename items, reducing code duplication across all content types.
+        /// </summary>
+        /// <param name="ids">List of content IDs to rename.</param>
+        /// <param name="prefix">The prefix/suffix/description to apply.</param>
+        /// <param name="contentTypeName">Display name for logging (e.g., "Settings Catalog").</param>
+        /// <param name="renameAction">Async action that performs the actual rename for a single ID.</param>
+        /// <param name="getDisplayName">Optional async function to retrieve the item's display name for logging.</param>
+        private async Task RenameItemsAsync(
+            List<string> ids,
+            string prefix,
+            string contentTypeName,
+            Func<string, string, Task> renameAction,
+            Func<string, Task<string?>>? getDisplayName = null)
+        {
+            foreach (var id in ids)
+            {
+                _renameCurrent++;
+                ShowOperationProgress($"Renaming {contentTypeName}", _renameCurrent, _renameTotal);
+                try
+                {
+                    string? displayName = getDisplayName != null ? await getDisplayName(id) : null;
+                    await renameAction(id, prefix);
+
+                    var logName = displayName ?? $"ID '{id}'";
+                    AppendToDetailsRichTextBlock($"Updated {contentTypeName} '{logName}' with '{prefix}'.");
+                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
+                    _renameSuccessCount++;
+                }
+                catch (Exception ex)
+                {
+                    _renameErrorCount++;
+                    AppendToDetailsRichTextBlock($"Error renaming {contentTypeName} with ID {id}: {ex.Message}");
+                }
+            }
+        }
+
         protected override string UnauthenticatedMessage => "You must authenticate with a tenant before using renaming features.";
 
         protected override IEnumerable<string> GetManagedControlNames() => new[]
@@ -239,7 +276,7 @@ namespace IntuneTools.Pages
             }
             else if (selectedRenameMode == "Suffix")
             {
-
+                // Empty - no implementation yet
             }
             else if (selectedRenameMode == "Description")
             {
@@ -394,301 +431,75 @@ namespace IntuneTools.Pages
             }
         }
 
-        private async Task RenameAppleBYODEnrollmentProfiles(List<string> profileIDs, string prefix)
-        {
-            foreach (var id in profileIDs)
-            {
-                _renameCurrent++;
-                ShowOperationProgress($"Renaming Apple BYOD Enrollment Profile", _renameCurrent, _renameTotal);
-                try
-                {
-                    var profile = await sourceGraphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[id].GetAsync((requestConfiguration) =>
-                    {
-                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
-                    });
-                    await RenameAppleBYODEnrollmentProfile(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Updated Apple BYOD Enrollment Profile '{profile.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
-                    _renameSuccessCount++;
-                }
-                catch (Exception ex)
-                {
-                    _renameErrorCount++;
-                    AppendToDetailsRichTextBlock($"Error renaming Apple BYOD Enrollment Profile with ID {id}: {ex.Message}");
-                }
-            }
-        }
+        private Task RenameAppleBYODEnrollmentProfiles(List<string> profileIDs, string prefix) =>
+            RenameItemsAsync(profileIDs, prefix, "Apple BYOD Enrollment Profile",
+                async (id, p) => await RenameAppleBYODEnrollmentProfile(sourceGraphServiceClient, id, p),
+                async id => (await sourceGraphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[id]
+                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName);
 
-        private async Task RenameApplications(List<string> appIDs, string prefix)
-        {
-            foreach (var id in appIDs)
-            {
-                _renameCurrent++;
-                ShowOperationProgress($"Renaming Application", _renameCurrent, _renameTotal);
-                try
-                {
-                    await RenameApplication(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Updated Application with ID '{id}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
-                    _renameSuccessCount++;
-                }
-                catch (Exception ex)
-                {
-                    _renameErrorCount++;
-                    AppendToDetailsRichTextBlock($"Error updating Application with ID {id}: {ex.Message}");
-                }
-            }
-        }
+        private Task RenameApplications(List<string> appIDs, string prefix) =>
+            RenameItemsAsync(appIDs, prefix, "Application",
+                async (id, p) => await RenameApplication(sourceGraphServiceClient, id, p));
 
-        private async Task RenameMacOSShellScripts(List<string> scriptIDs, string prefix)
-        {
-            foreach (var id in scriptIDs)
-            {
-                _renameCurrent++;
-                ShowOperationProgress($"Renaming macOS Shell Script", _renameCurrent, _renameTotal);
-                try
-                {
-                    var script = await sourceGraphServiceClient.DeviceManagement.DeviceShellScripts[id].GetAsync((requestConfiguration) =>
-                    {
-                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
-                    });
-                    await RenameMacOSShellScript(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Updated MacOS Shell Script '{script.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
-                    _renameSuccessCount++;
-                }
-                catch (Exception ex)
-                {
-                    _renameErrorCount++;
-                    AppendToDetailsRichTextBlock($"Error renaming MacOS Shell Script with ID {id}: {ex.Message}");
-                }
-            }
-        }
+        private Task RenameMacOSShellScripts(List<string> scriptIDs, string prefix) =>
+            RenameItemsAsync(scriptIDs, prefix, "macOS Shell Script",
+                async (id, p) => await RenameMacOSShellScript(sourceGraphServiceClient, id, p),
+                async id => (await sourceGraphServiceClient.DeviceManagement.DeviceShellScripts[id]
+                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName);
 
-        private async Task RenamePowerShellScripts(List<string> scriptIDs, string prefix)
-        {
-            foreach (var id in scriptIDs)
-            {
-                _renameCurrent++;
-                ShowOperationProgress($"Renaming PowerShell Script", _renameCurrent, _renameTotal);
-                try
-                {
-                    var script = await sourceGraphServiceClient.DeviceManagement.DeviceManagementScripts[id].GetAsync((requestConfiguration) =>
-                    {
-                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
-                    });
-                    await RenamePowerShellScript(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Updated PowerShell Script '{script.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
-                    _renameSuccessCount++;
-                }
-                catch (Exception ex)
-                {
-                    _renameErrorCount++;
-                    AppendToDetailsRichTextBlock($"Error renaming PowerShell Script with ID {id}: {ex.Message}");
-                }
-            }
-        }
+        private Task RenamePowerShellScripts(List<string> scriptIDs, string prefix) =>
+            RenameItemsAsync(scriptIDs, prefix, "PowerShell Script",
+                async (id, p) => await RenamePowerShellScript(sourceGraphServiceClient, id, p),
+                async id => (await sourceGraphServiceClient.DeviceManagement.DeviceManagementScripts[id]
+                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName);
 
-        private async Task RenameProactiveRemediations(List<string> scriptIDs, string prefix)
-        {
-            foreach (var id in scriptIDs)
-            {
-                _renameCurrent++;
-                ShowOperationProgress($"Renaming Proactive Remediation", _renameCurrent, _renameTotal);
-                try
-                {
-                    var remediation = await sourceGraphServiceClient.DeviceManagement.DeviceHealthScripts[id].GetAsync((requestConfiguration) =>
-                    {
-                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
-                    });
-                    await RenameProactiveRemediation(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Updated Proactive Remediation '{remediation.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
-                    _renameSuccessCount++;
-                }
-                catch (Exception ex)
-                {
-                    _renameErrorCount++;
-                    AppendToDetailsRichTextBlock($"Error renaming Proactive Remediation with ID {id}: {ex.Message}");
-                }
-            }
-        }
+        private Task RenameProactiveRemediations(List<string> scriptIDs, string prefix) =>
+            RenameItemsAsync(scriptIDs, prefix, "Proactive Remediation",
+                async (id, p) => await RenameProactiveRemediation(sourceGraphServiceClient, id, p),
+                async id => (await sourceGraphServiceClient.DeviceManagement.DeviceHealthScripts[id]
+                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName);
 
-        private async Task RenameWindowsAutoPilotProfiles(List<string> profileIDs, string prefix)
-        {
-            foreach (var id in profileIDs)
-            {
-                _renameCurrent++;
-                ShowOperationProgress($"Renaming Windows AutoPilot Profile", _renameCurrent, _renameTotal);
-                try
-                {
-                    var profile = await sourceGraphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[id].GetAsync((requestConfiguration) =>
-                    {
-                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
-                    });
-                    await RenameWindowsAutoPilotProfile(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Updated Windows AutoPilot Profile '{profile.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
-                    _renameSuccessCount++;
-                }
-                catch (Exception ex)
-                {
-                    _renameErrorCount++;
-                    AppendToDetailsRichTextBlock($"Error renaming Windows AutoPilot Profile with ID {id}: {ex.Message}");
-                }
-            }
-        }
+        private Task RenameWindowsAutoPilotProfiles(List<string> profileIDs, string prefix) =>
+            RenameItemsAsync(profileIDs, prefix, "Windows AutoPilot Profile",
+                async (id, p) => await RenameWindowsAutoPilotProfile(sourceGraphServiceClient, id, p),
+                async id => (await sourceGraphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[id]
+                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName);
 
-        private async Task RenameWindowsDriverUpdates(List<string> profileIDs, string prefix)
-        {
-            foreach (var id in profileIDs)
-            {
-                _renameCurrent++;
-                ShowOperationProgress($"Renaming Windows Driver Update", _renameCurrent, _renameTotal);
-                try
-                {
-                    var update = await sourceGraphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[id].GetAsync((requestConfiguration) =>
-                    {
-                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
-                    });
-                    await RenameDriverProfile(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Updated Windows Driver Update '{update.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
-                    _renameSuccessCount++;
-                }
-                catch (Exception ex)
-                {
-                    _renameErrorCount++;
-                    AppendToDetailsRichTextBlock($"Error renaming Windows Driver Update with ID {id}: {ex.Message}");
-                }
-            }
-        }
+        private Task RenameWindowsDriverUpdates(List<string> profileIDs, string prefix) =>
+            RenameItemsAsync(profileIDs, prefix, "Windows Driver Update",
+                async (id, p) => await RenameDriverProfile(sourceGraphServiceClient, id, p),
+                async id => (await sourceGraphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[id]
+                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName);
 
-        private async Task RenameWindowsFeatureUpdates(List<string> profileIDs, string prefix)
-        {
-            foreach (var id in profileIDs)
-            {
-                _renameCurrent++;
-                ShowOperationProgress($"Renaming Windows Feature Update", _renameCurrent, _renameTotal);
-                try
-                {
-                    var update = await sourceGraphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[id].GetAsync((requestConfiguration) =>
-                    {
-                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
-                    });
-                    await RenameWindowsFeatureUpdateProfile(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Updated Windows Feature Update '{update.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
-                    _renameSuccessCount++;
-                }
-                catch (Exception ex)
-                {
-                    _renameErrorCount++;
-                    AppendToDetailsRichTextBlock($"Error renaming Windows Feature Update with ID {id}: {ex.Message}");
-                }
-            }
-        }
+        private Task RenameWindowsFeatureUpdates(List<string> profileIDs, string prefix) =>
+            RenameItemsAsync(profileIDs, prefix, "Windows Feature Update",
+                async (id, p) => await RenameWindowsFeatureUpdateProfile(sourceGraphServiceClient, id, p),
+                async id => (await sourceGraphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[id]
+                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName);
 
-        private async Task RenameWindowsQualityUpdatePolicies(List<string> policyIDs, string prefix)
-        {
-            foreach (var id in policyIDs)
-            {
-                _renameCurrent++;
-                ShowOperationProgress($"Renaming Windows Quality Update Policy", _renameCurrent, _renameTotal);
-                try
-                {
-                    var policy = await sourceGraphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[id].GetAsync((requestConfiguration) =>
-                    {
-                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
-                    });
-                    await RenameWindowsQualityUpdatePolicy(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Updated Windows Quality Update Policy '{policy.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
-                    _renameSuccessCount++;
-                }
-                catch (Exception ex)
-                {
-                    _renameErrorCount++;
-                    AppendToDetailsRichTextBlock($"Error renaming Windows Quality Update Policy with ID {id}: {ex.Message}");
-                }
-            }
-        }
+        private Task RenameWindowsQualityUpdatePolicies(List<string> policyIDs, string prefix) =>
+            RenameItemsAsync(policyIDs, prefix, "Windows Quality Update Policy",
+                async (id, p) => await RenameWindowsQualityUpdatePolicy(sourceGraphServiceClient, id, p),
+                async id => (await sourceGraphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[id]
+                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName);
 
-        private async Task RenameWindowsQualityUpdateProfiles(List<string> profileIDs, string prefix)
-        {
-            foreach (var id in profileIDs)
-            {
-                _renameCurrent++;
-                ShowOperationProgress($"Renaming Windows Quality Update Profile", _renameCurrent, _renameTotal);
-                try
-                {
-                    var profile = await sourceGraphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[id].GetAsync((requestConfiguration) =>
-                    {
-                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
-                    });
-                    await RenameWindowsQualityUpdateProfile(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Updated Windows Quality Update Profile '{profile.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
-                    _renameSuccessCount++;
-                }
-                catch (Exception ex)
-                {
-                    _renameErrorCount++;
-                    AppendToDetailsRichTextBlock($"Error renaming Windows Quality Update Profile with ID {id}: {ex.Message}");
-                }
-            }
-        }
+        private Task RenameWindowsQualityUpdateProfiles(List<string> profileIDs, string prefix) =>
+            RenameItemsAsync(profileIDs, prefix, "Windows Quality Update Profile",
+                async (id, p) => await RenameWindowsQualityUpdateProfile(sourceGraphServiceClient, id, p),
+                async id => (await sourceGraphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[id]
+                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName);
 
-        private async Task RenameAssignmentFilters(List<string> filterIDs, string prefix)
-        {
-            foreach (var id in filterIDs)
-            {
-                _renameCurrent++;
-                ShowOperationProgress($"Renaming Assignment Filter", _renameCurrent, _renameTotal);
-                try
-                {
-                    var filter = await sourceGraphServiceClient.DeviceManagement.AssignmentFilters[id].GetAsync((requestConfiguration) =>
-                    {
-                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
-                    });
-                    await RenameAssignmentFilter(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Updated Assignment Filter '{filter.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
-                    _renameSuccessCount++;
-                }
-                catch (Exception ex)
-                {
-                    _renameErrorCount++;
-                    AppendToDetailsRichTextBlock($"Error renaming Assignment Filter with ID {id}: {ex.Message}");
-                }
-            }
-        }
+        private Task RenameAssignmentFilters(List<string> filterIDs, string prefix) =>
+            RenameItemsAsync(filterIDs, prefix, "Assignment Filter",
+                async (id, p) => await RenameAssignmentFilter(sourceGraphServiceClient, id, p),
+                async id => (await sourceGraphServiceClient.DeviceManagement.AssignmentFilters[id]
+                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName);
 
-        private async Task RenameEntraGroups(List<string> groupIDs, string prefix)
-        {
-            foreach (var id in groupIDs)
-            {
-                _renameCurrent++;
-                ShowOperationProgress($"Renaming Entra Group", _renameCurrent, _renameTotal);
-                try
-                {
-                    var group = await sourceGraphServiceClient.Groups[id].GetAsync((requestConfiguration) =>
-                    {
-                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
-                    });
-                    await RenameGroup(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Updated Entra Group '{group.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
-                    _renameSuccessCount++;
-                }
-                catch (Exception ex)
-                {
-                    _renameErrorCount++;
-                    AppendToDetailsRichTextBlock($"Error renaming Entra Group with ID {id}: {ex.Message}");
-                }
-            }
-        }
+        private Task RenameEntraGroups(List<string> groupIDs, string prefix) =>
+            RenameItemsAsync(groupIDs, prefix, "Entra Group",
+                async (id, p) => await RenameGroup(sourceGraphServiceClient, id, p),
+                async id => (await sourceGraphServiceClient.Groups[id]
+                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName);
 
         /// <summary>
         ///  Settings catalog
@@ -711,32 +522,11 @@ namespace IntuneTools.Pages
             AppendToDetailsRichTextBlock($"Found {count} settings catalog policies matching '{searchQuery}'.");
         }
 
-        private async Task RenameSettingsCatalogs(List<string> settingsCatalogIDs, string prefix)
-        {
-            foreach (var id in settingsCatalogIDs)
-            {
-                _renameCurrent++;
-                ShowOperationProgress($"Renaming Settings Catalog", _renameCurrent, _renameTotal);
-                try
-                {
-                    var policy = await sourceGraphServiceClient.DeviceManagement.ConfigurationPolicies[id].GetAsync((requestConfiguration) =>
-                    {
-                        requestConfiguration.QueryParameters.Select = new string[] { "name" };
-                    });
-
-                    await RenameSettingsCatalogPolicy(sourceGraphServiceClient, id, prefix);
-
-                    AppendToDetailsRichTextBlock($"Updated Settings Catalog '{policy.Name}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
-                    _renameSuccessCount++;
-                }
-                catch (Exception ex)
-                {
-                    _renameErrorCount++;
-                    AppendToDetailsRichTextBlock($"Error updating Settings Catalog with ID {id}: {ex.Message}");
-                }
-            }
-        }
+        private Task RenameSettingsCatalogs(List<string> settingsCatalogIDs, string prefix) =>
+            RenameItemsAsync(settingsCatalogIDs, prefix, "Settings Catalog",
+                async (id, p) => await RenameSettingsCatalogPolicy(sourceGraphServiceClient, id, p),
+                async id => (await sourceGraphServiceClient.DeviceManagement.ConfigurationPolicies[id]
+                    .GetAsync(r => r.QueryParameters.Select = new[] { "name" }))?.Name);
 
 
 
@@ -757,30 +547,11 @@ namespace IntuneTools.Pages
             AppendToDetailsRichTextBlock($"Found {count} device compliance policies matching '{searchQuery}'.");
         }
 
-        private async Task RenameDeviceCompliancePolicies(List<string> deviceCompliancePolicyIDs, string prefix)
-        {
-            foreach (var id in deviceCompliancePolicyIDs)
-            {
-                _renameCurrent++;
-                ShowOperationProgress($"Renaming Device Compliance Policy", _renameCurrent, _renameTotal);
-                try
-                {
-                    var policyName = await sourceGraphServiceClient.DeviceManagement.DeviceCompliancePolicies[id].GetAsync((requestConfiguration) =>
-                    {
-                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
-                    });
-                    await RenameDeviceCompliancePolicy(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Updated Device Compliance Policy '{policyName.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
-                    _renameSuccessCount++;
-                }
-                catch (Exception ex)
-                {
-                    _renameErrorCount++;
-                    AppendToDetailsRichTextBlock($"Error renaming Device Compliance Policy with ID {id}: {ex.Message}");
-                }
-            }
-        }
+        private Task RenameDeviceCompliancePolicies(List<string> deviceCompliancePolicyIDs, string prefix) =>
+            RenameItemsAsync(deviceCompliancePolicyIDs, prefix, "Device Compliance Policy",
+                async (id, p) => await RenameDeviceCompliancePolicy(sourceGraphServiceClient, id, p),
+                async id => (await sourceGraphServiceClient.DeviceManagement.DeviceCompliancePolicies[id]
+                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName);
 
         /// <summary>
         ///  Device configuration policies
@@ -804,30 +575,11 @@ namespace IntuneTools.Pages
             AppendToDetailsRichTextBlock($"Found {count} device configuration policies matching '{searchQuery}'.");
         }
 
-        private async Task RenameDeviceConfigurationPolicies(List<string> deviceConfigurationPolicyIDs, string prefix)
-        {
-            foreach (var id in deviceConfigurationPolicyIDs)
-            {
-                _renameCurrent++;
-                ShowOperationProgress($"Renaming Device Configuration Policy", _renameCurrent, _renameTotal);
-                try
-                {
-                    var policy = await sourceGraphServiceClient.DeviceManagement.DeviceConfigurations[id].GetAsync((requestConfiguration) =>
-                    {
-                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
-                    });
-                    await RenameDeviceConfigurationPolicy(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Renamed Device Configuration Policy '{policy.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
-                    _renameSuccessCount++;
-                }
-                catch (Exception ex)
-                {
-                    _renameErrorCount++;
-                    AppendToDetailsRichTextBlock($"Error renaming Device Configuration Policy with ID {id}: {ex.Message}");
-                }
-            }
-        }
+        private Task RenameDeviceConfigurationPolicies(List<string> deviceConfigurationPolicyIDs, string prefix) =>
+            RenameItemsAsync(deviceConfigurationPolicyIDs, prefix, "Device Configuration Policy",
+                async (id, p) => await RenameDeviceConfigurationPolicy(sourceGraphServiceClient, id, p),
+                async id => (await sourceGraphServiceClient.DeviceManagement.DeviceConfigurations[id]
+                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName);
 
         /// <summary>
         /// Apple BYOD Enrollment Profiles
