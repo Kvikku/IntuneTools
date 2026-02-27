@@ -223,7 +223,7 @@
                              PlaceholderText="Search groups..."
                              Width="190"/>
                     <Button x:Name="GroupSearchButton"
-                            Click="GroupSearchClick"
+                            Click="GroupSearchButton_Click"
                             ToolTipService.ToolTip="Search for a specific group.">
                         <FontIcon Glyph="&#xE721;" FontSize="14"/>
                     </Button>
@@ -233,7 +233,7 @@
                         Content="List all groups"
                         Margin="0,0,0,12"
                         HorizontalAlignment="Left"
-                        Click="GroupListAllClick"/>
+                        Click="GroupListAllButton_Click"/>
 
                 <controls:DataGrid x:Name="GroupDataGrid"
                                    AutoGenerateColumns="False"

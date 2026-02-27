@@ -4,8 +4,6 @@ using IntuneTools.Utilities;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Documents;
-using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -30,6 +28,8 @@ using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHe
 
 namespace IntuneTools.Pages
 {
+    #region Helper Types
+
     public class AssignmentGroupInfo
     {
         public string? GroupName { get; set; }
@@ -41,9 +41,21 @@ namespace IntuneTools.Pages
         public string? FilterName { get; set; }
     }
 
+    #endregion
+
     public sealed partial class AssignmentPage : BaseMultiTenantPage
     {
-        #region Variables and Properties
+        #region Fields & Types
+
+        /// <summary>
+        /// Defines an assignment operation for a specific content type.
+        /// </summary>
+        /// <param name="ContentTypeDisplayName">The display name used in ContentType property (e.g., "Device Compliance Policy").</param>
+        /// <param name="AssignAsync">Async function that performs the assignment operation.</param>
+        private record AssignTypeDefinition(
+            string ContentTypeDisplayName,
+            Func<string, List<string>, GraphServiceClient, Task> AssignAsync);
+
         public static ObservableCollection<CustomContentInfo> AssignmentList { get; } = new();
         public ObservableCollection<AssignmentGroupInfo> GroupList { get; } = new();
         public ObservableCollection<DeviceAndAppManagementAssignmentFilter> FilterOptions { get; } = new();
@@ -88,7 +100,7 @@ namespace IntuneTools.Pages
         }
 
         private DeviceAndAppManagementAssignmentFilter? _selectedFilterID;
-        private string _selectedFilterName;
+        private string _selectedFilterName = string.Empty;
 
 
         // New: Include / Exclude filter mode (default Include)
@@ -102,7 +114,10 @@ namespace IntuneTools.Pages
 
         // UI initialization flag to prevent early event handlers from using null controls (e.g., LogConsole)
         private bool _uiInitialized = false;
+
         #endregion
+
+        #region Constructor & Configuration
 
         public AssignmentPage()
         {
@@ -123,6 +138,97 @@ namespace IntuneTools.Pages
             "FilterModeToggle", "OptionsAllCheckBox", "ClearLogButton", "ContentTypesButton",
             "IntentToggle"
         };
+
+        #endregion
+
+        #region Assignment Logic
+
+        /// <summary>
+        /// Gets the registry of all assignment type definitions.
+        /// </summary>
+        private IEnumerable<AssignTypeDefinition> GetAssignTypeRegistry()
+        {
+            yield return new AssignTypeDefinition(
+                "Device Compliance Policy",
+                async (id, groups, client) => await AssignGroupsToSingleDeviceCompliance(id, groups, client));
+
+            yield return new AssignTypeDefinition(
+                "Settings Catalog",
+                async (id, groups, client) => await AssignGroupsToSingleSettingsCatalog(id, groups, client));
+
+            yield return new AssignTypeDefinition(
+                "Device Configuration Policy",
+                async (id, groups, client) => await AssignGroupsToSingleDeviceConfiguration(id, groups, client));
+
+            yield return new AssignTypeDefinition(
+                "MacOS Shell Script",
+                async (id, groups, client) => await AssignGroupsToSingleShellScriptmacOS(id, groups, client));
+
+            yield return new AssignTypeDefinition(
+                "PowerShell Script",
+                async (id, groups, client) => await AssignGroupsToSinglePowerShellScript(id, groups, client));
+
+            yield return new AssignTypeDefinition(
+                "Proactive Remediation",
+                async (id, groups, client) => await AssignGroupsToSingleProactiveRemediation(id, groups, client));
+
+            yield return new AssignTypeDefinition(
+                "Windows AutoPilot Profile",
+                async (id, groups, client) => await AssignGroupsToSingleWindowsAutoPilotProfile(id, groups, client));
+
+            yield return new AssignTypeDefinition(
+                "Windows Driver Update",
+                async (id, groups, client) => await AssignGroupsToSingleDriverProfile(id, groups, client));
+
+            yield return new AssignTypeDefinition(
+                "Windows Feature Update",
+                async (id, groups, client) => await AssignGroupsToSingleWindowsFeatureUpdateProfile(id, groups, client));
+
+            yield return new AssignTypeDefinition(
+                "Windows Quality Update Policy",
+                async (id, groups, client) => await AssignGroupsToSingleWindowsQualityUpdatePolicy(id, groups, client));
+
+            yield return new AssignTypeDefinition(
+                "Windows Quality Update Profile",
+                async (id, groups, client) => await AssignGroupsToSingleWindowsQualityUpdateProfile(id, groups, client));
+
+            yield return new AssignTypeDefinition(
+                "Apple BYOD Enrollment Profile",
+                async (id, groups, client) => await AssignGroupsToSingleAppleBYODEnrollmentProfile(id, groups, client));
+        }
+
+        /// <summary>
+        /// Assigns a single content item to the specified groups using the registry.
+        /// </summary>
+        private async Task<bool> AssignContentItemAsync(
+            CustomContentInfo item,
+            List<string> groupList,
+            GraphServiceClient graphServiceClient)
+        {
+            // Handle apps specially (they have "App - " prefix)
+            if (item.ContentType.StartsWith("App - "))
+            {
+                await PrepareApplicationForAssignment(
+                    new KeyValuePair<string, CustomContentInfo>(item.ContentId, item),
+                    groupList,
+                    graphServiceClient);
+                return true;
+            }
+
+            // Find matching definition in registry
+            var registry = GetAssignTypeRegistry().ToList();
+            var definition = registry.FirstOrDefault(d => d.ContentTypeDisplayName == item.ContentType);
+
+            if (definition != null)
+            {
+                await definition.AssignAsync(item.ContentId, groupList, graphServiceClient);
+                return true;
+            }
+
+            return false;
+        }
+
+        #endregion
 
         #region Orchestrators
 
@@ -230,77 +336,19 @@ namespace IntuneTools.Pages
 
                     try
                     {
-                        if (item.Value.ContentType == "Device Compliance Policy")
-                        {
-                            await AssignGroupsToSingleDeviceCompliance(item.Value.ContentId, groupList, sourceGraphServiceClient);
-                        }
-
-                        if (item.Value.ContentType == "Settings Catalog")
-                        {
-                            await AssignGroupsToSingleSettingsCatalog(item.Value.ContentId, groupList, sourceGraphServiceClient);
-                        }
-                        if (item.Value.ContentType == "Device Configuration Policy")
-                        {
-                            await AssignGroupsToSingleDeviceConfiguration(item.Value.ContentId, groupList, sourceGraphServiceClient);
-                        }
-                    if (item.Value.ContentType == "MacOS Shell Script")
-                    {
-                        await AssignGroupsToSingleShellScriptmacOS(item.Value.ContentId, groupList, sourceGraphServiceClient);
-                    }
-                    if (item.Value.ContentType == "PowerShell Script")
-                    {
-                        await AssignGroupsToSinglePowerShellScript(item.Value.ContentId, groupList, sourceGraphServiceClient);
-                    }
-                    if (item.Value.ContentType == "Proactive Remediation")
-                    {
-                        await AssignGroupsToSingleProactiveRemediation(item.Value.ContentId, groupList, sourceGraphServiceClient);
-                    }
-                    if (item.Value.ContentType == "Windows AutoPilot Profile")
-                    {
-                        await AssignGroupsToSingleWindowsAutoPilotProfile(item.Value.ContentId, groupList, sourceGraphServiceClient);
-                    }
-                    if (item.Value.ContentType == "Windows Driver Update")
-                    {
-                        await AssignGroupsToSingleDriverProfile(item.Value.ContentId, groupList, sourceGraphServiceClient);
-                    }
-                    if (item.Value.ContentType == "Windows Feature Update")
-                    {
-                        await AssignGroupsToSingleWindowsFeatureUpdateProfile(item.Value.ContentId, groupList, sourceGraphServiceClient);
-                    }
-                    if (item.Value.ContentType == "Windows Quality Update Policy")
-                    {
-                        await AssignGroupsToSingleWindowsQualityUpdatePolicy(item.Value.ContentId, groupList, sourceGraphServiceClient);
-                    }
-                    if (item.Value.ContentType == "Windows Quality Update Profile")
-                    {
-                        await AssignGroupsToSingleWindowsQualityUpdateProfile(item.Value.ContentId, groupList, sourceGraphServiceClient);
-                    }
-                    if (item.Value.ContentType == "Apple BYOD Enrollment Profile")
-                    {
-                        await AssignGroupsToSingleAppleBYODEnrollmentProfile(item.Value.ContentId, groupList, sourceGraphServiceClient);
-                    }
-                    if (item.Value.ContentType.StartsWith("App - "))
-                    {
-                        // Must first handle the app type
-                        await PrepareApplicationForAssignment(item, groupList, sourceGraphServiceClient);
-
-                        //await AssignGroupsToSingleApplication(item.Value.Id, groupList, sourceGraphServiceClient, _selectedInstallIntent);
-
-                    }
+                        await AssignContentItemAsync(item.Value, groupList, sourceGraphServiceClient);
 
                         _assignSuccessCount++;
                         foreach (var group in selectedGroups)
                         {
-                            AppendToLog(
-                                $"Assigning '{item.Value.ContentName}' to group '{group.GroupName}'.");
+                            AppendToLog($"Assigning '{item.Value.ContentName}' to group '{group.GroupName}'.");
                             successCount++;
                         }
                     }
                     catch (Exception ex)
                     {
                         _assignErrorCount++;
-                        AppendToLog(
-                            $"Failed to assign '{item.Value.ContentName}' (ID: {item.Key}): {ex.Message}");
+                        AppendToLog($"Failed to assign '{item.Value.ContentName}' (ID: {item.Key}): {ex.Message}");
                         failureCount++;
                     }
                 }
@@ -602,19 +650,14 @@ namespace IntuneTools.Pages
             await MainOrchestrator(sourceGraphServiceClient);
         }
 
-        private async void GroupListAllClick(object sender, RoutedEventArgs e)
+        private async void GroupListAllButton_Click(object sender, RoutedEventArgs e)
         {
             await LoadAllGroupsAsync();
         }
 
-        private async void GroupSearchClick(object sender, RoutedEventArgs e)
+        private async void GroupSearchButton_Click(object sender, RoutedEventArgs e)
         {
-            await SearchForGroupsAsync(GroupSearchTextBox.Text);
-        }
-
-        private async void FilterCheckBoxClick(object sender, RoutedEventArgs e)
-        {
-
+            await SearchForGroupsAsync(GroupSearchTextBox.Text?.Trim() ?? string.Empty);
         }
 
         private async Task ShowValidationDialogAsync(string title, string message)
