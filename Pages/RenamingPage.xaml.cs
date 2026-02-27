@@ -204,231 +204,209 @@ namespace IntuneTools.Pages
                 HideLoading();
             }
         }
+        /// <summary>
+        /// Main entry point for rename operations. Validates, prepares, and executes the rename.
+        /// </summary>
         private async Task RenameContent(List<string> contentIDs, string newName)
         {
+            if (!ValidateRenameInputs(contentIDs, newName))
+                return;
 
-            string prefix = string.Empty;
+            var operationText = await PrepareRenameOperation(contentIDs, newName);
+            if (operationText == null)
+                return; // Cancelled or validation failed
 
+            await ExecuteRenameOperations(contentIDs.Count, operationText);
+        }
+
+        /// <summary>
+        /// Validates basic input requirements for rename operations.
+        /// </summary>
+        private bool ValidateRenameInputs(List<string> contentIDs, string newName)
+        {
             if (contentIDs == null || contentIDs.Count == 0)
             {
                 AppendToDetailsRichTextBlock("No content IDs provided for renaming.");
-                return;
+                return false;
             }
             if (string.IsNullOrWhiteSpace(newName))
             {
                 AppendToDetailsRichTextBlock("New name cannot be empty.");
-                return;
+                return false;
             }
 
             var prefixSymbol = GetSelectedPrefixOption();
-
             if (prefixSymbol == null && selectedRenameMode == "Prefix")
             {
                 AppendToDetailsRichTextBlock("Please select a prefix option.");
-                return;
+                return false;
             }
 
+            return true;
+        }
 
-            if (selectedRenameMode == "Prefix")
+        /// <summary>
+        /// Prepares the rename operation based on mode (Prefix/Suffix/Description).
+        /// Shows confirmation dialog and returns the text to apply, or null if cancelled.
+        /// </summary>
+        private async Task<string?> PrepareRenameOperation(List<string> contentIDs, string newName)
+        {
+            return selectedRenameMode switch
             {
+                "Prefix" => await PreparePrefixRename(contentIDs, newName),
+                "Suffix" => await PrepareSuffixRename(contentIDs, newName),
+                "Description" => await PrepareDescriptionUpdate(newName),
+                _ => null
+            };
+        }
 
-                prefix = $"{prefixSymbol[0]}{newName}{prefixSymbol[1]}";
+        private async Task<string?> PreparePrefixRename(List<string> contentIDs, string newName)
+        {
+            var prefixSymbol = GetSelectedPrefixOption();
+            if (prefixSymbol == null) return null;
 
-                // Find the corresponding names for the content ID
+            var prefix = $"{prefixSymbol[0]}{newName}{prefixSymbol[1]}";
 
-                List<string> contentNames = new List<string>();
-                foreach (var id in contentIDs)
-                {
-                    var name = string.Empty;
-                    var content = CustomContentList.FirstOrDefault(c => c.ContentId == id);
-                    if (content != null)
-                    {
-                        name = FindPreFixInPolicyName(content.ContentName, prefix);
-                    }
-                    contentNames.Add(name);
-                }
+            // Build preview of new names
+            var contentNames = contentIDs
+                .Select(id => CustomContentList.FirstOrDefault(c => c.ContentId == id))
+                .Where(c => c != null)
+                .Select(c => FindPreFixInPolicyName(c!.ContentName, prefix))
+                .ToList();
 
-
-                // display a dialog box with the new names and confirm renaming
-                if (contentNames.Count == 0)
-                {
-                    AppendToDetailsRichTextBlock("No content names found for the provided IDs.");
-                    return;
-                }
-
-
-                string contentNamesList = string.Join("\n", contentNames);
-                ContentDialog renameDialog = new ContentDialog
-                {
-                    Title = "Confirm Renaming",
-                    Content = $"The new policy names will look like this. Proceed?\n\n{contentNamesList}",
-                    PrimaryButtonText = "Rename",
-                    CloseButtonText = "Cancel",
-                    XamlRoot = this.XamlRoot
-                };
-                var dialogResult = await renameDialog.ShowAsync();
-
-                if (dialogResult != ContentDialogResult.Primary)
-                {
-                    AppendToDetailsRichTextBlock("Renaming operation cancelled.");
-                    return;
-                }
-            }
-            else if (selectedRenameMode == "Suffix")
+            if (contentNames.Count == 0)
             {
-                // Empty - no implementation yet
+                AppendToDetailsRichTextBlock("No content names found for the provided IDs.");
+                return null;
             }
-            else if (selectedRenameMode == "Description")
+
+            var confirmed = await ShowConfirmationDialog(
+                "Confirm Renaming",
+                $"The new policy names will look like this. Proceed?\n\n{string.Join("\n", contentNames)}",
+                "Rename");
+
+            return confirmed ? prefix : null;
+        }
+
+        private async Task<string?> PrepareSuffixRename(List<string> contentIDs, string newName)
+        {
+            // TODO: Implement suffix rename logic similar to prefix
+            // For now, return null (not implemented)
+            await Task.CompletedTask;
+            return null;
+        }
+
+        private async Task<string?> PrepareDescriptionUpdate(string newDescription)
+        {
+            var confirmed = await ShowConfirmationDialog(
+                "Confirm updating description",
+                $"The new policy descriptions will look like this. Proceed?\n\n{newDescription}",
+                "Update");
+
+            return confirmed ? newDescription : null;
+        }
+
+        /// <summary>
+        /// Shows a confirmation dialog and returns true if user confirmed.
+        /// </summary>
+        private async Task<bool> ShowConfirmationDialog(string title, string content, string confirmButtonText)
+        {
+            var dialog = new ContentDialog
             {
-                prefix = newName; // For description, we just use the newName as the description text
-                ContentDialog renameDialog = new ContentDialog
-                {
-                    Title = "Confirm updating description",
-                    Content = $"The new policy descriptions will look like this. Proceed?\n\n{prefix}",
-                    PrimaryButtonText = "Update",
-                    CloseButtonText = "Cancel",
-                    XamlRoot = this.XamlRoot
-                };
-                var dialogResult = await renameDialog.ShowAsync();
-                if (dialogResult != ContentDialogResult.Primary)
-                {
-                    AppendToDetailsRichTextBlock("Renaming operation cancelled.");
-                    return;
-                }
+                Title = title,
+                Content = content,
+                PrimaryButtonText = confirmButtonText,
+                CloseButtonText = "Cancel",
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+            if (result != ContentDialogResult.Primary)
+            {
+                AppendToDetailsRichTextBlock("Renaming operation cancelled.");
+                return false;
             }
+            return true;
+        }
 
+        /// <summary>
+        /// Mapping of content types to their rename methods.
+        /// </summary>
+        private IEnumerable<(string ContentType, Func<List<string>, string, Task> RenameAction)> GetContentTypeRenameActions() =>
+        [
+            (ContentTypes.SettingsCatalog, RenameSettingsCatalogs),
+            (ContentTypes.DeviceCompliancePolicy, RenameDeviceCompliancePolicies),
+            (ContentTypes.DeviceConfigurationPolicy, RenameDeviceConfigurationPolicies),
+            (ContentTypes.AppleBYODEnrollmentProfile, RenameAppleBYODEnrollmentProfiles),
+            (ContentTypes.MacOSShellScript, RenameMacOSShellScripts),
+            (ContentTypes.PowerShellScript, RenamePowerShellScripts),
+            (ContentTypes.ProactiveRemediation, RenameProactiveRemediations),
+            (ContentTypes.WindowsAutoPilotProfile, RenameWindowsAutoPilotProfiles),
+            (ContentTypes.WindowsDriverUpdate, RenameWindowsDriverUpdates),
+            (ContentTypes.WindowsFeatureUpdate, RenameWindowsFeatureUpdates),
+            (ContentTypes.WindowsQualityUpdatePolicy, RenameWindowsQualityUpdatePolicies),
+            (ContentTypes.WindowsQualityUpdateProfile, RenameWindowsQualityUpdateProfiles),
+            (ContentTypes.AssignmentFilter, RenameAssignmentFilters),
+            (ContentTypes.EntraGroup, RenameEntraGroups),
+        ];
 
+        /// <summary>
+        /// Executes rename operations for all content types present in the list.
+        /// </summary>
+        private async Task ExecuteRenameOperations(int totalItems, string operationText)
+        {
             try
             {
-                // Initialize progress tracking
-                _renameTotal = contentIDs.Count;
-                _renameCurrent = 0;
-                _renameSuccessCount = 0;
-                _renameErrorCount = 0;
-
+                InitializeProgressTracking(totalItems);
                 ShowOperationProgress("Preparing to rename items...", 0, _renameTotal);
 
-                if (HasContentType(ContentTypes.SettingsCatalog))
+                // Process all mapped content types
+                foreach (var (contentType, renameAction) in GetContentTypeRenameActions())
                 {
-                    var ids = GetContentIdsByType(ContentTypes.SettingsCatalog);
-                    if (ids.Count > 0)
-                        await RenameSettingsCatalogs(ids, prefix);
+                    if (HasContentType(contentType))
+                    {
+                        var ids = GetContentIdsByType(contentType);
+                        if (ids.Count > 0)
+                            await renameAction(ids, operationText);
+                    }
                 }
 
-                if (HasContentType(ContentTypes.DeviceCompliancePolicy))
-                {
-                    var ids = GetContentIdsByType(ContentTypes.DeviceCompliancePolicy);
-                    if (ids.Count > 0)
-                        await RenameDeviceCompliancePolicies(ids, prefix);
-                }
-
-                if (HasContentType(ContentTypes.DeviceConfigurationPolicy))
-                {
-                    var ids = GetContentIdsByType(ContentTypes.DeviceConfigurationPolicy);
-                    if (ids.Count > 0)
-                        await RenameDeviceConfigurationPolicies(ids, prefix);
-                }
-
-                if (HasContentType(ContentTypes.AppleBYODEnrollmentProfile))
-                {
-                    var ids = GetContentIdsByType(ContentTypes.AppleBYODEnrollmentProfile);
-                    if (ids.Count > 0)
-                        await RenameAppleBYODEnrollmentProfiles(ids, prefix);
-                }
-
-                if (HasContentType(ContentTypes.MacOSShellScript))
-                {
-                    var ids = GetContentIdsByType(ContentTypes.MacOSShellScript);
-                    if (ids.Count > 0)
-                        await RenameMacOSShellScripts(ids, prefix);
-                }
-
-                if (HasContentType(ContentTypes.PowerShellScript))
-                {
-                    var ids = GetContentIdsByType(ContentTypes.PowerShellScript);
-                    if (ids.Count > 0)
-                        await RenamePowerShellScripts(ids, prefix);
-                }
-
-                if (HasContentType(ContentTypes.ProactiveRemediation))
-                {
-                    var ids = GetContentIdsByType(ContentTypes.ProactiveRemediation);
-                    if (ids.Count > 0)
-                        await RenameProactiveRemediations(ids, prefix);
-                }
-
-                if (HasContentType(ContentTypes.WindowsAutoPilotProfile))
-                {
-                    var ids = GetContentIdsByType(ContentTypes.WindowsAutoPilotProfile);
-                    if (ids.Count > 0)
-                        await RenameWindowsAutoPilotProfiles(ids, prefix);
-                }
-
-                if (HasContentType(ContentTypes.WindowsDriverUpdate))
-                {
-                    var ids = GetContentIdsByType(ContentTypes.WindowsDriverUpdate);
-                    if (ids.Count > 0)
-                        await RenameWindowsDriverUpdates(ids, prefix);
-                }
-
-                if (HasContentType(ContentTypes.WindowsFeatureUpdate))
-                {
-                    var ids = GetContentIdsByType(ContentTypes.WindowsFeatureUpdate);
-                    if (ids.Count > 0)
-                        await RenameWindowsFeatureUpdates(ids, prefix);
-                }
-
-                if (HasContentType(ContentTypes.WindowsQualityUpdatePolicy))
-                {
-                    var ids = GetContentIdsByType(ContentTypes.WindowsQualityUpdatePolicy);
-                    if (ids.Count > 0)
-                        await RenameWindowsQualityUpdatePolicies(ids, prefix);
-                }
-
-                if (HasContentType(ContentTypes.WindowsQualityUpdateProfile))
-                {
-                    var ids = GetContentIdsByType(ContentTypes.WindowsQualityUpdateProfile);
-                    if (ids.Count > 0)
-                        await RenameWindowsQualityUpdateProfiles(ids, prefix);
-                }
-
-                if (HasContentType(ContentTypes.AssignmentFilter))
-                {
-                    var ids = GetContentIdsByType(ContentTypes.AssignmentFilter);
-                    if (ids.Count > 0)
-                        await RenameAssignmentFilters(ids, prefix);
-                }
-
-                if (HasContentType(ContentTypes.EntraGroup))
-                {
-                    var ids = GetContentIdsByType(ContentTypes.EntraGroup);
-                    if (ids.Count > 0)
-                        await RenameEntraGroups(ids, prefix);
-                }
-
+                // Handle applications separately (different API pattern)
                 if (HasApplicationContent())
                 {
                     var ids = GetApplicationContentIds();
                     if (ids.Count > 0)
-                        await RenameApplications(ids, prefix);
+                        await RenameApplications(ids, operationText);
                 }
 
-                // Show final success/error status
-                if (_renameErrorCount == 0)
-                {
-                    ShowOperationSuccess($"Successfully renamed {_renameSuccessCount} items");
-                }
-                else
-                {
-                    ShowOperationError($"Completed with {_renameErrorCount} error(s). {_renameSuccessCount} items renamed successfully.");
-                }
-                AppendToDetailsRichTextBlock($"Renamed {_renameSuccessCount} items with prefix '{prefix}'.");
+                ReportRenameResults(operationText);
             }
             catch (Exception ex)
             {
                 ShowOperationError($"Rename operation failed: {ex.Message}");
                 AppendToDetailsRichTextBlock($"Error during renaming: {ex.Message}");
             }
+        }
+
+        private void InitializeProgressTracking(int totalItems)
+        {
+            _renameTotal = totalItems;
+            _renameCurrent = 0;
+            _renameSuccessCount = 0;
+            _renameErrorCount = 0;
+        }
+
+        private void ReportRenameResults(string operationText)
+        {
+            if (_renameErrorCount == 0)
+            {
+                ShowOperationSuccess($"Successfully renamed {_renameSuccessCount} items");
+            }
+            else
+            {
+                ShowOperationError($"Completed with {_renameErrorCount} error(s). {_renameSuccessCount} items renamed successfully.");
+            }
+            AppendToDetailsRichTextBlock($"Renamed {_renameSuccessCount} items with '{operationText}'.");
         }
 
         private Task RenameAppleBYODEnrollmentProfiles(List<string> profileIDs, string prefix) =>
