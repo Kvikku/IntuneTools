@@ -2,11 +2,8 @@ using CommunityToolkit.WinUI.UI.Controls;
 using IntuneTools.Utilities;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Data;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using static IntuneTools.Graph.EntraHelperClasses.GroupHelperClass;
@@ -23,8 +20,6 @@ using static IntuneTools.Graph.IntuneHelperClasses.WindowsDriverUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsFeatureUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdatePolicyHandler;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHelper;
-//using static IntuneTools.Utilities.SourceTenantGraphClient;
-
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -159,6 +154,9 @@ namespace IntuneTools.Pages
             AppendToDetailsRichTextBlock("Content deletion completed.");
         }
 
+        /// <summary>
+        /// Loads all content types from Microsoft Graph.
+        /// </summary>
         private async Task ListAllOrchestrator(GraphServiceClient graphServiceClient)
         {
             ShowLoading("Loading data from Microsoft Graph...");
@@ -179,6 +177,9 @@ namespace IntuneTools.Pages
             }
         }
 
+        /// <summary>
+        /// Searches for content matching the specified query.
+        /// </summary>
         private async Task SearchOrchestrator(GraphServiceClient graphServiceClient, string searchQuery)
         {
             ShowLoading("Searching content in Microsoft Graph...");
@@ -388,7 +389,7 @@ namespace IntuneTools.Pages
 
         private async void SearchButton_Click(object sender, RoutedEventArgs e)
         {
-            var searchQuery = InputTextBox.Text;
+            var searchQuery = InputTextBox.Text.Trim();
             if (string.IsNullOrWhiteSpace(searchQuery))
             {
                 AppendToDetailsRichTextBlock("Please enter a search query.");
