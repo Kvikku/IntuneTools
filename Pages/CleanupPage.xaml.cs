@@ -80,6 +80,12 @@ namespace IntuneTools.Pages
 
         #region Constructor & Configuration
 
+        public CleanupPage()
+        {
+            InitializeComponent();
+            RightClickMenu.AttachDataGridContextMenu(CleanupDataGrid);
+        }
+
         protected override string UnauthenticatedMessage => "You must authenticate with a tenant before using cleanup features.";
 
         protected override IEnumerable<string> GetManagedControlNames() => new[]
@@ -87,12 +93,6 @@ namespace IntuneTools.Pages
             "InputTextBox", "SearchButton", "ListAllButton", "ClearSelectedButton",
             "ClearAllButton", "DeleteButton", "CleanupDataGrid", "ClearLogButton"
         };
-
-        public CleanupPage()
-        {
-            InitializeComponent();
-            RightClickMenu.AttachDataGridContextMenu(CleanupDataGrid);
-        }
 
         #endregion
 
@@ -328,11 +328,6 @@ namespace IntuneTools.Pages
 
         #region Event Handlers
 
-        private void CleanupDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
-        {
-            HandleDataGridSorting(sender, e);
-        }
-
         private void ClearAllButton_Click(object sender, RoutedEventArgs e)
         {
             ContentList.Clear();
@@ -358,6 +353,11 @@ namespace IntuneTools.Pages
             AppendToDetailsRichTextBlock($"Cleared {selectedItems.Count} selected item(s) from the list.");
         }
 
+        private void CleanupDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
+        {
+            HandleDataGridSorting(sender, e);
+        }
+
         private async void DeleteButton_Click(object sender, RoutedEventArgs e)
         {
             var numberOfItems = ContentList.Count;
@@ -381,12 +381,12 @@ namespace IntuneTools.Pages
             }
         }
 
-        private async void ListAll_Click(object sender, RoutedEventArgs e)
+        private async void ListAllButton_Click(object sender, RoutedEventArgs e)
         {
             await ListAllOrchestrator(sourceGraphServiceClient);
         }
 
-        private async void Search_Click(object sender, RoutedEventArgs e)
+        private async void SearchButton_Click(object sender, RoutedEventArgs e)
         {
             var searchQuery = InputTextBox.Text;
             if (string.IsNullOrWhiteSpace(searchQuery))

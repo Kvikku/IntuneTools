@@ -65,8 +65,8 @@
                              PlaceholderText="Enter text here..."
                              Width="300"
                              VerticalAlignment="Bottom"/>
-                    <AppBarButton x:Name="SearchButton" Icon="Find" Label="Search" Click="Search_Click" ToolTipService.ToolTip="Search for specific items."/>
-                    <AppBarButton x:Name="ListAllButton" Icon="ViewAll" Label="List All" Click="ListAll_Click" ToolTipService.ToolTip="List all items."/>
+                    <AppBarButton x:Name="SearchButton" Icon="Find" Label="Search" Click="SearchButton_Click" ToolTipService.ToolTip="Search for specific items."/>
+                    <AppBarButton x:Name="ListAllButton" Icon="ViewAll" Label="List All" Click="ListAllButton_Click" ToolTipService.ToolTip="List all items."/>
                     <AppBarSeparator/>
                     <AppBarButton x:Name="ClearSelectedButton" Icon="Remove" Label="Clear Selected" Click="ClearSelectedButton_Click" ToolTipService.ToolTip="Remove selected items from staging area."/>
                     <AppBarButton x:Name="ClearAllButton" Icon="Clear" Label="Clear All" Click="ClearAllButton_Click" ToolTipService.ToolTip="Clear all items from staging area."/>
