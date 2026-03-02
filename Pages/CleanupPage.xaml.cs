@@ -79,6 +79,7 @@ namespace IntuneTools.Pages
         {
             InitializeComponent();
             RightClickMenu.AttachDataGridContextMenu(CleanupDataGrid);
+            LogConsole.ItemsSource = LogEntries;
         }
 
         protected override string UnauthenticatedMessage => "You must authenticate with a tenant before using cleanup features.";
