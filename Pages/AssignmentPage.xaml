@@ -54,98 +54,77 @@
             </InfoBar>
         </StackPanel>
 
-        <!-- Action Row -->
-        <CommandBar Grid.Row="1"
-                    DefaultLabelPosition="Right"
-                    Background="Transparent"
-                    Margin="0,0,0,12">
-            <CommandBar.Content>
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                    <AutoSuggestBox x:Name="ContentSearchBox"
-                                    PlaceholderText="Search by name..."
-                                    QueryIcon="Find"
-                                    Width="250"
-                                    QuerySubmitted="ContentSearchBox_QuerySubmitted"
-                                    TextChanged="ContentSearchBox_TextChanged"/>
-                    <AppBarButton x:Name="ListAllButton" Icon="ViewAll" Label="List All" Click="ListAllButton_Click" ToolTipService.ToolTip="List all content for selected types."/>
-                    <AppBarSeparator/>
-                    <AppBarButton x:Name="ContentTypesButton" Icon="Filter" Label="Content Types">
-                        <AppBarButton.Flyout>
-                            <Flyout Placement="BottomEdgeAlignedLeft">
-                                <StackPanel x:Name="OptionsPanel" Orientation="Vertical" Margin="0,12,0,0" MinWidth="300">
-                                    <TextBlock Text="Content Types" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                                    <CheckBox x:Name="OptionsAllCheckBox"
-                          Content="Select all"
-                          IsThreeState="False"
-                          Checked="SelectAll_Checked"
-                          Unchecked="SelectAll_Unchecked"
-                          Indeterminate="SelectAll_Indeterminate"/>
-                                    <CheckBox x:Name="Application" Content="Applications" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                    <CheckBox x:Name="SettingsCatalog" Content="Settings Catalog" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                    <CheckBox x:Name="DeviceCompliance" Content="Device Compliance" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                    <CheckBox x:Name="EntraGroups" Content="Entra Groups" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                    <CheckBox x:Name="DeviceConfiguration" Content="Device Configuration" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                    <CheckBox x:Name="AppleBYODEnrollmentProfile" Content="Apple BYOD enrollment profile" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                    <CheckBox x:Name="Filters" Content="Filters" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                    <CheckBox x:Name="PowerShellScript" Content="PowerShell Scripts" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                    <CheckBox x:Name="ProactiveRemediation" Content="Remediation Scripts" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                    <CheckBox x:Name="macOSShellScript" Content="macOS Shell Scripts" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                    <CheckBox x:Name="WindowsAutopilot" Content="Windows Autopilot" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                    <CheckBox x:Name="WindowsDriverUpdate" Content="Windows Driver Update" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                    <CheckBox x:Name="WindowsFeatureUpdate" Content="Windows Feature Update" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                    <CheckBox x:Name="WindowsQualityUpdatePolicy" Content="Windows Quality Update Policy" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                    <CheckBox x:Name="WindowsQualityUpdateProfile" Content="Windows Quality Update Profile" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                </StackPanel>
-                            </Flyout>
-                        </AppBarButton.Flyout>
-                    </AppBarButton>
-                    <AppBarSeparator/>
-                    <AppBarButton x:Name="RemoveSelectedButton" Icon="Delete" Label="Remove Selected" Click="RemoveSelectedButton_Click" ToolTipService.ToolTip="Remove selected items from the grid."/>
-                    <AppBarButton x:Name="RemoveAllButton" Icon="Clear" Label="Remove All" Click="RemoveAllButton_Click" ToolTipService.ToolTip="Clear all items from the grid."/>
-                    <AppBarSeparator/>
-                    <ToggleSwitch x:Name="FilterToggle"
-                                  Header="Use Assignment Filter"
-                                  OffContent="Disabled"
-                                  OnContent="Enabled"
-                                  Toggled="FilterToggle_Toggled"/>
-                    <ComboBox x:Name="FilterSelectionComboBox"
-                              Width="250"
-                              PlaceholderText="Select a filter..."
-                              Visibility="Collapsed"
-                              SelectionChanged="FilterSelectionComboBox_SelectionChanged"
-                              VerticalAlignment="Bottom"/>
-                    <ToggleSwitch x:Name="FilterModeToggle"
-                                  OnContent="Include"
-                                  OffContent="Exclude"
-                                  IsOn="True"
-                                  Visibility="Collapsed"
-                                  VerticalAlignment="Bottom"
-                                  Toggled="FilterModeToggle_Toggled"/>
-                    <ToggleSwitch x:Name="IntentToggle"
-                                  Header="Intent"
-                                  OnContent="Include"
-                                  OffContent="Exclude"
-                                  IsOn="True"
-                                  VerticalAlignment="Bottom"
-                                  Toggled="IntentToggle_Toggled"/>
-                    <AppBarSeparator/>
-                    
+        <!-- Toolbar Cards Row -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="12" Margin="0,0,0,12">
+
+            <!-- Search & Staging Card -->
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="12,8">
+                <StackPanel Spacing="6">
+                    <TextBlock Text="Search &amp; Staging" FontSize="12" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <AutoSuggestBox x:Name="ContentSearchBox"
+                                        PlaceholderText="Search by name..."
+                                        QueryIcon="Find"
+                                        Width="250"
+                                        QuerySubmitted="ContentSearchBox_QuerySubmitted"
+                                        TextChanged="ContentSearchBox_TextChanged"/>
+                        <AppBarButton x:Name="ListAllButton" Icon="ViewAll" Label="List All" Click="ListAllButton_Click" ToolTipService.ToolTip="List all content for selected types."/>
+                        <AppBarSeparator/>
+                        <AppBarButton x:Name="ContentTypesButton" Icon="Filter" Label="Content Types">
+                            <AppBarButton.Flyout>
+                                <Flyout Placement="BottomEdgeAlignedLeft">
+                                    <StackPanel x:Name="OptionsPanel" Orientation="Vertical" MinWidth="300">
+                                        <TextBlock Text="Content Types" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                        <CheckBox x:Name="OptionsAllCheckBox"
+                                                  Content="Select all"
+                                                  IsThreeState="False"
+                                                  Checked="SelectAll_Checked"
+                                                  Unchecked="SelectAll_Unchecked"
+                                                  Indeterminate="SelectAll_Indeterminate"/>
+                                        <CheckBox x:Name="Application" Content="Applications" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                        <CheckBox x:Name="SettingsCatalog" Content="Settings Catalog" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                        <CheckBox x:Name="DeviceCompliance" Content="Device Compliance" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                        <CheckBox x:Name="EntraGroups" Content="Entra Groups" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                        <CheckBox x:Name="DeviceConfiguration" Content="Device Configuration" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                        <CheckBox x:Name="AppleBYODEnrollmentProfile" Content="Apple BYOD enrollment profile" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                        <CheckBox x:Name="Filters" Content="Filters" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                        <CheckBox x:Name="PowerShellScript" Content="PowerShell Scripts" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                        <CheckBox x:Name="ProactiveRemediation" Content="Remediation Scripts" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                        <CheckBox x:Name="macOSShellScript" Content="macOS Shell Scripts" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                        <CheckBox x:Name="WindowsAutopilot" Content="Windows Autopilot" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                        <CheckBox x:Name="WindowsDriverUpdate" Content="Windows Driver Update" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                        <CheckBox x:Name="WindowsFeatureUpdate" Content="Windows Feature Update" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                        <CheckBox x:Name="WindowsQualityUpdatePolicy" Content="Windows Quality Update Policy" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                        <CheckBox x:Name="WindowsQualityUpdateProfile" Content="Windows Quality Update Profile" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                    </StackPanel>
+                                </Flyout>
+                            </AppBarButton.Flyout>
+                        </AppBarButton>
+                        <AppBarSeparator/>
+                        <AppBarButton x:Name="RemoveSelectedButton" Icon="Delete" Label="Remove Selected" Click="RemoveSelectedButton_Click" ToolTipService.ToolTip="Remove selected items from the grid."/>
+                        <AppBarButton x:Name="RemoveAllButton" Icon="Clear" Label="Remove All" Click="RemoveAllButton_Click" ToolTipService.ToolTip="Clear all items from the grid."/>
+                        <AppBarSeparator/>
+                        <AppBarButton x:Name="ClearLogButton" Icon="Delete" Label="Clear Log" Click="ClearLogButton_Click" ToolTipService.ToolTip="Clear the log console."/>
+                    </StackPanel>
                 </StackPanel>
-            </CommandBar.Content>
-            <CommandBar.PrimaryCommands>
-                <AppBarButton x:Name="ClearLogButton" Icon="Delete" Label="Clear Log" Click="ClearLogButton_Click" ToolTipService.ToolTip="Clear the log console."/>
-            </CommandBar.PrimaryCommands>
-        </CommandBar>
+            </Border>
+        </StackPanel>
 
         <!-- Main Content Row -->
         <Grid Grid.Row="2" Margin="0,0,0,20">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" MinWidth="300"/>
                 <!-- DataGrid -->
+                <ColumnDefinition Width="280" MinWidth="200"/>
+                <!-- Assignment side panel -->
                 <ColumnDefinition Width="Auto"/>
                 <!-- Splitter -->
-                <ColumnDefinition Width="340" MinWidth="250"/>
-                <!-- Assignment side panel -->
+                <ColumnDefinition Width="340" MinWidth="200"/>
+                <!-- Log panel -->
             </Grid.ColumnDefinitions>
 
             <!-- DataGrid with loading overlay -->
@@ -211,75 +190,120 @@
                 </Border>
             </Grid>
 
+            <!-- Assignment Side Panel -->
+            <ScrollViewer Grid.Column="1"
+                          VerticalScrollBarVisibility="Auto"
+                          Margin="0,-20,12,0">
+                <StackPanel Orientation="Vertical" Spacing="4">
+                    <TextBlock Text="Assign to Groups"
+                               FontSize="20"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,12"/>
+
+                    <!-- Groups Section -->
+                    <TextBlock Text="Groups" FontSize="13" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,0,0,6"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8" Spacing="8">
+                        <TextBox x:Name="GroupSearchTextBox"
+                                 PlaceholderText="Search groups..."
+                                 Width="150"/>
+                        <Button x:Name="GroupSearchButton"
+                                Click="GroupSearchButton_Click"
+                                ToolTipService.ToolTip="Search for a specific group.">
+                            <FontIcon Glyph="&#xE721;" FontSize="14"/>
+                        </Button>
+                    </StackPanel>
+
+                    <Button x:Name="GroupListAllButton"
+                            Content="List all groups"
+                            Margin="0,0,0,8"
+                            HorizontalAlignment="Left"
+                            Click="GroupListAllButton_Click"/>
+
+                    <controls:DataGrid x:Name="GroupDataGrid"
+                                       AutoGenerateColumns="False"
+                                       HeadersVisibility="Column"
+                                       Height="160"
+                                       SelectionMode="Extended"
+                                       Margin="0,0,0,16"
+                                       IsReadOnly="True"
+                                       CanUserSortColumns="True"
+                                       CanUserReorderColumns="False"
+                                       Sorting="GroupDataGrid_Sorting">
+                        <controls:DataGrid.Columns>
+                            <controls:DataGridTextColumn Header="Group Name" Binding="{Binding GroupName}" Width="2*"/>
+                            <controls:DataGridTextColumn Header="ID" Binding="{Binding GroupId}" Width="*"/>
+                        </controls:DataGrid.Columns>
+                    </controls:DataGrid>
+
+                    <!-- Assignment Options Section -->
+                    <TextBlock Text="Assignment Options" FontSize="13" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,4,0,8"/>
+
+                    <ToggleSwitch x:Name="IntentToggle"
+                                  Header="Intent"
+                                  OnContent="Include"
+                                  OffContent="Exclude"
+                                  IsOn="True"
+                                  Toggled="IntentToggle_Toggled"
+                                  Margin="0,0,0,4"/>
+
+                    <ToggleSwitch x:Name="FilterToggle"
+                                  Header="Assignment Filter"
+                                  OffContent="Disabled"
+                                  OnContent="Enabled"
+                                  Toggled="FilterToggle_Toggled"
+                                  Margin="0,0,0,4"/>
+                    <ComboBox x:Name="FilterSelectionComboBox"
+                              HorizontalAlignment="Stretch"
+                              PlaceholderText="Select a filter..."
+                              Visibility="Collapsed"
+                              SelectionChanged="FilterSelectionComboBox_SelectionChanged"
+                              Margin="0,0,0,4"/>
+                    <ToggleSwitch x:Name="FilterModeToggle"
+                                  OnContent="Include"
+                                  OffContent="Exclude"
+                                  IsOn="True"
+                                  Visibility="Collapsed"
+                                  Toggled="FilterModeToggle_Toggled"
+                                  Margin="0,0,0,12"/>
+
+                    <!-- ASSIGN BUTTON - Primary action -->
+                    <Button x:Name="AssignButton"
+                            Click="AssignButton_Click"
+                            HorizontalAlignment="Stretch"
+                            Style="{StaticResource AccentButtonStyle}"
+                            Height="40"
+                            FontWeight="SemiBold">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE8FB;" FontSize="16"/>
+                            <TextBlock Text="Assign to Groups" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </ScrollViewer>
+
             <!-- Resizable Splitter -->
-            <sizers:GridSplitter Grid.Column="1"
+            <sizers:GridSplitter Grid.Column="2"
                                  Width="8"
                                  ResizeBehavior="BasedOnAlignment"
                                  ResizeDirection="Columns"
                                  Background="Transparent"/>
 
-            <!-- Assignment Side Panel -->
-            <StackPanel Grid.Column="2"
-                        Orientation="Vertical"
-                        Margin="0,-20,0,0">
-                <TextBlock Text="Assign to Groups"
+            <!-- Log Console Panel -->
+            <Grid Grid.Column="3"
+                  Margin="0,-20,0,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0"
+                           Text="Log Console"
                            FontSize="20"
                            FontWeight="SemiBold"
                            Margin="0,0,0,12"/>
 
-                <!-- Group search panel (always visible) -->
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,8" Spacing="8">
-                    <TextBox x:Name="GroupSearchTextBox"
-                             PlaceholderText="Search groups..."
-                             Width="190"/>
-                    <Button x:Name="GroupSearchButton"
-                            Click="GroupSearchButton_Click"
-                            ToolTipService.ToolTip="Search for a specific group.">
-                        <FontIcon Glyph="&#xE721;" FontSize="14"/>
-                    </Button>
-                </StackPanel>
-
-                <Button x:Name="GroupListAllButton"
-                        Content="List all groups"
-                        Margin="0,0,0,12"
-                        HorizontalAlignment="Left"
-                        Click="GroupListAllButton_Click"/>
-
-                <controls:DataGrid x:Name="GroupDataGrid"
-                                   AutoGenerateColumns="False"
-                                   HeadersVisibility="Column"
-                                   Height="180"
-                                   Width="300"
-                                   SelectionMode="Extended"
-                                   Margin="0,0,0,16"
-                                   IsReadOnly="True"
-                                   CanUserSortColumns="True"
-                                   CanUserReorderColumns="False"
-                                   Sorting="GroupDataGrid_Sorting">
-                    <controls:DataGrid.Columns>
-                        <controls:DataGridTextColumn Header="Group Name" Binding="{Binding GroupName}" Width="2*"/>
-                        <controls:DataGridTextColumn Header="ID" Binding="{Binding GroupId}" Width="*"/>
-                    </controls:DataGrid.Columns>
-                </controls:DataGrid>
-
-                <!-- ASSIGN BUTTON - Primary action -->
-                <Button x:Name="AssignButton"
-                        Click="AssignButton_Click"
-                        HorizontalAlignment="Stretch"
-                        Style="{StaticResource AccentButtonStyle}"
-                        Height="40"
-                        FontWeight="SemiBold">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <FontIcon Glyph="&#xE8FB;" FontSize="16"/>
-                        <TextBlock Text="Assign to Groups" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Button>
-
-                <!-- Log Panel -->
-                <ListView x:Name="LogConsole"
-                          MaxHeight="200"
-                          SelectionMode="Extended"
-                          Margin="0,16,0,0">
+                <ListView Grid.Row="1"
+                          x:Name="LogConsole"
+                          SelectionMode="Extended">
                     <ListView.ItemTemplate>
                         <DataTemplate>
                             <Grid>
@@ -313,7 +337,7 @@
                         </Style>
                     </ListView.ItemContainerStyle>
                 </ListView>
-            </StackPanel>
+            </Grid>
         </Grid>
 
         <!-- Application Deployment Options Dialog -->
