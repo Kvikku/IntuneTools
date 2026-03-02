@@ -505,6 +505,27 @@ namespace IntuneTools.Pages
                 return;
             }
 
+            // Bulk operation safeguard: warn when importing 10 or more items
+            if (ContentList.Count >= 10)
+            {
+                var bulkWarning = new ContentDialog
+                {
+                    Title = "\u26A0 Large Bulk Import",
+                    Content = $"You are about to import {ContentList.Count} items. Are you sure you want to continue?",
+                    PrimaryButtonText = "Continue",
+                    CloseButtonText = "Cancel",
+                    DefaultButton = ContentDialogButton.Close,
+                    XamlRoot = this.XamlRoot
+                };
+
+                var bulkResult = await bulkWarning.ShowAsync();
+                if (bulkResult != ContentDialogResult.Primary)
+                {
+                    AppendToLog("Bulk import cancelled by user.");
+                    return;
+                }
+            }
+
             // Initialize progress tracking
             _importCurrent = 0;
             _importSuccessCount = 0;

@@ -252,6 +252,27 @@ namespace IntuneTools.Pages
             // Get all content
             var content = GetAllContentFromDatagrid();
 
+            // Bulk operation safeguard: warn when assigning 10 or more items
+            if (content.Count >= 10)
+            {
+                var bulkWarning = new ContentDialog
+                {
+                    Title = "\u26A0 Large Bulk Assignment",
+                    Content = $"You are about to assign {content.Count} items. Are you sure you want to continue?",
+                    PrimaryButtonText = "Continue",
+                    CloseButtonText = "Cancel",
+                    DefaultButton = ContentDialogButton.Close,
+                    XamlRoot = this.XamlRoot
+                };
+
+                var bulkResult = await bulkWarning.ShowAsync();
+                if (bulkResult != ContentDialogResult.Primary)
+                {
+                    AppendToLog("Bulk assignment cancelled by user.");
+                    return;
+                }
+            }
+
             // Get groups
             var selectedGroups = GroupDataGrid.SelectedItems?.Cast<AssignmentGroupInfo>().ToList();
             if (selectedGroups == null || selectedGroups.Count == 0)
