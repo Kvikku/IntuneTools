@@ -364,6 +364,27 @@ namespace IntuneTools.Pages
         {
             var numberOfItems = ContentList.Count;
 
+            // Bulk operation safeguard: warn when deleting 10 or more items
+            if (numberOfItems >= 10)
+            {
+                var bulkWarning = new ContentDialog
+                {
+                    Title = "\u26A0 Large Bulk Delete",
+                    Content = $"You are about to delete {numberOfItems} items. This is a large operation and cannot be undone. Are you sure you want to continue?",
+                    PrimaryButtonText = "Continue",
+                    CloseButtonText = "Cancel",
+                    DefaultButton = ContentDialogButton.Close,
+                    XamlRoot = this.XamlRoot
+                };
+
+                var bulkResult = await bulkWarning.ShowAsync().AsTask();
+                if (bulkResult != ContentDialogResult.Primary)
+                {
+                    AppendToDetailsRichTextBlock("Bulk delete cancelled by user.");
+                    return;
+                }
+            }
+
             var dialog = new ContentDialog
             {
                 Title = "Delete content?",

@@ -549,6 +549,27 @@ namespace IntuneTools.Pages
 
             selectedRenameMode = renameMode.ToString();
 
+            // Bulk operation safeguard: warn when renaming 10 or more items
+            if (itemsToRename.Count >= 10)
+            {
+                var bulkWarning = new ContentDialog
+                {
+                    Title = "\u26A0 Large Bulk Update",
+                    Content = $"You are about to update {itemsToRename.Count} items. Are you sure you want to continue?",
+                    PrimaryButtonText = "Continue",
+                    CloseButtonText = "Cancel",
+                    DefaultButton = ContentDialogButton.Close,
+                    XamlRoot = this.XamlRoot
+                };
+
+                var bulkResult = await bulkWarning.ShowAsync();
+                if (bulkResult != ContentDialogResult.Primary)
+                {
+                    LogInfo("Bulk rename cancelled by user.");
+                    return;
+                }
+            }
+
             await RenameContent(itemsToRename.Select(i => i.ContentId).Where(id => !string.IsNullOrEmpty(id)).ToList(), newName);
         }
 
