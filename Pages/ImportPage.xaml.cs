@@ -101,7 +101,8 @@ namespace IntuneTools.Pages
             this.InitializeComponent();
             SelectAll_Checked(LoadingOverlay, null); // Initialize the 'Select all' checkbox to checked state
             NewControlsPanel.Visibility = Visibility.Collapsed;
-            AppendToLog("Console output");
+            LogConsole.ItemsSource = LogEntries;
+            LogInfo("Console output");
             RightClickMenu.AttachDataGridContextMenu(ContentDataGrid);
         }
 

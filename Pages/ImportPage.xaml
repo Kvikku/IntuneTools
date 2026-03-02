@@ -7,6 +7,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:controls="using:CommunityToolkit.WinUI.UI.Controls"
+    xmlns:sizers="using:CommunityToolkit.WinUI.Controls"
     xmlns:utilities="using:IntuneTools.Utilities"
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
@@ -128,11 +129,13 @@
         <!-- Main Content Row -->
         <Grid Grid.Row="2" Margin="0,0,0,20">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*" MinWidth="300"/>
                 <!-- DataGrid -->
-                <ColumnDefinition Width="280"/>
+                <ColumnDefinition Width="280" MinWidth="200"/>
                 <!-- Import side panel -->
-                <ColumnDefinition Width="340"/>
+                <ColumnDefinition Width="Auto"/>
+                <!-- Splitter -->
+                <ColumnDefinition Width="340" MinWidth="200"/>
                 <!-- Log panel -->
             </Grid.ColumnDefinitions>
 
@@ -268,8 +271,15 @@
                 </StackPanel>
             </StackPanel>
 
+            <!-- Resizable Splitter -->
+            <sizers:GridSplitter Grid.Column="2"
+                                 Width="8"
+                                 ResizeBehavior="BasedOnAlignment"
+                                 ResizeDirection="Columns"
+                                 Background="Transparent"/>
+
             <!-- Log Console Panel -->
-            <StackPanel Grid.Column="2"
+            <StackPanel Grid.Column="3"
                         Orientation="Vertical"
                         Margin="0,-20,0,0">
                 <TextBlock Text="Log Console"
@@ -277,15 +287,42 @@
                            FontWeight="SemiBold"
                            Margin="0,0,0,12"/>
 
-                <ScrollViewer x:Name="LogScrollViewer"
-                              HorizontalScrollBarVisibility="Disabled"
-                              VerticalScrollBarVisibility="Auto"
-                              VerticalAlignment="Stretch"
-                              MaxHeight="400">
-                    <RichTextBlock x:Name="LogConsole"
-                                   IsTextSelectionEnabled="True"
-                                   TextWrapping="Wrap"/>
-                </ScrollViewer>
+                <ListView x:Name="LogConsole"
+                          MaxHeight="400"
+                          SelectionMode="Extended">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="58"/>
+                                    <ColumnDefinition Width="18"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding TimestampText}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           FontFamily="Consolas"
+                                           FontSize="12"
+                                           VerticalAlignment="Top"/>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding LevelIndicator}"
+                                           Foreground="{Binding Foreground}"
+                                           FontSize="12"
+                                           VerticalAlignment="Top"/>
+                                <TextBlock Grid.Column="2"
+                                           Text="{Binding Message}"
+                                           Foreground="{Binding Foreground}"
+                                           TextWrapping="Wrap"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="Padding" Value="4,2"/>
+                            <Setter Property="MinHeight" Value="0"/>
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                        </Style>
+                    </ListView.ItemContainerStyle>
+                </ListView>
             </StackPanel>
         </Grid>
     </Grid>
