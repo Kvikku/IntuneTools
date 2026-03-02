@@ -561,9 +561,14 @@ namespace IntuneTools.Pages
             var needsTextInput = selectionMode != RenameMode.RemovePrefix;
             var needsPrefixSymbol = selectionMode == RenameMode.Prefix;
 
-            PrefixButton.IsEnabled = needsPrefixSymbol;
+            PrefixButton.Visibility = needsPrefixSymbol ? Visibility.Visible : Visibility.Collapsed;
             NewNameTextBox.IsEnabled = needsTextInput;
-            NewNameTextBox.PlaceholderText = needsTextInput ? "Enter text" : "Not required for Remove Prefix";
+            NewNameTextBox.PlaceholderText = selectionMode switch
+            {
+                RenameMode.Prefix => "Enter prefix...",
+                RenameMode.Description => "Enter description...",
+                _ => "Not required"
+            };
         }
 
         private void RenamingDataGrid_Sorting(object sender, DataGridColumnEventArgs e)

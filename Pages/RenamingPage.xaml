@@ -51,26 +51,44 @@
             </InfoBar>
         </StackPanel>
 
-        <!-- CommandBar -->
-        <CommandBar Grid.Row="1"
-                    DefaultLabelPosition="Right"
-                    Background="Transparent"
-                    Margin="0,0,0,12">
-            <CommandBar.Content>
-                <StackPanel Orientation="Horizontal" Spacing="8">
+        <!-- Toolbar Cards Row -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="12" Margin="0,0,0,12">
+
+            <!-- Search & Staging Card -->
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="12,8">
+                <StackPanel Spacing="6">
+                    <TextBlock Text="Search &amp; Staging" FontSize="12" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                     <TextBox x:Name="SearchQueryTextBox"
                              PlaceholderText="Enter search query..."
-                             Width="300"
-                             VerticalAlignment="Bottom"/>
+                             Width="250"
+                             VerticalAlignment="Center"/>
                     <AppBarButton x:Name="SearchButton" Icon="Find" Label="Search" Click="SearchButton_Click" ToolTipService.ToolTip="Search for specific items."/>
                     <AppBarButton x:Name="ListAllButton" Icon="ViewAll" Label="List All" Click="ListAllButton_Click" ToolTipService.ToolTip="List all items."/>
                     <AppBarSeparator/>
                     <AppBarButton x:Name="ClearSelectedButton" Icon="Remove" Label="Clear Selected" Click="ClearSelectedButton_Click" ToolTipService.ToolTip="Remove selected items from staging area."/>
                     <AppBarButton x:Name="ClearAllButton" Icon="Clear" Label="Clear All" Click="ClearAllButton_Click" ToolTipService.ToolTip="Clear all items from staging area."/>
                     <AppBarSeparator/>
+                    <AppBarButton x:Name="ClearLogButton" Icon="Delete" Label="Clear Log" Click="ClearLogButton_Click" ToolTipService.ToolTip="Clear the log console."/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Rename Options Card -->
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="12,8">
+                <StackPanel Spacing="6">
+                    <TextBlock Text="Rename Configuration" FontSize="12" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                     <ComboBox x:Name="RenameModeComboBox"
-                              Width="140"
-                              VerticalAlignment="Bottom"
+                              Width="150"
                               SelectedIndex="0"
                               ToolTipService.ToolTip="Choose the rename mode."
                               SelectionChanged="RenameModeComboBox_SelectionChanged">
@@ -79,40 +97,38 @@
                         <ComboBoxItem Content="Remove Prefix"/>
                     </ComboBox>
                     <TextBox x:Name="NewNameTextBox"
-                             PlaceholderText="Enter text"
-                             Width="200"
-                             VerticalAlignment="Bottom"/>
-                    <AppBarButton x:Name="PrefixButton" Icon="ViewAll" Label="Prefix">
+                             PlaceholderText="Enter prefix..."
+                             Width="220"/>
+                    <AppBarButton x:Name="PrefixButton" Label="Format">
+                        <AppBarButton.Icon>
+                            <FontIcon Glyph="&#xE8D2;"/>
+                        </AppBarButton.Icon>
                         <AppBarButton.Flyout>
                             <Flyout Placement="BottomEdgeAlignedLeft">
                                 <StackPanel x:Name="OptionsPanel" Orientation="Vertical" MinWidth="200">
                                     <TextBlock Text="Prefix Format" FontWeight="SemiBold" Margin="0,0,0,8"/>
-                                    <RadioButton x:Name="Parentheses" Content="Parentheses (  )" GroupName="PrefixOptions"/>
+                                    <RadioButton x:Name="Parentheses" Content="Parentheses (  )" GroupName="PrefixOptions" IsChecked="True"/>
                                     <RadioButton x:Name="SquareBrackets" Content="Square brackets [  ]" GroupName="PrefixOptions"/>
                                     <RadioButton x:Name="CurlyBrackets" Content="Curly brackets {  }" GroupName="PrefixOptions"/>
                                 </StackPanel>
                             </Flyout>
                         </AppBarButton.Flyout>
                     </AppBarButton>
-                    <AppBarSeparator/>
                     <Button x:Name="RenameButton"
                             Click="RenameButton_Click"
                             ToolTipService.ToolTip="Update all staged items."
                             Style="{StaticResource AccentButtonStyle}"
-                            Height="36"
-                            Padding="16,0"
-                            VerticalAlignment="Bottom">
+                            Height="40"
+                            Padding="16,0">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <FontIcon Glyph="&#xE8AC;" FontSize="16"/>
-                            <TextBlock Text="Update" VerticalAlignment="Center"/>
+                            <TextBlock Text="Update" VerticalAlignment="Center" FontWeight="SemiBold"/>
                         </StackPanel>
                     </Button>
+                    </StackPanel>
                 </StackPanel>
-            </CommandBar.Content>
-            <CommandBar.PrimaryCommands>
-                <AppBarButton x:Name="ClearLogButton" Icon="Delete" Label="Clear Log" Click="ClearLogButton_Click" ToolTipService.ToolTip="Clear the log console."/>
-            </CommandBar.PrimaryCommands>
-        </CommandBar>
+            </Border>
+        </StackPanel>
 
         <!-- Main Content Row -->
         <Grid Grid.Row="2" Margin="0,0,0,20">
@@ -193,16 +209,20 @@
                                  Background="Transparent"/>
 
             <!-- Log Console Panel -->
-            <StackPanel Grid.Column="2"
-                        Orientation="Vertical"
-                        Margin="0,-20,0,0">
-                <TextBlock Text="Log Console"
+            <Grid Grid.Column="2"
+                  Margin="0,-20,0,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0"
+                           Text="Log Console"
                            FontSize="20"
                            FontWeight="SemiBold"
                            Margin="0,0,0,12"/>
 
-                <ListView x:Name="LogConsole"
-                          MaxHeight="400"
+                <ListView Grid.Row="1"
+                          x:Name="LogConsole"
                           SelectionMode="Extended">
                     <ListView.ItemTemplate>
                         <DataTemplate>
@@ -237,7 +257,7 @@
                         </Style>
                     </ListView.ItemContainerStyle>
                 </ListView>
-            </StackPanel>
+            </Grid>
         </Grid>
     </Grid>
 </utilities:BaseDataOperationPage>
