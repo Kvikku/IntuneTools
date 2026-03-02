@@ -125,6 +125,7 @@ namespace IntuneTools.Pages
 
             _allAssignments.AddRange(AssignmentList);
             AppDataGrid.ItemsSource = AssignmentList;
+            LogConsole.ItemsSource = LogEntries;
 
             this.Loaded += AssignmentPage_Loaded;
             RightClickMenu.AttachDataGridContextMenu(AppDataGrid);
