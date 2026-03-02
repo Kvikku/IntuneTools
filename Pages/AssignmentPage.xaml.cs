@@ -136,8 +136,7 @@ namespace IntuneTools.Pages
             "ContentSearchBox", "ListAllButton", "RemoveSelectedButton", "RemoveAllButton",
             "AssignButton", "GroupSearchTextBox", "GroupSearchButton", "GroupListAllButton",
             "AppDataGrid", "GroupDataGrid", "FilterExpander", "FilterSelectionComboBox",
-            "FilterModeComboBox", "OptionsAllCheckBox", "ClearLogButton", "ContentTypesButton",
-            "IntentComboBox"
+            "FilterModeComboBox", "OptionsAllCheckBox", "ClearLogButton", "ContentTypesButton"
         };
 
         #endregion
@@ -274,7 +273,17 @@ namespace IntuneTools.Pages
             AppendToLog("Filter: " + _selectedFilterName);
 
 
-            // Check if FilterToggle is enabled, otherwise set filter type to None
+
+            // Show deployment options dialog first
+            var deploymentOptions = await ShowAppDeploymentOptionsDialog();
+
+            if (deploymentOptions == false)
+            {
+                AppendToLog("Assignment cancelled by user during deployment options selection.");
+                return;
+            }
+
+            // Check if FilterExpander is expanded, otherwise set filter type to None
             if (FilterExpander.IsExpanded)
             {
                 deviceAndAppManagementAssignmentFilterType =
@@ -289,7 +298,7 @@ namespace IntuneTools.Pages
 
 
 
-            // Confirmation dialog
+            // Final confirmation dialog
             var confirmDialog = new ContentDialog
             {
                 Title = "Confirm Assignment",
@@ -305,14 +314,6 @@ namespace IntuneTools.Pages
             if (result != ContentDialogResult.Primary)
             {
                 AppendToLog("Assignment cancelled by user.");
-                return;
-            }
-
-            var deploymentOptions = await ShowAppDeploymentOptionsDialog();
-
-            if (deploymentOptions == false)
-            {
-                AppendToLog("Assignment cancelled by user during deployment options selection.");
                 return;
             }
 
@@ -729,8 +730,6 @@ namespace IntuneTools.Pages
         {
             if (!_uiInitialized) return;
 
-            FilterPlatformInfoBar.IsOpen = true;
-
             if (FilterModeComboBox is not null)
             {
                 FilterModeComboBox.SelectedIndex = 0; // Default to Include
@@ -750,7 +749,6 @@ namespace IntuneTools.Pages
             if (!_uiInitialized) return;
 
             FilterSelectionComboBox.SelectedItem = null;
-            FilterPlatformInfoBar.IsOpen = false;
 
             if (FilterModeComboBox is not null)
             {
@@ -775,13 +773,7 @@ namespace IntuneTools.Pages
 
         private void IntentComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (!_uiInitialized) return;
-            if (sender is ComboBox cb && cb.SelectedItem is ComboBoxItem item)
-            {
-                var content = item.Content?.ToString();
-                _selectedInstallIntent = content == "Exclude" ? InstallIntent.Available : InstallIntent.Required;
-                AppendToLog($"Assignment intent set to '{_selectedInstallIntent}'.");
-            }
+            // Intent is now configured in the deployment options dialog
         }
 
         #endregion
