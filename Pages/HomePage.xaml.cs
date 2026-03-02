@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Windows.System;
 
@@ -155,6 +156,52 @@ namespace IntuneTools.Pages
         private async void OpenStoreButton_Click(object sender, RoutedEventArgs e)
         {
             await Launcher.LaunchUriAsync(new Uri("https://apps.microsoft.com/detail/9phqrcx3gkxd"));
+        }
+
+        private void QuickAction_Settings_Click(object sender, RoutedEventArgs e)
+        {
+            NavigateToPage(typeof(SettingsPage), "Settings");
+        }
+
+        private void QuickAction_Assignment_Click(object sender, RoutedEventArgs e)
+        {
+            NavigateToPage(typeof(AssignmentPage), "Application");
+        }
+
+        private void QuickAction_Import_Click(object sender, RoutedEventArgs e)
+        {
+            NavigateToPage(typeof(ImportPage), "Import");
+        }
+
+        private void QuickAction_Cleanup_Click(object sender, RoutedEventArgs e)
+        {
+            NavigateToPage(typeof(CleanupPage), "Cleanup");
+        }
+
+        private void QuickAction_Renaming_Click(object sender, RoutedEventArgs e)
+        {
+            NavigateToPage(typeof(RenamingPage), "Renaming");
+        }
+
+        private void NavigateToPage(Type pageType, string navTag)
+        {
+            this.Frame.Navigate(pageType);
+
+            // Update NavigationView selection to stay in sync
+            DependencyObject parent = VisualTreeHelper.GetParent(this.Frame);
+            while (parent != null)
+            {
+                if (parent is NavigationView navView)
+                {
+                    var menuItem = navView.MenuItems
+                        .OfType<NavigationViewItem>()
+                        .FirstOrDefault(i => i.Tag?.ToString() == navTag);
+                    if (menuItem != null)
+                        navView.SelectedItem = menuItem;
+                    break;
+                }
+                parent = VisualTreeHelper.GetParent(parent);
+            }
         }
     }
 }

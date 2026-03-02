@@ -9,38 +9,38 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
     <Grid>
         <ScrollViewer>
-            <StackPanel Padding="40" Spacing="20">
+            <StackPanel Padding="40" Spacing="24">
+
+                <!-- Hero Banner -->
                 <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                         BorderThickness="1"
                         CornerRadius="12"
-                        Padding="24">
-                    <StackPanel Spacing="16">
+                        Padding="32">
+                    <StackPanel Spacing="12">
                         <TextBlock Text="Welcome to InToolz"
-                                   FontSize="48"
+                                   FontSize="42"
                                    FontWeight="Bold"
                                    HorizontalAlignment="Left"/>
                         <TextBlock TextWrapping="WrapWholeWords"
-                                   FontSize="18"
-                                   MaxWidth="1200"
+                                   FontSize="16"
+                                   Opacity="0.85"
+                                   MaxWidth="900"
                                    HorizontalAlignment="Left">
-                            InToolz is a powerful application designed to help you manage and migrate your Microsoft Intune environment with ease.
-                            This tool simplifies bulk management tasks, such as assignment, renaming, cleaning up and migrating Intune configurations between tenants.
+                            Simplify bulk Intune management — assign, rename, clean up, and migrate configurations between tenants.
                         </TextBlock>
 
-                        <!-- Version status indicator with action buttons -->
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="8">
-                            <Ellipse x:Name="VersionStatusIndicator" Width="12" Height="12" VerticalAlignment="Center">
+                        <!-- Version status indicator -->
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="8" Margin="0,4,0,0">
+                            <Ellipse x:Name="VersionStatusIndicator" Width="10" Height="10" VerticalAlignment="Center">
                                 <Ellipse.Fill>
                                     <SolidColorBrush x:Name="VersionStatusBrush" Color="Gray"/>
                                 </Ellipse.Fill>
                             </Ellipse>
                             <TextBlock x:Name="VersionStatusText"
                                        Text="Checking version..."
-                                       FontSize="16"
+                                       FontSize="14"
                                        VerticalAlignment="Center"/>
-
-                            <!-- Buttons shown only when update is available -->
                             <StackPanel Orientation="Horizontal" x:Name="UpdateButtonsPanel" Visibility="Collapsed" Spacing="6">
                                 <Button x:Name="OpenGitHubButton"
                                         Content="Open GitHub"
@@ -55,111 +55,210 @@
                     </StackPanel>
                 </Border>
 
-                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                        BorderThickness="1"
-                        CornerRadius="12"
-                        Padding="20">
-                    <StackPanel Spacing="10">
-                        <TextBlock Text="Connection Info" FontSize="28" FontWeight="SemiBold"/>
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="Tenant Name:" FontSize="18" VerticalAlignment="Center"/>
-                            <TextBlock x:Name="TenantNameText" Text="Not Connected" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0,0,0"/>
-                            <Image x:Name="LoginStatusImage" Width="32" Height="32" VerticalAlignment="Center" Margin="10,0,0,0"/>
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
+                <!-- Quick Actions -->
+                <TextBlock Text="Get started" FontSize="20" FontWeight="SemiBold" Margin="0,4,0,-8"/>
+                <Grid ColumnSpacing="16" RowSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                        BorderThickness="1"
-                        CornerRadius="12"
-                        Padding="20">
-                    <StackPanel Spacing="10">
-                        <TextBlock Text="Time Saved (Estimate)" FontSize="28" FontWeight="SemiBold"/>
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="12">
-                            <TextBlock x:Name="TimeSavedMinutesText"
-                                       Text="0"
-                                       FontSize="48"
-                                       FontWeight="Bold"
-                                       VerticalAlignment="Center"/>
-                            <TextBlock Text="minutes saved"
-                                       FontSize="18"
-                                       VerticalAlignment="Center"/>
+                    <Button Grid.Column="0"
+                            Click="QuickAction_Assignment_Click"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Stretch"
+                            VerticalAlignment="Stretch"
+                            Padding="20"
+                            CornerRadius="8"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1">
+                        <StackPanel Spacing="8">
+                            <SymbolIcon Symbol="AllApps" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" HorizontalAlignment="Left"/>
+                            <TextBlock Text="Assignment" FontSize="16" FontWeight="SemiBold"/>
+                            <TextBlock Text="Assign policies and apps to groups in bulk."
+                                       FontSize="13" Opacity="0.65" TextWrapping="Wrap"/>
                         </StackPanel>
-                        <ProgressBar x:Name="TimeSavedProgress"
-                                     Height="10"
-                                     Minimum="0"
-                                     Maximum="1000"
-                                     Value="0"/>
-                        <TextBlock Text="This overview is an estimate based on recorded actions and typical manual completion times. Actual time saved may vary."
-                                   TextWrapping="WrapWholeWords"
-                                   FontSize="14"
-                                   Opacity="0.75"/>
+                    </Button>
 
-                        <StackPanel x:Name="TimeSavedBreakdownPanel" Spacing="6" Visibility="Collapsed">
-                            <TextBlock Text="Activity breakdown" FontSize="16" FontWeight="SemiBold"/>
-                            <StackPanel x:Name="RenamedItemsPanel" Orientation="Horizontal" Spacing="8" Visibility="Collapsed">
-                                <TextBlock x:Name="RenamedItemsCountText" Text="0" FontWeight="SemiBold"/>
-                                <TextBlock Text="items renamed / descriptions updated"/>
+                    <Button Grid.Column="1"
+                            Click="QuickAction_Import_Click"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Stretch"
+                            VerticalAlignment="Stretch"
+                            Padding="20"
+                            CornerRadius="8"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1">
+                        <StackPanel Spacing="8">
+                            <SymbolIcon Symbol="Import" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" HorizontalAlignment="Left"/>
+                            <TextBlock Text="Import" FontSize="16" FontWeight="SemiBold"/>
+                            <TextBlock Text="Export and import configurations between tenants."
+                                       FontSize="13" Opacity="0.65" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Grid.Column="2"
+                            Click="QuickAction_Cleanup_Click"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Stretch"
+                            VerticalAlignment="Stretch"
+                            Padding="20"
+                            CornerRadius="8"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1">
+                        <StackPanel Spacing="8">
+                            <SymbolIcon Symbol="Delete" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" HorizontalAlignment="Left"/>
+                            <TextBlock Text="Cleanup" FontSize="16" FontWeight="SemiBold"/>
+                            <TextBlock Text="Remove policies, scripts, and profiles in bulk."
+                                       FontSize="13" Opacity="0.65" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Grid.Column="3"
+                            Click="QuickAction_Renaming_Click"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Stretch"
+                            VerticalAlignment="Stretch"
+                            Padding="20"
+                            CornerRadius="8"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1">
+                        <StackPanel Spacing="8">
+                            <SymbolIcon Symbol="Rename" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" HorizontalAlignment="Left"/>
+                            <TextBlock Text="Renaming" FontSize="16" FontWeight="SemiBold"/>
+                            <TextBlock Text="Rename objects with customizable prefixes."
+                                       FontSize="13" Opacity="0.65" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+
+                <!-- Dashboard Row: Connection + Time Saved -->
+                <Grid ColumnSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="2*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Connection Info (clickable → Settings) -->
+                    <Button Grid.Column="0"
+                            Click="QuickAction_Settings_Click"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Stretch"
+                            VerticalAlignment="Stretch"
+                            Padding="20"
+                            CornerRadius="12"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Connection" FontSize="20" FontWeight="SemiBold"/>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="8">
+                                <Image x:Name="LoginStatusImage" Width="24" Height="24" VerticalAlignment="Center"/>
+                                <StackPanel>
+                                    <TextBlock Text="Tenant" FontSize="13" Opacity="0.6"/>
+                                    <TextBlock x:Name="TenantNameText" Text="Not Connected" FontSize="16" FontWeight="SemiBold"/>
+                                </StackPanel>
                             </StackPanel>
-                            <StackPanel x:Name="AssignedItemsPanel" Orientation="Horizontal" Spacing="8" Visibility="Collapsed">
-                                <TextBlock x:Name="AssignedItemsCountText" Text="0" FontWeight="SemiBold"/>
-                                <TextBlock Text="items assigned"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Time Saved -->
+                    <Border Grid.Column="1"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="12"
+                            Padding="20">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Time Saved" FontSize="20" FontWeight="SemiBold"/>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="12">
+                                <TextBlock x:Name="TimeSavedMinutesText"
+                                           Text="0"
+                                           FontSize="40"
+                                           FontWeight="Bold"
+                                           VerticalAlignment="Center"/>
+                                <TextBlock Text="minutes saved"
+                                           FontSize="16"
+                                           Opacity="0.7"
+                                           VerticalAlignment="Center"/>
                             </StackPanel>
-                            <StackPanel x:Name="DeletedItemsPanel" Orientation="Horizontal" Spacing="8" Visibility="Collapsed">
-                                <TextBlock x:Name="DeletedItemsCountText" Text="0" FontWeight="SemiBold"/>
-                                <TextBlock Text="items deleted"/>
-                            </StackPanel>
-                            <StackPanel x:Name="ImportedItemsPanel" Orientation="Horizontal" Spacing="8" Visibility="Collapsed">
-                                <TextBlock x:Name="ImportedItemsCountText" Text="0" FontWeight="SemiBold"/>
-                                <TextBlock Text="items imported"/>
+                            <ProgressBar x:Name="TimeSavedProgress"
+                                         Height="6"
+                                         Minimum="0"
+                                         Maximum="1000"
+                                         Value="0"
+                                         CornerRadius="3"/>
+                            <TextBlock Text="Estimate based on recorded actions and typical manual completion times."
+                                       TextWrapping="WrapWholeWords"
+                                       FontSize="13"
+                                       Opacity="0.6"/>
+
+                            <StackPanel x:Name="TimeSavedBreakdownPanel" Spacing="4" Visibility="Collapsed">
+                                <TextBlock Text="Breakdown" FontSize="14" FontWeight="SemiBold" Margin="0,4,0,0"/>
+                                <StackPanel x:Name="RenamedItemsPanel" Orientation="Horizontal" Spacing="6" Visibility="Collapsed">
+                                    <TextBlock x:Name="RenamedItemsCountText" Text="0" FontWeight="SemiBold" FontSize="13"/>
+                                    <TextBlock Text="items renamed / descriptions updated" FontSize="13" Opacity="0.7"/>
+                                </StackPanel>
+                                <StackPanel x:Name="AssignedItemsPanel" Orientation="Horizontal" Spacing="6" Visibility="Collapsed">
+                                    <TextBlock x:Name="AssignedItemsCountText" Text="0" FontWeight="SemiBold" FontSize="13"/>
+                                    <TextBlock Text="items assigned" FontSize="13" Opacity="0.7"/>
+                                </StackPanel>
+                                <StackPanel x:Name="DeletedItemsPanel" Orientation="Horizontal" Spacing="6" Visibility="Collapsed">
+                                    <TextBlock x:Name="DeletedItemsCountText" Text="0" FontWeight="SemiBold" FontSize="13"/>
+                                    <TextBlock Text="items deleted" FontSize="13" Opacity="0.7"/>
+                                </StackPanel>
+                                <StackPanel x:Name="ImportedItemsPanel" Orientation="Horizontal" Spacing="6" Visibility="Collapsed">
+                                    <TextBlock x:Name="ImportedItemsCountText" Text="0" FontWeight="SemiBold" FontSize="13"/>
+                                    <TextBlock Text="items imported" FontSize="13" Opacity="0.7"/>
+                                </StackPanel>
                             </StackPanel>
                         </StackPanel>
-                    </StackPanel>
-                </Border>
+                    </Border>
+                </Grid>
 
+                <!-- Resources -->
                 <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                         BorderThickness="1"
                         CornerRadius="12"
                         Padding="20">
-                    <StackPanel Spacing="8">
-                        <TextBlock Text="Key Features" FontSize="28" FontWeight="SemiBold"/>
-                        <TextBlock Text="-  Export and Import of Intune content between tenants." FontSize="16"/>
-                        <TextBlock Text="-  Manage assignment of Intune content in bulk." FontSize="16"/>
-                        <TextBlock Text="-  Clean up policies, scripts, and profiles in bulk." FontSize="16"/>
-                        <TextBlock Text="-  Rename Intune objects with customizable prefixes." FontSize="16"/>
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="Resources" FontSize="20" FontWeight="SemiBold"/>
+                        <Grid ColumnSpacing="24">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                <FontIcon Glyph="&#xE736;" FontSize="18" Opacity="0.7"/>
+                                <TextBlock Text="Documentation" VerticalAlignment="Center"/>
+                                <HyperlinkButton x:Name="GitHubLink"
+                                                 Content="View on GitHub"
+                                                 NavigateUri="https://github.com/Kvikku/IntuneTools"
+                                                 Click="GitHubLink_Click"
+                                                 VerticalAlignment="Center"
+                                                 Padding="4,2"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                <FontIcon Glyph="&#xED15;" FontSize="18" Opacity="0.7"/>
+                                <TextBlock Text="Feedback &amp; Issues" VerticalAlignment="Center"/>
+                                <HyperlinkButton x:Name="GitHubIssuesLink"
+                                                 Content="Submit on GitHub"
+                                                 NavigateUri="https://github.com/Kvikku/IntuneTools/issues"
+                                                 Click="GitHubLink_Click"
+                                                 VerticalAlignment="Center"
+                                                 Padding="4,2"/>
+                            </StackPanel>
+                        </Grid>
                     </StackPanel>
                 </Border>
 
-                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                        BorderThickness="1"
-                        CornerRadius="12"
-                        Padding="20">
-                    <StackPanel Spacing="10">
-                        <TextBlock Text="Documentation" FontSize="28" FontWeight="SemiBold"/>
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="For more details on how to use the application, please refer to our documentation on GitHub." TextWrapping="Wrap" VerticalAlignment="Center"/>
-                            <HyperlinkButton x:Name="GitHubLink" Content="View on GitHub" NavigateUri="https://github.com/Kvikku/IntuneTools" Click="GitHubLink_Click" />
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
-
-                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                        BorderThickness="1"
-                        CornerRadius="12"
-                        Padding="20">
-                    <StackPanel Spacing="10">
-                        <TextBlock Text="Feedback and Issues" FontSize="28" FontWeight="SemiBold"/>
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="Encountered a bug or have a feature request? Please submit it on our GitHub issues page." TextWrapping="Wrap" VerticalAlignment="Center"/>
-                            <HyperlinkButton x:Name="GitHubIssuesLink" Content="Submit Feedback" NavigateUri="https://github.com/Kvikku/IntuneTools/issues" Click="GitHubLink_Click" />
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
             </StackPanel>
         </ScrollViewer>
     </Grid>
