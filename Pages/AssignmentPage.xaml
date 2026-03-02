@@ -238,33 +238,38 @@
                     <!-- Assignment Options Section -->
                     <TextBlock Text="Assignment Options" FontSize="13" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,4,0,8"/>
 
-                    <ToggleSwitch x:Name="IntentToggle"
-                                  Header="Intent"
-                                  OnContent="Include"
-                                  OffContent="Exclude"
-                                  IsOn="True"
-                                  Toggled="IntentToggle_Toggled"
-                                  Margin="0,0,0,4"/>
-
-                    <ToggleSwitch x:Name="FilterToggle"
-                                  Header="Assignment Filter"
-                                  OffContent="Disabled"
-                                  OnContent="Enabled"
-                                  Toggled="FilterToggle_Toggled"
-                                  Margin="0,0,0,4"/>
-                    <ComboBox x:Name="FilterSelectionComboBox"
+                    <ComboBox x:Name="IntentComboBox"
+                              Header="Intent"
                               HorizontalAlignment="Stretch"
-                              PlaceholderText="Select a filter..."
-                              Visibility="Collapsed"
-                              SelectionChanged="FilterSelectionComboBox_SelectionChanged"
-                              Margin="0,0,0,4"/>
-                    <ToggleSwitch x:Name="FilterModeToggle"
-                                  OnContent="Include"
-                                  OffContent="Exclude"
-                                  IsOn="True"
-                                  Visibility="Collapsed"
-                                  Toggled="FilterModeToggle_Toggled"
-                                  Margin="0,0,0,12"/>
+                              SelectedIndex="0"
+                              SelectionChanged="IntentComboBox_SelectionChanged"
+                              Margin="0,0,0,12">
+                        <ComboBoxItem Content="Include"/>
+                        <ComboBoxItem Content="Exclude"/>
+                    </ComboBox>
+
+                    <Expander x:Name="FilterExpander"
+                              Header="Assignment Filter"
+                              HorizontalAlignment="Stretch"
+                              HorizontalContentAlignment="Stretch"
+                              Expanding="FilterExpander_Expanding"
+                              Collapsed="FilterExpander_Collapsed"
+                              Margin="0,0,0,12">
+                        <StackPanel Spacing="12">
+                            <ComboBox x:Name="FilterSelectionComboBox"
+                                      HorizontalAlignment="Stretch"
+                                      PlaceholderText="Select a filter..."
+                                      SelectionChanged="FilterSelectionComboBox_SelectionChanged"/>
+                            <ComboBox x:Name="FilterModeComboBox"
+                                      Header="Filter Mode"
+                                      HorizontalAlignment="Stretch"
+                                      SelectedIndex="0"
+                                      SelectionChanged="FilterModeComboBox_SelectionChanged">
+                                <ComboBoxItem Content="Include"/>
+                                <ComboBoxItem Content="Exclude"/>
+                            </ComboBox>
+                        </StackPanel>
+                    </Expander>
 
                     <!-- ASSIGN BUTTON - Primary action -->
                     <Button x:Name="AssignButton"

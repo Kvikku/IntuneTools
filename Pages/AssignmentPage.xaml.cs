@@ -135,9 +135,9 @@ namespace IntuneTools.Pages
         {
             "ContentSearchBox", "ListAllButton", "RemoveSelectedButton", "RemoveAllButton",
             "AssignButton", "GroupSearchTextBox", "GroupSearchButton", "GroupListAllButton",
-            "AppDataGrid", "GroupDataGrid", "FilterToggle", "FilterSelectionComboBox",
-            "FilterModeToggle", "OptionsAllCheckBox", "ClearLogButton", "ContentTypesButton",
-            "IntentToggle"
+            "AppDataGrid", "GroupDataGrid", "FilterExpander", "FilterSelectionComboBox",
+            "FilterModeComboBox", "OptionsAllCheckBox", "ClearLogButton", "ContentTypesButton",
+            "IntentComboBox"
         };
 
         #endregion
@@ -275,7 +275,7 @@ namespace IntuneTools.Pages
 
 
             // Check if FilterToggle is enabled, otherwise set filter type to None
-            if (FilterToggle.IsOn)
+            if (FilterExpander.IsExpanded)
             {
                 deviceAndAppManagementAssignmentFilterType =
                     string.Equals(_selectedFilterMode, "Include", StringComparison.OrdinalIgnoreCase)
@@ -714,7 +714,7 @@ namespace IntuneTools.Pages
                 _selectedFilterID = selectedFilter;
                 _selectedFilterName = selectedFilter.DisplayName ?? string.Empty;
                 SelectedFilterID = _selectedFilterID.Id;
-                IsFilterSelected = FilterToggle.IsOn && !string.IsNullOrWhiteSpace(SelectedFilterID);
+                IsFilterSelected = FilterExpander.IsExpanded && !string.IsNullOrWhiteSpace(SelectedFilterID);
             }
             else
             {
@@ -727,88 +727,59 @@ namespace IntuneTools.Pages
 
         private async void FilterExpander_Expanding(Expander sender, ExpanderExpandingEventArgs args)
         {
+            if (!_uiInitialized) return;
+
+            FilterPlatformInfoBar.IsOpen = true;
+
+            if (FilterModeComboBox is not null)
+            {
+                FilterModeComboBox.SelectedIndex = 0; // Default to Include
+            }
+
             if (FilterSelectionComboBox.Items.Count == 0)
             {
-                try
-                {
-                    var filters = await FilterHelperClass.GetAllAssignmentFilters(sourceGraphServiceClient);
-                    if (filters != null)
-                    {
-                        FilterSelectionComboBox.ItemsSource = filters;
-                        FilterSelectionComboBox.DisplayMemberPath = "DisplayName";
-                    }
-                }
-                catch (Exception ex)
-                {
-                    // Handle exceptions, e.g., log them or show a message
-                    // Log("Failed to load filters: " + ex.Message);
-                }
+                await LoadAllAssignmentFiltersAsync();
             }
+            _selectedFilterMode = "Include";
+            IsFilterSelected = !string.IsNullOrWhiteSpace(SelectedFilterID);
+            AppendToLog("Assignment filter enabled.");
         }
 
-        private async void FilterToggle_Toggled(object sender, RoutedEventArgs e)
+        private void FilterExpander_Collapsed(Expander sender, ExpanderCollapsedEventArgs args)
         {
-            if (!_uiInitialized) return; // Prevent early logging before controls are ready
+            if (!_uiInitialized) return;
 
-            if (sender is ToggleSwitch toggleSwitch)
+            FilterSelectionComboBox.SelectedItem = null;
+            FilterPlatformInfoBar.IsOpen = false;
+
+            if (FilterModeComboBox is not null)
             {
-                if (toggleSwitch.IsOn)
-                {
-                    FilterSelectionComboBox.Visibility = Visibility.Visible;
-                    FilterPlatformInfoBar.IsOpen = true;
-
-                    if (FilterModeToggle is not null)
-                    {
-                        // Ensure default is Include when shown
-                        FilterModeToggle.IsOn = true; // On now means Include
-                        FilterModeToggle.Visibility = Visibility.Visible;
-                    }
-
-                    if (FilterSelectionComboBox.Items.Count == 0)
-                    {
-                        await LoadAllAssignmentFiltersAsync();
-                    }
-                    _selectedFilterMode = "Include";
-                    IsFilterSelected = !string.IsNullOrWhiteSpace(SelectedFilterID);
-                    AppendToLog("Assignment filter enabled.");
-                }
-                else
-                {
-                    FilterSelectionComboBox.Visibility = Visibility.Collapsed;
-                    FilterSelectionComboBox.SelectedItem = null;
-                    FilterPlatformInfoBar.IsOpen = false;
-
-                    if (FilterModeToggle is not null)
-                    {
-                        FilterModeToggle.Visibility = Visibility.Collapsed;
-                        FilterModeToggle.IsOn = true; // Keep semantic default (Include) even while hidden
-                    }
-                    _selectedFilterMode = "Include";
-                    SelectedFilterID = null;
-                    IsFilterSelected = false;
-                    deviceAndAppManagementAssignmentFilterType = DeviceAndAppManagementAssignmentFilterType.None;
-                    AppendToLog("Assignment filter disabled.");
-                }
+                FilterModeComboBox.SelectedIndex = 0; // Reset to Include
             }
+            _selectedFilterMode = "Include";
+            SelectedFilterID = null;
+            IsFilterSelected = false;
+            deviceAndAppManagementAssignmentFilterType = DeviceAndAppManagementAssignmentFilterType.None;
+            AppendToLog("Assignment filter disabled.");
         }
 
-        // Updated semantics: IsOn = Include, IsOff = Exclude
-        private void FilterModeToggle_Toggled(object sender, RoutedEventArgs e)
+        private void FilterModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (!_uiInitialized) return; // Prevent logging before LogConsole is ready
-            if (sender is ToggleSwitch ts)
+            if (!_uiInitialized) return;
+            if (sender is ComboBox cb && cb.SelectedItem is ComboBoxItem item)
             {
-                _selectedFilterMode = ts.IsOn ? "Include" : "Exclude";
+                _selectedFilterMode = item.Content?.ToString() ?? "Include";
                 AppendToLog($"Filter mode set to '{_selectedFilterMode}'.");
             }
         }
 
-        private void IntentToggle_Toggled(object sender, RoutedEventArgs e)
+        private void IntentComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (!_uiInitialized) return;
-            if (sender is ToggleSwitch ts)
+            if (sender is ComboBox cb && cb.SelectedItem is ComboBoxItem item)
             {
-                _selectedInstallIntent = ts.IsOn ? InstallIntent.Required : InstallIntent.Available;
+                var content = item.Content?.ToString();
+                _selectedInstallIntent = content == "Exclude" ? InstallIntent.Available : InstallIntent.Required;
                 AppendToLog($"Assignment intent set to '{_selectedInstallIntent}'.");
             }
         }
