@@ -8,6 +8,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:controls="using:CommunityToolkit.WinUI.UI.Controls"
+    xmlns:sizers="using:CommunityToolkit.WinUI.Controls"
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
@@ -82,9 +83,11 @@
         <!-- Main Content Row -->
         <Grid Grid.Row="2" Margin="0,0,0,20">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*" MinWidth="300"/>
                 <!-- DataGrid -->
-                <ColumnDefinition Width="340"/>
+                <ColumnDefinition Width="Auto"/>
+                <!-- Splitter -->
+                <ColumnDefinition Width="340" MinWidth="200"/>
                 <!-- Log panel -->
             </Grid.ColumnDefinitions>
 
@@ -146,8 +149,15 @@
                 </Border>
             </Grid>
 
+            <!-- Resizable Splitter -->
+            <sizers:GridSplitter Grid.Column="1"
+                                 Width="8"
+                                 ResizeBehavior="BasedOnAlignment"
+                                 ResizeDirection="Columns"
+                                 Background="Transparent"/>
+
             <!-- Log Console Panel -->
-            <StackPanel Grid.Column="1"
+            <StackPanel Grid.Column="2"
                         Orientation="Vertical"
                         Margin="0,-20,0,0">
                 <TextBlock Text="Log Console"
