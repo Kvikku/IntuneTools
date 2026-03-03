@@ -8,6 +8,7 @@ InToolz is a focused toolset for bulk management in Microsoft Intune. The spirit
 2. Bulk assign groups to profiles and applications.
 3. Bulk rename items and update description fields.
 4. Bulk delete Intune content.
+5. Export content inventory to JSON for backup and documentation.
 
 ## Download
 This version is now available on [Microsoft Store](https://apps.microsoft.com/detail/9phqrcx3gkxd?hl=neutral&gl=NO&ocid=pdpshare).

@@ -183,6 +183,11 @@ namespace IntuneTools.Pages
             NavigateToPage(typeof(RenamingPage), "Renaming");
         }
 
+        private void QuickAction_Export_Click(object sender, RoutedEventArgs e)
+        {
+            NavigateToPage(typeof(ExportPage), "Export");
+        }
+
         private void NavigateToPage(Type pageType, string navTag)
         {
             this.Frame.Navigate(pageType);

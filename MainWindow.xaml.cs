@@ -105,6 +105,9 @@ namespace IntuneTools
                 case "Renaming":
                     ContentFrame.Navigate(typeof(RenamingPage));
                     break;
+                case "Export":
+                    ContentFrame.Navigate(typeof(ExportPage));
+                    break;
                 default:
                     break;
             }

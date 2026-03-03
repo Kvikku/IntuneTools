@@ -40,6 +40,7 @@
                 <muxc:NavigationViewItem Content="Import" Tag="Import" Icon="Import"/>
                 <muxc:NavigationViewItem Content="Cleanup" Tag="Cleanup" Icon="Delete"/>
                 <muxc:NavigationViewItem Content="Renaming" Tag="Renaming" Icon="Rename"/>
+                <muxc:NavigationViewItem Content="Export" Tag="Export" Icon="Save"/>
             </muxc:NavigationView.MenuItems>
 
             <Frame x:Name="ContentFrame"/>
