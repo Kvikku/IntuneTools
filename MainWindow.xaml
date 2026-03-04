@@ -41,6 +41,11 @@
                 <muxc:NavigationViewItem Content="Cleanup" Tag="Cleanup" Icon="Delete"/>
                 <muxc:NavigationViewItem Content="Renaming" Tag="Renaming" Icon="Rename"/>
                 <muxc:NavigationViewItem Content="Export" Tag="Export" Icon="Save"/>
+                <muxc:NavigationViewItem Content="Import from JSON" Tag="ImportFromJson">
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE8E5;"/>
+                    </muxc:NavigationViewItem.Icon>
+                </muxc:NavigationViewItem>
             </muxc:NavigationView.MenuItems>
 
             <Frame x:Name="ContentFrame"/>

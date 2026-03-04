@@ -9,6 +9,7 @@ InToolz is a focused toolset for bulk management in Microsoft Intune. The spirit
 3. Bulk rename items and update description fields.
 4. Bulk delete Intune content.
 5. Export content inventory to JSON for backup and documentation.
+6. Import content inventory from a previously exported JSON file.
 
 ## Download
 This version is now available on [Microsoft Store](https://apps.microsoft.com/detail/9phqrcx3gkxd?hl=neutral&gl=NO&ocid=pdpshare).
@@ -27,7 +28,6 @@ Planned and community-requested features:
 - Import applications
 - Delete duplicate policies/apps
 - Delete group assignment
-- Import from json-file
 - Bulk add objects to groups (community request :D )
 
 ## Kudos and creds

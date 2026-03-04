@@ -174,13 +174,13 @@ namespace IntuneTools.Pages
 
                 ShowOperationProgress("Exporting content to JSON...");
 
-                var exportData = new ExportDocument
+                var exportData = new JsonExportDocument
                 {
                     ExportDate = DateTime.UtcNow.ToString("o"),
                     TenantName = sourceTenantName,
                     TenantId = sourceTenantID,
                     TotalItems = ContentList.Count,
-                    Items = ContentList.Select(c => new ExportItem
+                    Items = ContentList.Select(c => new JsonExportItem
                     {
                         Name = c.ContentName,
                         Type = c.ContentType,
@@ -215,34 +215,6 @@ namespace IntuneTools.Pages
                 AppendToDetailsRichTextBlock($"Error during export: {ex.Message}");
                 LogToFunctionFile(appFunction.Main, $"Error during JSON export: {ex.Message}", LogLevels.Error);
             }
-        }
-
-        #endregion
-
-        #region Export Data Model
-
-        /// <summary>
-        /// Root document for JSON export.
-        /// </summary>
-        private sealed class ExportDocument
-        {
-            public string? ExportDate { get; set; }
-            public string? TenantName { get; set; }
-            public string? TenantId { get; set; }
-            public int TotalItems { get; set; }
-            public List<ExportItem> Items { get; set; } = new();
-        }
-
-        /// <summary>
-        /// Individual item in the JSON export.
-        /// </summary>
-        private sealed class ExportItem
-        {
-            public string? Name { get; set; }
-            public string? Type { get; set; }
-            public string? Platform { get; set; }
-            public string? Id { get; set; }
-            public string? Description { get; set; }
         }
 
         #endregion

@@ -108,6 +108,9 @@ namespace IntuneTools
                 case "Export":
                     ContentFrame.Navigate(typeof(ExportPage));
                     break;
+                case "ImportFromJson":
+                    ContentFrame.Navigate(typeof(ImportFromJsonPage));
+                    break;
                 default:
                     break;
             }

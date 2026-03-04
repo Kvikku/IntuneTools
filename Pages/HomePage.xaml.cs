@@ -188,6 +188,11 @@ namespace IntuneTools.Pages
             NavigateToPage(typeof(ExportPage), "Export");
         }
 
+        private void QuickAction_ImportFromJson_Click(object sender, RoutedEventArgs e)
+        {
+            NavigateToPage(typeof(ImportFromJsonPage), "ImportFromJson");
+        }
+
         private void NavigateToPage(Type pageType, string navTag)
         {
             this.Frame.Navigate(pageType);
