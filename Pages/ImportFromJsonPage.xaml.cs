@@ -141,8 +141,8 @@ namespace IntuneTools.Pages
 
                 HideLoading();
                 ShowOperationSuccess($"Successfully loaded {ContentList.Count} items from {file.Name}");
-                AppendToLog($"Loaded {ContentList.Count} items from: {file.Path}");
-                LogToFunctionFile(appFunction.Main, $"Imported {ContentList.Count} items from JSON: {file.Path}");
+                AppendToLog($"Loaded {ContentList.Count} items from {file.Name}.");
+                LogToFunctionFile(appFunction.Main, $"Imported {ContentList.Count} items from JSON: {file.Name}");
             }
             catch (JsonException ex)
             {
