@@ -385,6 +385,17 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 {
                     var existingPolicy = await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].GetAsync();
 
+                    if (existingPolicy == null)
+                    {
+                        LogToFunctionFile(appFunction.Main, $"Unable to remove prefix: policy with ID {policyID} was not found.", LogLevels.Warning);
+                        return;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(existingPolicy.Name))
+                    {
+                        LogToFunctionFile(appFunction.Main, $"Unable to remove prefix from policy {policyID}: policy name is null or empty.", LogLevels.Warning);
+                        return;
+                    }
                     var name = RemovePrefixFromPolicyName(existingPolicy.Name);
 
                     var policy = new DeviceManagementConfigurationPolicy
