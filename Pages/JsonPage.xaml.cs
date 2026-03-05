@@ -44,7 +44,8 @@ namespace IntuneTools.Pages
 
         /// <summary>
         /// Cache of full policy data keyed by source content ID.
-        /// Populated during export (from Graph) or import (from JSON file).
+        /// Populated during export (from Graph), folder import (from JSON file), or on-demand during import-to-tenant.
+        /// Cleared whenever the staging list is replaced (list all, search, folder import).
         /// Used when importing to a destination tenant.
         /// </summary>
         private readonly Dictionary<string, JsonElement> _policyDataCache = new();
@@ -204,6 +205,7 @@ namespace IntuneTools.Pages
             try
             {
                 ContentList.Clear();
+                _policyDataCache.Clear();
                 await LoadContentTypesAsync(graphServiceClient, SupportedContentTypes, AppendToDetailsRichTextBlock);
                 JsonDataGrid.ItemsSource = ContentList;
             }
@@ -227,6 +229,7 @@ namespace IntuneTools.Pages
             try
             {
                 ContentList.Clear();
+                _policyDataCache.Clear();
                 await SearchContentTypesAsync(graphServiceClient, searchQuery, SupportedContentTypes, AppendToDetailsRichTextBlock);
                 JsonDataGrid.ItemsSource = ContentList;
             }
@@ -348,6 +351,12 @@ namespace IntuneTools.Pages
                             policyData = await ops.Export(sourceGraphServiceClient, c.ContentId);
                         }
 
+                        // Cache fetched policy data so Import-to-Tenant works in the same session
+                        if (policyData.HasValue && !string.IsNullOrEmpty(c.ContentId))
+                        {
+                            _policyDataCache[c.ContentId!] = policyData.Value;
+                        }
+
                         if (policyData.HasValue) totalWithData++;
 
                         items.Add(new JsonExportItem
@@ -446,10 +455,6 @@ namespace IntuneTools.Pages
                 int totalItems = 0;
                 int totalWithData = 0;
                 int filesRead = 0;
-
-                // Build reverse lookup: filename → content type
-                var fileNameToContentType = ContentTypeFileNames
-                    .ToDictionary(kv => kv.Value, kv => kv.Key, StringComparer.OrdinalIgnoreCase);
 
                 foreach (var kvp in ContentTypeFileNames)
                 {
