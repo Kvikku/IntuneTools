@@ -262,6 +262,25 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     await graphServiceClient.DeviceManagement.AssignmentFilters[filterID].PatchAsync(filter);
                     LogToFunctionFile(appFunction.Main, $"Updated description for filter {filterID} to '{newName}'.", LogLevels.Info);
                 }
+                else if (selectedRenameMode == "RemovePrefix")
+                {
+                    var existingFilter = await graphServiceClient.DeviceManagement.AssignmentFilters[filterID].GetAsync();
+
+                    if (existingFilter == null)
+                    {
+                        throw new InvalidOperationException($"Filter with ID '{filterID}' not found.");
+                    }
+
+                    var name = RemovePrefixFromPolicyName(existingFilter.DisplayName);
+
+                    var filter = new DeviceAndAppManagementAssignmentFilter
+                    {
+                        DisplayName = name
+                    };
+
+                    await graphServiceClient.DeviceManagement.AssignmentFilters[filterID].PatchAsync(filter);
+                    LogToFunctionFile(appFunction.Main, $"Removed prefix from filter {filterID}, new name: '{name}'", LogLevels.Info);
+                }
             }
             catch (Exception ex)
             {

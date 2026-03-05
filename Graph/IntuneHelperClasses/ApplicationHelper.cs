@@ -96,10 +96,10 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task PrepareApplicationForAssignment(KeyValuePair<string, AssignmentInfo> appInfo, List<string> groups, GraphServiceClient graphServiceClient)
+        public static async Task PrepareApplicationForAssignment(KeyValuePair<string, CustomContentInfo> appInfo, List<string> groups, GraphServiceClient graphServiceClient)
         {
             // Get the application type
-            var appType = TranslateODataTypeFromApplicationType(appInfo.Value.Type);
+            var appType = TranslateODataTypeFromApplicationType(appInfo.Value.ContentType);
 
             // Prepare the app options based on the application type
             MobileAppAssignmentSettings? assignmentSettings = appType switch
@@ -148,11 +148,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
             try
             {
-                await AssignGroupsToApplication(appInfo.Value.Id, groups, graphServiceClient, assignmentSettings);
+                await AssignGroupsToApplication(appInfo.Value.ContentId, groups, graphServiceClient, assignmentSettings);
             }
             catch (Exception)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while preparing application of type '{appInfo.Value.Platform}' for assignment", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while preparing application of type '{appInfo.Value.ContentPlatform}' for assignment", LogLevels.Error);
             }
         }
 
@@ -473,6 +473,19 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                     await graphServiceClient.DeviceAppManagement.MobileApps[appId].PatchAsync(app);
                     LogToFunctionFile(appFunction.Main, $"Updated description for application {appId} to '{newName}'");
+                }
+                else if (selectedRenameMode == "RemovePrefix")
+                {
+                    var name = RemovePrefixFromPolicyName(existingApp.DisplayName);
+
+                    var app = new MobileApp
+                    {
+                        OdataType = existingApp.OdataType,
+                        DisplayName = name
+                    };
+
+                    await graphServiceClient.DeviceAppManagement.MobileApps[appId].PatchAsync(app);
+                    LogToFunctionFile(appFunction.Main, $"Removed prefix from application {appId}, new name: '{name}'");
                 }
             }
             catch (Exception ex)

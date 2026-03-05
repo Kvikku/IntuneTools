@@ -1,11 +1,9 @@
-﻿using CommunityToolkit.WinUI.UI.Controls;
+using CommunityToolkit.WinUI.UI.Controls;
 using IntuneTools.Graph.IntuneHelperClasses;
 using IntuneTools.Utilities;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Documents;
-using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -30,13 +28,7 @@ using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHe
 
 namespace IntuneTools.Pages
 {
-    public class AssignmentInfo
-    {
-        public string Name { get; set; }
-        public string Id { get; set; }
-        public string Type { get; set; }
-        public string Platform { get; set; }
-    }
+    #region Helper Types
 
     public class AssignmentGroupInfo
     {
@@ -49,155 +41,203 @@ namespace IntuneTools.Pages
         public string? FilterName { get; set; }
     }
 
-    public sealed partial class AssignmentPage : Page
+    #endregion
+
+    public sealed partial class AssignmentPage : BaseMultiTenantPage
     {
-        #region Variables and Properties
-        public static ObservableCollection<AssignmentInfo> AssignmentList { get; } = new();
+        #region Fields & Types
+
+        /// <summary>
+        /// Defines an assignment operation for a specific content type.
+        /// </summary>
+        /// <param name="ContentTypeDisplayName">The display name used in ContentType property (e.g., "Device Compliance Policy").</param>
+        /// <param name="AssignAsync">Async function that performs the assignment operation.</param>
+        private record AssignTypeDefinition(
+            string ContentTypeDisplayName,
+            Func<string, List<string>, GraphServiceClient, Task> AssignAsync);
+
+        public static ObservableCollection<CustomContentInfo> AssignmentList { get; } = new();
         public ObservableCollection<AssignmentGroupInfo> GroupList { get; } = new();
         public ObservableCollection<DeviceAndAppManagementAssignmentFilter> FilterOptions { get; } = new();
 
-        private List<AssignmentInfo> _allAssignments = new();
+        private List<CustomContentInfo> _allAssignments = new();
         private bool _suppressOptionEvents = false;
         private bool _suppressSelectAllEvents = false;
 
-        private readonly Dictionary<string, Func<Task>> _assignmentLoaders;
+        /// <summary>
+        /// Maps checkbox names to ContentTypes constants for registry lookup.
+        /// </summary>
+        private static readonly Dictionary<string, string> CheckboxToContentType = new()
+        {
+            ["SettingsCatalog"] = ContentTypes.SettingsCatalog,
+            ["DeviceCompliance"] = ContentTypes.DeviceCompliancePolicy,
+            ["DeviceConfiguration"] = ContentTypes.DeviceConfigurationPolicy,
+            ["macOSShellScript"] = ContentTypes.MacOSShellScript,
+            ["PowerShellScript"] = ContentTypes.PowerShellScript,
+            ["ProactiveRemediation"] = ContentTypes.ProactiveRemediation,
+            ["WindowsAutopilot"] = ContentTypes.WindowsAutoPilotProfile,
+            ["WindowsDriverUpdate"] = ContentTypes.WindowsDriverUpdate,
+            ["WindowsFeatureUpdate"] = ContentTypes.WindowsFeatureUpdate,
+            ["WindowsQualityUpdatePolicy"] = ContentTypes.WindowsQualityUpdatePolicy,
+            ["WindowsQualityUpdateProfile"] = ContentTypes.WindowsQualityUpdateProfile,
+            ["AppleBYODEnrollmentProfile"] = ContentTypes.AppleBYODEnrollmentProfile,
+            ["Application"] = ContentTypes.Application,
+        };
+
+        /// <summary>
+        /// Gets the selected ContentTypes based on checked checkboxes.
+        /// </summary>
+        private IEnumerable<string> GetSelectedContentTypes()
+        {
+            var checkedNames = GetCheckedOptionNames();
+            foreach (var name in checkedNames)
+            {
+                if (CheckboxToContentType.TryGetValue(name, out var contentType))
+                {
+                    yield return contentType;
+                }
+            }
+        }
 
         private DeviceAndAppManagementAssignmentFilter? _selectedFilterID;
-        private string _selectedFilterName;
+        private string _selectedFilterName = string.Empty;
 
 
         // New: Include / Exclude filter mode (default Include)
         private string _selectedFilterMode = "Include";
 
-
-
-
+        // Progress tracking for assignment operations
+        private int _assignTotal;
+        private int _assignCurrent;
+        private int _assignSuccessCount;
+        private int _assignErrorCount;
 
         // UI initialization flag to prevent early event handlers from using null controls (e.g., LogConsole)
         private bool _uiInitialized = false;
+
         #endregion
+
+        #region Constructor & Configuration
 
         public AssignmentPage()
         {
             this.InitializeComponent();
 
-            _assignmentLoaders = new Dictionary<string, Func<Task>>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["SettingsCatalog"] = async () => await LoadAllSettingsCatalogPoliciesAsync(),
-                ["DeviceCompliance"] = async () => await LoadAllDeviceCompliancePoliciesAsync(),
-                ["DeviceConfiguration"] = async () => await LoadAllDeviceConfigurationPoliciesAsync(),
-                ["macOSShellScript"] = async () => await LoadAllmacOSShellScriptsAsync(),
-                ["PowerShellScript"] = async () => await LoadAllPowershellScriptsAsync(),
-                ["ProactiveRemediation"] = async () => await LoadAllProactiveRemediationScriptsAsync(),
-                ["WindowsAutopilot"] = async () => await LoadAllWindowsAutopilotProfilesAsync(),
-                ["WindowsDriverUpdate"] = async () => await LoadAllWindowsDriverUpdateProfilesAsync(),
-                ["WindowsFeatureUpdate"] = async () => await LoadAllWindowsFeatureUpdateProfilesAsync(),
-                ["WindowsQualityUpdatePolicy"] = async () => await LoadAllWindowsQualityUpdatePoliciesAsync(),
-                ["WindowsQualityUpdateProfile"] = async () => await LoadAllWindowsQualityUpdateProfilesAsync(),
-                ["AppleBYODEnrollmentProfile"] = async () => await LoadAllAppleBYODEnrollmentProfilesAsync(),
-                ["Application"] = async () => await LoadAllApplicationsAsync()
-            };
-
             _allAssignments.AddRange(AssignmentList);
             AppDataGrid.ItemsSource = AssignmentList;
+            LogConsole.ItemsSource = LogEntries;
 
             this.Loaded += AssignmentPage_Loaded;
             RightClickMenu.AttachDataGridContextMenu(AppDataGrid);
-            // Removed direct logging call here to avoid NullReference due to control construction order.
         }
 
-        protected override void OnNavigatedTo(NavigationEventArgs e)
+        protected override string[] GetManagedControlNames() => new[]
         {
-            base.OnNavigatedTo(e);
+            "ContentSearchBox", "ListAllButton", "RemoveSelectedButton", "RemoveAllButton",
+            "AssignButton", "GroupSearchTextBox", "GroupSearchButton", "GroupListAllButton",
+            "AppDataGrid", "GroupDataGrid", "FilterExpander", "FilterSelectionComboBox",
+            "FilterModeComboBox", "OptionsAllCheckBox", "ClearLogButton", "ContentTypesButton"
+        };
 
-            if (string.Equals(Variables.sourceTenantName, string.Empty))
+        #endregion
+
+        #region Assignment Logic
+
+        /// <summary>
+        /// Gets the registry of all assignment type definitions.
+        /// </summary>
+        private IEnumerable<AssignTypeDefinition> GetAssignTypeRegistry()
+        {
+            yield return new AssignTypeDefinition(
+                "Device Compliance Policy",
+                async (id, groups, client) => await AssignGroupsToSingleDeviceCompliance(id, groups, client));
+
+            yield return new AssignTypeDefinition(
+                "Settings Catalog",
+                async (id, groups, client) => await AssignGroupsToSingleSettingsCatalog(id, groups, client));
+
+            yield return new AssignTypeDefinition(
+                "Device Configuration Policy",
+                async (id, groups, client) => await AssignGroupsToSingleDeviceConfiguration(id, groups, client));
+
+            yield return new AssignTypeDefinition(
+                "MacOS Shell Script",
+                async (id, groups, client) => await AssignGroupsToSingleShellScriptmacOS(id, groups, client));
+
+            yield return new AssignTypeDefinition(
+                "PowerShell Script",
+                async (id, groups, client) => await AssignGroupsToSinglePowerShellScript(id, groups, client));
+
+            yield return new AssignTypeDefinition(
+                "Proactive Remediation",
+                async (id, groups, client) => await AssignGroupsToSingleProactiveRemediation(id, groups, client));
+
+            yield return new AssignTypeDefinition(
+                "Windows AutoPilot Profile",
+                async (id, groups, client) => await AssignGroupsToSingleWindowsAutoPilotProfile(id, groups, client));
+
+            yield return new AssignTypeDefinition(
+                "Windows Driver Update",
+                async (id, groups, client) => await AssignGroupsToSingleDriverProfile(id, groups, client));
+
+            yield return new AssignTypeDefinition(
+                "Windows Feature Update",
+                async (id, groups, client) => await AssignGroupsToSingleWindowsFeatureUpdateProfile(id, groups, client));
+
+            yield return new AssignTypeDefinition(
+                "Windows Quality Update Policy",
+                async (id, groups, client) => await AssignGroupsToSingleWindowsQualityUpdatePolicy(id, groups, client));
+
+            yield return new AssignTypeDefinition(
+                "Windows Quality Update Profile",
+                async (id, groups, client) => await AssignGroupsToSingleWindowsQualityUpdateProfile(id, groups, client));
+
+            yield return new AssignTypeDefinition(
+                "Apple BYOD Enrollment Profile",
+                async (id, groups, client) => await AssignGroupsToSingleAppleBYODEnrollmentProfile(id, groups, client));
+        }
+
+        /// <summary>
+        /// Assigns a single content item to the specified groups using the registry.
+        /// </summary>
+        private async Task<bool> AssignContentItemAsync(
+            CustomContentInfo item,
+            List<string> groupList,
+            GraphServiceClient graphServiceClient)
+        {
+            // Handle apps specially (they have "App - " prefix)
+            if (item.ContentType.StartsWith("App - "))
             {
-                TenantInfoBar.Title = "Authentication Required";
-                TenantInfoBar.Message = "You must authenticate with a tenant before using assignment features.";
-                TenantInfoBar.Severity = InfoBarSeverity.Warning;
-                TenantInfoBar.IsOpen = true;
-
-                // Disable main controls
-                ContentSearchBox.IsEnabled = false;
-                ListAllButton.IsEnabled = false;
-                RemoveSelectedButton.IsEnabled = false;
-                RemoveAllButton.IsEnabled = false;
-                AssignButton.IsEnabled = false;
-                GroupSearchTextBox.IsEnabled = false;
-                GroupSearchButton.IsEnabled = false;
-                GroupListAllButton.IsEnabled = false;
-                AppDataGrid.IsEnabled = false;
-                GroupDataGrid.IsEnabled = false;
-                FilterToggle.IsEnabled = false;
-                FilterSelectionComboBox.IsEnabled = false;
-                FilterModeToggle.IsEnabled = false;
-                //OptionsPanel.IsEnabled = false;
-                OptionsAllCheckBox.IsEnabled = false;
-                ClearLogButton.IsEnabled = false;
-                OptionsAllCheckBox.IsEnabled = false;
-                ContentTypesButton.IsEnabled = false;
-                IntentToggle.IsEnabled = false;
+                await PrepareApplicationForAssignment(
+                    new KeyValuePair<string, CustomContentInfo>(item.ContentId, item),
+                    groupList,
+                    graphServiceClient);
+                return true;
             }
-            else
+
+            // Find matching definition in registry
+            var registry = GetAssignTypeRegistry().ToList();
+            var definition = registry.FirstOrDefault(d => d.ContentTypeDisplayName == item.ContentType);
+
+            if (definition != null)
             {
-                TenantInfoBar.Title = "Authenticated Tenant";
-                TenantInfoBar.Message = Variables.sourceTenantName;
-                TenantInfoBar.Severity = InfoBarSeverity.Informational;
-                TenantInfoBar.IsOpen = true;
-
-                // Enable main controls
-                ContentSearchBox.IsEnabled = true;
-                ListAllButton.IsEnabled = true;
-                RemoveSelectedButton.IsEnabled = true;
-                RemoveAllButton.IsEnabled = true;
-                AssignButton.IsEnabled = true;
-                GroupSearchTextBox.IsEnabled = true;
-                GroupSearchButton.IsEnabled = true;
-                GroupListAllButton.IsEnabled = true;
-                AppDataGrid.IsEnabled = true;
-                GroupDataGrid.IsEnabled = true;
-                FilterToggle.IsEnabled = true;
-                FilterSelectionComboBox.IsEnabled = true;
-                FilterModeToggle.IsEnabled = true;
-                //OptionsPanel.IsEnabled = true;
-                OptionsAllCheckBox.IsEnabled = true;
-                ClearLogButton.IsEnabled = true;
-                OptionsAllCheckBox.IsEnabled = true;
-                ContentTypesButton.IsEnabled = true;
-                IntentToggle.IsEnabled = true;
+                await definition.AssignAsync(item.ContentId, groupList, graphServiceClient);
+                return true;
             }
+
+            return false;
         }
 
-        #region Loading Overlay
-        private void ShowLoading(string message = "Loading data from Microsoft Graph...")
-        {
-            LoadingStatusText.Text = message;
-            LoadingOverlay.Visibility = Visibility.Visible;
-            LoadingProgressRing.IsActive = true;
-
-            ContentSearchBox.IsEnabled = false;
-            ListAllButton.IsEnabled = false;
-            RemoveSelectedButton.IsEnabled = false;
-            AssignButton.IsEnabled = false;
-        }
-
-        private void HideLoading()
-        {
-            LoadingOverlay.Visibility = Visibility.Collapsed;
-            LoadingProgressRing.IsActive = false;
-
-            ContentSearchBox.IsEnabled = true;
-            ListAllButton.IsEnabled = true;
-            RemoveSelectedButton.IsEnabled = true;
-            AssignButton.IsEnabled = true;
-        }
         #endregion
 
         #region Orchestrators
 
+        /// <summary>
+        /// Main orchestrator that validates selections, confirms with user, and performs
+        /// group assignments for all content items in the DataGrid.
+        /// </summary>
         private async Task MainOrchestrator(GraphServiceClient graphServiceClient)
         {
-            // Main orchestrator of assignment operations
 
 
             // Validate selections 
@@ -212,12 +252,33 @@ namespace IntuneTools.Pages
             // Get all content
             var content = GetAllContentFromDatagrid();
 
+            // Bulk operation safeguard: warn when assigning 10 or more items
+            if (content.Count >= 10)
+            {
+                var bulkWarning = new ContentDialog
+                {
+                    Title = "\u26A0 Large Bulk Assignment",
+                    Content = $"You are about to assign {content.Count} items. Are you sure you want to continue?",
+                    PrimaryButtonText = "Continue",
+                    CloseButtonText = "Cancel",
+                    DefaultButton = ContentDialogButton.Close,
+                    XamlRoot = this.XamlRoot
+                };
+
+                var bulkResult = await bulkWarning.ShowAsync();
+                if (bulkResult != ContentDialogResult.Primary)
+                {
+                    AppendToLog("Bulk assignment cancelled by user.");
+                    return;
+                }
+            }
+
             // Get groups
             var selectedGroups = GroupDataGrid.SelectedItems?.Cast<AssignmentGroupInfo>().ToList();
             if (selectedGroups == null || selectedGroups.Count == 0)
             {
-                AppendToDetailsRichTextBlock("No groups selected for assignment.");
-                AppendToDetailsRichTextBlock("Please select at least one group and try again.");
+                AppendToLog("No groups selected for assignment.");
+                AppendToLog("Please select at least one group and try again.");
                 return;
             }
 
@@ -230,11 +291,21 @@ namespace IntuneTools.Pages
             }
 
             // Log the filter
-            AppendToDetailsRichTextBlock("Filter: " + _selectedFilterName);
+            AppendToLog("Filter: " + _selectedFilterName);
 
 
-            // Check if FilterToggle is enabled, otherwise set filter type to None
-            if (FilterToggle.IsOn)
+
+            // Show deployment options dialog first
+            var deploymentOptions = await ShowAppDeploymentOptionsDialog();
+
+            if (deploymentOptions == false)
+            {
+                AppendToLog("Assignment cancelled by user during deployment options selection.");
+                return;
+            }
+
+            // Check if FilterExpander is expanded, otherwise set filter type to None
+            if (FilterExpander.IsExpanded)
             {
                 deviceAndAppManagementAssignmentFilterType =
                     string.Equals(_selectedFilterMode, "Include", StringComparison.OrdinalIgnoreCase)
@@ -248,7 +319,7 @@ namespace IntuneTools.Pages
 
 
 
-            // Confirmation dialog
+            // Final confirmation dialog
             var confirmDialog = new ContentDialog
             {
                 Title = "Confirm Assignment",
@@ -263,15 +334,7 @@ namespace IntuneTools.Pages
             var result = await confirmDialog.ShowAsync();
             if (result != ContentDialogResult.Primary)
             {
-                AppendToDetailsRichTextBlock("Assignment cancelled by user.");
-                return;
-            }
-
-            var deploymentOptions = await ShowAppDeploymentOptionsDialog();
-
-            if (deploymentOptions == false)
-            {
-                AppendToDetailsRichTextBlock("Assignment cancelled by user during deployment options selection.");
+                AppendToLog("Assignment cancelled by user.");
                 return;
             }
 
@@ -279,91 +342,55 @@ namespace IntuneTools.Pages
             ShowLoading("Assigning content to groups...");
             try
             {
-                AppendToDetailsRichTextBlock($"Starting assignment of {content.Count} item(s) to {selectedGroups.Count} group(s)...");
+                AppendToLog($"Starting assignment of {content.Count} item(s) to {selectedGroups.Count} group(s)...");
+
+                // Initialize progress tracking
+                _assignTotal = content.Count;
+                _assignCurrent = 0;
+                _assignSuccessCount = 0;
+                _assignErrorCount = 0;
+
+                ShowOperationProgress("Starting assignment...", 0, _assignTotal);
 
                 int successCount = 0;
                 int failureCount = 0;
 
                 foreach (var item in content)
                 {
-                    if (item.Value.Type == "Device Compliance")
-                    {
-                        await AssignGroupsToSingleDeviceCompliance(item.Value.Id, groupList, sourceGraphServiceClient);
-                    }
+                    _assignCurrent++;
+                    ShowOperationProgress($"Assigning '{item.Value.ContentName}'...", _assignCurrent, _assignTotal);
 
-                    if (item.Value.Type == "Settings Catalog")
+                    try
                     {
-                        await AssignGroupsToSingleSettingsCatalog(item.Value.Id, groupList, sourceGraphServiceClient);
-                    }
-                    if (item.Value.Type == "Device Configuration")
-                    {
-                        await AssignGroupsToSingleDeviceConfiguration(item.Value.Id, groupList, sourceGraphServiceClient);
-                    }
-                    if (item.Value.Type == "macOS Shell Script")
-                    {
-                        await AssignGroupsToSingleShellScriptmacOS(item.Value.Id, groupList, sourceGraphServiceClient);
-                    }
-                    if (item.Value.Type == "PowerShell Script")
-                    {
-                        await AssignGroupsToSinglePowerShellScript(item.Value.Id, groupList, sourceGraphServiceClient);
-                    }
-                    if (item.Value.Type == "Proactive Remediation Script")
-                    {
-                        await AssignGroupsToSingleProactiveRemediation(item.Value.Id, groupList, sourceGraphServiceClient);
-                    }
-                    if (item.Value.Type == "Windows Autopilot Profile")
-                    {
-                        await AssignGroupsToSingleWindowsAutoPilotProfile(item.Value.Id, groupList, sourceGraphServiceClient);
-                    }
-                    if (item.Value.Type == "Windows Driver Update Profile")
-                    {
-                        await AssignGroupsToSingleDriverProfile(item.Value.Id, groupList, sourceGraphServiceClient);
-                    }
-                    if (item.Value.Type == "Windows Feature Update Profile")
-                    {
-                        await AssignGroupsToSingleWindowsFeatureUpdateProfile(item.Value.Id, groupList, sourceGraphServiceClient);
-                    }
-                    if (item.Value.Type == "Windows Quality Update Policy")
-                    {
-                        await AssignGroupsToSingleWindowsQualityUpdatePolicy(item.Value.Id, groupList, sourceGraphServiceClient);
-                    }
-                    if (item.Value.Type == "Windows Quality Update Profile")
-                    {
-                        await AssignGroupsToSingleWindowsQualityUpdateProfile(item.Value.Id, groupList, sourceGraphServiceClient);
-                    }
-                    if (item.Value.Type == "Apple BYOD Enrollment Profile")
-                    {
-                        await AssignGroupsToSingleAppleBYODEnrollmentProfile(item.Value.Id, groupList, sourceGraphServiceClient);
-                    }
-                    if (item.Value.Type.StartsWith("App - "))
-                    {
-                        // Must first handle the app type
-                        await PrepareApplicationForAssignment(item, groupList, sourceGraphServiceClient);
+                        await AssignContentItemAsync(item.Value, groupList, sourceGraphServiceClient);
 
-                        //await AssignGroupsToSingleApplication(item.Value.Id, groupList, sourceGraphServiceClient, _selectedInstallIntent);
-
-                    }
-
-
-                    foreach (var group in selectedGroups)
-                    {
-                        try
+                        _assignSuccessCount++;
+                        foreach (var group in selectedGroups)
                         {
-                            AppendToDetailsRichTextBlock(
-                                $"Assigning '{item.Value.Name}' to group '{group.GroupName}'.");
+                            AppendToLog($"Assigning '{item.Value.ContentName}' to group '{group.GroupName}'.");
                             successCount++;
                         }
-                        catch (Exception ex)
-                        {
-                            AppendToDetailsRichTextBlock(
-                                $"❌ Failed to assign '{item.Value.Name}' (ID: {item.Key}) to '{group.GroupName}': {ex.Message}");
-                            failureCount++;
-                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _assignErrorCount++;
+                        AppendToLog($"Failed to assign '{item.Value.ContentName}' (ID: {item.Key}): {ex.Message}");
+                        failureCount++;
                     }
                 }
 
 
-                AppendToDetailsRichTextBlock($"Assignment completed: {successCount} successful, {failureCount} failed.");
+                AppendToLog($"Assignment completed: {successCount} successful, {failureCount} failed.");
+
+                // Show final status
+                if (_assignErrorCount == 0)
+                {
+                    ShowOperationSuccess($"Assignment completed: {_assignSuccessCount} item(s) assigned successfully");
+                }
+                else
+                {
+                    ShowOperationError($"Assignment completed with errors: {_assignSuccessCount} succeeded, {_assignErrorCount} failed");
+                }
 
                 // Show completion dialog
                 await ShowValidationDialogAsync("Assignment Complete",
@@ -371,7 +398,7 @@ namespace IntuneTools.Pages
             }
             catch (Exception ex)
             {
-                AppendToDetailsRichTextBlock($"❌ Assignment operation failed: {ex.Message}");
+                AppendToLog($"Error: Assignment operation failed: {ex.Message}");
                 await ShowValidationDialogAsync("Assignment Error",
                     $"An error occurred during assignment:\n{ex.Message}");
             }
@@ -382,36 +409,49 @@ namespace IntuneTools.Pages
 
         }
 
+        /// <summary>
+        /// Loads all content items for the selected content types from Microsoft Graph
+        /// and populates the DataGrid.
+        /// </summary>
         private async Task ListAllOrchestrator(GraphServiceClient graphServiceClient)
         {
             AssignmentList.Clear();
             _allAssignments.Clear();
 
-
-            var selectedContent = GetCheckedOptionNames();
-            if (selectedContent.Count == 0)
+            var selectedContentTypes = GetSelectedContentTypes().ToList();
+            if (selectedContentTypes.Count == 0)
             {
-                AppendToDetailsRichTextBlock("No content types selected for import.");
-                AppendToDetailsRichTextBlock("Please select at least one content type and try again.");
+                AppendToLog("No content types selected.");
+                AppendToLog("Please select at least one content type and try again.");
                 return;
             }
 
-            AppendToDetailsRichTextBlock("Listing all content.");
+            AppendToLog("Listing all content.");
             ShowLoading("Loading assignment data...");
             try
             {
-                foreach (var option in selectedContent)
+                foreach (var contentType in selectedContentTypes)
                 {
-                    if (_assignmentLoaders.TryGetValue(option, out var loader))
+                    var op = ContentTypeRegistry.Get(contentType);
+                    if (op != null)
                     {
-                        try { await loader(); }
+                        try
+                        {
+                            var items = await op.LoadAll(graphServiceClient);
+                            foreach (var item in items)
+                            {
+                                AssignmentList.Add(item);
+                            }
+                            AppendToLog($"Loaded {items.Count()} {op.DisplayNamePlural}.");
+                        }
                         catch (Exception ex)
                         {
-                            AppendToDetailsRichTextBlock($"Failed loading assignments for '{option}': {ex.Message}");
+                            AppendToLog($"Failed loading {op.DisplayNamePlural}: {ex.Message}");
                         }
                     }
                 }
                 _allAssignments.AddRange(AssignmentList);
+                AppDataGrid.ItemsSource = AssignmentList;
             }
             finally
             {
@@ -424,355 +464,22 @@ namespace IntuneTools.Pages
 
         #region Content loaders
 
-        private Dictionary<string, AssignmentInfo> GetAllContentFromDatagrid()
+        /// <summary>
+        /// Gathers all content items from the DataGrid into a dictionary keyed by ContentId.
+        /// </summary>
+        private Dictionary<string, CustomContentInfo> GetAllContentFromDatagrid()
         {
             // Gather all content (full objects) from the datagrid and send to orchestrator
-            var content = new Dictionary<string, AssignmentInfo>();
+            var content = new Dictionary<string, CustomContentInfo>();
 
             foreach (var item in AssignmentList)
             {
-                // Key = Id, Value = full AssignmentInfo (includes Name, Type, Platform)
-                content[item.Id] = item;
+                // Key = Id, Value = full CustomContentInfo (includes ContentName, ContentType, ContentPlatform)
+                content[item.ContentId] = item;
             }
 
-            AppendToDetailsRichTextBlock($"Gathered {content.Count} items from DataGrid.");
+            AppendToLog($"Gathered {content.Count} items from DataGrid.");
             return content;
-        }
-
-
-        private async Task LoadAllSettingsCatalogPoliciesAsync()
-        {
-            ShowLoading("Loading settings catalog policies from Microsoft Graph...");
-            try
-            {
-                var policies = await GetAllSettingsCatalogPolicies(sourceGraphServiceClient);
-                foreach (var policy in policies)
-                {
-                    var assignmentInfo = new AssignmentInfo
-                    {
-                        Name = policy.Name,
-                        Type = "Settings Catalog",
-                        Platform = policy.Platforms?.ToString() ?? string.Empty,
-                        Id = policy.Id
-                    };
-                    AssignmentList.Add(assignmentInfo);
-                }
-                AppDataGrid.ItemsSource = AssignmentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private async Task LoadAllDeviceCompliancePoliciesAsync()
-        {
-            ShowLoading("Loading device compliance policies from Microsoft Graph...");
-            try
-            {
-                var policies = await GetAllDeviceCompliancePolicies(sourceGraphServiceClient);
-                foreach (var policy in policies)
-                {
-                    var platform = TranslatePolicyPlatformName(policy.OdataType);
-
-                    var assignmentInfo = new AssignmentInfo
-                    {
-                        Name = policy.DisplayName,
-                        Type = "Device Compliance",
-                        Platform = platform,
-                        Id = policy.Id
-                    };
-                    AssignmentList.Add(assignmentInfo);
-                }
-                AppDataGrid.ItemsSource = AssignmentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private async Task LoadAllDeviceConfigurationPoliciesAsync()
-        {
-            ShowLoading("Loading device configuration policies from Microsoft Graph...");
-            try
-            {
-                var policies = await GetAllDeviceConfigurations(sourceGraphServiceClient);
-                foreach (var policy in policies)
-                {
-                    var platform = TranslatePolicyPlatformName(policy.OdataType);
-
-                    var assignmentInfo = new AssignmentInfo
-                    {
-                        Name = policy.DisplayName,
-                        Type = "Device Configuration",
-                        Platform = platform,
-                        Id = policy.Id
-                    };
-                    AssignmentList.Add(assignmentInfo);
-                }
-                AppDataGrid.ItemsSource = AssignmentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private async Task LoadAllmacOSShellScriptsAsync()
-        {
-            ShowLoading("Loading macOS shell scripts from Microsoft Graph...");
-            try
-            {
-                var scripts = await GetAllmacOSShellScripts(sourceGraphServiceClient);
-                foreach (var script in scripts)
-                {
-                    var assignmentInfo = new AssignmentInfo
-                    {
-                        Name = script.DisplayName,
-                        Type = "macOS Shell Script",
-                        Platform = "macOS",
-                        Id = script.Id
-                    };
-                    AssignmentList.Add(assignmentInfo);
-                }
-                AppDataGrid.ItemsSource = AssignmentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private async Task LoadAllPowershellScriptsAsync()
-        {
-            ShowLoading("Loading PowerShell scripts from Microsoft Graph...");
-            try
-            {
-                var scripts = await GetAllPowerShellScripts(sourceGraphServiceClient);
-                foreach (var script in scripts)
-                {
-                    var assignmentInfo = new AssignmentInfo
-                    {
-                        Name = script.DisplayName,
-                        Type = "PowerShell Script",
-                        Platform = "Windows",
-                        Id = script.Id
-                    };
-                    AssignmentList.Add(assignmentInfo);
-                }
-                AppDataGrid.ItemsSource = AssignmentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private async Task LoadAllProactiveRemediationScriptsAsync()
-        {
-            ShowLoading("Loading proactive remediation scripts from Microsoft Graph...");
-            try
-            {
-                var scripts = await GetAllProactiveRemediations(sourceGraphServiceClient);
-                foreach (var script in scripts)
-                {
-                    var assignmentInfo = new AssignmentInfo
-                    {
-                        Name = script.DisplayName,
-                        Type = "Proactive Remediation Script",
-                        Platform = "Windows",
-                        Id = script.Id
-                    };
-                    AssignmentList.Add(assignmentInfo);
-                }
-                AppDataGrid.ItemsSource = AssignmentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private async Task LoadAllWindowsAutopilotProfilesAsync()
-        {
-            ShowLoading("Loading Windows Autopilot profiles from Microsoft Graph...");
-            try
-            {
-                var profiles = await GetAllWindowsAutoPilotProfiles(sourceGraphServiceClient);
-                foreach (var profile in profiles)
-                {
-                    var assignmentInfo = new AssignmentInfo
-                    {
-                        Name = profile.DisplayName,
-                        Type = "Windows Autopilot Profile",
-                        Platform = "Windows",
-                        Id = profile.Id
-                    };
-                    AssignmentList.Add(assignmentInfo);
-                }
-                AppDataGrid.ItemsSource = AssignmentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-
-        private async Task LoadAllWindowsDriverUpdateProfilesAsync()
-        {
-            ShowLoading("Loading Windows Driver Update profiles from Microsoft Graph...");
-            try
-            {
-                var profiles = await GetAllDriverProfiles(sourceGraphServiceClient);
-                foreach (var profile in profiles)
-                {
-                    var assignmentInfo = new AssignmentInfo
-                    {
-                        Name = profile.DisplayName,
-                        Type = "Windows Driver Update Profile",
-                        Platform = "Windows",
-                        Id = profile.Id
-                    };
-                    AssignmentList.Add(assignmentInfo);
-                }
-                AppDataGrid.ItemsSource = AssignmentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private async Task LoadAllWindowsFeatureUpdateProfilesAsync()
-        {
-            ShowLoading("Loading Windows Feature Update profiles from Microsoft Graph...");
-            try
-            {
-                var profiles = await GetAllWindowsFeatureUpdateProfiles(sourceGraphServiceClient);
-                foreach (var profile in profiles)
-                {
-                    var assignmentInfo = new AssignmentInfo
-                    {
-                        Name = profile.DisplayName,
-                        Type = "Windows Feature Update Profile",
-                        Platform = "Windows",
-                        Id = profile.Id
-                    };
-                    AssignmentList.Add(assignmentInfo);
-                }
-                AppDataGrid.ItemsSource = AssignmentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private async Task LoadAllWindowsQualityUpdatePoliciesAsync()
-        {
-            ShowLoading("Loading Windows Quality Update policies from Microsoft Graph...");
-            try
-            {
-                var profiles = await GetAllWindowsQualityUpdatePolicies(sourceGraphServiceClient);
-                foreach (var profile in profiles)
-                {
-                    var assignmentInfo = new AssignmentInfo
-                    {
-                        Name = profile.DisplayName,
-                        Type = "Windows Quality Update Policy",
-                        Platform = "Windows",
-                        Id = profile.Id
-                    };
-                    AssignmentList.Add(assignmentInfo);
-                }
-                AppDataGrid.ItemsSource = AssignmentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private async Task LoadAllWindowsQualityUpdateProfilesAsync()
-        {
-            ShowLoading("Loading Windows Quality Update profiles from Microsoft Graph...");
-            try
-            {
-                var profiles = await GetAllWindowsQualityUpdateProfiles(sourceGraphServiceClient);
-                foreach (var profile in profiles)
-                {
-                    var assignmentInfo = new AssignmentInfo
-                    {
-                        Name = profile.DisplayName,
-                        Type = "Windows Quality Update Profile",
-                        Platform = "Windows",
-                        Id = profile.Id
-                    };
-                    AssignmentList.Add(assignmentInfo);
-                }
-                AppDataGrid.ItemsSource = AssignmentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private async Task LoadAllAppleBYODEnrollmentProfilesAsync()
-        {
-            ShowLoading("Loading Apple BYOD enrollment profiles from Microsoft Graph...");
-            try
-            {
-                var profiles = await GetAllAppleBYODEnrollmentProfiles(sourceGraphServiceClient);
-                foreach (var profile in profiles)
-                {
-                    var assignmentInfo = new AssignmentInfo
-                    {
-                        Name = profile.DisplayName,
-                        Type = "Apple BYOD Enrollment Profile",
-                        Platform = "iOS",
-                        Id = profile.Id
-                    };
-                    AssignmentList.Add(assignmentInfo);
-                }
-                AppDataGrid.ItemsSource = AssignmentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private async Task LoadAllApplicationsAsync()
-        {
-            ShowLoading("Loading applications from Microsoft Graph...");
-            try
-            {
-                var applications = await ApplicationHelper.GetAllMobileApps(sourceGraphServiceClient);
-                foreach (var app in applications)
-                {
-                    var assignmentInfo = new AssignmentInfo
-                    {
-                        Name = app.DisplayName,
-                        Type = TranslateApplicationType(app.OdataType),
-                        Platform = TranslatePolicyPlatformName(app.OdataType),
-                        Id = app.Id
-                    };
-                    AssignmentList.Add(assignmentInfo);
-                }
-                AppDataGrid.ItemsSource = AssignmentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private async Task SearchForApplicationsAsync()
-        {
-            // Implement search logic if needed
         }
 
         #endregion
@@ -785,21 +492,24 @@ namespace IntuneTools.Pages
                 if (Enum.TryParse(intent, out InstallIntent parsedIntent))
                 {
                     _selectedInstallIntent = parsedIntent;
-                    AppendToDetailsRichTextBlock($"Intent: {_selectedInstallIntent}");
+                    AppendToLog($"Intent: {_selectedInstallIntent}");
                 }
                 else
                 {
-                    AppendToDetailsRichTextBlock($"Warning: Could not parse assignment intent '{intent}'. Defaulting to 'Required'.");
+                    AppendToLog($"Warning: Could not parse assignment intent '{intent}'. Defaulting to 'Required'.");
                     _selectedInstallIntent = InstallIntent.Required;
                 }
             }
             else
             {
-                AppendToDetailsRichTextBlock("Warning: No assignment intent selected. Defaulting to 'Required'.");
+                AppendToLog("Warning: No assignment intent selected. Defaulting to 'Required'.");
                 _selectedInstallIntent = InstallIntent.Required;
             }
         }
 
+        /// <summary>
+        /// Loads all Entra ID groups from Microsoft Graph into the GroupList.
+        /// </summary>
         private async Task LoadAllGroupsAsync()
         {
             GroupList.Clear();
@@ -823,6 +533,9 @@ namespace IntuneTools.Pages
             }
         }
 
+        /// <summary>
+        /// Searches for Entra ID groups matching the specified query.
+        /// </summary>
         private async Task SearchForGroupsAsync(string searchQuery)
         {
             GroupList.Clear();
@@ -846,6 +559,9 @@ namespace IntuneTools.Pages
             }
         }
 
+        /// <summary>
+        /// Loads all assignment filters from Microsoft Graph into the FilterOptions collection.
+        /// </summary>
         private async Task LoadAllAssignmentFiltersAsync()
         {
             ShowLoading("Loading assignment filters from Microsoft Graph...");
@@ -883,15 +599,15 @@ namespace IntuneTools.Pages
                 {
                     AssignmentList.Add(item);
                 }
-                AppendToDetailsRichTextBlock("Search cleared. Displaying all items.");
+                AppendToLog("Search cleared. Displaying all items.");
             }
             else
             {
                 // Perform search
                 var filtered = _allAssignments.Where(item =>
-                    item.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                    item.Type.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                    item.Platform.Contains(query, StringComparison.OrdinalIgnoreCase))
+                    item.ContentName.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                    item.ContentType.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                    item.ContentPlatform.Contains(query, StringComparison.OrdinalIgnoreCase))
                     .ToList();
 
                 AssignmentList.Clear();
@@ -899,7 +615,7 @@ namespace IntuneTools.Pages
                 {
                     AssignmentList.Add(item);
                 }
-                AppendToDetailsRichTextBlock($"Search for '{query}' found {filtered.Count} item(s).");
+                AppendToLog($"Search for '{query}' found {filtered.Count} item(s).");
             }
         }
 
@@ -925,17 +641,17 @@ namespace IntuneTools.Pages
         {
             if (AppDataGrid.SelectedItems.Count > 0)
             {
-                var selectedItems = AppDataGrid.SelectedItems.Cast<AssignmentInfo>().ToList();
+                var selectedItems = AppDataGrid.SelectedItems.Cast<CustomContentInfo>().ToList();
                 foreach (var item in selectedItems)
                 {
                     AssignmentList.Remove(item);
                     _allAssignments.Remove(item);
                 }
-                AppendToDetailsRichTextBlock($"Removed {selectedItems.Count} selected item(s).");
+                AppendToLog($"Removed {selectedItems.Count} selected item(s).");
             }
             else
             {
-                AppendToDetailsRichTextBlock("No items selected to remove.");
+                AppendToLog("No items selected to remove.");
             }
         }
 
@@ -943,7 +659,7 @@ namespace IntuneTools.Pages
         {
             if (AssignmentList.Count == 0)
             {
-                AppendToDetailsRichTextBlock("The list is already empty.");
+                AppendToLog("The list is already empty.");
                 return;
             }
 
@@ -963,11 +679,11 @@ namespace IntuneTools.Pages
                 var count = AssignmentList.Count;
                 AssignmentList.Clear();
                 _allAssignments.Clear();
-                AppendToDetailsRichTextBlock($"Removed all {count} items from the list.");
+                AppendToLog($"Removed all {count} items from the list.");
             }
             else
             {
-                AppendToDetailsRichTextBlock("Operation to remove all items was cancelled.");
+                AppendToLog("Operation to remove all items was cancelled.");
             }
         }
 
@@ -976,38 +692,14 @@ namespace IntuneTools.Pages
             await MainOrchestrator(sourceGraphServiceClient);
         }
 
-        private async void GroupListAllClick(object sender, RoutedEventArgs e)
+        private async void GroupListAllButton_Click(object sender, RoutedEventArgs e)
         {
             await LoadAllGroupsAsync();
         }
 
-        private async void GroupSearchClick(object sender, RoutedEventArgs e)
+        private async void GroupSearchButton_Click(object sender, RoutedEventArgs e)
         {
-            await SearchForGroupsAsync(GroupSearchTextBox.Text);
-        }
-
-        private async void FilterCheckBoxClick(object sender, RoutedEventArgs e)
-        {
-
-        }
-
-        private async void ClearLogButton_Click(object sender, RoutedEventArgs e)
-        {
-            var dialog = new ContentDialog
-            {
-                Title = "Clear Log Console?",
-                Content = "Are you sure you want to clear all log console text? This action cannot be undone.",
-                PrimaryButtonText = "Clear",
-                CloseButtonText = "Cancel",
-                DefaultButton = ContentDialogButton.Close,
-                XamlRoot = this.XamlRoot
-            };
-
-            var result = await dialog.ShowAsync().AsTask();
-            if (result == ContentDialogResult.Primary)
-            {
-                LogConsole.Blocks.Clear();
-            }
+            await SearchForGroupsAsync(GroupSearchTextBox.Text?.Trim() ?? string.Empty);
         }
 
         private async Task ShowValidationDialogAsync(string title, string message)
@@ -1044,7 +736,7 @@ namespace IntuneTools.Pages
                 _selectedFilterID = selectedFilter;
                 _selectedFilterName = selectedFilter.DisplayName ?? string.Empty;
                 SelectedFilterID = _selectedFilterID.Id;
-                IsFilterSelected = FilterToggle.IsOn && !string.IsNullOrWhiteSpace(SelectedFilterID);
+                IsFilterSelected = FilterExpander.IsExpanded && !string.IsNullOrWhiteSpace(SelectedFilterID);
             }
             else
             {
@@ -1057,90 +749,52 @@ namespace IntuneTools.Pages
 
         private async void FilterExpander_Expanding(Expander sender, ExpanderExpandingEventArgs args)
         {
+            if (!_uiInitialized) return;
+
+            if (FilterModeComboBox is not null)
+            {
+                FilterModeComboBox.SelectedIndex = 0; // Default to Include
+            }
+
             if (FilterSelectionComboBox.Items.Count == 0)
             {
-                try
-                {
-                    var filters = await FilterHelperClass.GetAllAssignmentFilters(sourceGraphServiceClient);
-                    if (filters != null)
-                    {
-                        FilterSelectionComboBox.ItemsSource = filters;
-                        FilterSelectionComboBox.DisplayMemberPath = "DisplayName";
-                    }
-                }
-                catch (Exception ex)
-                {
-                    // Handle exceptions, e.g., log them or show a message
-                    // Log("Failed to load filters: " + ex.Message);
-                }
+                await LoadAllAssignmentFiltersAsync();
             }
+            _selectedFilterMode = "Include";
+            IsFilterSelected = !string.IsNullOrWhiteSpace(SelectedFilterID);
+            AppendToLog("Assignment filter enabled.");
         }
 
-        private async void FilterToggle_Toggled(object sender, RoutedEventArgs e)
-        {
-            if (!_uiInitialized) return; // Prevent early logging before controls are ready
-
-            if (sender is ToggleSwitch toggleSwitch)
-            {
-                if (toggleSwitch.IsOn)
-                {
-                    FilterSelectionComboBox.Visibility = Visibility.Visible;
-                    FilterPlatformInfoBar.IsOpen = true;
-
-                    if (FilterModeToggle is not null)
-                    {
-                        // Ensure default is Include when shown
-                        FilterModeToggle.IsOn = true; // On now means Include
-                        FilterModeToggle.Visibility = Visibility.Visible;
-                    }
-
-                    if (FilterSelectionComboBox.Items.Count == 0)
-                    {
-                        await LoadAllAssignmentFiltersAsync();
-                    }
-                    _selectedFilterMode = "Include";
-                    IsFilterSelected = !string.IsNullOrWhiteSpace(SelectedFilterID);
-                    AppendToDetailsRichTextBlock("Assignment filter enabled.");
-                }
-                else
-                {
-                    FilterSelectionComboBox.Visibility = Visibility.Collapsed;
-                    FilterSelectionComboBox.SelectedItem = null;
-                    FilterPlatformInfoBar.IsOpen = false;
-
-                    if (FilterModeToggle is not null)
-                    {
-                        FilterModeToggle.Visibility = Visibility.Collapsed;
-                        FilterModeToggle.IsOn = true; // Keep semantic default (Include) even while hidden
-                    }
-                    _selectedFilterMode = "Include";
-                    SelectedFilterID = null;
-                    IsFilterSelected = false;
-                    deviceAndAppManagementAssignmentFilterType = DeviceAndAppManagementAssignmentFilterType.None;
-                    AppendToDetailsRichTextBlock("Assignment filter disabled.");
-                }
-            }
-        }
-
-        // Updated semantics: IsOn = Include, IsOff = Exclude
-        private void FilterModeToggle_Toggled(object sender, RoutedEventArgs e)
-        {
-            if (!_uiInitialized) return; // Prevent logging before LogConsole is ready
-            if (sender is ToggleSwitch ts)
-            {
-                _selectedFilterMode = ts.IsOn ? "Include" : "Exclude";
-                AppendToDetailsRichTextBlock($"Filter mode set to '{_selectedFilterMode}'.");
-            }
-        }
-
-        private void IntentToggle_Toggled(object sender, RoutedEventArgs e)
+        private void FilterExpander_Collapsed(Expander sender, ExpanderCollapsedEventArgs args)
         {
             if (!_uiInitialized) return;
-            if (sender is ToggleSwitch ts)
+
+            FilterSelectionComboBox.SelectedItem = null;
+
+            if (FilterModeComboBox is not null)
             {
-                _selectedInstallIntent = ts.IsOn ? InstallIntent.Required : InstallIntent.Available;
-                AppendToDetailsRichTextBlock($"Assignment intent set to '{_selectedInstallIntent}'.");
+                FilterModeComboBox.SelectedIndex = 0; // Reset to Include
             }
+            _selectedFilterMode = "Include";
+            SelectedFilterID = null;
+            IsFilterSelected = false;
+            deviceAndAppManagementAssignmentFilterType = DeviceAndAppManagementAssignmentFilterType.None;
+            AppendToLog("Assignment filter disabled.");
+        }
+
+        private void FilterModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!_uiInitialized) return;
+            if (sender is ComboBox cb && cb.SelectedItem is ComboBoxItem item)
+            {
+                _selectedFilterMode = item.Content?.ToString() ?? "Include";
+                AppendToLog($"Filter mode set to '{_selectedFilterMode}'.");
+            }
+        }
+
+        private void IntentComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // Intent is now configured in the deployment options dialog
         }
 
         #endregion
@@ -1150,7 +804,7 @@ namespace IntuneTools.Pages
         {
             _uiInitialized = true; // UI now safe for logging
             AutoCheckAllOptions();
-            AppendToDetailsRichTextBlock("Assignment page loaded.");
+            AppendToLog("Assignment page loaded.");
         }
 
         private void AutoCheckAllOptions()
@@ -1165,32 +819,6 @@ namespace IntuneTools.Pages
             _suppressSelectAllEvents = true;
             OptionsAllCheckBox.IsChecked = true;
             _suppressSelectAllEvents = false;
-        }
-
-        private void AppendToDetailsRichTextBlock(string text)
-        {
-            // Guard against null LogConsole (early calls) or not yet initialized UI
-            if (LogConsole == null || !_uiInitialized) return;
-
-            Paragraph paragraph;
-            if (LogConsole.Blocks.Count == 0)
-            {
-                paragraph = new Paragraph();
-                LogConsole.Blocks.Add(paragraph);
-            }
-            else
-            {
-                paragraph = LogConsole.Blocks.First() as Paragraph ?? new Paragraph();
-                if (!LogConsole.Blocks.Contains(paragraph))
-                    LogConsole.Blocks.Add(paragraph);
-            }
-            if (paragraph.Inlines.Count > 0)
-            {
-                paragraph.Inlines.Add(new LineBreak());
-            }
-            paragraph.Inlines.Add(new Run { Text = text });
-
-            ScrollLogToEnd();
         }
 
         public List<string> GetCheckedOptionNames()
@@ -1259,17 +887,6 @@ namespace IntuneTools.Pages
             _suppressSelectAllEvents = false;
         }
 
-        private void ScrollLogToEnd()
-        {
-            // Use DispatcherQueue to ensure layout updates are processed
-            DispatcherQueue.TryEnqueue(() =>
-            {
-                LogConsole.UpdateLayout();
-                LogScrollViewer.UpdateLayout();
-                LogScrollViewer.ChangeView(null, LogScrollViewer.ScrollableHeight, null, true);
-            });
-        }
-
         private void AppDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
         {
             var dataGrid = sender as DataGrid;
@@ -1282,15 +899,15 @@ namespace IntuneTools.Pages
             string sortProperty = binding?.Path?.Path;
             if (string.IsNullOrEmpty(sortProperty))
             {
-                AppendToDetailsRichTextBlock("Sorting error: Unable to determine property name from column binding.");
+                AppendToLog("Sorting error: Unable to determine property name from column binding.");
                 return;
             }
 
             // Check if property exists on AssignmentInfo
-            var propInfo = typeof(AssignmentInfo).GetProperty(sortProperty);
+            var propInfo = typeof(CustomContentInfo).GetProperty(sortProperty);
             if (propInfo == null)
             {
-                AppendToDetailsRichTextBlock($"Sorting error: Property '{sortProperty}' not found on AssignmentInfo.");
+                AppendToLog($"Sorting error: Property '{sortProperty}' not found on AssignmentInfo.");
                 return;
             }
 
@@ -1303,7 +920,7 @@ namespace IntuneTools.Pages
                 direction = ListSortDirection.Ascending;
 
             // Sort the AssignmentList in place
-            List<AssignmentInfo> sorted;
+            List<CustomContentInfo> sorted;
             try
             {
                 if (direction == ListSortDirection.Ascending)
@@ -1317,7 +934,7 @@ namespace IntuneTools.Pages
             }
             catch (Exception ex)
             {
-                AppendToDetailsRichTextBlock($"Sorting error: {ex.Message}");
+                AppendToLog($"Sorting error: {ex.Message}");
                 return;
             }
 
@@ -1384,11 +1001,11 @@ namespace IntuneTools.Pages
 
 
                     // Log the selected options
-                    AppendToDetailsRichTextBlock("Application Deployment Options Configured:");
-                    AppendToDetailsRichTextBlock($" • Intent: {_selectedInstallIntent}");
-                    AppendToDetailsRichTextBlock($" • Group Mode: {_selectedDeploymentMode}");
-                    AppendToDetailsRichTextBlock($" • Notifications: {_selectedNotificationSetting}");
-                    AppendToDetailsRichTextBlock($" • Delivery Opt: {_selectedDeliveryOptimizationPriority}");
+                    AppendToLog("Application Deployment Options Configured:");
+                    AppendToLog($" - Intent: {_selectedInstallIntent}");
+                    AppendToLog($" - Group Mode: {_selectedDeploymentMode}");
+                    AppendToLog($" - Notifications: {_selectedNotificationSetting}");
+                    AppendToLog($" - Delivery Opt: {_selectedDeliveryOptimizationPriority}");
 
                     return true;
                 }
@@ -1405,7 +1022,7 @@ namespace IntuneTools.Pages
             }
             catch (Exception ex)
             {
-                AppendToDetailsRichTextBlock($"Error showing app options dialog: {ex.Message}");
+                AppendToLog($"Error showing app options dialog: {ex.Message}");
                 return false;
             }
         }
@@ -1426,7 +1043,7 @@ namespace IntuneTools.Pages
             string sortProperty = binding?.Path?.Path;
             if (string.IsNullOrEmpty(sortProperty))
             {
-                AppendToDetailsRichTextBlock("Sorting error: Unable to determine property name from column binding.");
+                AppendToLog("Sorting error: Unable to determine property name from column binding.");
                 return;
             }
 
@@ -1434,7 +1051,7 @@ namespace IntuneTools.Pages
             var propInfo = typeof(AssignmentGroupInfo).GetProperty(sortProperty);
             if (propInfo == null)
             {
-                AppendToDetailsRichTextBlock($"Sorting error: Property '{sortProperty}' not found on AssignmentGroupInfo.");
+                AppendToLog($"Sorting error: Property '{sortProperty}' not found on AssignmentGroupInfo.");
                 return;
             }
 
@@ -1461,7 +1078,7 @@ namespace IntuneTools.Pages
             }
             catch (Exception ex)
             {
-                AppendToDetailsRichTextBlock($"Sorting error: {ex.Message}");
+                AppendToLog($"Sorting error: {ex.Message}");
                 return;
             }
 

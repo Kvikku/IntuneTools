@@ -1,13 +1,11 @@
 using CommunityToolkit.WinUI.UI.Controls;
 using IntuneTools.Utilities;
-using Microsoft.UI.Xaml; // Added for RoutedEventArgs
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Documents; // Added for Paragraph and Run
-using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel; // Add this for ObservableCollection
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -31,14 +29,7 @@ using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHe
 
 namespace IntuneTools.Pages
 {
-
-    public class ContentInfo
-    {
-        public string? ContentName { get; set; }
-        public string? ContentPlatform { get; set; }
-        public string? ContentType { get; set; }
-        public string? ContentId { get; set; }
-    }
+    #region Helper Types
 
     public class GroupInfo
     {
@@ -50,134 +41,78 @@ namespace IntuneTools.Pages
         public string? FilterName { get; set; }
     }
 
-    public sealed partial class ImportPage : Page
+    #endregion
+
+    public sealed partial class ImportPage : BaseDataOperationPage
     {
-        public ObservableCollection<ContentInfo> ContentList { get; set; } = new ObservableCollection<ContentInfo>();
+        #region Fields & Types
+
+        /// <summary>
+        /// Defines an import operation for a specific content type.
+        /// </summary>
+        /// <param name="TypeKey">The ContentTypes constant identifying this content type.</param>
+        /// <param name="DisplayName">Human-readable name for logging.</param>
+        /// <param name="ImportAsync">Async function that performs the import operation.</param>
+        private record ImportTypeDefinition(
+            string TypeKey,
+            string DisplayName,
+            Func<List<string>, List<string>, Task> ImportAsync);
+
         public ObservableCollection<GroupInfo> GroupList { get; set; } = new ObservableCollection<GroupInfo>();
         public ObservableCollection<FilterInfo> FilterList { get; set; } = new ObservableCollection<FilterInfo>();
         public ObservableCollection<string> FilterOptions { get; set; } = new ObservableCollection<string>();
 
-        private bool _suppressUpdateSelectAll = false;
         private bool _suppressOptionEvents = false;
         private bool _suppressSelectAllEvents = false;
+
+        // Progress tracking for import operations
+        private int _importTotal;
+        private int _importCurrent;
+        private int _importSuccessCount;
+        private int _importErrorCount;
+
+        /// <summary>
+        /// Maps checkbox names to ContentTypes constants.
+        /// </summary>
+        private static readonly Dictionary<string, string> CheckboxToContentType = new()
+        {
+            ["SettingsCatalog"] = ContentTypes.SettingsCatalog,
+            ["DeviceCompliance"] = ContentTypes.DeviceCompliancePolicy,
+            ["DeviceConfiguration"] = ContentTypes.DeviceConfigurationPolicy,
+            ["AppleBYODEnrollmentProfile"] = ContentTypes.AppleBYODEnrollmentProfile,
+            ["PowerShellScript"] = ContentTypes.PowerShellScript,
+            ["ProactiveRemediation"] = ContentTypes.ProactiveRemediation,
+            ["macOSShellScript"] = ContentTypes.MacOSShellScript,
+            ["WindowsAutopilot"] = ContentTypes.WindowsAutoPilotProfile,
+            ["WindowsDriverUpdate"] = ContentTypes.WindowsDriverUpdate,
+            ["WindowsFeatureUpdate"] = ContentTypes.WindowsFeatureUpdate,
+            ["WindowsQualityUpdatePolicy"] = ContentTypes.WindowsQualityUpdatePolicy,
+            ["WindowsQualityUpdateProfile"] = ContentTypes.WindowsQualityUpdateProfile,
+            ["Filters"] = ContentTypes.AssignmentFilter,
+            ["EntraGroups"] = ContentTypes.EntraGroup,
+        };
+
+        #endregion
+
+        #region Constructor & Configuration
 
         public ImportPage()
         {
             this.InitializeComponent();
             SelectAll_Checked(LoadingOverlay, null); // Initialize the 'Select all' checkbox to checked state
-            // Ensure the new controls panel is not visible by default
             NewControlsPanel.Visibility = Visibility.Collapsed;
-            //LoadFilterOptions();
-            AppendToDetailsRichTextBlock("Console output");
+            LogConsole.ItemsSource = LogEntries;
+            LogInfo("Console output");
             RightClickMenu.AttachDataGridContextMenu(ContentDataGrid);
-
         }
 
-        protected override void OnNavigatedTo(NavigationEventArgs e)
+        protected override string[] GetManagedControlNames() => new[]
         {
-            base.OnNavigatedTo(e);
-
-            var sourceReady = !string.Equals(Variables.sourceTenantName, string.Empty, StringComparison.Ordinal);
-            var destReady = !string.Equals(Variables.destinationTenantName, string.Empty, StringComparison.Ordinal);
-
-            if (!sourceReady || !destReady)
-            {
-                TenantInfoBar.Title = "Authentication Required";
-                if (!sourceReady && !destReady)
-                {
-                    TenantInfoBar.Message = "You must authenticate to both Source and Destination tenants before using import features.";
-                }
-                else if (!sourceReady)
-                {
-                    TenantInfoBar.Message = "You must authenticate to the Source tenant before using import features.";
-                }
-                else
-                {
-                    TenantInfoBar.Message = "You must authenticate to the Destination tenant before using import features.";
-                }
-                TenantInfoBar.Severity = InfoBarSeverity.Warning;
-                TenantInfoBar.IsOpen = true;
-
-                // Disable controls until both tenants are authenticated
-                SearchQueryTextBox.IsEnabled = false;
-                Search.IsEnabled = false;
-                ListAll.IsEnabled = false;
-                ClearSelected.IsEnabled = false;
-                ClearAll.IsEnabled = false;
-                ContentTypesButton.IsEnabled = false;
-                GroupsCheckBox.IsEnabled = false;
-                FiltersCheckBox.IsEnabled = false;
-                ContentDataGrid.IsEnabled = false;
-                Import.IsEnabled = false;
-                FilterSelectionComboBox.IsEnabled = false;
-                GroupSearchTextBox.IsEnabled = false;
-                NewButton1.IsEnabled = false;
-                NewButton2.IsEnabled = false;
-                GroupDataGrid.IsEnabled = false;
-                ClearLogButton.IsEnabled = false;
-            }
-            else
-            {
-                TenantInfoBar.Title = "Authenticated Tenants";
-                TenantInfoBar.Message = $"Source: {Variables.sourceTenantName} | Destination: {Variables.destinationTenantName}";
-                TenantInfoBar.Severity = InfoBarSeverity.Informational;
-                TenantInfoBar.IsOpen = true;
-
-                // Enable controls
-                SearchQueryTextBox.IsEnabled = true;
-                Search.IsEnabled = true;
-                ListAll.IsEnabled = true;
-                ClearSelected.IsEnabled = true;
-                ClearAll.IsEnabled = true;
-                ContentTypesButton.IsEnabled = true;
-                GroupsCheckBox.IsEnabled = true;
-                FiltersCheckBox.IsEnabled = true;
-                ContentDataGrid.IsEnabled = true;
-                Import.IsEnabled = true;
-                FilterSelectionComboBox.IsEnabled = true;
-                GroupSearchTextBox.IsEnabled = true;
-                NewButton1.IsEnabled = true;
-                NewButton2.IsEnabled = true;
-                GroupDataGrid.IsEnabled = true;
-                ClearLogButton.IsEnabled = true;
-            }
-        }
-
-        private void AppendToDetailsRichTextBlock(string text)
-        {
-            Paragraph paragraph;
-            if (LogConsole.Blocks.Count == 0)
-            {
-                paragraph = new Paragraph();
-                LogConsole.Blocks.Add(paragraph);
-            }
-            else
-            {
-                paragraph = LogConsole.Blocks.First() as Paragraph;
-                if (paragraph == null)
-                {
-                    paragraph = new Paragraph();
-                    LogConsole.Blocks.Add(paragraph);
-                }
-            }
-            if (paragraph.Inlines.Count > 0)
-            {
-                paragraph.Inlines.Add(new LineBreak());
-            }
-            paragraph.Inlines.Add(new Run { Text = text });
-
-            ScrollLogToEnd();
-        }
-
-        private void ScrollLogToEnd()
-        {
-            // Ensure measure is up-to-date before scrolling
-            LogConsole.UpdateLayout();
-            LogScrollViewer.UpdateLayout();
-
-            // Scroll to the bottom
-            LogScrollViewer.ChangeView(null, LogScrollViewer.ScrollableHeight, null, true);
-        }
+            "SearchQueryTextBox", "Search", "ListAll", "ClearSelected", "ClearAll",
+            "ContentTypesButton", "GroupsCheckBox", "FiltersCheckBox", "ContentDataGrid",
+            "Import", "FilterSelectionComboBox", "GroupSearchTextBox", "NewButton1",
+            "NewButton2", "GroupDataGrid", "ClearLogButton"
+        };
 
         private void LoadFilterOptions()
         {
@@ -186,26 +121,6 @@ namespace IntuneTools.Pages
             FilterOptions.Add("Filter 2");
             FilterOptions.Add("Filter 3");
             FilterSelectionComboBox.ItemsSource = FilterOptions;
-        }
-
-        private void ShowLoading(string message = "Loading data from Microsoft Graph...")
-        {
-            LoadingStatusText.Text = message;
-            LoadingOverlay.Visibility = Visibility.Visible;
-            LoadingProgressRing.IsActive = true;
-
-            // // Optionally disable buttons during loading
-            ListAll.IsEnabled = false;
-            Search.IsEnabled = false;
-        }        // Hide loading overlay - TODO: Uncomment when XAML controls are available
-        private void HideLoading()
-        {
-            LoadingOverlay.Visibility = Visibility.Collapsed;
-            LoadingProgressRing.IsActive = false;
-
-            // Re-enable buttons
-            ListAll.IsEnabled = true;
-            Search.IsEnabled = true;
         }
 
         private List<string> GetCheckedOptionNames()
@@ -221,10 +136,24 @@ namespace IntuneTools.Pages
             return checkedNames;
         }
 
+        /// <summary>
+        /// Gets the selected ContentTypes based on checked checkboxes.
+        /// </summary>
+        private IEnumerable<string> GetSelectedContentTypes()
+        {
+            var checkedNames = GetCheckedOptionNames();
+            foreach (var name in checkedNames)
+            {
+                if (CheckboxToContentType.TryGetValue(name, out var contentType))
+                {
+                    yield return contentType;
+                }
+            }
+        }
 
-        /// Graph API Methods ///
-        /// These methods should handle the actual API calls to Microsoft Graph.
-        /// 
+        #endregion
+
+        #region Core Operations
 
         private async Task ListAllOrchestrator(GraphServiceClient graphServiceClient)
         {
@@ -234,99 +163,25 @@ namespace IntuneTools.Pages
                 // Clear the ContentList before loading new data
                 ContentList.Clear();
 
+                // Get the selected content types
+                var selectedContentTypes = GetSelectedContentTypes().ToList();
 
-                // Get the names of checked options
-                var selectedContent = GetCheckedOptionNames();
-
-                if (selectedContent.Count == 0)
+                if (selectedContentTypes.Count == 0)
                 {
                     // If no options are selected, show a message and return
-                    AppendToDetailsRichTextBlock("No content types selected for import.");
+                    AppendToLog("No content types selected for import.");
                     return;
                 }
 
-                if (selectedContent.Contains("SettingsCatalog"))
-                {
-                    // Load Settings Catalog policies
-                    await LoadAllSettingsCatalogPoliciesAsync();
-                }
-                if (selectedContent.Contains("DeviceCompliance"))
-                {
-                    // Load Device Compliance policies
-                    await LoadAllDeviceCompliancePoliciesAsync();
-                }
-                if (selectedContent.Contains("DeviceConfiguration"))
-                {
-                    // Load Device Configuration policies
-                    await LoadAllDeviceConfigurationPoliciesAsync();
-                }
-                if (selectedContent.Contains("AppleBYODEnrollmentProfile"))
-                {
-                    // Load Apple BYOD Enrollment Profiles
-                    await LoadAllAppleBYODEnrollmentProfilesAsync();
-                }
-                if (selectedContent.Contains("PowerShellScript"))
-                {
-                    // Load PowerShell Scripts
-                    await LoadAllPowerShellScriptsAsync();
-                }
-                if (selectedContent.Contains("ProactiveRemediation"))
-                {
-                    // Load Proactive Remediations
-                    await LoadAllProactiveRemediationsAsync();
-                }
-                if (selectedContent.Contains("macOSShellScript"))
-                {
-                    // Load macOS Shell Scripts
-                    await LoadAllmacOSShellScriptsAsync();
-                }
-                if (selectedContent.Contains("WindowsAutopilot"))
-                {
-                    // Load Windows AutoPilot Profiles
-                    await LoadAllWindowsAutoPilotProfilesAsync();
-                }
-                if (selectedContent.Contains("WindowsDriverUpdate"))
-                {
-                    // Load Windows Driver Updates
-                    await LoadAllWindowsDriverUpdatesAsync();
-                }
-                if (selectedContent.Contains("WindowsFeatureUpdate"))
-                {
-                    // Load Windows Feature Updates
-                    await LoadAllWindowsFeatureUpdatesAsync();
-                }
-                if (selectedContent.Contains("WindowsQualityUpdatePolicy"))
-                {
-                    // Load Windows Quality Update policies
-                    await LoadAllWindowsQualityUpdatePoliciesAsync();
-                }
-                if (selectedContent.Contains("WindowsQualityUpdateProfile"))
-                {
-                    // Load Windows Quality Update profiles
-                    await LoadAllWindowsQualityUpdateProfilesAsync();
-                }
-                if (selectedContent.Contains("Filters"))
-                {
-                    // Load Assignment Filters
-                    await LoadAllAssignmentFiltersToBeImportedAsync();
-                }
-                if (selectedContent.Contains("EntraGroups"))
-                {
-                    // Load Entra Groups
-                    await LoadGroupsOrchestrator();
-                }
-
-
-                // TODO - method to clean up ContentList if needed
+                // Load all selected content types using the registry
+                await LoadContentTypesAsync(graphServiceClient, selectedContentTypes, AppendToLog);
 
                 // Clean up content platform value (operating system names) in ContentList
                 foreach (var content in ContentList)
                 {
-                    var cleanedValue = TranslatePolicyPlatformName(content?.ContentPlatform); // Use the method to clean up the platform name
-                    content.ContentPlatform = cleanedValue ?? string.Empty; // Ensure no null values
-
+                    var cleanedValue = TranslatePolicyPlatformName(content?.ContentPlatform);
+                    content.ContentPlatform = cleanedValue ?? string.Empty;
                 }
-                // More cleanup as needed
 
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
@@ -345,99 +200,25 @@ namespace IntuneTools.Pages
                 // Clear the ContentList before loading new data
                 ContentList.Clear();
 
+                // Get the selected content types
+                var selectedContentTypes = GetSelectedContentTypes().ToList();
 
-                // Get the names of checked options
-                var selectedContent = GetCheckedOptionNames();
-
-                if (selectedContent.Count == 0)
+                if (selectedContentTypes.Count == 0)
                 {
                     // If no options are selected, show a message and return
-                    AppendToDetailsRichTextBlock("No content types selected for import.");
+                    AppendToLog("No content types selected for import.");
                     return;
                 }
 
-                if (selectedContent.Contains("SettingsCatalog"))
-                {
-                    // Load Settings Catalog policies
-                    await SearchForSettingsCatalogPoliciesAsync(searchQuery);
-                }
-                if (selectedContent.Contains("DeviceCompliance"))
-                {
-                    // Load Device Compliance policies
-                    await SearchForDeviceCompliancePoliciesAsync(searchQuery);
-                }
-                if (selectedContent.Contains("DeviceConfiguration"))
-                {
-                    // Load Device Configuration policies
-                    await SearchForDeviceConfigurationAsync(searchQuery);
-                }
-                if (selectedContent.Contains("AppleBYODEnrollmentProfile"))
-                {
-                    // Load Apple BYOD Enrollment Profiles
-                    await SearchForAppleBYODEnrollmentProfilesAsync(searchQuery);
-                }
-                if (selectedContent.Contains("PowerShellScript"))
-                {
-                    // Load PowerShell Scripts
-                    await SearchForPowerShellScriptsAsync(searchQuery);
-                }
-                if (selectedContent.Contains("ProactiveRemediation"))
-                {
-                    // Load Proactive Remediations
-                    await SearchForProactiveRemediationsAsync(searchQuery);
-                }
-                if (selectedContent.Contains("macOSShellScript"))
-                {
-                    // Load macOS Shell Scripts
-                    await SearchFormacOSShellScriptsAsync(searchQuery);
-                }
-                if (selectedContent.Contains("WindowsAutopilot"))
-                {
-                    // Load Windows AutoPilot Profiles
-                    await SearchForWindowsAutoPilotProfilesAsync(searchQuery);
-                }
-                if (selectedContent.Contains("WindowsDriverUpdate"))
-                {
-                    // Load Windows Driver Updates
-                    await SearchForWindowsDriverUpdatesAsync(searchQuery);
-                }
-                if (selectedContent.Contains("WindowsFeatureUpdate"))
-                {
-                    // Load Windows Feature Updates
-                    await SearchForWindowsFeatureUpdatesAsync(searchQuery);
-                }
-                if (selectedContent.Contains("WindowsQualityUpdatePolicy"))
-                {
-                    // Load Windows Quality Update policies
-                    await SearchForWindowsQualityUpdatePoliciesAsync(searchQuery);
-                }
-                if (selectedContent.Contains("WindowsQualityUpdateProfile"))
-                {
-                    // Load Windows Quality Update profiles
-                    await SearchForWindowsQualityUpdateProfilesAsync(searchQuery);
-                }
-                if (selectedContent.Contains("Filters"))
-                {
-                    // Load Assignment Filters
-                    await SearchForAssignmentFiltersAsync(searchQuery);
-                }
-                if (selectedContent.Contains("EntraGroups"))
-                {
-                    // Load Entra Groups
-                    await SearchForGroupsOrchestrator(searchQuery);
-                }
-
-
-                // TODO - method to clean up ContentList if needed
+                // Search all selected content types using the registry
+                await SearchContentTypesAsync(graphServiceClient, searchQuery, selectedContentTypes, AppendToLog);
 
                 // Clean up content platform value (operating system names) in ContentList
                 foreach (var content in ContentList)
                 {
-                    var cleanedValue = TranslatePolicyPlatformName(content?.ContentPlatform); // Use the method to clean up the platform name
-                    content.ContentPlatform = cleanedValue ?? string.Empty; // Ensure no null values
-
+                    var cleanedValue = TranslatePolicyPlatformName(content?.ContentPlatform);
+                    content.ContentPlatform = cleanedValue ?? string.Empty;
                 }
-                // More cleanup as needed
 
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
@@ -448,878 +229,16 @@ namespace IntuneTools.Pages
             }
         }
 
-        /// <summary>
-        ///  Settings catalog
-        /// </summary>
-        private async Task LoadAllSettingsCatalogPoliciesAsync()
-        {
-            ShowLoading("Loading settings catalog policies from Microsoft Graph...");
-            try
-            {
-                // Retrieve all settings catalog policies
-                var policies = await GetAllSettingsCatalogPolicies(sourceGraphServiceClient);
-                // Update ContentList for DataGrid
-                foreach (var policy in policies)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = policy.Name,
-                        ContentType = "Settings Catalog",
-                        ContentPlatform = policy.Platforms?.ToString() ?? string.Empty,
-                        ContentId = policy.Id
-                    });
-                }
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
+        // Note: LoadAllGroupsAsync, SearchForGroupsAsync, and LoadAllAssignmentFiltersAsync
+        // are kept because they are used for the secondary group/filter assignment controls
+        // and use destinationGraphServiceClient.
 
-        private async Task SearchForSettingsCatalogPoliciesAsync(string searchQuery)
-        {
-            ShowLoading("Loading settings catalog policies from Microsoft Graph...");
-            try
-            {
-                // Retrieve all settings catalog policies
-                var policies = await SearchForSettingsCatalog(sourceGraphServiceClient, searchQuery);
-                // Update ContentList for DataGrid
-                foreach (var policy in policies)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = policy.Name,
-                        ContentType = "Settings Catalog",
-                        ContentPlatform = policy.Platforms?.ToString() ?? string.Empty,
-                        ContentId = policy.Id
-                    });
-                }
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private List<string> GetSettingsCatalogIDs()
-        {
-            // This method retrieves the IDs of all settings catalog policies in ContentList
-            return ContentList
-                .Where(c => c.ContentType == "Settings Catalog")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
-
-        /// <summary>
-        /// Device Configuration policies
-        /// </summary>
-
-        private async Task LoadAllDeviceConfigurationPoliciesAsync()
-        {
-            ShowLoading("Loading device configuration policies from Microsoft Graph...");
-            try
-            {
-                // Retrieve all device configuration policies
-                var policies = await GetAllDeviceConfigurations(sourceGraphServiceClient);
-                // Update ContentList for DataGrid
-                foreach (var policy in policies)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = policy.DisplayName,
-                        ContentType = "Device Configuration Policy",
-                        ContentPlatform = policy.OdataType?.ToString() ?? string.Empty,
-                        ContentId = policy.Id
-                    });
-                }
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private async Task SearchForDeviceConfigurationAsync(string searchQuery)
-        {
-            ShowLoading("Loading settings catalog policies from Microsoft Graph...");
-            try
-            {
-                // Retrieve all settings catalog policies
-                var policies = await SearchForDeviceConfigurations(sourceGraphServiceClient, searchQuery);
-                // Update ContentList for DataGrid
-                foreach (var policy in policies)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = policy.DisplayName,
-                        ContentType = "Device Configuration",
-                        ContentPlatform = policy.OdataType?.ToString() ?? string.Empty,
-                        ContentId = policy.Id
-                    });
-                }
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private List<string> GetDeviceConfigurationIDs()
-        {
-            // This method retrieves the IDs of all device configuration policies in ContentList
-            return ContentList
-                .Where(c => c.ContentType == "Device Configuration Policy")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
-
-
-        /// <summary>
-        ///  Device compliance policies
-        /// </summary>
-        private async Task LoadAllDeviceCompliancePoliciesAsync()
-        {
-            ShowLoading("Loading device compliance policies from Microsoft Graph...");
-            try
-            {
-                // Retrieve all device compliance policies
-                var policies = await GetAllDeviceCompliancePolicies(sourceGraphServiceClient);
-                // Update ContentList for DataGrid
-                foreach (var policy in policies)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = policy.DisplayName,
-                        ContentType = "Device Compliance Policy",
-                        ContentPlatform = policy.OdataType?.ToString() ?? string.Empty,
-                        ContentId = policy.Id
-                    });
-                }
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-        private async Task SearchForDeviceCompliancePoliciesAsync(string searchQuery)
-        {
-            ShowLoading("Loading settings catalog policies from Microsoft Graph...");
-            try
-            {
-                // Retrieve all settings catalog policies
-                var policies = await SearchForDeviceCompliancePolicies(sourceGraphServiceClient, searchQuery);
-                // Update ContentList for DataGrid
-                foreach (var policy in policies)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = policy.DisplayName,
-                        ContentType = "Device Compliance",
-                        ContentPlatform = policy.OdataType?.ToString() ?? string.Empty,
-                        ContentId = policy.Id
-                    });
-                }
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-        private List<string> GetDeviceComplianceIDs()
-        {
-            // This method retrieves the IDs of all settings catalog policies in ContentList
-            return ContentList
-                .Where(c => c.ContentType == "Device Compliance Policy")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
-
-        /// <summary>
-        /// Apple BYOD Enrollment Profiles
-        /// </summary>
-
-        private async Task LoadAllAppleBYODEnrollmentProfilesAsync()
-        {
-            ShowLoading("Loading Apple BYOD Enrollment Profiles from Microsoft Graph...");
-            try
-            {
-                // Retrieve all Apple BYOD Enrollment Profiles
-                var profiles = await GetAllAppleBYODEnrollmentProfiles(sourceGraphServiceClient);
-                // Update ContentList for DataGrid
-                foreach (var profile in profiles)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = profile.DisplayName,
-                        ContentType = "Apple BYOD Enrollment Profile",
-                        ContentPlatform = "iOS",
-                        ContentId = profile.Id
-                    });
-                }
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-        private async Task SearchForAppleBYODEnrollmentProfilesAsync(string searchQuery)
-        {
-            ShowLoading("Loading Apple BYOD Enrollment Profiles from Microsoft Graph...");
-            try
-            {
-                // Retrieve all Apple BYOD Enrollment Profiles
-                var profiles = await SearchForAppleBYODEnrollmentProfiles(sourceGraphServiceClient, searchQuery);
-                // Update ContentList for DataGrid
-                foreach (var profile in profiles)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = profile.DisplayName,
-                        ContentType = "Apple BYOD Enrollment Profile",
-                        ContentPlatform = "iOS",
-                        ContentId = profile.Id
-                    });
-                }
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-        private List<string> GetAppleBYODEnrollmentProfileIDs()
-        {
-            // This method retrieves the IDs of all Apple BYOD Enrollment Profiles in ContentList
-            return ContentList
-                .Where(c => c.ContentType == "Apple BYOD Enrollment Profile")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
-
-
-        /// <summary>
-        /// PowerShell Scripts
-        /// </summary>
-
-        private async Task LoadAllPowerShellScriptsAsync()
-        {
-            ShowLoading("Loading PowerShell scripts from Microsoft Graph...");
-            try
-            {
-                // Retrieve all PowerShell scripts
-                var scripts = await GetAllPowerShellScripts(sourceGraphServiceClient);
-                // Update ContentList for DataGrid
-                foreach (var script in scripts)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = script.DisplayName,
-                        ContentType = "PowerShell Script",
-                        ContentPlatform = "Windows",
-                        ContentId = script.Id
-                    });
-                }
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private async Task SearchForPowerShellScriptsAsync(string searchQuery)
-        {
-            ShowLoading("Loading PowerShell scripts from Microsoft Graph...");
-            try
-            {
-                // Retrieve all PowerShell scripts
-                var scripts = await SearchForPowerShellScripts(sourceGraphServiceClient, searchQuery);
-                // Update ContentList for DataGrid
-                foreach (var script in scripts)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = script.DisplayName,
-                        ContentType = "PowerShell Script",
-                        ContentPlatform = "Windows",
-                        ContentId = script.Id
-                    });
-                }
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-        private List<string> GetPowerShellScriptIDs()
-        {
-            // This method retrieves the IDs of all PowerShell scripts in ContentList
-            return ContentList
-                .Where(c => c.ContentType == "PowerShell Script")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
-
-        /// <summary>
-        /// Proactive Remediations
-        /// </summary>
-
-        private async Task LoadAllProactiveRemediationsAsync()
-        {
-            ShowLoading("Loading proactive remediations from Microsoft Graph...");
-            try
-            {
-                // Retrieve all proactive remediations
-                var scripts = await GetAllProactiveRemediations(sourceGraphServiceClient);
-                // Update ContentList for DataGrid
-                foreach (var script in scripts)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = script.DisplayName,
-                        ContentType = "Proactive Remediation",
-                        ContentPlatform = "Windows",
-                        ContentId = script.Id
-                    });
-                }
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-        private async Task SearchForProactiveRemediationsAsync(string searchQuery)
-        {
-            ShowLoading("Loading proactive remediations from Microsoft Graph...");
-            try
-            {
-                // Retrieve all proactive remediations
-                var scripts = await SearchForProactiveRemediations(sourceGraphServiceClient, searchQuery);
-                // Update ContentList for DataGrid
-                foreach (var script in scripts)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = script.DisplayName,
-                        ContentType = "Proactive Remediation",
-                        ContentPlatform = "Windows",
-                        ContentId = script.Id
-                    });
-                }
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private List<string> GetProactiveRemediationIDs()
-        {
-            // This method retrieves the IDs of all proactive remediations in ContentList
-            return ContentList
-                .Where(c => c.ContentType == "Proactive Remediation")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
-
-        /// <summary>
-        /// macOS Shell Scripts
-        /// </summary>
-
-        private async Task LoadAllmacOSShellScriptsAsync()
-        {
-            ShowLoading("Loading macOS shell scripts from Microsoft Graph...");
-            try
-            {
-                // Retrieve all macOS shell scripts
-                var scripts = await GetAllmacOSShellScripts(sourceGraphServiceClient);
-                // Update ContentList for DataGrid
-                foreach (var script in scripts)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = script.DisplayName,
-                        ContentType = "macOS Shell Script",
-                        ContentPlatform = "macOS",
-                        ContentId = script.Id
-                    });
-                }
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-        private async Task SearchFormacOSShellScriptsAsync(string searchQuery)
-        {
-            ShowLoading("Loading macOS shell scripts from Microsoft Graph...");
-            try
-            {
-                // Retrieve all macOS shell scripts
-                var scripts = await SearchForShellScriptmacOS(sourceGraphServiceClient, searchQuery);
-                // Update ContentList for DataGrid
-                foreach (var script in scripts)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = script.DisplayName,
-                        ContentType = "macOS Shell Script",
-                        ContentPlatform = "macOS",
-                        ContentId = script.Id
-                    });
-                }
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private List<string> GetmacOSShellScriptIDs()
-        {
-            // This method retrieves the IDs of all macOS shell scripts in ContentList
-            return ContentList
-                .Where(c => c.ContentType == "macOS Shell Script")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
-
-        /// <summary>
-        /// Windows AutoPilot
-        /// </summary>
-
-        private async Task LoadAllWindowsAutoPilotProfilesAsync()
-        {
-            ShowLoading("Loading Windows AutoPilot profiles from Microsoft Graph...");
-            try
-            {
-                // Retrieve all Windows AutoPilot profiles
-                var profiles = await GetAllWindowsAutoPilotProfiles(sourceGraphServiceClient);
-                // Update ContentList for DataGrid
-                foreach (var profile in profiles)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = profile.DisplayName,
-                        ContentType = "Windows AutoPilot Profile",
-                        ContentPlatform = "Windows",
-                        ContentId = profile.Id
-                    });
-                }
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-        private async Task SearchForWindowsAutoPilotProfilesAsync(string searchQuery)
-        {
-            ShowLoading("Loading Windows AutoPilot profiles from Microsoft Graph...");
-            try
-            {
-                // Retrieve all Windows AutoPilot profiles
-                var profiles = await SearchForWindowsAutoPilotProfiles(sourceGraphServiceClient, searchQuery);
-                // Update ContentList for DataGrid
-                foreach (var profile in profiles)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = profile.DisplayName,
-                        ContentType = "Windows AutoPilot Profile",
-                        ContentPlatform = "Windows",
-                        ContentId = profile.Id
-                    });
-                }
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private List<string> GetWindowsAutoPilotProfileIDs()
-        {
-            // This method retrieves the IDs of all Windows AutoPilot profiles in ContentList
-            return ContentList
-                .Where(c => c.ContentType == "Windows AutoPilot Profile")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
-
-        /// <summary>
-        /// Windows Driver Updates
-        /// </summary>
-
-        private async Task LoadAllWindowsDriverUpdatesAsync()
-        {
-            ShowLoading("Loading Windows Driver Updates from Microsoft Graph...");
-            try
-            {
-                // Retrieve all Windows Driver Updates
-                var updates = await GetAllDriverProfiles(sourceGraphServiceClient);
-                // Update ContentList for DataGrid
-                foreach (var update in updates)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = update.DisplayName,
-                        ContentType = "Windows Driver Update",
-                        ContentPlatform = "Windows",
-                        ContentId = update.Id
-                    });
-                }
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-        private async Task SearchForWindowsDriverUpdatesAsync(string searchQuery)
-        {
-            ShowLoading("Loading Windows Driver Updates from Microsoft Graph...");
-            try
-            {
-                // Retrieve all Windows Driver Updates
-                var updates = await SearchForDriverProfiles(sourceGraphServiceClient, searchQuery);
-                // Update ContentList for DataGrid
-                foreach (var update in updates)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = update.DisplayName,
-                        ContentType = "Windows Driver Update",
-                        ContentPlatform = "Windows",
-                        ContentId = update.Id
-                    });
-                }
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private List<string> GetWindowsDriverUpdateIDs()
-        {
-            // This method retrieves the IDs of all Windows Driver Updates in ContentList
-            return ContentList
-                .Where(c => c.ContentType == "Windows Driver Update")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
-
-        /// <summary>
-        /// Windows Feature Updates
-        /// </summary>
-
-        private async Task LoadAllWindowsFeatureUpdatesAsync()
-        {
-            ShowLoading("Loading Windows Feature Updates from Microsoft Graph...");
-            try
-            {
-                // Retrieve all Windows Feature Updates
-                var updates = await GetAllWindowsFeatureUpdateProfiles(sourceGraphServiceClient);
-                // Update ContentList for DataGrid
-                foreach (var update in updates)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = update.DisplayName,
-                        ContentType = "Windows Feature Update",
-                        ContentPlatform = "Windows",
-                        ContentId = update.Id
-                    });
-                }
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-        private async Task SearchForWindowsFeatureUpdatesAsync(string searchQuery)
-        {
-            ShowLoading("Loading Windows Feature Updates from Microsoft Graph...");
-            try
-            {
-                // Retrieve all Windows Feature Updates
-                var updates = await SearchForWindowsFeatureUpdateProfiles(sourceGraphServiceClient, searchQuery);
-                // Update ContentList for DataGrid
-                foreach (var update in updates)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = update.DisplayName,
-                        ContentType = "Windows Feature Update",
-                        ContentPlatform = "Windows",
-                        ContentId = update.Id
-                    });
-                }
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private List<string> GetWindowsFeatureUpdateIDs()
-        {
-            // This method retrieves the IDs of all Windows Feature Updates in ContentList
-            return ContentList
-                .Where(c => c.ContentType == "Windows Feature Update")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
-
-        /// <summary>
-        /// Windows Quality Update policies
-        /// Must not be confused with Windows quality update profiles AKA expedite
-        /// </summary>
-
-        private async Task LoadAllWindowsQualityUpdatePoliciesAsync()
-        {
-            ShowLoading("Loading Windows Quality Update policies from Microsoft Graph...");
-            try
-            {
-                // Retrieve all Windows Quality Update policies
-                var policies = await GetAllWindowsQualityUpdatePolicies(sourceGraphServiceClient);
-                // Update ContentList for DataGrid
-                foreach (var policy in policies)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = policy.DisplayName,
-                        ContentType = "Windows Quality Update Policy",
-                        ContentPlatform = "Windows",
-                        ContentId = policy.Id
-                    });
-                }
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-        private async Task SearchForWindowsQualityUpdatePoliciesAsync(string searchQuery)
-        {
-            ShowLoading("Loading Windows Quality Update policies from Microsoft Graph...");
-            try
-            {
-                // Retrieve all Windows Quality Update policies
-                var policies = await SearchForWindowsQualityUpdatePolicies(sourceGraphServiceClient, searchQuery);
-                // Update ContentList for DataGrid
-                foreach (var policy in policies)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = policy.DisplayName,
-                        ContentType = "Windows Quality Update Policy",
-                        ContentPlatform = "Windows",
-                        ContentId = policy.Id
-                    });
-                }
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private List<string> GetWindowsQualityUpdatePolicyIDs()
-        {
-            // This method retrieves the IDs of all Windows Quality Update policies in ContentList
-            return ContentList
-                .Where(c => c.ContentType == "Windows Quality Update Policy")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
-
-        /// <summary
-        /// Windows Quality Update profiles
-        /// Must not be confused with Windows quality update policies AKA hotpatch
-        /// </summary>
-
-        private async Task LoadAllWindowsQualityUpdateProfilesAsync()
-        {
-            ShowLoading("Loading Windows Quality Update profiles from Microsoft Graph...");
-            try
-            {
-                // Retrieve all Windows Quality Update profiles
-                var profiles = await GetAllWindowsQualityUpdateProfiles(sourceGraphServiceClient);
-                // Update ContentList for DataGrid
-                foreach (var profile in profiles)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = profile.DisplayName,
-                        ContentType = "Windows Quality Update Profile",
-                        ContentPlatform = "Windows",
-                        ContentId = profile.Id
-                    });
-                }
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-        private async Task SearchForWindowsQualityUpdateProfilesAsync(string searchQuery)
-        {
-            ShowLoading("Loading Windows Quality Update profiles from Microsoft Graph...");
-            try
-            {
-                // Retrieve all Windows Quality Update profiles
-                var profiles = await SearchForWindowsQualityUpdateProfiles(sourceGraphServiceClient, searchQuery);
-                // Update ContentList for DataGrid
-                foreach (var profile in profiles)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = profile.DisplayName,
-                        ContentType = "Windows Quality Update Profile",
-                        ContentPlatform = "Windows",
-                        ContentId = profile.Id
-                    });
-                }
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private List<string> GetWindowsQualityUpdateProfileIDs()
-        {
-            // This method retrieves the IDs of all Windows Quality Update profiles in ContentList
-            return ContentList
-                .Where(c => c.ContentType == "Windows Quality Update Profile")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
-
-        /// <summary
-        /// Groups
-        /// </summary>
-
-        private async Task LoadGroupsOrchestrator()
-        {
-            ShowLoading("Loading groups from Microsoft Graph...");
-            try
-            {
-                // Clear the GroupList before loading new data
-                GroupList.Clear();
-                // Load all groups from Graph API
-                var groups = await GetAllGroups(sourceGraphServiceClient);
-                // Update GroupList for DataGrid
-                foreach (var group in groups)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentId = group.Id,
-                        ContentName = group.DisplayName,
-                        ContentType = "Entra Group",
-                        ContentPlatform = group.GroupTypes != null && group.GroupTypes.Contains("Unified") ? "Microsoft 365 Group" : "Security Group"
-                    });
-                }
-                // Bind to DataGrid
-                GroupDataGrid.ItemsSource = GroupList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-        private async Task SearchForGroupsOrchestrator(string searchQuery)
-        {
-            ShowLoading("Searching for groups in Microsoft Graph...");
-            try
-            {
-                // Clear the GroupList before loading new data
-                GroupList.Clear();
-                // Search for groups using the provided query
-                var groups = await SearchForGroups(sourceGraphServiceClient, searchQuery);
-                // Update GroupList for DataGrid
-                foreach (var group in groups)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentId = group.Id,
-                        ContentName = group.DisplayName,
-                        ContentType = "Entra Group",
-                        ContentPlatform = group.GroupTypes != null && group.GroupTypes.Contains("Unified") ? "Microsoft 365 Group" : "Security Group"
-                    });
-                }
-                // Bind to DataGrid
-                GroupDataGrid.ItemsSource = GroupList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-        private List<string> GetGroupIDs()
-        {
-            // This method retrieves the IDs of all groups in GroupList
-            return ContentList
-                .Where(c => c.ContentType == "Entra Group")
-                .Select(g => g.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
         private async Task SearchForGroupsAsync(string searchQuery)
         {
-            // Clear the GroupList before loading new data
             GroupList.Clear();
-
             ShowLoading("Searching for groups in Microsoft Graph...");
             try
             {
-                // Clear the GroupList before loading new data
-                GroupList.Clear();
                 // Search for groups using the provided query
                 var groups = await SearchForGroups(destinationGraphServiceClient, searchQuery);
                 // Update GroupList for DataGrid
@@ -1368,80 +287,9 @@ namespace IntuneTools.Pages
 
 
         /// <summary>
-        /// Assignment filters
+        /// Assignment filters for the destination tenant filter selection.
+        /// This is separate from the source content loading and uses destinationGraphServiceClient.
         /// </summary>
-
-        private async Task LoadAllAssignmentFiltersToBeImportedAsync()
-        {
-            // Clear the dictionary for filter names and IDs
-            filterNameAndID.Clear();
-            ShowLoading("Loading assignment filters from Microsoft Graph...");
-            try
-            {
-                // Clear existing filter options
-                FilterOptions.Clear();
-                // Retrieve all assignment filters
-                var filters = await GetAllAssignmentFilters(sourceGraphServiceClient);
-                // Update FilterOptions for ComboBox
-                foreach (var filter in filters)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = filter.DisplayName,
-                        ContentType = "Assignment filter",
-                        ContentPlatform = filter.Platform.ToString() ?? string.Empty,
-                        ContentId = filter.Id
-                    });
-                }
-
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-        private async Task SearchForAssignmentFiltersAsync(string searchQuery)
-        {
-            // Clear the dictionary for filter names and IDs
-            filterNameAndID.Clear();
-            ShowLoading("Searching for assignment filters in Microsoft Graph...");
-            try
-            {
-                // Clear existing filter options
-                FilterOptions.Clear();
-                // Retrieve all assignment filters
-                var filters = await SearchForAssignmentFilters(sourceGraphServiceClient, searchQuery);
-                // Update FilterOptions for ComboBox
-                foreach (var filter in filters)
-                {
-                    ContentList.Add(new ContentInfo
-                    {
-                        ContentName = filter.DisplayName,
-                        ContentType = "Assignment filter",
-                        ContentPlatform = filter.Platform.ToString() ?? string.Empty,
-                        ContentId = filter.Id
-                    });
-                }
-                // Bind to DataGrid
-                ContentDataGrid.ItemsSource = ContentList;
-            }
-            finally
-            {
-                HideLoading();
-            }
-        }
-
-        private List<string> GetFilterIDs()
-        {
-            // This method retrieves the IDs of all device configuration policies in ContentList
-            return ContentList
-                .Where(c => c.ContentType == "Assignment filter")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
-
         private async Task LoadAllAssignmentFiltersAsync()
         {
             // Clear the dictionary for filter names and IDs
@@ -1475,8 +323,88 @@ namespace IntuneTools.Pages
             }
         }
 
+        #endregion
 
+        #region Import Logic
 
+        /// <summary>
+        /// Gets the registry of all import type definitions.
+        /// </summary>
+        private IEnumerable<ImportTypeDefinition> GetImportTypeRegistry(
+            bool isGroupSelected,
+            bool isFilterSelected,
+            List<string> groupIds)
+        {
+            yield return new ImportTypeDefinition(
+                ContentTypes.EntraGroup,
+                "Entra Groups",
+                async (ids, _) => await ImportMultipleGroups(sourceGraphServiceClient, destinationGraphServiceClient, ids));
+
+            yield return new ImportTypeDefinition(
+                ContentTypes.SettingsCatalog,
+                "Settings Catalog policies",
+                async (ids, grpIds) => await ImportMultipleSettingsCatalog(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+
+            yield return new ImportTypeDefinition(
+                ContentTypes.DeviceCompliancePolicy,
+                "Device Compliance policies",
+                async (ids, grpIds) => await ImportMultipleDeviceCompliancePolicies(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+
+            yield return new ImportTypeDefinition(
+                ContentTypes.DeviceConfigurationPolicy,
+                "Device Configuration policies",
+                async (ids, grpIds) => await ImportMultipleDeviceConfigurations(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+
+            yield return new ImportTypeDefinition(
+                ContentTypes.AppleBYODEnrollmentProfile,
+                "Apple BYOD Enrollment Profiles",
+                async (ids, grpIds) => await ImportMultipleAppleBYODEnrollmentProfiles(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+
+            yield return new ImportTypeDefinition(
+                ContentTypes.AssignmentFilter,
+                "Assignment Filters",
+                async (ids, _) => await ImportMultipleAssignmentFilters(sourceGraphServiceClient, destinationGraphServiceClient, ids));
+
+            yield return new ImportTypeDefinition(
+                ContentTypes.PowerShellScript,
+                "PowerShell Scripts",
+                async (ids, grpIds) => await ImportMultiplePowerShellScripts(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+
+            yield return new ImportTypeDefinition(
+                ContentTypes.ProactiveRemediation,
+                "Proactive Remediations",
+                async (ids, grpIds) => await ImportMultipleProactiveRemediations(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+
+            yield return new ImportTypeDefinition(
+                ContentTypes.MacOSShellScript,
+                "macOS Shell Scripts",
+                async (ids, grpIds) => await ImportMultiplemacOSShellScripts(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+
+            yield return new ImportTypeDefinition(
+                ContentTypes.WindowsAutoPilotProfile,
+                "Windows AutoPilot Profiles",
+                async (ids, grpIds) => await ImportMultipleWindowsAutoPilotProfiles(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+
+            yield return new ImportTypeDefinition(
+                ContentTypes.WindowsDriverUpdate,
+                "Windows Driver Updates",
+                async (ids, grpIds) => await ImportMultipleDriverProfiles(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+
+            yield return new ImportTypeDefinition(
+                ContentTypes.WindowsFeatureUpdate,
+                "Windows Feature Updates",
+                async (ids, grpIds) => await ImportMultipleWindowsFeatureUpdateProfiles(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+
+            yield return new ImportTypeDefinition(
+                ContentTypes.WindowsQualityUpdatePolicy,
+                "Windows Quality Update Policies",
+                async (ids, grpIds) => await ImportMultipleWindowsQualityUpdatePolicies(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+
+            yield return new ImportTypeDefinition(
+                ContentTypes.WindowsQualityUpdateProfile,
+                "Windows Quality Update Profiles",
+                async (ids, grpIds) => await ImportMultipleWindowsQualityUpdateProfiles(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+        }
 
         /// <summary>
         /// Main import process
@@ -1485,7 +413,7 @@ namespace IntuneTools.Pages
         private List<string> LogContentToImport()
         {
             LogToFunctionFile(appFunction.Main, "Importing the following content:", LogLevels.Info);
-            AppendToDetailsRichTextBlock("Importing the following content:\n");
+            AppendToLog("Importing the following content:\n");
 
             List<string> contentTypes = new List<string>();
 
@@ -1496,12 +424,12 @@ namespace IntuneTools.Pages
                 {
                     contentTypes.Add(content.ContentType);
                     LogToFunctionFile(appFunction.Main, $"- {content.ContentType}", LogLevels.Info);
-                    AppendToDetailsRichTextBlock($"- {content.ContentType}\n");
+                    AppendToLog($"- {content.ContentType}\n");
                 }
             }
 
             LogToFunctionFile(appFunction.Main, "--------------------------------------------------", LogLevels.Info);
-            AppendToDetailsRichTextBlock("--------------------------------------------------\n");
+            AppendToLog("--------------------------------------------------\n");
             return contentTypes;
         }
 
@@ -1511,7 +439,7 @@ namespace IntuneTools.Pages
             IsGroupSelected = false; // Reset group selection status
 
             LogToFunctionFile(appFunction.Main, "Assigning to the following groups:", LogLevels.Info);
-            AppendToDetailsRichTextBlock("Assigning to the following groups:\n");
+            AppendToLog("Assigning to the following groups:\n");
             if (GroupDataGrid.SelectedItems != null && GroupDataGrid.SelectedItems.Count > 0)
             {
                 foreach (GroupInfo selectedGroup in GroupDataGrid.SelectedItems)
@@ -1519,7 +447,7 @@ namespace IntuneTools.Pages
                     if (selectedGroup != null && !string.IsNullOrEmpty(selectedGroup.GroupName))
                     {
                         LogToFunctionFile(appFunction.Main, $"- {selectedGroup.GroupName}", LogLevels.Info);
-                        AppendToDetailsRichTextBlock($"- {selectedGroup.GroupName}\n");
+                        AppendToLog($"- {selectedGroup.GroupName}\n");
                         // Add the group name and ID to the selectedGroupNameAndID dictionary
                         if (!selectedGroupNameAndID.ContainsKey(selectedGroup.GroupName))
                         {
@@ -1532,10 +460,10 @@ namespace IntuneTools.Pages
             else
             {
                 LogToFunctionFile(appFunction.Main, "No groups selected for assignment.", LogLevels.Info);
-                AppendToDetailsRichTextBlock("No groups selected for assignment.\n");
+                AppendToLog("No groups selected for assignment.\n");
             }
             LogToFunctionFile(appFunction.Main, "--------------------------------------------------", LogLevels.Info);
-            AppendToDetailsRichTextBlock("--------------------------------------------------\n");
+            AppendToLog("--------------------------------------------------\n");
         }
 
         private void LogFiltersToBeApplied()
@@ -1543,7 +471,7 @@ namespace IntuneTools.Pages
             IsFilterSelected = false; // Reset filter selection status
 
             LogToFunctionFile(appFunction.Main, "Applying the following filters:", LogLevels.Info);
-            AppendToDetailsRichTextBlock("Applying the following filters:\n");
+            AppendToLog("Applying the following filters:\n");
             if (FilterSelectionComboBox.SelectedItem != null)
             {
                 string selectedFilter = FilterSelectionComboBox.SelectedItem.ToString();
@@ -1552,40 +480,77 @@ namespace IntuneTools.Pages
                 deviceAndAppManagementAssignmentFilterType = DeviceAndAppManagementAssignmentFilterType.Include;
 
                 LogToFunctionFile(appFunction.Main, $"- {selectedFilter}", LogLevels.Info);
-                AppendToDetailsRichTextBlock($"- {selectedFilter}\n");
+                AppendToLog($"- {selectedFilter}\n");
                 IsFilterSelected = true; // Set filter selection status to true if a filter is selected
             }
             else
             {
                 LogToFunctionFile(appFunction.Main, "No filter selected for assignment.", LogLevels.Info);
-                AppendToDetailsRichTextBlock("No filter selected for assignment.\n");
+                AppendToLog("No filter selected for assignment.\n");
             }
             LogToFunctionFile(appFunction.Main, "--------------------------------------------------", LogLevels.Info);
-            AppendToDetailsRichTextBlock("--------------------------------------------------\n");
+            AppendToLog("--------------------------------------------------\n");
         }
 
 
         private async Task MainImportProcess()
         {
-            AppendToDetailsRichTextBlock("Starting import process...\n");
+            AppendToLog("Starting import process...\n");
 
             // Check if there is content to import
             if (ContentList.Count == 0)
             {
                 LogToFunctionFile(appFunction.Main, "No content to import.", LogLevels.Warning);
-                AppendToDetailsRichTextBlock("No content to import.\n");
+                AppendToLog("No content to import.\n");
                 return;
             }
 
+            // Bulk operation safeguard: warn when importing 10 or more items
+            if (ContentList.Count >= 10)
+            {
+                var bulkWarning = new ContentDialog
+                {
+                    Title = "\u26A0 Large Bulk Import",
+                    Content = $"You are about to import {ContentList.Count} items. Are you sure you want to continue?",
+                    PrimaryButtonText = "Continue",
+                    CloseButtonText = "Cancel",
+                    DefaultButton = ContentDialogButton.Close,
+                    XamlRoot = this.XamlRoot
+                };
 
+                var bulkResult = await bulkWarning.ShowAsync();
+                if (bulkResult != ContentDialogResult.Primary)
+                {
+                    AppendToLog("Bulk import cancelled by user.");
+                    return;
+                }
+            }
+
+            // Initialize progress tracking
+            _importCurrent = 0;
+            _importSuccessCount = 0;
+            _importErrorCount = 0;
+
+            // Extract group IDs into a list for later use
+            List<string> groupIds = selectedGroupNameAndID
+                .Where(g => !string.IsNullOrEmpty(g.Value))
+                .Select(g => g.Value)
+                .ToList();
+
+            // Get import registry with current group/filter selection state
+            var importRegistry = GetImportTypeRegistry(IsGroupSelected, IsFilterSelected, groupIds).ToList();
+
+            // Count total content types to import
+            _importTotal = importRegistry.Count(def => HasContentType(def.TypeKey));
+
+            ShowOperationProgress("Starting import...", 0, _importTotal);
 
             // Log the start of the import process
             LogToFunctionFile(appFunction.Main, "Starting import process...", LogLevels.Info);
             LogToFunctionFile(appFunction.Main, $"Source Tenant: {sourceTenantName}", LogLevels.Info);
             LogToFunctionFile(appFunction.Main, $"Destination Tenant: {destinationTenantName}", LogLevels.Info);
-            AppendToDetailsRichTextBlock($"Source Tenant: {sourceTenantName}\n");
-            AppendToDetailsRichTextBlock($"Destination Tenant: {destinationTenantName}\n");
-
+            AppendToLog($"Source Tenant: {sourceTenantName}\n");
+            AppendToLog($"Destination Tenant: {destinationTenantName}\n");
 
             // Log what content is being imported
             var contentList = LogContentToImport();
@@ -1596,210 +561,61 @@ namespace IntuneTools.Pages
             // Log which filter(s) are being applied
             LogFiltersToBeApplied();
 
-            // Extract group IDs into a list for later use
-            List<string> groupIDs = new List<string>();
-            foreach (var group in selectedGroupNameAndID)
+            // Perform the import process using the registry
+            foreach (var definition in importRegistry)
             {
-                if (!string.IsNullOrEmpty(group.Value))
+                if (!HasContentType(definition.TypeKey))
+                    continue;
+
+                _importCurrent++;
+                ShowOperationProgress($"Importing {definition.DisplayName}...", _importCurrent, _importTotal);
+
+                try
                 {
-                    groupIDs.Add(group.Value); // Add the group ID to the list
+                    AppendToLog($"Importing {definition.DisplayName}...\n");
+                    LogToFunctionFile(appFunction.Main, $"Importing {definition.DisplayName}...", LogLevels.Info);
+
+                    var contentIds = GetContentIdsByType(definition.TypeKey);
+                    await definition.ImportAsync(contentIds, groupIds);
+
+                    AppendToLog($"{definition.DisplayName} imported successfully.\n");
+                    _importSuccessCount++;
+                }
+                catch (Exception ex)
+                {
+                    AppendToLog($"Error importing {definition.DisplayName}: {ex.Message}\n");
+                    LogToFunctionFile(appFunction.Main, $"Error importing {definition.DisplayName}: {ex.Message}", LogLevels.Error);
+                    _importErrorCount++;
                 }
             }
 
-            // Perform the import process
-
-            // TODO  - Check that all info is available before proceeding with the import
-
-            if (ContentList.Any(c => c.ContentType == "Entra Group"))
+            // Show final status
+            if (_importErrorCount == 0)
             {
-                // Import Entra Groups
-                AppendToDetailsRichTextBlock("Importing Entra Groups...\n");
-                LogToFunctionFile(appFunction.Main, "Importing Entra Groups...", LogLevels.Info);
-                var groups = GetGroupIDs();
-                await ImportMultipleGroups(sourceGraphServiceClient, destinationGraphServiceClient, groups);
-                AppendToDetailsRichTextBlock("Entra Groups imported successfully.\n");
-            }
-            if (ContentList.Any(c => c.ContentType == "Settings Catalog"))
-            {
-                // Import Settings Catalog policies
-                AppendToDetailsRichTextBlock("Importing Settings Catalog policies...\n");
-                LogToFunctionFile(appFunction.Main, "Importing Settings Catalog policies...", LogLevels.Info);
-                var policies = GetSettingsCatalogIDs();
-                await ImportMultipleSettingsCatalog(sourceGraphServiceClient, destinationGraphServiceClient, policies, IsGroupSelected, IsFilterSelected, groupIDs);
-                AppendToDetailsRichTextBlock("Settings Catalog policies imported successfully.\n");
-            }
-            if (ContentList.Any(c => c.ContentType == "Device Compliance Policy"))
-            {
-                // Import Device Compliance policies
-                AppendToDetailsRichTextBlock("Importing Device Compliance policies...\n");
-                LogToFunctionFile(appFunction.Main, "Importing Device Compliance policies...", LogLevels.Info);
-                var policies = GetDeviceComplianceIDs();
-                await ImportMultipleDeviceCompliancePolicies(sourceGraphServiceClient, destinationGraphServiceClient, policies, IsGroupSelected, IsFilterSelected, groupIDs);
-                AppendToDetailsRichTextBlock("Device Compliance policies imported successfully.\n");
-            }
-            if (ContentList.Any(c => c.ContentType == "Device Configuration Policy"))
-            {
-                // Import Device Configuration policies
-                AppendToDetailsRichTextBlock("Importing Device Configuration policies...\n");
-                LogToFunctionFile(appFunction.Main, "Importing Device Configuration policies...", LogLevels.Info);
-                var policies = GetDeviceConfigurationIDs();
-                await ImportMultipleDeviceConfigurations(sourceGraphServiceClient, destinationGraphServiceClient, policies, IsGroupSelected, IsFilterSelected, groupIDs);
-                AppendToDetailsRichTextBlock("Device Configuration policies imported successfully.\n");
-            }
-            if (ContentList.Any(c => c.ContentType == "Apple BYOD Enrollment Profile"))
-            {
-                // Import Apple BYOD Enrollment Profiles
-                AppendToDetailsRichTextBlock("Importing Apple BYOD Enrollment Profiles...\n");
-                LogToFunctionFile(appFunction.Main, "Importing Apple BYOD Enrollment Profiles...", LogLevels.Info);
-                var profiles = GetAppleBYODEnrollmentProfileIDs();
-                await ImportMultipleAppleBYODEnrollmentProfiles(sourceGraphServiceClient, destinationGraphServiceClient, profiles, IsGroupSelected, IsFilterSelected, groupIDs);
-                AppendToDetailsRichTextBlock("Apple BYOD Enrollment Profiles imported successfully.\n");
-            }
-            if (ContentList.Any(c => c.ContentType == "Assignment filter"))
-            {
-                // Import Assignment Filters
-                AppendToDetailsRichTextBlock("Importing Assignment Filters...\n");
-                LogToFunctionFile(appFunction.Main, "Importing Assignment Filters...", LogLevels.Info);
-                var filters = GetFilterIDs();
-                await ImportMultipleAssignmentFilters(sourceGraphServiceClient, destinationGraphServiceClient, filters);
-                AppendToDetailsRichTextBlock("Assignment Filters imported successfully.\n");
-            }
-            if (ContentList.Any(c => c.ContentType == "PowerShell Script"))
-            {
-                // Import PowerShell Scripts
-                AppendToDetailsRichTextBlock("Importing PowerShell Scripts...\n");
-                LogToFunctionFile(appFunction.Main, "Importing PowerShell Scripts...", LogLevels.Info);
-                var scripts = GetPowerShellScriptIDs();
-                await ImportMultiplePowerShellScripts(sourceGraphServiceClient, destinationGraphServiceClient, scripts, IsGroupSelected, IsFilterSelected, groupIDs);
-                AppendToDetailsRichTextBlock("PowerShell Scripts imported successfully.\n");
-            }
-            if (ContentList.Any(c => c.ContentType == "Proactive Remediation"))
-            {
-                // Import Proactive Remediations
-                AppendToDetailsRichTextBlock("Importing Proactive Remediations...\n");
-                LogToFunctionFile(appFunction.Main, "Importing Proactive Remediations...", LogLevels.Info);
-                var scripts = GetProactiveRemediationIDs();
-                await ImportMultipleProactiveRemediations(sourceGraphServiceClient, destinationGraphServiceClient, scripts, IsGroupSelected, IsFilterSelected, groupIDs);
-                AppendToDetailsRichTextBlock("Proactive Remediations imported successfully.\n");
-            }
-            if (ContentList.Any(c => c.ContentType == "macOS Shell Script"))
-            {
-                // Import macOS Shell Scripts
-                AppendToDetailsRichTextBlock("Importing macOS Shell Scripts...\n");
-                LogToFunctionFile(appFunction.Main, "Importing macOS Shell Scripts...", LogLevels.Info);
-                var scripts = GetmacOSShellScriptIDs();
-                await ImportMultiplemacOSShellScripts(sourceGraphServiceClient, destinationGraphServiceClient, scripts, IsGroupSelected, IsFilterSelected, groupIDs);
-                AppendToDetailsRichTextBlock("macOS Shell Scripts imported successfully.\n");
-            }
-            if (ContentList.Any(c => c.ContentType == "Windows AutoPilot Profile"))
-            {
-                // Import Windows AutoPilot Profiles
-                AppendToDetailsRichTextBlock("Importing Windows AutoPilot Profiles...\n");
-                LogToFunctionFile(appFunction.Main, "Importing Windows AutoPilot Profiles...", LogLevels.Info);
-                var profiles = GetWindowsAutoPilotProfileIDs();
-                await ImportMultipleWindowsAutoPilotProfiles(sourceGraphServiceClient, destinationGraphServiceClient, profiles, IsGroupSelected, IsFilterSelected, groupIDs);
-                AppendToDetailsRichTextBlock("Windows AutoPilot Profiles imported successfully.\n");
-            }
-            if (ContentList.Any(c => c.ContentType == "Windows Driver Update"))
-            {
-                // Import Windows Driver Updates
-                AppendToDetailsRichTextBlock("Importing Windows Driver Updates...\n");
-                LogToFunctionFile(appFunction.Main, "Importing Windows Driver Updates...", LogLevels.Info);
-                var updates = GetWindowsDriverUpdateIDs();
-                await ImportMultipleDriverProfiles(sourceGraphServiceClient, destinationGraphServiceClient, updates, IsGroupSelected, IsFilterSelected, groupIDs);
-                AppendToDetailsRichTextBlock("Windows Driver Updates imported successfully.\n");
-            }
-            if (ContentList.Any(c => c.ContentType == "Windows Feature Update"))
-            {
-                // Import Windows Feature Updates
-                AppendToDetailsRichTextBlock("Importing Windows Feature Updates...\n");
-                LogToFunctionFile(appFunction.Main, "Importing Windows Feature Updates...", LogLevels.Info);
-                var updates = GetWindowsFeatureUpdateIDs();
-                await ImportMultipleWindowsFeatureUpdateProfiles(sourceGraphServiceClient, destinationGraphServiceClient, updates, IsGroupSelected, IsFilterSelected, groupIDs);
-                AppendToDetailsRichTextBlock("Windows Feature Updates imported successfully.\n");
-            }
-            if (ContentList.Any(c => c.ContentType == "Windows Quality Update Policy"))
-            {
-                // Import Windows Quality Update Policies
-                AppendToDetailsRichTextBlock("Importing Windows Quality Update Policies...\n");
-                LogToFunctionFile(appFunction.Main, "Importing Windows Quality Update Policies...", LogLevels.Info);
-                var policies = GetWindowsQualityUpdatePolicyIDs();
-                await ImportMultipleWindowsQualityUpdatePolicies(sourceGraphServiceClient, destinationGraphServiceClient, policies, IsGroupSelected, IsFilterSelected, groupIDs);
-                AppendToDetailsRichTextBlock("Windows Quality Update Policies imported successfully.\n");
-            }
-            if (ContentList.Any(c => c.ContentType == "Windows Quality Update Profile"))
-            {
-                // Import Windows Quality Update Profiles
-                AppendToDetailsRichTextBlock("Importing Windows Quality Update Profiles...\n");
-                LogToFunctionFile(appFunction.Main, "Importing Windows Quality Update Profiles...", LogLevels.Info);
-                var profiles = GetWindowsQualityUpdateProfileIDs();
-                await ImportMultipleWindowsQualityUpdateProfiles(sourceGraphServiceClient, destinationGraphServiceClient, profiles, IsGroupSelected, IsFilterSelected, groupIDs);
-                AppendToDetailsRichTextBlock("Windows Quality Update Profiles imported successfully.\n");
-            }
-
-            AppendToDetailsRichTextBlock("Import process finished.\n");
-        }
-
-
-
-        /// BUTTON HANDLERS ///
-        /// Buttons should be defined in the XAML file and linked to these methods.
-        /// Buttons should call other methods to perform specific actions.
-        /// Buttons should not directly perform actions themselves.
-        private async void ImportButton_Click(object sender, RoutedEventArgs e)
-        {
-            await MainImportProcess();
-        }
-        private async void SearchButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (!string.IsNullOrEmpty(SearchQueryTextBox.Text))
-            {
-                await SearchOrchestrator(sourceGraphServiceClient, SearchQueryTextBox.Text);
+                ShowOperationSuccess($"Import completed: {_importSuccessCount} content type(s) imported successfully");
             }
             else
             {
-                AppendToDetailsRichTextBlock("Search query cannot be empty.");
+                ShowOperationError($"Import completed with errors: {_importSuccessCount} succeeded, {_importErrorCount} failed");
             }
-        }
-        private async void ListAllButton_Click(object sender, RoutedEventArgs e)
-        {
-            // This method is called when the "List All" button is clicked
-            await ListAllOrchestrator(sourceGraphServiceClient);
+
+            AppendToLog("Import process finished.\n");
         }
 
-        private async void GroupListAllClick(object sender, RoutedEventArgs e)
-        {
-            // This method is called when the "List All Groups" button is clicked
-            await LoadAllGroupsAsync();
-        }
+        #endregion
 
-        private async void GroupSearchClick(object sender, RoutedEventArgs e)
-        {
-            // This method is called when the "Search Groups" button is clicked
-            await SearchForGroupsAsync(GroupSearchTextBox.Text);
-        }
-
-        private async void FilterCheckBoxClick(object sender, RoutedEventArgs e)
-        {
-            // This method is called when the "List All Assignment Filters" button is clicked
-            await LoadAllAssignmentFiltersAsync();
-            NewControlsPanel.Visibility = Visibility.Visible;
-            GroupsCheckBox.IsChecked = true;
-        }
+        #region Event Handlers
 
         private void ClearAllButton_Click(object sender, RoutedEventArgs e)
         {
-            // Clear all items from ContentList, which will update the DataGrid
             ContentList.Clear();
         }
 
         private void ClearSelectedButton_Click(object sender, RoutedEventArgs e)
         {
-            // Remove only the selected items from ContentList
             if (ContentDataGrid.SelectedItems != null && ContentDataGrid.SelectedItems.Count > 0)
             {
-                // To avoid modifying the collection while iterating, copy selected items to a list
-                var itemsToRemove = ContentDataGrid.SelectedItems.Cast<ContentInfo>().ToList();
+                var itemsToRemove = ContentDataGrid.SelectedItems.Cast<CustomContentInfo>().ToList();
                 foreach (var item in itemsToRemove)
                 {
                     ContentList.Remove(item);
@@ -1807,7 +623,144 @@ namespace IntuneTools.Pages
             }
         }
 
-        // Handler for the 'Select all' checkbox Checked event
+        private void ContentDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
+        {
+            HandleDataGridSorting(sender, e);
+        }
+
+        private void FilterSelectionComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // Handle filter selection change - placeholder for future logic
+        }
+
+        private void FiltersCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            FilterSelectionComboBox.Visibility = Visibility.Visible;
+        }
+
+        private async void FiltersCheckBox_Click(object sender, RoutedEventArgs e)
+        {
+            await LoadAllAssignmentFiltersAsync();
+            NewControlsPanel.Visibility = Visibility.Visible;
+            GroupsCheckBox.IsChecked = true;
+        }
+
+        private void FiltersCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            FilterSelectionComboBox.Visibility = Visibility.Collapsed;
+        }
+
+        private void GroupDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
+        {
+            var dataGrid = sender as DataGrid;
+            if (GroupList == null || GroupList.Count == 0)
+                return;
+
+            var textColumn = e.Column as DataGridTextColumn;
+            var binding = textColumn?.Binding as Binding;
+            string sortProperty = binding?.Path?.Path;
+            if (string.IsNullOrEmpty(sortProperty))
+            {
+                AppendToLog("Sorting error: Unable to determine property name from column binding.");
+                return;
+            }
+
+            var propInfo = typeof(GroupInfo).GetProperty(sortProperty);
+            if (propInfo == null)
+            {
+                AppendToLog($"Sorting error: Property '{sortProperty}' not found on GroupInfo.");
+                return;
+            }
+
+            DataGridSortDirection? currentDirection = e.Column.SortDirection;
+            ListSortDirection direction;
+            if (currentDirection.HasValue && currentDirection.Value == DataGridSortDirection.Ascending)
+                direction = ListSortDirection.Descending;
+            else
+                direction = ListSortDirection.Ascending;
+
+            List<GroupInfo> sorted;
+            try
+            {
+                if (direction == ListSortDirection.Ascending)
+                    sorted = GroupList.OrderBy(x => propInfo.GetValue(x, null) ?? string.Empty).ToList();
+                else
+                    sorted = GroupList.OrderByDescending(x => propInfo.GetValue(x, null) ?? string.Empty).ToList();
+            }
+            catch (Exception ex)
+            {
+                AppendToLog($"Sorting error: {ex.Message}");
+                return;
+            }
+
+            GroupList.Clear();
+            foreach (var item in sorted)
+                GroupList.Add(item);
+
+            foreach (var col in dataGrid.Columns)
+                col.SortDirection = null;
+            e.Column.SortDirection = direction == ListSortDirection.Ascending
+                ? DataGridSortDirection.Ascending
+                : DataGridSortDirection.Descending;
+        }
+
+        private async void GroupListAllButton_Click(object sender, RoutedEventArgs e)
+        {
+            await LoadAllGroupsAsync();
+        }
+
+        private async void GroupSearchButton_Click(object sender, RoutedEventArgs e)
+        {
+            await SearchForGroupsAsync(GroupSearchTextBox.Text?.Trim() ?? string.Empty);
+        }
+
+        private void GroupsCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            NewControlsPanel.Visibility = Visibility.Visible;
+            Option_Checked(sender, e);
+        }
+
+        private void GroupsCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            NewControlsPanel.Visibility = Visibility.Collapsed;
+            Option_Unchecked(sender, e);
+        }
+
+        private async void ImportButton_Click(object sender, RoutedEventArgs e)
+        {
+            await MainImportProcess();
+        }
+
+        private async void ListAllButton_Click(object sender, RoutedEventArgs e)
+        {
+            await ListAllOrchestrator(sourceGraphServiceClient);
+        }
+
+        private void Option_Checked(object sender, RoutedEventArgs e)
+        {
+            if (_suppressOptionEvents) return;
+            UpdateSelectAllCheckBox();
+        }
+
+        private void Option_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (_suppressOptionEvents) return;
+            UpdateSelectAllCheckBox();
+        }
+
+        private async void SearchButton_Click(object sender, RoutedEventArgs e)
+        {
+            var searchQuery = SearchQueryTextBox.Text?.Trim();
+            if (!string.IsNullOrEmpty(searchQuery))
+            {
+                await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
+            }
+            else
+            {
+                AppendToLog("Search query cannot be empty.");
+            }
+        }
+
         private void SelectAll_Checked(object sender, RoutedEventArgs e)
         {
             if (_suppressSelectAllEvents) return;
@@ -1822,7 +775,11 @@ namespace IntuneTools.Pages
             _suppressOptionEvents = false;
         }
 
-        // Handler for the 'Select all' checkbox Unchecked event
+        private void SelectAll_Indeterminate(object sender, RoutedEventArgs e)
+        {
+            // Do nothing - indeterminate state is handled by UpdateSelectAllCheckBox
+        }
+
         private void SelectAll_Unchecked(object sender, RoutedEventArgs e)
         {
             if (_suppressSelectAllEvents) return;
@@ -1837,30 +794,6 @@ namespace IntuneTools.Pages
             _suppressOptionEvents = false;
         }
 
-        // Handler for the 'Select all' checkbox Indeterminate event
-        private void SelectAll_Indeterminate(object sender, RoutedEventArgs e)
-        {
-            // Do nothing, or optionally set all to null if you want
-            // Option1CheckBox.IsChecked = null;
-            // Option2CheckBox.IsChecked = null;
-            // Option3CheckBox.IsChecked = null;
-        }
-
-        // Handler for individual option checkbox Checked event
-        private void Option_Checked(object sender, RoutedEventArgs e)
-        {
-            if (_suppressOptionEvents) return;
-            UpdateSelectAllCheckBox();
-        }
-
-        // Handler for individual option checkbox Unchecked event
-        private void Option_Unchecked(object sender, RoutedEventArgs e)
-        {
-            if (_suppressOptionEvents) return;
-            UpdateSelectAllCheckBox();
-        }
-
-        // Helper to update the 'Select all' checkbox state based on options
         private void UpdateSelectAllCheckBox()
         {
             var optionCheckBoxes = OptionsPanel.Children.OfType<CheckBox>().Where(cb => cb.Name != "OptionsAllCheckBox").ToList();
@@ -1880,194 +813,6 @@ namespace IntuneTools.Pages
             _suppressSelectAllEvents = false;
         }
 
-        private void GroupsCheckBox_Checked(object sender, RoutedEventArgs e)
-        {
-            NewControlsPanel.Visibility = Visibility.Visible;
-            // Call the general Option_Checked handler if needed for other logic (like updating SelectAllCheckBox)
-            Option_Checked(sender, e);
-        }
-
-        private void GroupsCheckBox_Unchecked(object sender, RoutedEventArgs e)
-        {
-            NewControlsPanel.Visibility = Visibility.Collapsed;
-            // Call the general Option_Unchecked handler if needed for other logic
-            Option_Unchecked(sender, e);
-        }
-
-        private void FiltersCheckBox_Checked(object sender, RoutedEventArgs e)
-        {
-            FilterSelectionComboBox.Visibility = Visibility.Visible;
-
-        }
-
-        private void FiltersCheckBox_Unchecked(object sender, RoutedEventArgs e)
-        {
-            FilterSelectionComboBox.Visibility = Visibility.Collapsed;
-        }
-
-        private void FilterSelectionComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            // Handle filter selection change
-            // For now, just a placeholder
-            if (FilterSelectionComboBox.SelectedItem != null)
-            {
-                string selectedFilter = FilterSelectionComboBox.SelectedItem.ToString();
-                // You can add logic here to use the selectedFilter
-            }
-        }
-
-        private async void ClearLogButton_Click(object sender, RoutedEventArgs e)
-        {
-            var dialog = new ContentDialog
-            {
-                Title = "Clear Log Console?",
-                Content = "Are you sure you want to clear all log console text? This action cannot be undone.",
-                PrimaryButtonText = "Clear",
-                CloseButtonText = "Cancel",
-                DefaultButton = ContentDialogButton.Close,
-                XamlRoot = this.XamlRoot
-            };
-
-            var result = await dialog.ShowAsync().AsTask();
-            if (result == ContentDialogResult.Primary)
-            {
-                LogConsole.Blocks.Clear();
-            }
-        }
-
-        private void GroupDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
-        {
-            var dataGrid = sender as DataGrid;
-            if (GroupList == null || GroupList.Count == 0)
-                return;
-
-            // Get the property name from the column binding
-            var textColumn = e.Column as DataGridTextColumn;
-            var binding = textColumn?.Binding as Binding;
-            string sortProperty = binding?.Path?.Path;
-            if (string.IsNullOrEmpty(sortProperty))
-            {
-                AppendToDetailsRichTextBlock("Sorting error: Unable to determine property name from column binding.");
-                return;
-            }
-
-            // Check if property exists on GroupInfo
-            var propInfo = typeof(GroupInfo).GetProperty(sortProperty);
-            if (propInfo == null)
-            {
-                AppendToDetailsRichTextBlock($"Sorting error: Property '{sortProperty}' not found on GroupInfo.");
-                return;
-            }
-
-            // Toggle sort direction
-            DataGridSortDirection? currentDirection = e.Column.SortDirection;
-            ListSortDirection direction;
-            if (currentDirection.HasValue && currentDirection.Value == DataGridSortDirection.Ascending)
-                direction = ListSortDirection.Descending;
-            else
-                direction = ListSortDirection.Ascending;
-
-            // Sort the GroupList in place
-            List<GroupInfo> sorted;
-            try
-            {
-                if (direction == ListSortDirection.Ascending)
-                {
-                    sorted = GroupList.OrderBy(x => propInfo.GetValue(x, null) ?? string.Empty).ToList();
-                }
-                else
-                {
-                    sorted = GroupList.OrderByDescending(x => propInfo.GetValue(x, null) ?? string.Empty).ToList();
-                }
-            }
-            catch (Exception ex)
-            {
-                AppendToDetailsRichTextBlock($"Sorting error: {ex.Message}");
-                return;
-            }
-
-            // Update GroupList
-            GroupList.Clear();
-            foreach (var item in sorted)
-                GroupList.Add(item);
-
-            // Update sort direction indicator
-            foreach (var col in dataGrid.Columns)
-                col.SortDirection = null;
-            e.Column.SortDirection = direction == ListSortDirection.Ascending
-                ? DataGridSortDirection.Ascending
-                : DataGridSortDirection.Descending;
-
-            // Prevent default sort
-            // e.Handled = true; // Uncomment if needed for your toolkit version
-        }
-
-        private void ContentDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
-        {
-            var dataGrid = sender as DataGrid;
-            if (ContentList == null || ContentList.Count == 0)
-                return;
-
-            // Get the property name from the column binding
-            var textColumn = e.Column as DataGridTextColumn;
-            var binding = textColumn?.Binding as Binding;
-            string sortProperty = binding?.Path?.Path;
-            if (string.IsNullOrEmpty(sortProperty))
-            {
-                AppendToDetailsRichTextBlock("Sorting error: Unable to determine property name from column binding.");
-                return;
-            }
-
-            // Check if property exists on ContentInfo
-            var propInfo = typeof(ContentInfo).GetProperty(sortProperty);
-            if (propInfo == null)
-            {
-                AppendToDetailsRichTextBlock($"Sorting error: Property '{sortProperty}' not found on ContentInfo.");
-                return;
-            }
-
-            // Toggle sort direction
-            DataGridSortDirection? currentDirection = e.Column.SortDirection;
-            ListSortDirection direction;
-            if (currentDirection.HasValue && currentDirection.Value == DataGridSortDirection.Ascending)
-                direction = ListSortDirection.Descending;
-            else
-                direction = ListSortDirection.Ascending;
-
-            // Sort the ContentList in place
-            List<ContentInfo> sorted;
-            try
-            {
-                if (direction == ListSortDirection.Ascending)
-                {
-                    sorted = ContentList.OrderBy(x => propInfo.GetValue(x, null) ?? string.Empty).ToList();
-                }
-                else
-                {
-                    sorted = ContentList.OrderByDescending(x => propInfo.GetValue(x, null) ?? string.Empty).ToList();
-                }
-            }
-            catch (Exception ex)
-            {
-                AppendToDetailsRichTextBlock($"Sorting error: {ex.Message}");
-                return;
-            }
-
-            // Update ContentList
-            ContentList.Clear();
-            foreach (var item in sorted)
-                ContentList.Add(item);
-
-            // Update sort direction indicator
-            foreach (var col in dataGrid.Columns)
-                col.SortDirection = null;
-            e.Column.SortDirection = direction == ListSortDirection.Ascending
-                ? DataGridSortDirection.Ascending
-                : DataGridSortDirection.Descending;
-
-            // Prevent default sort
-            // e.Handled = true; // Uncomment if needed for your toolkit version
-        }
-
+        #endregion
     }
 }

@@ -418,6 +418,73 @@ namespace IntuneTools.Utilities
                 hideLoading();
             }
         }
+        /// <summary>
+        /// Removes any bracket-style prefix from a policy name.
+        /// Handles (prefix), [prefix], and {prefix} formats.
+        /// </summary>
+        /// <param name="policyName">The original policy name with a potential prefix.</param>
+        /// <returns>The policy name without the prefix, or the original name if no prefix found.</returns>
+        public static string RemovePrefixFromPolicyName(string policyName)
+        {
+            if (string.IsNullOrWhiteSpace(policyName))
+            {
+                return policyName;
+            }
+
+            policyName = policyName.Trim();
+
+            // Clean up double brackets like [[...]] or ((...)) or {{...}}
+            if (policyName.StartsWith("[[") && policyName.Contains("]]"))
+            {
+                int doubleBracketClosingIndex = policyName.IndexOf("]]");
+                if (doubleBracketClosingIndex > 1)
+                {
+                    policyName = policyName.Remove(doubleBracketClosingIndex, 1).Remove(0, 1);
+                }
+            }
+            else if (policyName.StartsWith("((") && policyName.Contains("))"))
+            {
+                int doubleBracketClosingIndex = policyName.IndexOf("))");
+                if (doubleBracketClosingIndex > 1)
+                {
+                    policyName = policyName.Remove(doubleBracketClosingIndex, 1).Remove(0, 1);
+                }
+            }
+            else if (policyName.StartsWith("{{") && policyName.Contains("}}"))
+            {
+                int doubleBracketClosingIndex = policyName.IndexOf("}}");
+                if (doubleBracketClosingIndex > 1)
+                {
+                    policyName = policyName.Remove(doubleBracketClosingIndex, 1).Remove(0, 1);
+                }
+            }
+
+            char firstChar = policyName[0];
+            char expectedClosingChar;
+
+            switch (firstChar)
+            {
+                case '(': expectedClosingChar = ')'; break;
+                case '[': expectedClosingChar = ']'; break;
+                case '{': expectedClosingChar = '}'; break;
+                default:
+                    // No recognized prefix bracket - return as-is
+                    return policyName;
+            }
+
+            int closingIndex = policyName.IndexOf(expectedClosingChar);
+
+            if (closingIndex > 0)
+            {
+                // Extract the rest of the string after the prefix
+                string restOfName = policyName.Substring(closingIndex + 1).TrimStart();
+                return string.IsNullOrWhiteSpace(restOfName) ? policyName : restOfName;
+            }
+
+            // No valid closing bracket found - return as-is
+            return policyName;
+        }
+
         public static string FindPreFixInPolicyName(string policyName, string newPolicyName)
         {
             if (string.IsNullOrWhiteSpace(policyName))

@@ -3,7 +3,6 @@ using IntuneTools.Utilities;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
@@ -32,1255 +31,420 @@ using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHe
 namespace IntuneTools.Pages
 {
     /// <summary>
-    /// An empty page that can be used on its own or navigated to within a Frame.
+    /// Page for renaming Intune content with prefix, suffix, or description updates.
     /// </summary>
-    public sealed partial class RenamingPage : Page
+    public sealed partial class RenamingPage : BaseDataOperationPage
     {
-        public class ContentInfo
-        {
-            public string? ContentName { get; set; }
-            public string? ContentPlatform { get; set; }
-            public string? ContentType { get; set; }
-            public string? ContentId { get; set; }
-            public string? ContentDescription { get; set; }
-        }
+        #region Fields & Types
 
-        // old list
-        //public ObservableCollection<ContentInfo> ContentList { get; set; } = new ObservableCollection<ContentInfo>();
-        
-        
-        // new list
-        public ObservableCollection<CustomContentInfo> CustomContentList { get; set; } = new ObservableCollection<CustomContentInfo>();
+        /// <summary>
+        /// Alias for ContentList to maintain backward compatibility with existing code.
+        /// </summary>
+        private ObservableCollection<CustomContentInfo> CustomContentList => ContentList;
 
+        // Progress tracking for rename operations
+        private int _renameTotal;
+        private int _renameCurrent;
+        private int _renameSuccessCount;
+        private int _renameErrorCount;
 
+        /// <summary>
+        /// Defines a rename operation for a specific content type.
+        /// </summary>
+        /// <param name="TypeKey">Content type identifier (e.g., ContentTypes.SettingsCatalog).</param>
+        /// <param name="DisplayName">Human-readable name for logging.</param>
+        /// <param name="RenameAsync">Async action that renames a single item by ID.</param>
+        /// <param name="GetDisplayNameAsync">Optional async function to get item's display name for logging.</param>
+        private record RenameTypeDefinition(
+            string TypeKey,
+            string DisplayName,
+            Func<string, string, Task> RenameAsync,
+            Func<string, Task<string?>>? GetDisplayNameAsync = null);
 
+        #endregion
+
+        #region Constructor & Configuration
 
         public RenamingPage()
         {
             this.InitializeComponent();
             RightClickMenu.AttachDataGridContextMenu(RenamingDataGrid);
+            LogConsole.ItemsSource = LogEntries;
         }
 
-        /// <summary>
-        ///  Local helper methods
-        /// </summary>
+        protected override string UnauthenticatedMessage => "You must authenticate with a tenant before using renaming features.";
 
-        protected override void OnNavigatedTo(NavigationEventArgs e)
+        protected override IEnumerable<string> GetManagedControlNames() => new[]
         {
-            base.OnNavigatedTo(e);
+            "SearchQueryTextBox", "SearchButton", "ListAllButton", "ClearSelectedButton",
+            "ClearAllButton", "NewNameTextBox", "PrefixButton", "RenameButton",
+            "RenamingDataGrid", "ClearLogButton", "RenameModeComboBox"
+        };
 
-            if (string.Equals(Variables.sourceTenantName, string.Empty))
-            {
-                TenantInfoBar.Title = "Authentication Required";
-                TenantInfoBar.Message = "You must authenticate with a tenant before using renaming features.";
-                TenantInfoBar.Severity = InfoBarSeverity.Warning;
-                TenantInfoBar.IsOpen = true;
+        #endregion
 
-                // Disable controls until authenticated
-                SearchQueryTextBox.IsEnabled = false;
-                SearchButton.IsEnabled = false;
-                ListAllButton.IsEnabled = false;
-                ClearSelectedButton.IsEnabled = false;
-                ClearAllButton.IsEnabled = false;
-                NewNameTextBox.IsEnabled = false;
-                PrefixButton.IsEnabled = false;
-                RenameButton.IsEnabled = false;
-                RenamingDataGrid.IsEnabled = false;
-                ClearLogButton.IsEnabled = false;
-                RenameModeComboBox.IsEnabled = false;
-            }
-            else
-            {
-                TenantInfoBar.Title = "Authenticated Tenant";
-                TenantInfoBar.Message = Variables.sourceTenantName;
-                TenantInfoBar.Severity = InfoBarSeverity.Informational;
-                TenantInfoBar.IsOpen = true;
+        #region Base Class Overrides
 
-                // Enable controls
-                SearchQueryTextBox.IsEnabled = true;
-                SearchButton.IsEnabled = true;
-                ListAllButton.IsEnabled = true;
-                ClearSelectedButton.IsEnabled = true;
-                ClearAllButton.IsEnabled = true;
-                NewNameTextBox.IsEnabled = true;
-                PrefixButton.IsEnabled = true;
-                RenameButton.IsEnabled = true;
-                RenamingDataGrid.IsEnabled = true;
-                ClearLogButton.IsEnabled = true;
-                RenameModeComboBox.IsEnabled = true;
-            }
-        }
-
-        // Add this event handler to your RenamingPage class
-        private void RenamingDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
+        protected override void ShowLoading(string message = "Loading data from Microsoft Graph...")
         {
-            var dataGrid = sender as DataGrid;
-            if (CustomContentList == null || CustomContentList.Count == 0)
-                return;
-
-            var textColumn = e.Column as DataGridTextColumn;
-            var binding = textColumn?.Binding as Binding;
-            string sortProperty = binding?.Path?.Path;
-            if (string.IsNullOrEmpty(sortProperty))
-            {
-                AppendToDetailsRichTextBlock("Sorting error: Unable to determine property name from column binding.");
-                return;
-            }
-
-            var propInfo = typeof(CustomContentInfo).GetProperty(sortProperty);
-            if (propInfo == null)
-            {
-                AppendToDetailsRichTextBlock($"Sorting error: Property '{sortProperty}' not found on CustomContentInfo.");
-                return;
-            }
-
-            ListSortDirection direction;
-            if (e.Column.SortDirection.HasValue && e.Column.SortDirection.Value == DataGridSortDirection.Ascending)
-            {
-                direction = ListSortDirection.Descending;
-            }
-            else
-            {
-                direction = ListSortDirection.Ascending;
-            }
-
-            List<CustomContentInfo> sorted;
-            try
-            {
-                if (direction == ListSortDirection.Ascending)
-                {
-                    sorted = CustomContentList.OrderBy(x => propInfo.GetValue(x, null) ?? string.Empty).ToList();
-                }
-                else
-                {
-                    sorted = CustomContentList.OrderByDescending(x => propInfo.GetValue(x, null) ?? string.Empty).ToList();
-                }
-            }
-            catch (Exception ex)
-            {
-                AppendToDetailsRichTextBlock($"Sorting error: {ex.Message}");
-                return;
-            }
-
-            CustomContentList.Clear();
-            foreach (var item in sorted)
-                CustomContentList.Add(item);
-
-            foreach (var col in dataGrid.Columns)
-                col.SortDirection = null;
-            e.Column.SortDirection = direction == ListSortDirection.Ascending
-                ? DataGridSortDirection.Ascending
-                : DataGridSortDirection.Descending;
-
-            // Prevent default sort
-            // e.Handled = true; // Removed as per workaround
-
-        }
-
-        private void ShowLoading(string message = "Loading data from Microsoft Graph...")
-        {
-            LoadingStatusText.Text = message;
-            LoadingOverlay.Visibility = Visibility.Visible;
-            LoadingProgressRing.IsActive = true;
-
-            // Optionally disable buttons during loading
+            base.ShowLoading(message);
             ListAllButton.IsEnabled = false;
             SearchButton.IsEnabled = false;
         }
-        private void HideLoading()
-        {
-            LoadingOverlay.Visibility = Visibility.Collapsed;
-            LoadingProgressRing.IsActive = false;
 
-            // Re-enable buttons
+        protected override void HideLoading()
+        {
+            base.HideLoading();
             ListAllButton.IsEnabled = true;
             SearchButton.IsEnabled = true;
         }
-        private void AppendToDetailsRichTextBlock(string text)
-        {
-            // Append log text to the LogConsole RichTextBlock
-            Paragraph paragraph;
-            if (LogConsole.Blocks.Count == 0)
-            {
-                paragraph = new Paragraph();
-                LogConsole.Blocks.Add(paragraph);
-            }
-            else
-            {
-                paragraph = LogConsole.Blocks.First() as Paragraph;
-                if (paragraph == null)
-                {
-                    paragraph = new Paragraph();
-                    LogConsole.Blocks.Add(paragraph);
-                }
-            }
-            if (paragraph.Inlines.Count > 0)
-            {
-                paragraph.Inlines.Add(new LineBreak());
-            }
-            paragraph.Inlines.Add(new Run { Text = text });
 
-            ScrollLogToEnd();
-        }
+        #endregion
+
+        #region Core Operations
+
         private async Task ListAllOrchestrator(GraphServiceClient graphServiceClient)
         {
             ShowLoading("Loading data from Microsoft Graph...");
-            AppendToDetailsRichTextBlock("Starting to load all content. This could take a while...");
+            LogInfo("Starting to load all content. This could take a while...");
             try
             {
-                // Clear the CustomContentList before loading new data
                 CustomContentList.Clear();
-
-                await LoadAllSettingsCatalogPoliciesAsync();
-                await LoadAllDeviceCompliancePoliciesAsync();
-                await LoadAllDeviceConfigurationPoliciesAsync();
-                await LoadAllWindowsAutoPilotProfilesAsync();
-                await LoadAllWindowsDriverUpdatesAsync();
-                await LoadAllWindowsFeatureUpdatesAsync();
-                await LoadAllWindowsQualityUpdatePoliciesAsync();
-                await LoadAllWindowsQualityUpdateProfilesAsync();
-                await LoadAllPowerShellScriptsAsync();
-                await LoadAllProactiveRemediationsAsync();
-                await LoadAllMacOSShellScriptsAsync();
-                await LoadAllAppleBYODEnrollmentProfilesAsync();
-                await LoadAllApplicationsAsync();
-                await LoadAllAssignmentFiltersAsync();
-                await LoadAllEntraGroupsAsync();
-
-                // Bind the combined list to the grid once
-                //RenamingDataGrid.ItemsSource = ContentList;
-
-                // New list
+                await LoadAllContentTypesAsync(graphServiceClient, LogInfo);
                 RenamingDataGrid.ItemsSource = CustomContentList;
             }
             catch (Exception ex)
             {
-                AppendToDetailsRichTextBlock($"Error during loading: {ex.Message}");
-                HideLoading();
-                return;
+                LogError($"Error during loading: {ex.Message}");
             }
             finally
             {
                 HideLoading();
             }
         }
+
         private async Task SearchOrchestrator(GraphServiceClient graphServiceClient, string searchQuery)
         {
             ShowLoading("Searching content in Microsoft Graph...");
-            AppendToDetailsRichTextBlock($"Searching for content matching '{searchQuery}'. This may take a while...");
+            LogInfo($"Searching for content matching '{searchQuery}'. This may take a while...");
             try
             {
-                // Clear the CustomContentList before loading new data
                 CustomContentList.Clear();
-                await SearchForSettingsCatalogPoliciesAsync(searchQuery);
-                await SearchForDeviceCompliancePoliciesAsync(searchQuery);
-                await SearchForDeviceConfigurationPoliciesAsync(searchQuery);
-                await SearchForAppleBYODEnrollmentProfilesAsync(searchQuery);
-                await SearchForAssignmentFiltersAsync(searchQuery);
-                await SearchForEntraGroupsAsync(searchQuery);
-                await SearchForPowerShellScriptsAsync(searchQuery);
-                await SearchForProactiveRemediationsAsync(searchQuery);
-                await SearchForMacOSShellScriptsAsync(searchQuery);
-                await SearchForWindowsAutoPilotProfilesAsync(searchQuery);
-                await SearchForWindowsDriverUpdatesAsync(searchQuery);
-                await SearchForWindowsFeatureUpdatesAsync(searchQuery);
-                await SearchForWindowsQualityUpdatePoliciesAsync(searchQuery);
-                await SearchForWindowsQualityUpdateProfilesAsync(searchQuery);
-                await SearchForApplicationsAsync(searchQuery);
-
-                // Bind the combined list to the grid once
+                await SearchAllContentTypesAsync(graphServiceClient, searchQuery, LogInfo);
                 RenamingDataGrid.ItemsSource = CustomContentList;
             }
             catch (Exception ex)
             {
-                AppendToDetailsRichTextBlock($"Error during search: {ex.Message}");
-                HideLoading();
-                return;
+                LogError($"Error during search: {ex.Message}");
             }
             finally
             {
                 HideLoading();
             }
         }
+
+        /// <summary>
+        /// Main entry point for rename operations. Validates, prepares, and executes the rename.
+        /// </summary>
         private async Task RenameContent(List<string> contentIDs, string newName)
         {
-
-            string prefix = string.Empty;
-
-            if (contentIDs == null || contentIDs.Count == 0)
-            {
-                AppendToDetailsRichTextBlock("No content IDs provided for renaming.");
+            if (!ValidateRenameInputs(contentIDs, newName))
                 return;
-            }
-            if (string.IsNullOrWhiteSpace(newName))
-            {
-                AppendToDetailsRichTextBlock("New name cannot be empty.");
-                return;
-            }
 
-            var prefixSymbol = GetSelectedPrefixOption();
+            var operationText = await PrepareRenameOperation(contentIDs, newName);
+            if (operationText == null)
+                return; // Cancelled or validation failed
 
-            if (prefixSymbol == null && selectedRenameMode == "Prefix")
-            {
-                AppendToDetailsRichTextBlock("Please select a prefix option.");
-                return;
-            }
+            await ExecuteRenameOperations(contentIDs.Count, operationText);
+        }
 
-
-            if (selectedRenameMode == "Prefix")
-            {
-
-                prefix = $"{prefixSymbol[0]}{newName}{prefixSymbol[1]}";
-
-                // Find the corresponding names for the content ID
-
-                List<string> contentNames = new List<string>();
-                foreach (var id in contentIDs)
-                {
-                    var name = string.Empty;
-                    var content = CustomContentList.FirstOrDefault(c => c.ContentId == id);
-                    if (content != null)
-                    {
-                        name = FindPreFixInPolicyName(content.ContentName, prefix);
-                    }
-                    contentNames.Add(name);
-                }
-
-
-                // display a dialog box with the new names and confirm renaming
-                if (contentNames.Count == 0)
-                {
-                    AppendToDetailsRichTextBlock("No content names found for the provided IDs.");
-                    return;
-                }
-
-
-                string contentNamesList = string.Join("\n", contentNames);
-                ContentDialog renameDialog = new ContentDialog
-                {
-                    Title = "Confirm Renaming",
-                    Content = $"The new policy names will look like this. Proceed?\n\n{contentNamesList}",
-                    PrimaryButtonText = "Rename",
-                    CloseButtonText = "Cancel",
-                    XamlRoot = this.XamlRoot
-                };
-                var dialogResult = await renameDialog.ShowAsync();
-
-                if (dialogResult != ContentDialogResult.Primary)
-                {
-                    AppendToDetailsRichTextBlock("Renaming operation cancelled.");
-                    return;
-                }
-            }
-            else if (selectedRenameMode == "Suffix")
-            {
-
-            }
-            else if (selectedRenameMode == "Description")
-            {
-                prefix = newName; // For description, we just use the newName as the description text
-                ContentDialog renameDialog = new ContentDialog
-                {
-                    Title = "Confirm updating description",
-                    Content = $"The new policy descriptions will look like this. Proceed?\n\n{prefix}",
-                    PrimaryButtonText = "Update",
-                    CloseButtonText = "Cancel",
-                    XamlRoot = this.XamlRoot
-                };
-                var dialogResult = await renameDialog.ShowAsync();
-                if (dialogResult != ContentDialogResult.Primary)
-                {
-                    AppendToDetailsRichTextBlock("Renaming operation cancelled.");
-                    return;
-                }
-            }
-
-
+        /// <summary>
+        /// Executes rename operations for all content types present in the list.
+        /// </summary>
+        private async Task ExecuteRenameOperations(int totalItems, string operationText)
+        {
             try
             {
-                if (CustomContentList.Any(c => c.ContentType == "Settings Catalog"))
+                InitializeProgressTracking(totalItems);
+                ShowOperationProgress("Preparing to rename items...", 0, _renameTotal);
+
+                foreach (var definition in GetRenameTypeRegistry())
                 {
-                    var settingsCatalogIDs = GetSettingsCatalogIDs();
-                    if (settingsCatalogIDs.Count > 0)
+                    var ids = GetContentIdsByType(definition.TypeKey);
+                    if (ids.Count > 0)
                     {
-                        await RenameSettingsCatalogs(settingsCatalogIDs, prefix);
+                        await RenameItemsAsync(ids, operationText, definition.DisplayName,
+                            definition.RenameAsync, definition.GetDisplayNameAsync);
                     }
                 }
 
-                if (CustomContentList.Any(c => c.ContentType == "Device Compliance Policy"))
-                {
-                    var deviceCompliancePolicyIDs = GetDeviceCompliancePolicyIDs();
-                    if (deviceCompliancePolicyIDs.Count > 0)
-                    {
-                        await RenameDeviceCompliancePolicies(deviceCompliancePolicyIDs, prefix);
-                    }
-                }
-
-                if (CustomContentList.Any(c => c.ContentType == "Device Configuration Policy"))
-                {
-                    var deviceConfigurationPolicyIDs = GetDeviceConfigurationPolicyIDs();
-                    if (deviceConfigurationPolicyIDs.Count > 0)
-                    {
-                        await RenameDeviceConfigurationPolicies(deviceConfigurationPolicyIDs, prefix);
-                    }
-                }
-
-                if (CustomContentList.Any(c => c.ContentType == "Apple BYOD Enrollment Profile"))
-                {
-                    var appleBYODProfileIDs = GetAppleBYODEnrollmentProfileIDs();
-                    if (appleBYODProfileIDs.Count > 0)
-                    {
-                        await RenameAppleBYODEnrollmentProfiles(appleBYODProfileIDs, prefix);
-                    }
-                }
-
-                if (CustomContentList.Any(c => c.ContentType == "MacOS Shell Script"))
-                {
-                    var macOSShellScriptIDs = GetMacOSShellScriptIDs();
-                    if (macOSShellScriptIDs.Count > 0)
-                    {
-                        await RenameMacOSShellScripts(macOSShellScriptIDs, prefix);
-                    }
-                }
-
-                if (CustomContentList.Any(c => c.ContentType == "PowerShell Script"))
-                {
-                    var powerShellScriptIDs = GetPowerShellScriptIDs();
-                    if (powerShellScriptIDs.Count > 0)
-                    {
-                        await RenamePowerShellScripts(powerShellScriptIDs, prefix);
-                    }
-                }
-
-                if (CustomContentList.Any(c => c.ContentType == "Proactive Remediation"))
-                {
-                    var proactiveRemediationIDs = GetProactiveRemediationIDs();
-                    if (proactiveRemediationIDs.Count > 0)
-                    {
-                        await RenameProactiveRemediations(proactiveRemediationIDs, prefix);
-                    }
-                }
-
-                if (CustomContentList.Any(c => c.ContentType == "Windows AutoPilot Profile"))
-                {
-                    var windowsAutoPilotProfileIDs = GetWindowsAutoPilotProfileIDs();
-                    if (windowsAutoPilotProfileIDs.Count > 0)
-                    {
-                        await RenameWindowsAutoPilotProfiles(windowsAutoPilotProfileIDs, prefix);
-                    }
-                }
-
-                if (CustomContentList.Any(c => c.ContentType == "Windows Driver Update"))
-                {
-                    var windowsDriverUpdateIDs = GetWindowsDriverUpdateIDs();
-                    if (windowsDriverUpdateIDs.Count > 0)
-                    {
-                        await RenameWindowsDriverUpdates(windowsDriverUpdateIDs, prefix);
-                    }
-                }
-
-                if (CustomContentList.Any(c => c.ContentType == "Windows Feature Update"))
-                {
-                    var windowsFeatureUpdateIDs = GetWindowsFeatureUpdateIDs();
-                    if (windowsFeatureUpdateIDs.Count > 0)
-                    {
-                        await RenameWindowsFeatureUpdates(windowsFeatureUpdateIDs, prefix);
-                    }
-                }
-
-                if (CustomContentList.Any(c => c.ContentType == "Windows Quality Update Policy"))
-                {
-                    var windowsQualityUpdatePolicyIDs = GetWindowsQualityUpdatePolicyIDs();
-                    if (windowsQualityUpdatePolicyIDs.Count > 0)
-                    {
-                        await RenameWindowsQualityUpdatePolicies(windowsQualityUpdatePolicyIDs, prefix);
-                    }
-                }
-
-                if (CustomContentList.Any(c => c.ContentType == "Windows Quality Update Profile"))
-                {
-                    var windowsQualityUpdateProfileIDs = GetWindowsQualityUpdateProfileIDs();
-                    if (windowsQualityUpdateProfileIDs.Count > 0)
-                    {
-                        await RenameWindowsQualityUpdateProfiles(windowsQualityUpdateProfileIDs, prefix);
-                    }
-                }
-
-                if (CustomContentList.Any(c => c.ContentType == "Assignment Filter"))
-                {
-                    var assignmentFilterIDs = GetAssignmentFilterIDs();
-                    if (assignmentFilterIDs.Count > 0)
-                    {
-                        await RenameAssignmentFilters(assignmentFilterIDs, prefix);
-                    }
-                }
-
-                if (CustomContentList.Any(c => c.ContentType == "Entra Group"))
-                {
-                    var entraGroupIDs = GetEntraGroupIDs();
-                    if (entraGroupIDs.Count > 0)
-                    {
-                        await RenameEntraGroups(entraGroupIDs, prefix);
-                    }
-                }
-                if (CustomContentList.Any(c => UserInterfaceHelper.IsApplicationContentType(c.ContentType)))
-                {
-                    var applicationIDs = GetApplicationIDs();
-                    if (applicationIDs.Count > 0)
-                    {
-                        await RenameApplications(applicationIDs, prefix);
-                    }
-                }
-                AppendToDetailsRichTextBlock($"Renamed {contentIDs.Count} items with prefix '{prefix}'.");
+                ReportRenameResults(operationText);
             }
             catch (Exception ex)
             {
-                AppendToDetailsRichTextBlock($"Error during renaming: {ex.Message}");
+                ShowOperationError($"Rename operation failed: {ex.Message}");
+                LogError($"Error during renaming: {ex.Message}");
             }
         }
 
-        private async Task RenameAppleBYODEnrollmentProfiles(List<string> profileIDs, string prefix)
+        #endregion
+
+        #region Rename Logic
+
+        /// <summary>
+        /// Generic helper to rename items, reducing code duplication across all content types.
+        /// </summary>
+        private async Task RenameItemsAsync(
+            List<string> ids,
+            string prefix,
+            string contentTypeName,
+            Func<string, string, Task> renameAction,
+            Func<string, Task<string?>>? getDisplayName = null)
         {
-            foreach (var id in profileIDs)
+            foreach (var id in ids)
             {
+                _renameCurrent++;
+                ShowOperationProgress($"Renaming {contentTypeName}", _renameCurrent, _renameTotal);
                 try
                 {
-                    var profile = await sourceGraphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[id].GetAsync((requestConfiguration) =>
-                    {
-                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
-                    });
-                    await RenameAppleBYODEnrollmentProfile(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Updated Apple BYOD Enrollment Profile '{profile.DisplayName}' with '{prefix}'.");
+                    string? displayName = getDisplayName != null ? await getDisplayName(id) : null;
+                    await renameAction(id, prefix);
+
+                    var logName = displayName ?? $"ID '{id}'";
+                    LogSuccess($"Updated {contentTypeName} '{logName}' with '{prefix}'.");
                     UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
+                    _renameSuccessCount++;
                 }
                 catch (Exception ex)
                 {
-                    AppendToDetailsRichTextBlock($"Error renaming Apple BYOD Enrollment Profile with ID {id}: {ex.Message}");
-                }
-            }
-        }
-
-        private List<string> GetApplicationIDs()
-        {
-            return CustomContentList
-                .Where(c => UserInterfaceHelper.IsApplicationContentType(c.ContentType))
-                .Select(c => c.ContentId ?? string.Empty)
-                .ToList();
-        }
-
-        private async Task RenameApplications(List<string> appIDs, string prefix)
-        {
-            foreach (var id in appIDs)
-            {
-                try
-                {
-                    await RenameApplication(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Updated Application with ID '{id}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
-                }
-                catch (Exception ex)
-                {
-                    AppendToDetailsRichTextBlock($"Error updating Application with ID {id}: {ex.Message}");
-                }
-            }
-        }
-
-        private async Task RenameMacOSShellScripts(List<string> scriptIDs, string prefix)
-        {
-            foreach (var id in scriptIDs)
-            {
-                try
-                {
-                    var script = await sourceGraphServiceClient.DeviceManagement.DeviceShellScripts[id].GetAsync((requestConfiguration) =>
-                    {
-                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
-                    });
-                    await RenameMacOSShellScript(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Updated MacOS Shell Script '{script.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
-                }
-                catch (Exception ex)
-                {
-                    AppendToDetailsRichTextBlock($"Error renaming MacOS Shell Script with ID {id}: {ex.Message}");
-                }
-            }
-        }
-
-        private async Task RenamePowerShellScripts(List<string> scriptIDs, string prefix)
-        {
-            foreach (var id in scriptIDs)
-            {
-                try
-                {
-                    var script = await sourceGraphServiceClient.DeviceManagement.DeviceManagementScripts[id].GetAsync((requestConfiguration) =>
-                    {
-                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
-                    });
-                    await RenamePowerShellScript(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Updated PowerShell Script '{script.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
-                }
-                catch (Exception ex)
-                {
-                    AppendToDetailsRichTextBlock($"Error renaming PowerShell Script with ID {id}: {ex.Message}");
-                }
-            }
-        }
-
-        private async Task RenameProactiveRemediations(List<string> scriptIDs, string prefix)
-        {
-            foreach (var id in scriptIDs)
-            {
-                try
-                {
-                    var remediation = await sourceGraphServiceClient.DeviceManagement.DeviceHealthScripts[id].GetAsync((requestConfiguration) =>
-                    {
-                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
-                    });
-                    await RenameProactiveRemediation(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Updated Proactive Remediation '{remediation.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
-                }
-                catch (Exception ex)
-                {
-                    AppendToDetailsRichTextBlock($"Error renaming Proactive Remediation with ID {id}: {ex.Message}");
-                }
-            }
-        }
-
-        private async Task RenameWindowsAutoPilotProfiles(List<string> profileIDs, string prefix)
-        {
-            foreach (var id in profileIDs)
-            {
-                try
-                {
-                    var profile = await sourceGraphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[id].GetAsync((requestConfiguration) =>
-                    {
-                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
-                    });
-                    await RenameWindowsAutoPilotProfile(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Updated Windows AutoPilot Profile '{profile.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
-                }
-                catch (Exception ex)
-                {
-                    AppendToDetailsRichTextBlock($"Error renaming Windows AutoPilot Profile with ID {id}: {ex.Message}");
-                }
-            }
-        }
-
-        private async Task RenameWindowsDriverUpdates(List<string> profileIDs, string prefix)
-        {
-            foreach (var id in profileIDs)
-            {
-                try
-                {
-                    var update = await sourceGraphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[id].GetAsync((requestConfiguration) =>
-                    {
-                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
-                    });
-                    await RenameDriverProfile(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Updated Windows Driver Update '{update.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
-                }
-                catch (Exception ex)
-                {
-                    AppendToDetailsRichTextBlock($"Error renaming Windows Driver Update with ID {id}: {ex.Message}");
-                }
-            }
-        }
-
-        private async Task RenameWindowsFeatureUpdates(List<string> profileIDs, string prefix)
-        {
-            foreach (var id in profileIDs)
-            {
-                try
-                {
-                    var update = await sourceGraphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[id].GetAsync((requestConfiguration) =>
-                    {
-                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
-                    });
-                    await RenameWindowsFeatureUpdateProfile(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Updated Windows Feature Update '{update.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
-                }
-                catch (Exception ex)
-                {
-                    AppendToDetailsRichTextBlock($"Error renaming Windows Feature Update with ID {id}: {ex.Message}");
-                }
-            }
-        }
-
-        private async Task RenameWindowsQualityUpdatePolicies(List<string> policyIDs, string prefix)
-        {
-            foreach (var id in policyIDs)
-            {
-                try
-                {
-                    var policy = await sourceGraphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[id].GetAsync((requestConfiguration) =>
-                    {
-                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
-                    });
-                    await RenameWindowsQualityUpdatePolicy(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Updated Windows Quality Update Policy '{policy.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
-                }
-                catch (Exception ex)
-                {
-                    AppendToDetailsRichTextBlock($"Error renaming Windows Quality Update Policy with ID {id}: {ex.Message}");
-                }
-            }
-        }
-
-        private async Task RenameWindowsQualityUpdateProfiles(List<string> profileIDs, string prefix)
-        {
-            foreach (var id in profileIDs)
-            {
-                try
-                {
-                    var profile = await sourceGraphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[id].GetAsync((requestConfiguration) =>
-                    {
-                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
-                    });
-                    await RenameWindowsQualityUpdateProfile(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Updated Windows Quality Update Profile '{profile.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
-                }
-                catch (Exception ex)
-                {
-                    AppendToDetailsRichTextBlock($"Error renaming Windows Quality Update Profile with ID {id}: {ex.Message}");
-                }
-            }
-        }
-
-        private async Task RenameAssignmentFilters(List<string> filterIDs, string prefix)
-        {
-            foreach (var id in filterIDs)
-            {
-                try
-                {
-                    var filter = await sourceGraphServiceClient.DeviceManagement.AssignmentFilters[id].GetAsync((requestConfiguration) =>
-                    {
-                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
-                    });
-                    await RenameAssignmentFilter(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Updated Assignment Filter '{filter.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
-                }
-                catch (Exception ex)
-                {
-                    AppendToDetailsRichTextBlock($"Error renaming Assignment Filter with ID {id}: {ex.Message}");
-                }
-            }
-        }
-
-        private async Task RenameEntraGroups(List<string> groupIDs, string prefix)
-        {
-            foreach (var id in groupIDs)
-            {
-                try
-                {
-                    var group = await sourceGraphServiceClient.Groups[id].GetAsync((requestConfiguration) =>
-                    {
-                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
-                    });
-                    await RenameGroup(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Updated Entra Group '{group.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
-                }
-                catch (Exception ex)
-                {
-                    AppendToDetailsRichTextBlock($"Error renaming Entra Group with ID {id}: {ex.Message}");
+                    _renameErrorCount++;
+                    LogError($"Error renaming {contentTypeName} with ID {id}: {ex.Message}");
                 }
             }
         }
 
         /// <summary>
-        ///  Settings catalog
+        /// Validates basic input requirements for rename operations.
         /// </summary>
-        private async Task LoadAllSettingsCatalogPoliciesAsync()
+        private bool ValidateRenameInputs(List<string> contentIDs, string newName)
         {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await GetAllSettingsCatalogContentAsync(sourceGraphServiceClient));
-
-            AppendToDetailsRichTextBlock($"Loaded {count} settings catalog policies.");
-        }
-
-        private async Task SearchForSettingsCatalogPoliciesAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await SearchSettingsCatalogContentAsync(sourceGraphServiceClient, searchQuery));
-
-            AppendToDetailsRichTextBlock($"Found {count} settings catalog policies matching '{searchQuery}'.");
-        }
-        private List<string> GetSettingsCatalogIDs()
-        {
-            // This method retrieves the IDs of all settings catalog policies in CustomContentList
-            return CustomContentList
-                .Where(c => c.ContentType == "Settings Catalog")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
-
-        private async Task RenameSettingsCatalogs(List<string> settingsCatalogIDs, string prefix)
-        {
-            foreach (var id in settingsCatalogIDs)
+            if (contentIDs == null || contentIDs.Count == 0)
             {
-                try
-                {
-                    var policy = await sourceGraphServiceClient.DeviceManagement.ConfigurationPolicies[id].GetAsync((requestConfiguration) =>
-                    {
-                        requestConfiguration.QueryParameters.Select = new string[] { "name" };
-                    });
-
-                    await RenameSettingsCatalogPolicy(sourceGraphServiceClient, id, prefix);
-
-                    AppendToDetailsRichTextBlock($"Updated Settings Catalog '{policy.Name}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
-                }
-                catch (Exception ex)
-                {
-                    AppendToDetailsRichTextBlock($"Error updating Settings Catalog with ID {id}: {ex.Message}");
-                }
+                LogWarning("No content IDs provided for renaming.");
+                return false;
             }
-        }
 
-
-
-        private async Task LoadAllDeviceCompliancePoliciesAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await GetAllDeviceComplianceContentAsync(sourceGraphServiceClient));
-
-            AppendToDetailsRichTextBlock($"Loaded {count} device compliance policies.");
-        }
-        private async Task SearchForDeviceCompliancePoliciesAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await SearchDeviceComplianceContentAsync(sourceGraphServiceClient, searchQuery));
-
-            AppendToDetailsRichTextBlock($"Found {count} device compliance policies matching '{searchQuery}'.");
-        }
-        private List<string> GetDeviceCompliancePolicyIDs()
-        {
-            // This method retrieves the IDs of all device compliance policies in CustomContentList
-            return CustomContentList
-                .Where(c => c.ContentType == "Device Compliance Policy")
-                .Select(c => c.ContentId ?? string.Empty)
-                .ToList();
-        }
-
-        private async Task RenameDeviceCompliancePolicies(List<string> deviceCompliancePolicyIDs, string prefix)
-        {
-            foreach (var id in deviceCompliancePolicyIDs)
+            if (selectedRenameMode != "RemovePrefix" && string.IsNullOrWhiteSpace(newName))
             {
-                try
-                {
-                    var policyName = await sourceGraphServiceClient.DeviceManagement.DeviceCompliancePolicies[id].GetAsync((requestConfiguration) =>
-                    {
-                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
-                    });
-                    await RenameDeviceCompliancePolicy(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Updated Device Compliance Policy '{policyName.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
-                }
-                catch (Exception ex)
-                {
-                    AppendToDetailsRichTextBlock($"Error renaming Device Compliance Policy with ID {id}: {ex.Message}");
-                }
+                LogWarning("New name cannot be empty.");
+                return false;
             }
-        }
 
-        /// <summary>
-        ///  Device configuration policies
-        /// </summary>
-
-        private async Task LoadAllDeviceConfigurationPoliciesAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await GetAllDeviceConfigurationContentAsync(sourceGraphServiceClient));
-
-            AppendToDetailsRichTextBlock($"Loaded {count} device configuration policies.");
-        }
-
-        private async Task SearchForDeviceConfigurationPoliciesAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await SearchDeviceConfigurationContentAsync(sourceGraphServiceClient, searchQuery));
-
-            AppendToDetailsRichTextBlock($"Found {count} device configuration policies matching '{searchQuery}'.");
-        }
-
-        private List<string> GetDeviceConfigurationPolicyIDs()
-        {
-            // This method retrieves the IDs of all device configuration policies in CustomContentList
-            return CustomContentList
-                .Where(c => c.ContentType == "Device Configuration Policy")
-                .Select(c => c.ContentId ?? string.Empty)
-                .ToList();
-        }
-
-        private async Task RenameDeviceConfigurationPolicies(List<string> deviceConfigurationPolicyIDs, string prefix)
-        {
-            foreach (var id in deviceConfigurationPolicyIDs)
+            var prefixSymbol = GetSelectedPrefixOption();
+            if (prefixSymbol == null && selectedRenameMode == "Prefix")
             {
-                try
-                {
-                    var policy = await sourceGraphServiceClient.DeviceManagement.DeviceConfigurations[id].GetAsync((requestConfiguration) =>
-                    {
-                        requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
-                    });
-                    await RenameDeviceConfigurationPolicy(sourceGraphServiceClient, id, prefix);
-                    AppendToDetailsRichTextBlock($"Renamed Device Configuration Policy '{policy.DisplayName}' with '{prefix}'.");
-                    UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
-                }
-                catch (Exception ex)
-                {
-                    AppendToDetailsRichTextBlock($"Error renaming Device Configuration Policy with ID {id}: {ex.Message}");
-                }
+                LogWarning("Please select a prefix option.");
+                return false;
             }
+
+            return true;
         }
 
         /// <summary>
-        /// Apple BYOD Enrollment Profiles
+        /// Prepares the rename operation based on mode (Prefix/RemovePrefix/Description).
+        /// Shows confirmation dialog and returns the text to apply, or null if cancelled.
         /// </summary>
-
-        private async Task LoadAllAppleBYODEnrollmentProfilesAsync()
+        private async Task<string?> PrepareRenameOperation(List<string> contentIDs, string newName)
         {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await GetAllAppleBYODEnrollmentContentAsync(sourceGraphServiceClient));
-
-            AppendToDetailsRichTextBlock($"Loaded {count} Apple BYOD enrollment profiles.");
+            return selectedRenameMode switch
+            {
+                "Prefix" => await PreparePrefixRename(contentIDs, newName),
+                "RemovePrefix" => await PrepareRemovePrefixRename(contentIDs),
+                "Description" => await PrepareDescriptionUpdate(newName),
+                _ => null
+            };
         }
 
-        private async Task LoadAllApplicationsAsync()
+        private async Task<string?> PreparePrefixRename(List<string> contentIDs, string newName)
         {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await GetAllApplicationContentAsync(sourceGraphServiceClient));
+            var prefixSymbol = GetSelectedPrefixOption();
+            if (prefixSymbol == null) return null;
 
-            AppendToDetailsRichTextBlock($"Loaded {count} applications.");
-        }
-        private async Task SearchForAppleBYODEnrollmentProfilesAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await SearchAppleBYODEnrollmentContentAsync(sourceGraphServiceClient, searchQuery));
+            var prefix = $"{prefixSymbol[0]}{newName}{prefixSymbol[1]}";
 
-            AppendToDetailsRichTextBlock($"Found {count} Apple BYOD enrollment profiles matching '{searchQuery}'.");
-        }
-
-        private async Task SearchForApplicationsAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await SearchApplicationContentAsync(sourceGraphServiceClient, searchQuery));
-
-            AppendToDetailsRichTextBlock($"Found {count} applications matching '{searchQuery}'.");
-        }
-        private List<string> GetAppleBYODEnrollmentProfileIDs()
-        {
-            // This method retrieves the IDs of all Apple BYOD enrollment profiles in CustomContentList
-            return CustomContentList
-                .Where(c => c.ContentType == "Apple BYOD Enrollment Profile")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
+            var contentNames = contentIDs
+                .Select(id => CustomContentList.FirstOrDefault(c => c.ContentId == id))
+                .Where(c => c != null)
+                .Select(c => FindPreFixInPolicyName(c!.ContentName, prefix))
                 .ToList();
+
+            if (contentNames.Count == 0)
+            {
+                LogWarning("No content names found for the provided IDs.");
+                return null;
+            }
+
+            var confirmed = await ShowConfirmationDialog(
+                "Confirm Renaming",
+                $"The new policy names will look like this. Proceed?\n\n{string.Join("\n", contentNames)}",
+                "Rename");
+
+            return confirmed ? prefix : null;
+        }
+
+        private async Task<string?> PrepareRemovePrefixRename(List<string> contentIDs)
+        {
+            var previewNames = contentIDs
+                .Select(id => CustomContentList.FirstOrDefault(c => c.ContentId == id))
+                .Where(c => c != null)
+                .Select(c => new
+                {
+                    Original = c!.ContentName,
+                    NewName = RemovePrefixFromPolicyName(c.ContentName)
+                })
+                .ToList();
+
+            if (previewNames.Count == 0)
+            {
+                LogWarning("No content names found for the provided IDs.");
+                return null;
+            }
+
+            var itemsWithPrefixes = previewNames.Where(p => p.Original != p.NewName).ToList();
+            if (itemsWithPrefixes.Count == 0)
+            {
+                LogWarning("No items have prefixes to remove.");
+                return null;
+            }
+
+            var previewText = string.Join("\n", itemsWithPrefixes.Take(10).Select(p => $"{p.Original}  →  {p.NewName}"));
+            if (itemsWithPrefixes.Count > 10)
+            {
+                previewText += $"\n... and {itemsWithPrefixes.Count - 10} more items";
+            }
+
+            var confirmed = await ShowConfirmationDialog(
+                "Confirm Removing Prefixes",
+                $"The following {itemsWithPrefixes.Count} item(s) will have their prefixes removed:\n\n{previewText}",
+                "Remove Prefixes");
+
+            return confirmed ? "__REMOVE_PREFIX__" : null;
+        }
+
+        private async Task<string?> PrepareDescriptionUpdate(string newDescription)
+        {
+            var confirmed = await ShowConfirmationDialog(
+                "Confirm updating description",
+                $"The new policy descriptions will look like this. Proceed?\n\n{newDescription}",
+                "Update");
+
+            return confirmed ? newDescription : null;
         }
 
         /// <summary>
-        /// Assignment Filters
+        /// Returns the rename registry with all content types and their rename operations.
         /// </summary>
+        private IEnumerable<RenameTypeDefinition> GetRenameTypeRegistry() =>
+        [
+            new(ContentTypes.SettingsCatalog, "Settings Catalog",
+                async (id, p) => await RenameSettingsCatalogPolicy(sourceGraphServiceClient, id, p),
+                async id => (await sourceGraphServiceClient.DeviceManagement.ConfigurationPolicies[id]
+                    .GetAsync(r => r.QueryParameters.Select = new[] { "name" }))?.Name),
 
-        private async Task LoadAllAssignmentFiltersAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await GetAllAssignmentFilterContentAsync(sourceGraphServiceClient));
+            new(ContentTypes.DeviceCompliancePolicy, "Device Compliance Policy",
+                async (id, p) => await RenameDeviceCompliancePolicy(sourceGraphServiceClient, id, p),
+                async id => (await sourceGraphServiceClient.DeviceManagement.DeviceCompliancePolicies[id]
+                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
 
-            AppendToDetailsRichTextBlock($"Loaded {count} assignment filters.");
-        }
-        private async Task SearchForAssignmentFiltersAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await SearchAssignmentFilterContentAsync(sourceGraphServiceClient, searchQuery));
+            new(ContentTypes.DeviceConfigurationPolicy, "Device Configuration Policy",
+                async (id, p) => await RenameDeviceConfigurationPolicy(sourceGraphServiceClient, id, p),
+                async id => (await sourceGraphServiceClient.DeviceManagement.DeviceConfigurations[id]
+                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
 
-            AppendToDetailsRichTextBlock($"Found {count} assignment filters matching '{searchQuery}'.");
-        }
-        private List<string> GetAssignmentFilterIDs()
-        {
-            // This method retrieves the IDs of all assignment filters in CustomContentList
-            return CustomContentList
-                .Where(c => c.ContentType == "Assignment Filter")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
+            new(ContentTypes.AppleBYODEnrollmentProfile, "Apple BYOD Enrollment Profile",
+                async (id, p) => await RenameAppleBYODEnrollmentProfile(sourceGraphServiceClient, id, p),
+                async id => (await sourceGraphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[id]
+                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
+
+            new(ContentTypes.MacOSShellScript, "macOS Shell Script",
+                async (id, p) => await RenameMacOSShellScript(sourceGraphServiceClient, id, p),
+                async id => (await sourceGraphServiceClient.DeviceManagement.DeviceShellScripts[id]
+                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
+
+            new(ContentTypes.PowerShellScript, "PowerShell Script",
+                async (id, p) => await RenamePowerShellScript(sourceGraphServiceClient, id, p),
+                async id => (await sourceGraphServiceClient.DeviceManagement.DeviceManagementScripts[id]
+                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
+
+            new(ContentTypes.ProactiveRemediation, "Proactive Remediation",
+                async (id, p) => await RenameProactiveRemediation(sourceGraphServiceClient, id, p),
+                async id => (await sourceGraphServiceClient.DeviceManagement.DeviceHealthScripts[id]
+                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
+
+            new(ContentTypes.WindowsAutoPilotProfile, "Windows AutoPilot Profile",
+                async (id, p) => await RenameWindowsAutoPilotProfile(sourceGraphServiceClient, id, p),
+                async id => (await sourceGraphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[id]
+                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
+
+            new(ContentTypes.WindowsDriverUpdate, "Windows Driver Update",
+                async (id, p) => await RenameDriverProfile(sourceGraphServiceClient, id, p),
+                async id => (await sourceGraphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[id]
+                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
+
+            new(ContentTypes.WindowsFeatureUpdate, "Windows Feature Update",
+                async (id, p) => await RenameWindowsFeatureUpdateProfile(sourceGraphServiceClient, id, p),
+                async id => (await sourceGraphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[id]
+                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
+
+            new(ContentTypes.WindowsQualityUpdatePolicy, "Windows Quality Update Policy",
+                async (id, p) => await RenameWindowsQualityUpdatePolicy(sourceGraphServiceClient, id, p),
+                async id => (await sourceGraphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[id]
+                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
+
+            new(ContentTypes.WindowsQualityUpdateProfile, "Windows Quality Update Profile",
+                async (id, p) => await RenameWindowsQualityUpdateProfile(sourceGraphServiceClient, id, p),
+                async id => (await sourceGraphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[id]
+                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
+
+            new(ContentTypes.AssignmentFilter, "Assignment Filter",
+                async (id, p) => await RenameAssignmentFilter(sourceGraphServiceClient, id, p),
+                async id => (await sourceGraphServiceClient.DeviceManagement.AssignmentFilters[id]
+                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
+
+            new(ContentTypes.EntraGroup, "Entra Group",
+                async (id, p) => await RenameGroup(sourceGraphServiceClient, id, p),
+                async id => (await sourceGraphServiceClient.Groups[id]
+                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
+
+            new(ContentTypes.Application, "Application",
+                async (id, p) => await RenameApplication(sourceGraphServiceClient, id, p)),
+        ];
+
+        #endregion
+
+        #region UI Helpers
 
         /// <summary>
-        /// Entra Groups
+        /// Shows a confirmation dialog and returns true if user confirmed.
         /// </summary>
-
-        private async Task LoadAllEntraGroupsAsync()
+        private async Task<bool> ShowConfirmationDialog(string title, string content, string confirmButtonText)
         {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await GetAllGroupContentAsync(sourceGraphServiceClient));
+            var dialog = new ContentDialog
+            {
+                Title = title,
+                Content = content,
+                PrimaryButtonText = confirmButtonText,
+                CloseButtonText = "Cancel",
+                XamlRoot = this.XamlRoot
+            };
 
-            AppendToDetailsRichTextBlock($"Loaded {count} Entra groups.");
-        }
-        private async Task SearchForEntraGroupsAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await SearchGroupContentAsync(sourceGraphServiceClient, searchQuery));
-
-            AppendToDetailsRichTextBlock($"Found {count} Entra groups matching '{searchQuery}'.");
-        }
-        private List<string> GetEntraGroupIDs()
-        {
-            // This method retrieves the IDs of all Entra groups in CustomContentList
-            return CustomContentList
-                .Where(c => c.ContentType == "Entra Group")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
-
-        /// <summary>
-        /// Powershell Scripts
-        /// </summary>
-
-        private async Task LoadAllPowerShellScriptsAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await GetAllPowerShellScriptContentAsync(sourceGraphServiceClient));
-
-            AppendToDetailsRichTextBlock($"Loaded {count} PowerShell scripts.");
-        }
-        private async Task SearchForPowerShellScriptsAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await SearchPowerShellScriptContentAsync(sourceGraphServiceClient, searchQuery));
-
-            AppendToDetailsRichTextBlock($"Found {count} PowerShell scripts matching '{searchQuery}'.");
-        }
-        private List<string> GetPowerShellScriptIDs()
-        {
-            // This method retrieves the IDs of all PowerShell scripts in CustomContentList
-            return CustomContentList
-                .Where(c => c.ContentType == "PowerShell Script")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
-
-        /// <summary>
-        /// Proactive Remediations
-        /// </summary>
-
-        private async Task LoadAllProactiveRemediationsAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await GetAllProactiveRemediationContentAsync(sourceGraphServiceClient));
-
-            AppendToDetailsRichTextBlock($"Loaded {count} proactive remediations.");
-        }
-        private async Task SearchForProactiveRemediationsAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await SearchProactiveRemediationContentAsync(sourceGraphServiceClient, searchQuery));
-
-            AppendToDetailsRichTextBlock($"Found {count} proactive remediations matching '{searchQuery}'.");
-        }
-        private List<string> GetProactiveRemediationIDs()
-        {
-            // This method retrieves the IDs of all proactive remediations in CustomContentList
-            return CustomContentList
-                .Where(c => c.ContentType == "Proactive Remediation")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
-
-        /// <summary>
-        /// MacOS shell scripts
-        /// </summary>
-
-        private async Task LoadAllMacOSShellScriptsAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await GetAllMacOSShellScriptContentAsync(sourceGraphServiceClient));
-
-            AppendToDetailsRichTextBlock($"Loaded {count} MacOS shell scripts.");
-        }
-        private async Task SearchForMacOSShellScriptsAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await SearchMacOSShellScriptContentAsync(sourceGraphServiceClient, searchQuery));
-
-            AppendToDetailsRichTextBlock($"Found {count} MacOS shell scripts matching '{searchQuery}'.");
-        }
-        private List<string> GetMacOSShellScriptIDs()
-        {
-            // This method retrieves the IDs of all MacOS shell scripts in CustomContentList
-            return CustomContentList
-                .Where(c => c.ContentType == "MacOS Shell Script")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
-
-        /// <summary>
-        /// Windows AutoPilot Profiles
-        /// </summary>
-
-        private async Task LoadAllWindowsAutoPilotProfilesAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await GetAllWindowsAutoPilotContentAsync(sourceGraphServiceClient));
-
-            AppendToDetailsRichTextBlock($"Loaded {count} Windows AutoPilot profiles.");
-        }
-        private async Task SearchForWindowsAutoPilotProfilesAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await SearchWindowsAutoPilotContentAsync(sourceGraphServiceClient, searchQuery));
-
-            AppendToDetailsRichTextBlock($"Found {count} Windows AutoPilot profiles matching '{searchQuery}'.");
-        }
-        private List<string> GetWindowsAutoPilotProfileIDs()
-        {
-            // This method retrieves the IDs of all Windows AutoPilot profiles in CustomContentList
-            return CustomContentList
-                .Where(c => c.ContentType == "Windows AutoPilot Profile")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
-
-        /// <summary>
-        /// Windows Driver Updates
-        /// </summary>
-        private async Task LoadAllWindowsDriverUpdatesAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await GetAllWindowsDriverUpdateContentAsync(sourceGraphServiceClient));
-
-            AppendToDetailsRichTextBlock($"Loaded {count} Windows driver updates.");
-        }
-        private async Task SearchForWindowsDriverUpdatesAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await SearchWindowsDriverUpdateContentAsync(sourceGraphServiceClient, searchQuery));
-
-            AppendToDetailsRichTextBlock($"Found {count} Windows driver updates matching '{searchQuery}'.");
-        }
-        private List<string> GetWindowsDriverUpdateIDs()
-        {
-            // This method retrieves the IDs of all Windows driver updates in CustomContentList
-            return CustomContentList
-                .Where(c => c.ContentType == "Windows Driver Update")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
-
-        /// <summary>
-        /// Windows Feature Updates
-        /// </summary>
-
-        private async Task LoadAllWindowsFeatureUpdatesAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await GetAllWindowsFeatureUpdateContentAsync(sourceGraphServiceClient));
-
-            AppendToDetailsRichTextBlock($"Loaded {count} Windows feature updates.");
-        }
-        private async Task SearchForWindowsFeatureUpdatesAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await SearchWindowsFeatureUpdateContentAsync(sourceGraphServiceClient, searchQuery));
-
-            AppendToDetailsRichTextBlock($"Found {count} Windows feature updates matching '{searchQuery}'.");
-        }
-        private List<string> GetWindowsFeatureUpdateIDs()
-        {
-            // This method retrieves the IDs of all Windows feature updates in CustomContentList
-            return CustomContentList
-                .Where(c => c.ContentType == "Windows Feature Update")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
-
-        /// <summary>
-        /// Windows Quality Update Policy
-        /// </summary>
-
-        private async Task LoadAllWindowsQualityUpdatePoliciesAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await GetAllWindowsQualityUpdatePolicyContentAsync(sourceGraphServiceClient));
-
-            AppendToDetailsRichTextBlock($"Loaded {count} Windows quality update policies.");
-        }
-        private async Task SearchForWindowsQualityUpdatePoliciesAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await SearchWindowsQualityUpdatePolicyContentAsync(sourceGraphServiceClient, searchQuery));
-
-            AppendToDetailsRichTextBlock($"Found {count} Windows quality update policies matching '{searchQuery}'.");
-        }
-        private List<string> GetWindowsQualityUpdatePolicyIDs()
-        {
-            // This method retrieves the IDs of all Windows quality update policies in CustomContentList
-            return CustomContentList
-                .Where(c => c.ContentType == "Windows Quality Update Policy")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
-        }
-
-        /// <summary>
-        /// Windows Quality Update Profile
-        /// </summary>
-
-        private async Task LoadAllWindowsQualityUpdateProfilesAsync()
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await GetAllWindowsQualityUpdateProfileContentAsync(sourceGraphServiceClient));
-
-            AppendToDetailsRichTextBlock($"Loaded {count} Windows quality update profiles.");
-        }
-        private async Task SearchForWindowsQualityUpdateProfilesAsync(string searchQuery)
-        {
-            var count = await UserInterfaceHelper.PopulateCollectionAsync(
-                CustomContentList,
-                async () => await SearchWindowsQualityUpdateProfileContentAsync(sourceGraphServiceClient, searchQuery));
-
-            AppendToDetailsRichTextBlock($"Found {count} Windows quality update profiles matching '{searchQuery}'.");
-        }
-        private List<string> GetWindowsQualityUpdateProfileIDs()
-        {
-            // This method retrieves the IDs of all Windows quality update profiles in CustomContentList
-            return CustomContentList
-                .Where(c => c.ContentType == "Windows Quality Update Profile")
-                .Select(c => c.ContentId ?? string.Empty) // Ensure no nulls are returned
-                .ToList();
+            var result = await dialog.ShowAsync();
+            if (result != ContentDialogResult.Primary)
+            {
+                LogInfo("Renaming operation cancelled.");
+                return false;
+            }
+            return true;
         }
 
         /// <summary>
@@ -1288,33 +452,50 @@ namespace IntuneTools.Pages
         /// </summary>
         public string? GetSelectedPrefixOption()
         {
-            if (Parentheses.IsChecked == true)
-                return "()";
-            if (SquareBrackets.IsChecked == true)
-                return "[]";
-            if (CurlyBrackets.IsChecked == true)
-                return "{}";
+            if (Parentheses.IsChecked == true) return "()";
+            if (SquareBrackets.IsChecked == true) return "[]";
+            if (CurlyBrackets.IsChecked == true) return "{}";
             return null;
         }
 
+        private RenameMode GetSelectedRenameMode()
+        {
+            var index = RenameModeComboBox?.SelectedIndex ?? 0;
+            if (index < 0 || index > 2) index = 0;
+            return (RenameMode)index;
+        }
 
+        private void InitializeProgressTracking(int totalItems)
+        {
+            _renameTotal = totalItems;
+            _renameCurrent = 0;
+            _renameSuccessCount = 0;
+            _renameErrorCount = 0;
+        }
 
+        private void ReportRenameResults(string operationText)
+        {
+            if (_renameErrorCount == 0)
+            {
+                ShowOperationSuccess($"Successfully renamed {_renameSuccessCount} items");
+            }
+            else
+            {
+                ShowOperationError($"Completed with {_renameErrorCount} error(s). {_renameSuccessCount} items renamed successfully.");
+            }
+            LogSuccess($"Renamed {_renameSuccessCount} items with '{operationText}'.");
+        }
 
+        #endregion
 
-
-
-
-
-        /// <summary>
-        /// Button handlers
-        /// </summary>
+        #region Event Handlers
 
         private void ClearAllButton_Click(object sender, RoutedEventArgs e)
         {
             CustomContentList.Clear();
             RenamingDataGrid.ItemsSource = null;
             RenamingDataGrid.ItemsSource = CustomContentList;
-            AppendToDetailsRichTextBlock("All items cleared from the list.");
+            LogInfo("All items cleared from the list.");
         }
 
         private void ClearSelectedButton_Click(object sender, RoutedEventArgs e)
@@ -1322,7 +503,7 @@ namespace IntuneTools.Pages
             var selectedItems = RenamingDataGrid.SelectedItems?.Cast<CustomContentInfo>().ToList();
             if (selectedItems == null || selectedItems.Count == 0)
             {
-                AppendToDetailsRichTextBlock("No items selected to clear.");
+                LogWarning("No items selected to clear.");
                 return;
             }
             foreach (var item in selectedItems)
@@ -1331,43 +512,14 @@ namespace IntuneTools.Pages
             }
             RenamingDataGrid.ItemsSource = null;
             RenamingDataGrid.ItemsSource = CustomContentList;
-            AppendToDetailsRichTextBlock($"Cleared {selectedItems.Count} selected item(s) from the list.");
+            LogInfo($"Cleared {selectedItems.Count} selected item(s) from the list.");
         }
 
         private async void ListAllButton_Click(object sender, RoutedEventArgs e)
         {
             await ListAllOrchestrator(sourceGraphServiceClient);
         }
-        private async void SearchButton_Click(object sender, RoutedEventArgs e)
-        {
-            string searchQuery = SearchQueryTextBox.Text.Trim();
-            if (string.IsNullOrEmpty(searchQuery))
-            {
-                AppendToDetailsRichTextBlock("Please enter a search query.");
-                return;
-            }
-            await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
-        }
 
-        // Handler for the 'Clear Log' button
-        private async void ClearLogButton_Click(object sender, RoutedEventArgs e)
-        {
-            var dialog = new ContentDialog
-            {
-                Title = "Clear Log Console?",
-                Content = "Are you sure you want to clear all log console text? This action cannot be undone.",
-                PrimaryButtonText = "Clear",
-                CloseButtonText = "Cancel",
-                DefaultButton = ContentDialogButton.Close,
-                XamlRoot = this.XamlRoot
-            };
-
-            var result = await dialog.ShowAsync().AsTask();
-            if (result == ContentDialogResult.Primary)
-            {
-                LogConsole.Blocks.Clear();
-            }
-        }
         private async void RenameButton_Click(object sender, RoutedEventArgs e)
         {
             var itemsToRename = CustomContentList.ToList();
@@ -1375,79 +527,87 @@ namespace IntuneTools.Pages
 
             if (itemsToRename == null || itemsToRename.Count == 0)
             {
-                AppendToDetailsRichTextBlock("No items in the grid to rename.");
+                LogWarning("No items in the grid to rename.");
                 return;
             }
 
             string newName = NewNameTextBox.Text.Trim();
 
-            if (string.IsNullOrEmpty(newName))
+            if (renameMode != RenameMode.RemovePrefix && string.IsNullOrEmpty(newName))
             {
-                AppendToDetailsRichTextBlock("Please enter a new name.");
+                LogWarning("Please enter a new name.");
                 return;
             }
 
             var prefixSymbol = GetSelectedPrefixOption();
 
-            if (prefixSymbol == null && renameMode != RenameMode.Description)
+            if (prefixSymbol == null && renameMode == RenameMode.Prefix)
             {
-                AppendToDetailsRichTextBlock("Please select a prefix option.");
+                LogWarning("Please select a prefix option.");
                 return;
             }
 
-
-
             selectedRenameMode = renameMode.ToString();
 
+            // Bulk operation safeguard: warn when renaming 10 or more items
+            if (itemsToRename.Count >= 10)
+            {
+                var bulkWarning = new ContentDialog
+                {
+                    Title = "\u26A0 Large Bulk Update",
+                    Content = $"You are about to update {itemsToRename.Count} items. Are you sure you want to continue?",
+                    PrimaryButtonText = "Continue",
+                    CloseButtonText = "Cancel",
+                    DefaultButton = ContentDialogButton.Close,
+                    XamlRoot = this.XamlRoot
+                };
+
+                var bulkResult = await bulkWarning.ShowAsync();
+                if (bulkResult != ContentDialogResult.Primary)
+                {
+                    LogInfo("Bulk rename cancelled by user.");
+                    return;
+                }
+            }
+
             await RenameContent(itemsToRename.Select(i => i.ContentId).Where(id => !string.IsNullOrEmpty(id)).ToList(), newName);
-
-        }
-
-        private RenameMode GetSelectedRenameMode()
-        {
-            // Defaults to Prefix if the ComboBox is not available yet.
-            var index = RenameModeComboBox?.SelectedIndex ?? 0;
-
-            // Clamp to valid range [0..2].
-            if (index < 0 || index > 2) index = 0;
-
-            return (RenameMode)index;
-        }
-
-        private int GetSelectedRenameModeIndex()
-        {
-            return (int)GetSelectedRenameMode();
-        }
-
-        // Call this after appending to LogConsole
-        private void ScrollLogToEnd()
-        {
-            // Ensure measure is up-to-date before scrolling
-            LogConsole.UpdateLayout();
-            LogScrollViewer.UpdateLayout();
-
-            // Scroll to the bottom
-            LogScrollViewer.ChangeView(null, LogScrollViewer.ScrollableHeight, null, true);
         }
 
         private void RenameModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             var selectionMode = GetSelectedRenameMode();
 
-            if (PrefixButton is null) return;
+            if (PrefixButton is null || NewNameTextBox is null) return;
 
-            PrefixButton.IsEnabled = selectionMode != RenameMode.Description;
+            var needsTextInput = selectionMode != RenameMode.RemovePrefix;
+            var needsPrefixSymbol = selectionMode == RenameMode.Prefix;
 
-
-            if (selectionMode == RenameMode.Description)
+            PrefixButton.Visibility = needsPrefixSymbol ? Visibility.Visible : Visibility.Collapsed;
+            NewNameTextBox.IsEnabled = needsTextInput;
+            NewNameTextBox.PlaceholderText = selectionMode switch
             {
-                PrefixButton.IsEnabled = false;
-            }
-            else
-            {
-                PrefixButton.IsEnabled = true;
-            }
+                RenameMode.Prefix => "Enter prefix...",
+                RenameMode.Description => "Enter description...",
+                _ => "Not required"
+            };
         }
-    }
 
+        private void RenamingDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
+        {
+            HandleDataGridSorting(sender, e);
+        }
+
+        private async void SearchButton_Click(object sender, RoutedEventArgs e)
+        {
+            string searchQuery = SearchQueryTextBox.Text.Trim();
+            if (string.IsNullOrEmpty(searchQuery))
+            {
+                LogWarning("Please enter a search query.");
+                return;
+            }
+            await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
+        }
+
+        #endregion
+    }
 }

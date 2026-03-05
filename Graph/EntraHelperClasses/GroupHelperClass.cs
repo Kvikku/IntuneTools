@@ -338,6 +338,25 @@ namespace IntuneTools.Graph.EntraHelperClasses
                     await graphServiceClient.Groups[groupID].PatchAsync(group);
                     LogToFunctionFile(appFunction.Main, $"Updated description for group {groupID} to '{newName}'");
                 }
+                else if (selectedRenameMode == "RemovePrefix")
+                {
+                    var existingGroup = await graphServiceClient.Groups[groupID].GetAsync();
+
+                    if (existingGroup == null)
+                    {
+                        throw new InvalidOperationException($"Group with ID '{groupID}' not found.");
+                    }
+
+                    var name = RemovePrefixFromPolicyName(existingGroup.DisplayName);
+
+                    var group = new Group
+                    {
+                        DisplayName = name
+                    };
+
+                    await graphServiceClient.Groups[groupID].PatchAsync(group);
+                    LogToFunctionFile(appFunction.Main, $"Removed prefix from group {groupID}, new name: '{name}'");
+                }
             }
             catch (Microsoft.Graph.Beta.Models.ODataErrors.ODataError odataError)
             {

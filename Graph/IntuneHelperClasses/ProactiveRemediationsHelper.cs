@@ -356,6 +356,25 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     await graphServiceClient.DeviceManagement.DeviceHealthScripts[scriptID].PatchAsync(script);
                     LogToFunctionFile(appFunction.Main, $"Updated description for Proactive remediation script {scriptID} to {newName}");
                 }
+                else if (selectedRenameMode == "RemovePrefix")
+                {
+                    var existingScript = await graphServiceClient.DeviceManagement.DeviceHealthScripts[scriptID].GetAsync();
+
+                    if (existingScript == null)
+                    {
+                        throw new InvalidOperationException($"Script with ID '{scriptID}' not found.");
+                    }
+
+                    var name = RemovePrefixFromPolicyName(existingScript.DisplayName);
+
+                    var script = new DeviceHealthScript
+                    {
+                        DisplayName = name
+                    };
+
+                    await graphServiceClient.DeviceManagement.DeviceHealthScripts[scriptID].PatchAsync(script);
+                    LogToFunctionFile(appFunction.Main, $"Removed prefix from Proactive remediation script {scriptID}, new name: '{name}'");
+                }
             }
             catch (Exception ex)
             {

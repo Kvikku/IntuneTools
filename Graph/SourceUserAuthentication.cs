@@ -98,6 +98,29 @@ public static class SourceUserAuthentication
         return await _tokenProvider.GetAuthorizationTokenAsync(new Uri("https://graph.microsoft.com"));
     }
 
+    /// <summary>
+    /// Gets the granted permission scopes from the current access token.
+    /// </summary>
+    /// <returns>Array of granted scope strings, or empty array if not authenticated.</returns>
+    public static async Task<string[]> GetGrantedScopesAsync()
+    {
+        if (_tokenProvider == null)
+            return Array.Empty<string>();
+
+        try
+        {
+            var token = await GetAccessTokenAsync();
+            var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+            var jwt = handler.ReadJwtToken(token);
+            var scopes = jwt.Claims.FirstOrDefault(c => c.Type == "scp")?.Value;
+            return scopes?.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+        }
+        catch
+        {
+            return Array.Empty<string>();
+        }
+    }
+
     public static async Task<bool> ClearSessionAsync()
     {
         // Ensure PCA exists

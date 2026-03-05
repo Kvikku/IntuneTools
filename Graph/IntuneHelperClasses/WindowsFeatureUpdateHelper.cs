@@ -377,6 +377,25 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileID].PatchAsync(profile);
                     LogToFunctionFile(appFunction.Main, $"Updated description for Windows Feature Update profile {profileID} to '{newName}'");
                 }
+                else if (selectedRenameMode == "RemovePrefix")
+                {
+                    var existingProfile = await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileID].GetAsync();
+
+                    if (existingProfile == null)
+                    {
+                        throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
+                    }
+
+                    var name = RemovePrefixFromPolicyName(existingProfile.DisplayName);
+
+                    var profile = new WindowsFeatureUpdateProfile
+                    {
+                        DisplayName = name
+                    };
+
+                    await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileID].PatchAsync(profile);
+                    LogToFunctionFile(appFunction.Main, $"Removed prefix from Windows Feature Update profile {profileID}, new name: '{name}'");
+                }
             }
             catch (Exception ex)
             {
