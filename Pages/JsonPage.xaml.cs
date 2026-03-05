@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceCompliancePolicyHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.DeviceConfigurationHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.SettingsCatalogHelper;
 
 namespace IntuneTools.Pages
@@ -45,6 +46,7 @@ namespace IntuneTools.Pages
         {
             ContentTypes.SettingsCatalog,
             ContentTypes.DeviceCompliancePolicy,
+            ContentTypes.DeviceConfigurationPolicy,
         };
 
         /// <summary>
@@ -54,6 +56,7 @@ namespace IntuneTools.Pages
         {
             { ContentTypes.SettingsCatalog, "settingscatalog.json" },
             { ContentTypes.DeviceCompliancePolicy, "devicecompliance.json" },
+            { ContentTypes.DeviceConfigurationPolicy, "deviceconfiguration.json" },
         };
 
         /// <summary>
@@ -68,6 +71,7 @@ namespace IntuneTools.Pages
         {
             { ContentTypes.SettingsCatalog, (ExportSettingsCatalogPolicyDataAsync, ImportSettingsCatalogFromJsonDataAsync) },
             { ContentTypes.DeviceCompliancePolicy, (ExportDeviceCompliancePolicyDataAsync, ImportDeviceComplianceFromJsonDataAsync) },
+            { ContentTypes.DeviceConfigurationPolicy, (ExportDeviceConfigurationPolicyDataAsync, ImportDeviceConfigurationFromJsonDataAsync) },
         };
 
         #endregion
