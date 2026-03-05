@@ -1,8 +1,12 @@
 ﻿using IntuneTools.Utilities;
 using Microsoft.Graph;
+using Microsoft.Kiota.Serialization.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
@@ -119,10 +123,8 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     {
                         var result = await sourceGraphServiceClient.DeviceManagement.DeviceCompliancePolicies[policy].GetAsync((requestConfiguration) =>
                         {
-                            requestConfiguration.QueryParameters.Expand = new string[] { "scheduledActionsForRule" };
+                            requestConfiguration.QueryParameters.Expand = new string[] { "scheduledActionsForRule($expand=scheduledActionConfigurations)" };
                         });
-
-                        //var rules = await sourceGraphServiceClient.DeviceManagement.DeviceCompliancePolicies[policy].ScheduledActionsForRule.GetAsync();
 
                         policyName = result.DisplayName;
 
@@ -133,9 +135,15 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         var newPolicy = Activator.CreateInstance(type);
 
                         // Copy all settings from the source policy to the new policy
+                        // Copy all properties except server-generated ones and ScheduledActionsForRule
+                        // (ScheduledActionsForRule is rebuilt separately to strip server-generated IDs)
                         foreach (var property in result.GetType().GetProperties())
                         {
-                            if (property.CanWrite && property.Name != "Id" && property.Name != "CreatedDateTime" && property.Name != "LastModifiedDateTime")
+                            if (property.CanWrite
+                                && property.Name != "Id"
+                                && property.Name != "CreatedDateTime"
+                                && property.Name != "LastModifiedDateTime"
+                                && property.Name != "ScheduledActionsForRule")
                             {
                                 var value = property.GetValue(result);
                                 if (value != null)
@@ -145,53 +153,62 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                             }
                         }
 
-
-
-
                         // Cast the new policy to DeviceCompliancePolicy
                         var deviceCompliancePolicy = newPolicy as DeviceCompliancePolicy;
 
-
-                        // new device compliance scheduled action rule
-
-                        // Note - this manual test works. Need to copy the scheduled actions for rule
-
-                        var testRule = new DeviceComplianceScheduledActionForRule
+                        // Rebuild ScheduledActionsForRule with clean objects (no server-generated IDs).
+                        // The Graph API requires exactly one rule with exactly one Block action.
+                        // Collect all action configs from all source rules into a single rule.
+                        var allConfigs = new List<DeviceComplianceActionItem>();
+                        if (result.ScheduledActionsForRule != null)
                         {
-                            RuleName = "Test Rule",
-                            ScheduledActionConfigurations = new List<DeviceComplianceActionItem>()
+                            foreach (var action in result.ScheduledActionsForRule)
                             {
-                                new DeviceComplianceActionItem
+                                if (action.ScheduledActionConfigurations != null)
                                 {
-                                    ActionType = DeviceComplianceActionType.Block,
-                                    GracePeriodHours = 8,
-                                    NotificationMessageCCList = new List<string>(),
-                                    NotificationTemplateId = ""
+                                    foreach (var config in action.ScheduledActionConfigurations)
+                                    {
+                                        allConfigs.Add(new DeviceComplianceActionItem
+                                        {
+                                            ActionType = config.ActionType,
+                                            GracePeriodHours = config.GracePeriodHours,
+                                            NotificationMessageCCList = config.NotificationMessageCCList ?? new List<string>(),
+                                            NotificationTemplateId = config.NotificationTemplateId ?? ""
+                                        });
+                                    }
                                 }
                             }
-                        };
+                        }
+
+                        // Ensure exactly one Block action exists
+                        var blockActions = allConfigs.Where(c => c.ActionType == DeviceComplianceActionType.Block).ToList();
+                        var nonBlockActions = allConfigs.Where(c => c.ActionType != DeviceComplianceActionType.Block).ToList();
+
+                        var finalConfigs = new List<DeviceComplianceActionItem>();
+                        if (blockActions.Count > 0)
+                        {
+                            finalConfigs.Add(blockActions.First());
+                        }
+                        else
+                        {
+                            finalConfigs.Add(new DeviceComplianceActionItem
+                            {
+                                ActionType = DeviceComplianceActionType.Block,
+                                GracePeriodHours = 0,
+                                NotificationMessageCCList = new List<string>(),
+                                NotificationTemplateId = ""
+                            });
+                        }
+                        finalConfigs.AddRange(nonBlockActions);
 
                         deviceCompliancePolicy.ScheduledActionsForRule = new List<DeviceComplianceScheduledActionForRule>
                         {
-                            testRule
+                            new DeviceComplianceScheduledActionForRule
+                            {
+                                RuleName = "PasswordRequired",
+                                ScheduledActionConfigurations = finalConfigs
+                            }
                         };
-
-
-                        //// Ensure the ScheduledActionsForRule is copied
-                        //if (result.ScheduledActionsForRule != null)
-                        //{
-                        //    deviceCompliancePolicy.ScheduledActionsForRule = new List<DeviceComplianceScheduledActionForRule>();
-                        //    foreach (var action in result.ScheduledActionsForRule)
-                        //    {
-                        //        var newAction = new DeviceComplianceScheduledActionForRule
-                        //        {
-                        //            RuleName = action.RuleName,
-                        //            ScheduledActionConfigurations = action.ScheduledActionConfigurations
-
-                        //        };
-                        //        deviceCompliancePolicy.ScheduledActionsForRule.Add(newAction);
-                        //    }
-                        //}
 
 
                         var import = await destinationGraphServiceClient.DeviceManagement.DeviceCompliancePolicies.PostAsync(deviceCompliancePolicy);
@@ -569,6 +586,144 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
 
             return content;
+        }
+
+        /// <summary>
+        /// Exports a device compliance policy's full data as a JsonElement for JSON file export.
+        /// Uses Kiota serialization to preserve OData type annotations and polymorphic types.
+        /// </summary>
+        public static async Task<JsonElement?> ExportDeviceCompliancePolicyDataAsync(GraphServiceClient graphServiceClient, string policyId)
+        {
+            try
+            {
+                var result = await graphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyId].GetAsync((requestConfiguration) =>
+                {
+                    requestConfiguration.QueryParameters.Expand = new[] { "scheduledActionsForRule($expand=scheduledActionConfigurations)" };
+                });
+
+                if (result == null)
+                {
+                    LogToFunctionFile(appFunction.Main, $"Device compliance policy {policyId} not found for export.", LogLevels.Warning);
+                    return null;
+                }
+
+                using var writer = new JsonSerializationWriter();
+                writer.WriteObjectValue(null, result);
+                using var stream = writer.GetSerializedContent();
+                var doc = await JsonDocument.ParseAsync(stream);
+                return doc.RootElement.Clone();
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error exporting device compliance policy {policyId}: {ex.Message}", LogLevels.Error);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Imports a device compliance policy from previously exported JSON data into the destination tenant.
+        /// </summary>
+        public static async Task<string?> ImportDeviceComplianceFromJsonDataAsync(GraphServiceClient graphServiceClient, JsonElement policyData)
+        {
+            try
+            {
+                var json = policyData.GetRawText();
+                using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+                var parseNode = new JsonParseNode(JsonDocument.Parse(stream).RootElement);
+                var exportedPolicy = parseNode.GetObjectValue(DeviceCompliancePolicy.CreateFromDiscriminatorValue);
+
+                if (exportedPolicy == null)
+                {
+                    LogToFunctionFile(appFunction.Main, "Failed to deserialize device compliance policy data from JSON.", LogLevels.Error);
+                    return null;
+                }
+
+                // Use reflection to create a clean copy of the specific derived type
+                var type = exportedPolicy.GetType();
+                var newPolicy = (DeviceCompliancePolicy)Activator.CreateInstance(type)!;
+
+                // Copy all properties except server-generated ones and ScheduledActionsForRule
+                // (ScheduledActionsForRule is rebuilt separately to strip server-generated IDs)
+                foreach (var property in type.GetProperties())
+                {
+                    if (property.CanWrite
+                        && property.Name != "Id"
+                        && property.Name != "CreatedDateTime"
+                        && property.Name != "LastModifiedDateTime"
+                        && property.Name != "ScheduledActionsForRule")
+                    {
+                        var value = property.GetValue(exportedPolicy);
+                        if (value != null)
+                        {
+                            property.SetValue(newPolicy, value);
+                        }
+                    }
+                }
+
+                // Rebuild ScheduledActionsForRule with clean objects (no server-generated IDs).
+                // The Graph API requires exactly one rule with exactly one Block action.
+                // Collect all action configs from all source rules into a single rule.
+                var allConfigs = new List<DeviceComplianceActionItem>();
+                if (exportedPolicy.ScheduledActionsForRule != null)
+                {
+                    foreach (var action in exportedPolicy.ScheduledActionsForRule)
+                    {
+                        if (action.ScheduledActionConfigurations != null)
+                        {
+                            foreach (var config in action.ScheduledActionConfigurations)
+                            {
+                                allConfigs.Add(new DeviceComplianceActionItem
+                                {
+                                    ActionType = config.ActionType,
+                                    GracePeriodHours = config.GracePeriodHours,
+                                    NotificationMessageCCList = config.NotificationMessageCCList ?? new List<string>(),
+                                    NotificationTemplateId = config.NotificationTemplateId ?? ""
+                                });
+                            }
+                        }
+                    }
+                }
+
+                // Ensure exactly one Block action exists
+                var blockActions = allConfigs.Where(c => c.ActionType == DeviceComplianceActionType.Block).ToList();
+                var nonBlockActions = allConfigs.Where(c => c.ActionType != DeviceComplianceActionType.Block).ToList();
+
+                var finalConfigs = new List<DeviceComplianceActionItem>();
+                if (blockActions.Count > 0)
+                {
+                    finalConfigs.Add(blockActions.First());
+                }
+                else
+                {
+                    finalConfigs.Add(new DeviceComplianceActionItem
+                    {
+                        ActionType = DeviceComplianceActionType.Block,
+                        GracePeriodHours = 0,
+                        NotificationMessageCCList = new List<string>(),
+                        NotificationTemplateId = ""
+                    });
+                }
+                finalConfigs.AddRange(nonBlockActions);
+
+                newPolicy.ScheduledActionsForRule = new List<DeviceComplianceScheduledActionForRule>
+                {
+                    new DeviceComplianceScheduledActionForRule
+                    {
+                        RuleName = "PasswordRequired",
+                        ScheduledActionConfigurations = finalConfigs
+                    }
+                };
+
+                var imported = await graphServiceClient.DeviceManagement.DeviceCompliancePolicies.PostAsync(newPolicy);
+
+                LogToFunctionFile(appFunction.Main, $"Imported device compliance policy: {imported?.DisplayName}");
+                return imported?.DisplayName;
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error importing device compliance policy from JSON: {ex.Message}", LogLevels.Error);
+                return null;
+            }
         }
     }
 

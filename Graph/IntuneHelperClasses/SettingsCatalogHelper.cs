@@ -1,7 +1,11 @@
 ﻿using IntuneTools.Utilities;
 using Microsoft.Graph;
+using Microsoft.Kiota.Serialization.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
@@ -452,6 +456,81 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
 
             return content;
+        }
+
+        /// <summary>
+        /// Exports a settings catalog policy's full data as a JsonElement for JSON file export.
+        /// Uses Kiota serialization to preserve OData type annotations and polymorphic settings.
+        /// </summary>
+        public static async Task<JsonElement?> ExportSettingsCatalogPolicyDataAsync(GraphServiceClient graphServiceClient, string policyId)
+        {
+            try
+            {
+                var result = await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyId].GetAsync((requestConfiguration) =>
+                {
+                    requestConfiguration.QueryParameters.Expand = new[] { "settings" };
+                });
+
+                if (result == null)
+                {
+                    LogToFunctionFile(appFunction.Main, $"Policy {policyId} not found for export.", LogLevels.Warning);
+                    return null;
+                }
+
+                using var writer = new JsonSerializationWriter();
+                writer.WriteObjectValue(null, result);
+                using var stream = writer.GetSerializedContent();
+                var doc = await JsonDocument.ParseAsync(stream);
+                return doc.RootElement.Clone();
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error exporting settings catalog policy {policyId}: {ex.Message}", LogLevels.Error);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Imports a settings catalog policy from previously exported JSON data into the destination tenant.
+        /// </summary>
+        public static async Task<string?> ImportSettingsCatalogFromJsonDataAsync(GraphServiceClient graphServiceClient, JsonElement policyData)
+        {
+            try
+            {
+                // Deserialize the exported data back into a typed policy object
+                var json = policyData.GetRawText();
+                using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+                var parseNode = new JsonParseNode(JsonDocument.Parse(stream).RootElement);
+                var exportedPolicy = parseNode.GetObjectValue(DeviceManagementConfigurationPolicy.CreateFromDiscriminatorValue);
+
+                if (exportedPolicy == null)
+                {
+                    LogToFunctionFile(appFunction.Main, "Failed to deserialize policy data from JSON.", LogLevels.Error);
+                    return null;
+                }
+
+                // Create a clean policy object for import (exclude read-only properties like Id)
+                var newPolicy = new DeviceManagementConfigurationPolicy
+                {
+                    Name = exportedPolicy.Name,
+                    Description = exportedPolicy.Description,
+                    Platforms = exportedPolicy.Platforms,
+                    Technologies = exportedPolicy.Technologies,
+                    RoleScopeTagIds = exportedPolicy.RoleScopeTagIds,
+                    Settings = exportedPolicy.Settings,
+                    Assignments = new List<DeviceManagementConfigurationPolicyAssignment>()
+                };
+
+                var imported = await graphServiceClient.DeviceManagement.ConfigurationPolicies.PostAsync(newPolicy);
+
+                LogToFunctionFile(appFunction.Main, $"Imported settings catalog policy: {imported?.Name}");
+                return imported?.Name;
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error importing settings catalog policy from JSON: {ex.Message}", LogLevels.Error);
+                return null;
+            }
         }
     }
 }

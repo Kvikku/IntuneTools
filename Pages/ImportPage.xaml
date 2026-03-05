@@ -24,10 +24,14 @@
 
         <!-- Header -->
         <StackPanel Grid.Row="0" Margin="0,0,0,16">
-            <TextBlock Text="Intune Import"
+            <TextBlock Text="Tenant to Tenant Import"
                        HorizontalAlignment="Left"
                        FontSize="38"
                        FontWeight="Bold"/>
+            <TextBlock Text="Copy policies directly between two authenticated tenants in real time."
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       FontSize="14"
+                       Margin="0,4,0,0"/>
             <InfoBar x:Name="TenantInfoBar"
                      Severity="Informational"
                      IsClosable="False"
@@ -142,7 +146,7 @@
                          IsOpen="True"
                          Severity="Informational"
                          Title="Staging Area"
-                         Message="This grid acts as a staging area. All items listed below will be imported from the source tenant. Use the 'Clear' buttons to exclude items you do not wish to import."
+                         Message="Items listed here will be imported from the source tenant to the destination tenant. Use 'Clear' to exclude items."
                          IsClosable="True"
                          Margin="0,0,12,12"/>
                 

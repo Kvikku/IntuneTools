@@ -1,8 +1,12 @@
 ﻿using IntuneTools.Utilities;
 using Microsoft.Graph;
+using Microsoft.Kiota.Serialization.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
@@ -431,6 +435,88 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
 
             return content;
+        }
+
+        /// <summary>
+        /// Exports a Windows Quality Update profile's full data as a JsonElement for JSON file export.
+        /// </summary>
+        public static async Task<JsonElement?> ExportWindowsQualityUpdateProfileDataAsync(GraphServiceClient graphServiceClient, string profileId)
+        {
+            try
+            {
+                var result = await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileId].GetAsync();
+
+                if (result == null)
+                {
+                    LogToFunctionFile(appFunction.Main, $"Windows Quality Update profile {profileId} not found for export.", LogLevels.Warning);
+                    return null;
+                }
+
+                using var writer = new JsonSerializationWriter();
+                writer.WriteObjectValue(null, result);
+                using var stream = writer.GetSerializedContent();
+                var doc = await JsonDocument.ParseAsync(stream);
+                return doc.RootElement.Clone();
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error exporting Windows Quality Update profile {profileId}: {ex.Message}", LogLevels.Error);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Imports a Windows Quality Update profile from previously exported JSON data into the destination tenant.
+        /// </summary>
+        public static async Task<string?> ImportWindowsQualityUpdateProfileFromJsonDataAsync(GraphServiceClient graphServiceClient, JsonElement policyData)
+        {
+            try
+            {
+                var json = policyData.GetRawText();
+                using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+                var parseNode = new JsonParseNode(JsonDocument.Parse(stream).RootElement);
+                var exportedProfile = parseNode.GetObjectValue(WindowsQualityUpdateProfile.CreateFromDiscriminatorValue);
+
+                if (exportedProfile == null)
+                {
+                    LogToFunctionFile(appFunction.Main, "Failed to deserialize Windows Quality Update profile data from JSON.", LogLevels.Error);
+                    return null;
+                }
+
+                var type = exportedProfile.GetType();
+                var newProfile = new WindowsQualityUpdateProfile();
+
+                foreach (var property in type.GetProperties())
+                {
+                    if (property.CanWrite
+                        && property.Name != "Id"
+                        && property.Name != "CreatedDateTime"
+                        && property.Name != "LastModifiedDateTime"
+                        && property.Name != "Assignments"
+                        && property.Name != "AdditionalData"
+                        && property.Name != "BackingStore")
+                    {
+                        var value = property.GetValue(exportedProfile);
+                        if (value != null)
+                        {
+                            property.SetValue(newProfile, value);
+                        }
+                    }
+                }
+
+                newProfile.OdataType = "#microsoft.graph.windowsQualityUpdateProfile";
+
+                var imported = await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles.PostAsync(newProfile);
+
+                LogToFunctionFile(appFunction.Main, $"Imported Windows Quality Update profile: {imported?.DisplayName}");
+                return imported?.DisplayName;
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error importing Windows Quality Update profile from JSON: {ex.Message}", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, "This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", LogLevels.Warning);
+                return null;
+            }
         }
     }
 }

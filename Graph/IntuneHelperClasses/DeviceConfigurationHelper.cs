@@ -1,7 +1,11 @@
 ﻿using IntuneTools.Utilities;
 using Microsoft.Graph;
+using Microsoft.Kiota.Serialization.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
@@ -494,6 +498,114 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
 
             return content;
+        }
+
+        /// <summary>
+        /// Exports a device configuration policy's full data as a JsonElement for JSON file export.
+        /// Uses Kiota serialization to preserve OData type annotations and polymorphic types.
+        /// </summary>
+        public static async Task<JsonElement?> ExportDeviceConfigurationPolicyDataAsync(GraphServiceClient graphServiceClient, string policyId)
+        {
+            try
+            {
+                var result = await graphServiceClient.DeviceManagement.DeviceConfigurations[policyId].GetAsync();
+
+                if (result == null)
+                {
+                    LogToFunctionFile(appFunction.Main, $"Device configuration {policyId} not found for export.", LogLevels.Warning);
+                    return null;
+                }
+
+                using var writer = new JsonSerializationWriter();
+                writer.WriteObjectValue(null, result);
+                using var stream = writer.GetSerializedContent();
+                var doc = await JsonDocument.ParseAsync(stream);
+                return doc.RootElement.Clone();
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error exporting device configuration {policyId}: {ex.Message}", LogLevels.Error);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Imports a device configuration policy from previously exported JSON data into the destination tenant.
+        /// Mirrors the logic in ImportMultipleDeviceConfigurations.
+        /// </summary>
+        public static async Task<string?> ImportDeviceConfigurationFromJsonDataAsync(GraphServiceClient graphServiceClient, JsonElement policyData)
+        {
+            try
+            {
+                var json = policyData.GetRawText();
+                using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+                var parseNode = new JsonParseNode(JsonDocument.Parse(stream).RootElement);
+                var exportedPolicy = parseNode.GetObjectValue(DeviceConfiguration.CreateFromDiscriminatorValue);
+
+                if (exportedPolicy == null)
+                {
+                    LogToFunctionFile(appFunction.Main, "Failed to deserialize device configuration data from JSON.", LogLevels.Error);
+                    return null;
+                }
+
+                // Skip iOS Device Features — known Graph SDK bug
+                if (exportedPolicy.OdataType != null &&
+                    exportedPolicy.OdataType.Equals("#microsoft.graph.iosDeviceFeaturesConfiguration", StringComparison.OrdinalIgnoreCase))
+                {
+                    LogToFunctionFile(appFunction.Main, $"Skipped '{exportedPolicy.DisplayName}': iOS Device Feature template is currently bugged in Graph SDK.", LogLevels.Warning);
+                    return null;
+                }
+
+                var type = exportedPolicy.GetType();
+                if (type.IsAbstract)
+                {
+                    LogToFunctionFile(appFunction.Main, $"Skipped '{exportedPolicy.DisplayName}': abstract type {type.Name} cannot be imported.", LogLevels.Warning);
+                    return null;
+                }
+
+                // Create a clean copy via reflection, skipping server-generated properties
+                var newPolicy = (DeviceConfiguration)Activator.CreateInstance(type)!;
+                foreach (var property in type.GetProperties())
+                {
+                    if (property.CanWrite
+                        && property.Name != "Id"
+                        && property.Name != "CreatedDateTime"
+                        && property.Name != "LastModifiedDateTime"
+                        && property.Name != "Version"
+                        && property.Name != "AdditionalData"
+                        && property.Name != "BackingStore")
+                    {
+                        var value = property.GetValue(exportedPolicy);
+                        if (value != null)
+                        {
+                            property.SetValue(newPolicy, value);
+                        }
+                    }
+                }
+
+                // Clear navigation / read-only collections that Graph rejects on POST
+                newPolicy.Assignments = new List<DeviceConfigurationAssignment>();
+                newPolicy.GroupAssignments = new List<DeviceConfigurationGroupAssignment>();
+                newPolicy.DeviceStatuses = new List<DeviceConfigurationDeviceStatus>();
+                newPolicy.DeviceSettingStateSummaries = new List<SettingStateDeviceSummary>();
+                newPolicy.UserStatuses = new List<DeviceConfigurationUserStatus>();
+
+                // Special case for Windows 10 General Configuration
+                if (newPolicy is Windows10GeneralConfiguration windows10Config)
+                {
+                    windows10Config.PrivacyAccessControls = windows10Config.PrivacyAccessControls ?? new List<WindowsPrivacyDataAccessControlItem>();
+                }
+
+                var imported = await graphServiceClient.DeviceManagement.DeviceConfigurations.PostAsync(newPolicy);
+
+                LogToFunctionFile(appFunction.Main, $"Imported device configuration: {imported?.DisplayName}");
+                return imported?.DisplayName;
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error importing device configuration from JSON: {ex.Message}", LogLevels.Error);
+                return null;
+            }
         }
     }
 }

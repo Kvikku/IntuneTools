@@ -27,6 +27,10 @@
                        HorizontalAlignment="Left"
                        FontSize="38"
                        FontWeight="Bold"/>
+            <TextBlock Text="Assign policies and apps to groups in bulk."
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       FontSize="14"
+                       Margin="0,4,0,0"/>
             <InfoBar x:Name="TenantInfoBar"
                      Severity="Informational"
                      IsClosable="False"

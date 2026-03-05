@@ -1,8 +1,12 @@
 ﻿using IntuneTools.Utilities;
 using Microsoft.Graph;
+using Microsoft.Kiota.Serialization.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
@@ -442,6 +446,75 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
 
             return content;
+        }
+
+        /// <summary>
+        /// Exports a Windows Feature Update profile's full data as a JsonElement for JSON file export.
+        /// </summary>
+        public static async Task<JsonElement?> ExportWindowsFeatureUpdatePolicyDataAsync(GraphServiceClient graphServiceClient, string profileId)
+        {
+            try
+            {
+                var result = await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileId].GetAsync();
+
+                if (result == null)
+                {
+                    LogToFunctionFile(appFunction.Main, $"Windows Feature Update profile {profileId} not found for export.", LogLevels.Warning);
+                    return null;
+                }
+
+                using var writer = new JsonSerializationWriter();
+                writer.WriteObjectValue(null, result);
+                using var stream = writer.GetSerializedContent();
+                var doc = await JsonDocument.ParseAsync(stream);
+                return doc.RootElement.Clone();
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error exporting Windows Feature Update profile {profileId}: {ex.Message}", LogLevels.Error);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Imports a Windows Feature Update profile from previously exported JSON data into the destination tenant.
+        /// </summary>
+        public static async Task<string?> ImportWindowsFeatureUpdateFromJsonDataAsync(GraphServiceClient graphServiceClient, JsonElement policyData)
+        {
+            try
+            {
+                var json = policyData.GetRawText();
+                using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+                var parseNode = new JsonParseNode(JsonDocument.Parse(stream).RootElement);
+                var exportedProfile = parseNode.GetObjectValue(WindowsFeatureUpdateProfile.CreateFromDiscriminatorValue);
+
+                if (exportedProfile == null)
+                {
+                    LogToFunctionFile(appFunction.Main, "Failed to deserialize Windows Feature Update profile data from JSON.", LogLevels.Error);
+                    return null;
+                }
+
+                var newProfile = new WindowsFeatureUpdateProfile
+                {
+                    OdataType = "#microsoft.graph.windowsFeatureUpdateProfile",
+                    DisplayName = exportedProfile.DisplayName,
+                    Description = exportedProfile.Description,
+                    FeatureUpdateVersion = exportedProfile.FeatureUpdateVersion,
+                    RoleScopeTagIds = exportedProfile.RoleScopeTagIds,
+                    RolloutSettings = exportedProfile.RolloutSettings,
+                };
+
+                var imported = await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles.PostAsync(newProfile);
+
+                LogToFunctionFile(appFunction.Main, $"Imported Windows Feature Update profile: {imported?.DisplayName}");
+                return imported?.DisplayName;
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error importing Windows Feature Update profile from JSON: {ex.Message}", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, "This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", LogLevels.Warning);
+                return null;
+            }
         }
     }
 }
