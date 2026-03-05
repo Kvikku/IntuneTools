@@ -1,8 +1,12 @@
 ﻿using IntuneTools.Utilities;
 using Microsoft.Graph;
 using Microsoft.Graph.Beta.Models.ODataErrors;
+using Microsoft.Kiota.Serialization.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
@@ -572,6 +576,85 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
 
             return content;
+        }
+
+        /// <summary>
+        /// Exports a Windows AutoPilot deployment profile's full data as a JsonElement for JSON file export.
+        /// </summary>
+        public static async Task<JsonElement?> ExportWindowsAutoPilotProfileDataAsync(GraphServiceClient graphServiceClient, string profileId)
+        {
+            try
+            {
+                var result = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileId].GetAsync();
+
+                if (result == null)
+                {
+                    LogToFunctionFile(appFunction.Main, $"Windows AutoPilot profile {profileId} not found for export.", LogLevels.Warning);
+                    return null;
+                }
+
+                using var writer = new JsonSerializationWriter();
+                writer.WriteObjectValue(null, result);
+                using var stream = writer.GetSerializedContent();
+                var doc = await JsonDocument.ParseAsync(stream);
+                return doc.RootElement.Clone();
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error exporting Windows AutoPilot profile {profileId}: {ex.Message}", LogLevels.Error);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Imports a Windows AutoPilot deployment profile from previously exported JSON data into the destination tenant.
+        /// Note: Hybrid Azure AD join profiles are not supported via Graph API and will be skipped.
+        /// </summary>
+        public static async Task<string?> ImportWindowsAutoPilotProfileFromJsonDataAsync(GraphServiceClient graphServiceClient, JsonElement policyData)
+        {
+            try
+            {
+                var json = policyData.GetRawText();
+                using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+                var parseNode = new JsonParseNode(JsonDocument.Parse(stream).RootElement);
+                var exported = parseNode.GetObjectValue(WindowsAutopilotDeploymentProfile.CreateFromDiscriminatorValue);
+
+                if (exported == null)
+                {
+                    LogToFunctionFile(appFunction.Main, "Failed to deserialize Windows AutoPilot profile data from JSON.", LogLevels.Error);
+                    return null;
+                }
+
+                // Hybrid AD join profiles are not supported via Graph API
+                if (exported.OdataType != null && exported.OdataType.Contains("ActiveDirectory", StringComparison.OrdinalIgnoreCase))
+                {
+                    LogToFunctionFile(appFunction.Main, $"Skipping Hybrid Azure AD join AutoPilot profile '{exported.DisplayName}' - not supported via Graph API.", LogLevels.Warning);
+                    return null;
+                }
+
+                var newProfile = new WindowsAutopilotDeploymentProfile();
+
+                foreach (var property in exported.GetType().GetProperties())
+                {
+                    var value = property.GetValue(exported);
+                    if (value != null && property.CanWrite)
+                    {
+                        property.SetValue(newProfile, value);
+                    }
+                }
+
+                newProfile.Id = "";
+
+                var imported = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles.PostAsync(newProfile);
+
+                LogToFunctionFile(appFunction.Main, $"Imported Windows AutoPilot profile: {imported?.DisplayName}");
+                return imported?.DisplayName;
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error importing Windows AutoPilot profile from JSON: {ex.Message}", LogLevels.Error);
+                return null;
+            }
         }
     }
 }

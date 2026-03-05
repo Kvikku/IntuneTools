@@ -18,6 +18,8 @@ using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdatePolicyHan
 using static IntuneTools.Graph.IntuneHelperClasses.PowerShellScriptsHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.ProactiveRemediationsHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.macOSShellScript;
+using static IntuneTools.Graph.IntuneHelperClasses.WindowsAutoPilotHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.AppleBYODEnrollmentProfileHelper;
 
 namespace IntuneTools.Pages
 {
@@ -61,6 +63,8 @@ namespace IntuneTools.Pages
             ContentTypes.PowerShellScript,
             ContentTypes.ProactiveRemediation,
             ContentTypes.MacOSShellScript,
+            ContentTypes.WindowsAutoPilotProfile,
+            ContentTypes.AppleBYODEnrollmentProfile,
         };
 
         /// <summary>
@@ -78,6 +82,8 @@ namespace IntuneTools.Pages
             { ContentTypes.PowerShellScript, "powershellscript.json" },
             { ContentTypes.ProactiveRemediation, "proactiveremediation.json" },
             { ContentTypes.MacOSShellScript, "macosshellscript.json" },
+            { ContentTypes.WindowsAutoPilotProfile, "windowsautopilot.json" },
+            { ContentTypes.AppleBYODEnrollmentProfile, "applebyodenrollment.json" },
         };
 
         /// <summary>
@@ -100,6 +106,8 @@ namespace IntuneTools.Pages
             { ContentTypes.PowerShellScript, (ExportPowerShellScriptDataAsync, ImportPowerShellScriptFromJsonDataAsync) },
             { ContentTypes.ProactiveRemediation, (ExportProactiveRemediationDataAsync, ImportProactiveRemediationFromJsonDataAsync) },
             { ContentTypes.MacOSShellScript, (ExportMacOSShellScriptDataAsync, ImportMacOSShellScriptFromJsonDataAsync) },
+            { ContentTypes.WindowsAutoPilotProfile, (ExportWindowsAutoPilotProfileDataAsync, ImportWindowsAutoPilotProfileFromJsonDataAsync) },
+            { ContentTypes.AppleBYODEnrollmentProfile, (ExportAppleBYODEnrollmentProfileDataAsync, ImportAppleBYODEnrollmentProfileFromJsonDataAsync) },
         };
 
         #endregion

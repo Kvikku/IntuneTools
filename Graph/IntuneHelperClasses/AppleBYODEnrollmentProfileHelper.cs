@@ -1,9 +1,13 @@
 ﻿using IntuneTools.Utilities;
 using Microsoft.Graph;
 using Microsoft.Graph.Beta.Models.ODataErrors;
+using Microsoft.Kiota.Serialization.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
@@ -514,6 +518,78 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
 
             return content;
+        }
+
+        /// <summary>
+        /// Exports an Apple BYOD enrollment profile's full data as a JsonElement for JSON file export.
+        /// </summary>
+        public static async Task<JsonElement?> ExportAppleBYODEnrollmentProfileDataAsync(GraphServiceClient graphServiceClient, string profileId)
+        {
+            try
+            {
+                var result = await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileId].GetAsync();
+
+                if (result == null)
+                {
+                    LogToFunctionFile(appFunction.Main, $"Apple BYOD enrollment profile {profileId} not found for export.", LogLevels.Warning);
+                    return null;
+                }
+
+                using var writer = new JsonSerializationWriter();
+                writer.WriteObjectValue(null, result);
+                using var stream = writer.GetSerializedContent();
+                var doc = await JsonDocument.ParseAsync(stream);
+                return doc.RootElement.Clone();
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error exporting Apple BYOD enrollment profile {profileId}: {ex.Message}", LogLevels.Error);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Imports an Apple BYOD enrollment profile from previously exported JSON data into the destination tenant.
+        /// </summary>
+        public static async Task<string?> ImportAppleBYODEnrollmentProfileFromJsonDataAsync(GraphServiceClient graphServiceClient, JsonElement policyData)
+        {
+            try
+            {
+                var json = policyData.GetRawText();
+                using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+                var parseNode = new JsonParseNode(JsonDocument.Parse(stream).RootElement);
+                var exported = parseNode.GetObjectValue(AppleUserInitiatedEnrollmentProfile.CreateFromDiscriminatorValue);
+
+                if (exported == null)
+                {
+                    LogToFunctionFile(appFunction.Main, "Failed to deserialize Apple BYOD enrollment profile data from JSON.", LogLevels.Error);
+                    return null;
+                }
+
+                var newProfile = new AppleUserInitiatedEnrollmentProfile();
+
+                foreach (var property in exported.GetType().GetProperties())
+                {
+                    if (property.CanWrite && property.Name != "Id" && property.Name != "CreatedDateTime" && property.Name != "LastModifiedDateTime")
+                    {
+                        var value = property.GetValue(exported);
+                        if (value != null)
+                        {
+                            property.SetValue(newProfile, value);
+                        }
+                    }
+                }
+
+                var imported = await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles.PostAsync(newProfile);
+
+                LogToFunctionFile(appFunction.Main, $"Imported Apple BYOD enrollment profile: {imported?.DisplayName}");
+                return imported?.DisplayName;
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error importing Apple BYOD enrollment profile from JSON: {ex.Message}", LogLevels.Error);
+                return null;
+            }
         }
     }
 }
