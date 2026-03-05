@@ -164,6 +164,43 @@ namespace IntuneTools.Pages
                 return;
             }
 
+            // Warn if source tenant is not authenticated — export will lack policy data
+            if (sourceGraphServiceClient == null)
+            {
+                var noAuthDialog = new ContentDialog
+                {
+                    Title = "No Source Tenant Authenticated",
+                    Content = "Without an authenticated source tenant, the exported JSON will only contain item metadata (names, types, IDs) and will NOT include full policy data.\n\nThe resulting file cannot be used to import policies into another tenant. To include full policy data, authenticate with a source tenant first.",
+                    PrimaryButtonText = "Export Anyway",
+                    CloseButtonText = "Cancel",
+                    DefaultButton = ContentDialogButton.Close,
+                    XamlRoot = this.XamlRoot
+                };
+
+                if (await noAuthDialog.ShowAsync() != ContentDialogResult.Primary)
+                {
+                    AppendToDetailsRichTextBlock("Export cancelled.");
+                    return;
+                }
+            }
+
+            // Confirm export
+            var confirmDialog = new ContentDialog
+            {
+                Title = "Export to JSON",
+                Content = $"This will fetch full policy data for {ContentList.Count} item(s) from the source tenant and save it to a JSON file.\n\nThe exported file can later be used to recreate these policies in another tenant using 'Import from JSON' → 'Import to Tenant'.",
+                PrimaryButtonText = "Export",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = this.XamlRoot
+            };
+
+            if (await confirmDialog.ShowAsync() != ContentDialogResult.Primary)
+            {
+                AppendToDetailsRichTextBlock("Export cancelled.");
+                return;
+            }
+
             var savePicker = new Windows.Storage.Pickers.FileSavePicker();
             savePicker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
             savePicker.FileTypeChoices.Add("JSON File", new List<string> { ".json" });
@@ -247,6 +284,26 @@ namespace IntuneTools.Pages
         /// </summary>
         private async Task ImportFromJsonAsync()
         {
+            // Warn if staging area has items
+            if (ContentList.Count > 0)
+            {
+                var replaceDialog = new ContentDialog
+                {
+                    Title = "Replace Staging Area?",
+                    Content = $"The staging area currently contains {ContentList.Count} item(s). Importing from a JSON file will replace all current items.\n\nDo you want to continue?",
+                    PrimaryButtonText = "Replace",
+                    CloseButtonText = "Cancel",
+                    DefaultButton = ContentDialogButton.Close,
+                    XamlRoot = this.XamlRoot
+                };
+
+                if (await replaceDialog.ShowAsync() != ContentDialogResult.Primary)
+                {
+                    AppendToDetailsRichTextBlock("Import from JSON cancelled.");
+                    return;
+                }
+            }
+
             var openPicker = new Windows.Storage.Pickers.FileOpenPicker();
             openPicker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
             openPicker.FileTypeFilter.Add(".json");

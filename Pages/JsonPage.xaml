@@ -93,7 +93,7 @@
                     <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                         <Button x:Name="ExportButton"
                                 Click="ExportButton_Click"
-                                ToolTipService.ToolTip="Export all staged items to a JSON file."
+                                ToolTipService.ToolTip="Save staged items to a JSON file. Fetches full policy data from the source tenant so items can later be imported to another tenant."
                                 Height="40"
                                 Padding="16,0"
                                 Style="{StaticResource AccentButtonStyle}">
@@ -104,7 +104,7 @@
                         </Button>
                         <Button x:Name="ImportButton"
                                 Click="ImportButton_Click"
-                                ToolTipService.ToolTip="Import items from a JSON file into the staging area."
+                                ToolTipService.ToolTip="Load items from a previously exported JSON file into the staging area. This replaces the current staging area contents. No tenant authentication required."
                                 Height="40"
                                 Padding="16,0">
                             <StackPanel Orientation="Horizontal" Spacing="8">
@@ -115,7 +115,7 @@
                         <AppBarSeparator/>
                         <Button x:Name="ImportToTenantButton"
                                 Click="ImportToTenantButton_Click"
-                                ToolTipService.ToolTip="Import staged items (loaded from JSON) into the destination tenant."
+                                ToolTipService.ToolTip="Create policies in the destination tenant from the staged JSON data. Requires a destination tenant to be authenticated."
                                 Height="40"
                                 Padding="16,0">
                             <StackPanel Orientation="Horizontal" Spacing="8">
@@ -151,7 +151,7 @@
                          IsOpen="True"
                          Severity="Informational"
                          Title="Staging Area"
-                         Message="Use 'List All' or 'Search' to load items from the tenant, or 'Import from JSON' to load from a file. Then use 'Export to JSON' to save all staged items."
+                         Message="Step 1: Use 'List All' or 'Search' to load items from a source tenant. Step 2: 'Export to JSON' saves them with full policy data. Step 3: On another machine or later, use 'Import from JSON' to load the file, then 'Import to Tenant' to create the policies in the destination tenant."
                          IsClosable="True"
                          Margin="0,0,12,12"/>
                 
