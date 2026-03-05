@@ -1,7 +1,11 @@
 ﻿using IntuneTools.Utilities;
 using Microsoft.Graph;
+using Microsoft.Kiota.Serialization.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
@@ -462,6 +466,74 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
 
             return content;
+        }
+
+        /// <summary>
+        /// Exports a Windows Driver Update profile's full data as a JsonElement for JSON file export.
+        /// </summary>
+        public static async Task<JsonElement?> ExportWindowsDriverUpdatePolicyDataAsync(GraphServiceClient graphServiceClient, string profileId)
+        {
+            try
+            {
+                var result = await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileId].GetAsync();
+
+                if (result == null)
+                {
+                    LogToFunctionFile(appFunction.Main, $"Windows Driver Update profile {profileId} not found for export.", LogLevels.Warning);
+                    return null;
+                }
+
+                using var writer = new JsonSerializationWriter();
+                writer.WriteObjectValue(null, result);
+                using var stream = writer.GetSerializedContent();
+                var doc = await JsonDocument.ParseAsync(stream);
+                return doc.RootElement.Clone();
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error exporting Windows Driver Update profile {profileId}: {ex.Message}", LogLevels.Error);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Imports a Windows Driver Update profile from previously exported JSON data into the destination tenant.
+        /// </summary>
+        public static async Task<string?> ImportWindowsDriverUpdateFromJsonDataAsync(GraphServiceClient graphServiceClient, JsonElement policyData)
+        {
+            try
+            {
+                var json = policyData.GetRawText();
+                using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+                var parseNode = new JsonParseNode(JsonDocument.Parse(stream).RootElement);
+                var exportedProfile = parseNode.GetObjectValue(WindowsDriverUpdateProfile.CreateFromDiscriminatorValue);
+
+                if (exportedProfile == null)
+                {
+                    LogToFunctionFile(appFunction.Main, "Failed to deserialize Windows Driver Update profile data from JSON.", LogLevels.Error);
+                    return null;
+                }
+
+                var newProfile = new WindowsDriverUpdateProfile
+                {
+                    OdataType = "#microsoft.graph.windowsDriverUpdateProfile",
+                    DisplayName = exportedProfile.DisplayName,
+                    Description = exportedProfile.Description,
+                    ApprovalType = exportedProfile.ApprovalType,
+                    RoleScopeTagIds = exportedProfile.RoleScopeTagIds,
+                    DeploymentDeferralInDays = exportedProfile.DeploymentDeferralInDays
+                };
+
+                var imported = await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles.PostAsync(newProfile);
+
+                LogToFunctionFile(appFunction.Main, $"Imported Windows Driver Update profile: {imported?.DisplayName}");
+                return imported?.DisplayName;
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error importing Windows Driver Update profile from JSON: {ex.Message}", LogLevels.Error);
+                return null;
+            }
         }
     }
 }

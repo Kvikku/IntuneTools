@@ -11,6 +11,10 @@ using System.Threading.Tasks;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceCompliancePolicyHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceConfigurationHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.SettingsCatalogHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.WindowsDriverUpdateHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.WindowsFeatureUpdateHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdatePolicyHandler;
 
 namespace IntuneTools.Pages
 {
@@ -47,6 +51,10 @@ namespace IntuneTools.Pages
             ContentTypes.SettingsCatalog,
             ContentTypes.DeviceCompliancePolicy,
             ContentTypes.DeviceConfigurationPolicy,
+            ContentTypes.WindowsDriverUpdate,
+            ContentTypes.WindowsFeatureUpdate,
+            ContentTypes.WindowsQualityUpdateProfile,
+            ContentTypes.WindowsQualityUpdatePolicy,
         };
 
         /// <summary>
@@ -57,6 +65,10 @@ namespace IntuneTools.Pages
             { ContentTypes.SettingsCatalog, "settingscatalog.json" },
             { ContentTypes.DeviceCompliancePolicy, "devicecompliance.json" },
             { ContentTypes.DeviceConfigurationPolicy, "deviceconfiguration.json" },
+            { ContentTypes.WindowsDriverUpdate, "windowsdriverupdate.json" },
+            { ContentTypes.WindowsFeatureUpdate, "windowsfeatureupdate.json" },
+            { ContentTypes.WindowsQualityUpdateProfile, "windowsqualityupdateprofile.json" },
+            { ContentTypes.WindowsQualityUpdatePolicy, "windowsqualityupdatepolicy.json" },
         };
 
         /// <summary>
@@ -72,6 +84,10 @@ namespace IntuneTools.Pages
             { ContentTypes.SettingsCatalog, (ExportSettingsCatalogPolicyDataAsync, ImportSettingsCatalogFromJsonDataAsync) },
             { ContentTypes.DeviceCompliancePolicy, (ExportDeviceCompliancePolicyDataAsync, ImportDeviceComplianceFromJsonDataAsync) },
             { ContentTypes.DeviceConfigurationPolicy, (ExportDeviceConfigurationPolicyDataAsync, ImportDeviceConfigurationFromJsonDataAsync) },
+            { ContentTypes.WindowsDriverUpdate, (ExportWindowsDriverUpdatePolicyDataAsync, ImportWindowsDriverUpdateFromJsonDataAsync) },
+            { ContentTypes.WindowsFeatureUpdate, (ExportWindowsFeatureUpdatePolicyDataAsync, ImportWindowsFeatureUpdateFromJsonDataAsync) },
+            { ContentTypes.WindowsQualityUpdateProfile, (ExportWindowsQualityUpdateProfileDataAsync, ImportWindowsQualityUpdateProfileFromJsonDataAsync) },
+            { ContentTypes.WindowsQualityUpdatePolicy, (ExportWindowsQualityUpdatePolicyDataAsync, ImportWindowsQualityUpdatePolicyFromJsonDataAsync) },
         };
 
         #endregion

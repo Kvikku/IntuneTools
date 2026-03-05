@@ -1,8 +1,12 @@
 ﻿using IntuneTools.Utilities;
 using Microsoft.Graph;
+using Microsoft.Kiota.Serialization.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
@@ -442,6 +446,87 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
 
             return content;
+        }
+
+        /// <summary>
+        /// Exports a Windows Quality Update policy's full data as a JsonElement for JSON file export.
+        /// </summary>
+        public static async Task<JsonElement?> ExportWindowsQualityUpdatePolicyDataAsync(GraphServiceClient graphServiceClient, string policyId)
+        {
+            try
+            {
+                var result = await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyId].GetAsync();
+
+                if (result == null)
+                {
+                    LogToFunctionFile(appFunction.Main, $"Windows Quality Update policy {policyId} not found for export.", LogLevels.Warning);
+                    return null;
+                }
+
+                using var writer = new JsonSerializationWriter();
+                writer.WriteObjectValue(null, result);
+                using var stream = writer.GetSerializedContent();
+                var doc = await JsonDocument.ParseAsync(stream);
+                return doc.RootElement.Clone();
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error exporting Windows Quality Update policy {policyId}: {ex.Message}", LogLevels.Error);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Imports a Windows Quality Update policy from previously exported JSON data into the destination tenant.
+        /// </summary>
+        public static async Task<string?> ImportWindowsQualityUpdatePolicyFromJsonDataAsync(GraphServiceClient graphServiceClient, JsonElement policyData)
+        {
+            try
+            {
+                var json = policyData.GetRawText();
+                using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+                var parseNode = new JsonParseNode(JsonDocument.Parse(stream).RootElement);
+                var exportedPolicy = parseNode.GetObjectValue(WindowsQualityUpdatePolicy.CreateFromDiscriminatorValue);
+
+                if (exportedPolicy == null)
+                {
+                    LogToFunctionFile(appFunction.Main, "Failed to deserialize Windows Quality Update policy data from JSON.", LogLevels.Error);
+                    return null;
+                }
+
+                var type = exportedPolicy.GetType();
+                var newPolicy = new WindowsQualityUpdatePolicy();
+
+                foreach (var property in type.GetProperties())
+                {
+                    if (property.CanWrite
+                        && property.Name != "Id"
+                        && property.Name != "CreatedDateTime"
+                        && property.Name != "LastModifiedDateTime"
+                        && property.Name != "Assignments"
+                        && property.Name != "AdditionalData"
+                        && property.Name != "BackingStore")
+                    {
+                        var value = property.GetValue(exportedPolicy);
+                        if (value != null)
+                        {
+                            property.SetValue(newPolicy, value);
+                        }
+                    }
+                }
+
+                newPolicy.OdataType = "#microsoft.graph.windowsQualityUpdatePolicy";
+
+                var imported = await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies.PostAsync(newPolicy);
+
+                LogToFunctionFile(appFunction.Main, $"Imported Windows Quality Update policy: {imported?.DisplayName}");
+                return imported?.DisplayName;
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error importing Windows Quality Update policy from JSON: {ex.Message}", LogLevels.Error);
+                return null;
+            }
         }
     }
 }
