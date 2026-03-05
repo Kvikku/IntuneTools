@@ -28,6 +28,10 @@
                        HorizontalAlignment="Left"
                        FontSize="38"
                        FontWeight="Bold"/>
+            <TextBlock Text="Export policies to JSON files for backup or offline transfer, then import them into any tenant later."
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       FontSize="14"
+                       Margin="0,4,0,0"/>
             <InfoBar x:Name="TenantInfoBar"
                      Severity="Informational"
                      IsClosable="False"
@@ -151,7 +155,7 @@
                          IsOpen="True"
                          Severity="Informational"
                          Title="Staging Area"
-                         Message="Step 1: Use 'List All' or 'Search' to load items from a source tenant. Step 2: 'Export to Folder' saves each content type to its own JSON file. Step 3: On another machine or later, use 'Import from Folder' to load the files, then 'Import to Tenant' to create the policies in the destination tenant."
+                         Message="Load items from a tenant or JSON files. 'Export to Folder' saves them as JSON. 'Import to Tenant' creates them in the destination tenant."
                          IsClosable="True"
                          Margin="0,0,12,12"/>
                 
