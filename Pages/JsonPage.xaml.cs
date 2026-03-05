@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using static IntuneTools.Graph.IntuneHelperClasses.SettingsCatalogHelper;
 
 namespace IntuneTools.Pages
 {
@@ -30,25 +31,18 @@ namespace IntuneTools.Pages
         };
 
         /// <summary>
+        /// Cache of full policy data keyed by source content ID.
+        /// Populated during export (from Graph) or import (from JSON file).
+        /// Used when importing to a destination tenant.
+        /// </summary>
+        private readonly Dictionary<string, JsonElement> _policyDataCache = new();
+
+        /// <summary>
         /// Content types supported by JsonPage.
         /// </summary>
         private static readonly string[] SupportedContentTypes = new[]
         {
             ContentTypes.SettingsCatalog,
-            ContentTypes.DeviceCompliancePolicy,
-            ContentTypes.DeviceConfigurationPolicy,
-            ContentTypes.AppleBYODEnrollmentProfile,
-            ContentTypes.AssignmentFilter,
-            ContentTypes.EntraGroup,
-            ContentTypes.PowerShellScript,
-            ContentTypes.ProactiveRemediation,
-            ContentTypes.MacOSShellScript,
-            ContentTypes.WindowsAutoPilotProfile,
-            ContentTypes.WindowsDriverUpdate,
-            ContentTypes.WindowsFeatureUpdate,
-            ContentTypes.WindowsQualityUpdatePolicy,
-            ContentTypes.WindowsQualityUpdateProfile,
-            ContentTypes.Application,
         };
 
         #endregion
@@ -81,6 +75,7 @@ namespace IntuneTools.Pages
             // Always keep the JSON action buttons and import button enabled regardless of auth
             ImportButton.IsEnabled = true;
             ExportButton.IsEnabled = true;
+            ImportToTenantButton.IsEnabled = !string.IsNullOrEmpty(Variables.destinationTenantName);
         }
 
         #endregion
@@ -159,6 +154,7 @@ namespace IntuneTools.Pages
 
         /// <summary>
         /// Exports the current staging area content to a JSON file.
+        /// Fetches full policy data from the source tenant for supported content types.
         /// </summary>
         private async Task ExportToJsonAsync()
         {
@@ -186,27 +182,53 @@ namespace IntuneTools.Pages
 
             try
             {
-                ShowOperationProgress("Exporting to JSON...");
+                int totalItems = ContentList.Count;
+                int currentItem = 0;
+                ShowOperationProgress("Exporting to JSON...", 0, totalItems);
 
-                var document = new JsonExportDocument
+                var items = new List<JsonExportItem>();
+
+                foreach (var c in ContentList)
                 {
-                    ExportedAt = DateTime.UtcNow.ToString("o"),
-                    TenantName = string.IsNullOrEmpty(sourceTenantName) ? "Unknown" : sourceTenantName,
-                    Items = ContentList.Select(c => new JsonExportItem
+                    currentItem++;
+                    ShowOperationProgress($"Exporting '{c.ContentName}'...", currentItem, totalItems);
+
+                    JsonElement? policyData = null;
+
+                    // Fetch full policy data from Graph for supported types
+                    if (sourceGraphServiceClient != null && !string.IsNullOrEmpty(c.ContentId))
+                    {
+                        if (string.Equals(c.ContentType, ContentTypes.SettingsCatalog, StringComparison.OrdinalIgnoreCase))
+                        {
+                            policyData = await ExportSettingsCatalogPolicyDataAsync(sourceGraphServiceClient, c.ContentId);
+                        }
+                        // Future: add other content types here
+                    }
+
+                    items.Add(new JsonExportItem
                     {
                         Name = c.ContentName,
                         Type = c.ContentType,
                         Platform = c.ContentPlatform,
                         Id = c.ContentId,
-                        Description = c.ContentDescription
-                    }).ToList()
+                        Description = c.ContentDescription,
+                        PolicyData = policyData
+                    });
+                }
+
+                var document = new JsonExportDocument
+                {
+                    ExportedAt = DateTime.UtcNow.ToString("o"),
+                    TenantName = string.IsNullOrEmpty(sourceTenantName) ? "Unknown" : sourceTenantName,
+                    Items = items
                 };
 
                 var json = JsonSerializer.Serialize(document, ExportSerializerOptions);
                 await File.WriteAllTextAsync(file.Path, json);
 
-                ShowOperationSuccess($"Exported {document.Items.Count} items to {file.Name}");
-                AppendToDetailsRichTextBlock($"Successfully exported {document.Items.Count} item(s) to '{file.Path}'.");
+                int withData = items.Count(i => i.PolicyData.HasValue);
+                ShowOperationSuccess($"Exported {document.Items.Count} items ({withData} with full policy data) to {file.Name}");
+                AppendToDetailsRichTextBlock($"Successfully exported {document.Items.Count} item(s) to '{file.Path}'. {withData} item(s) include full policy data for tenant import.");
             }
             catch (Exception ex)
             {
@@ -221,6 +243,7 @@ namespace IntuneTools.Pages
 
         /// <summary>
         /// Imports content from a JSON file into the staging area.
+        /// Preserves full policy data in the cache for later import to a tenant.
         /// </summary>
         private async Task ImportFromJsonAsync()
         {
@@ -254,6 +277,9 @@ namespace IntuneTools.Pages
                 }
 
                 ContentList.Clear();
+                _policyDataCache.Clear();
+                int itemsWithData = 0;
+
                 foreach (var item in document.Items)
                 {
                     ContentList.Add(new CustomContentInfo
@@ -264,6 +290,13 @@ namespace IntuneTools.Pages
                         ContentId = item.Id,
                         ContentDescription = item.Description
                     });
+
+                    // Cache full policy data if present
+                    if (item.PolicyData.HasValue && !string.IsNullOrEmpty(item.Id))
+                    {
+                        _policyDataCache[item.Id] = item.PolicyData.Value;
+                        itemsWithData++;
+                    }
                 }
 
                 JsonDataGrid.ItemsSource = ContentList;
@@ -272,6 +305,14 @@ namespace IntuneTools.Pages
                 var exportDate = !string.IsNullOrEmpty(document.ExportedAt) ? $" exported at {document.ExportedAt}" : "";
                 ShowOperationSuccess($"Imported {document.Items.Count} items from {file.Name}");
                 AppendToDetailsRichTextBlock($"Successfully imported {document.Items.Count} item(s) from '{file.Name}'{tenantInfo}{exportDate}.");
+                if (itemsWithData > 0)
+                {
+                    AppendToDetailsRichTextBlock($"{itemsWithData} item(s) have full policy data and can be imported to a destination tenant.");
+                }
+                else
+                {
+                    AppendToDetailsRichTextBlock("No items contain full policy data. Use 'Export to JSON' from a source tenant to include importable data.");
+                }
             }
             catch (JsonException ex)
             {
@@ -283,6 +324,112 @@ namespace IntuneTools.Pages
                 ShowOperationError($"Import failed: {ex.Message}");
                 AppendToDetailsRichTextBlock($"Error importing from JSON: {ex.Message}");
             }
+        }
+
+        #endregion
+
+        #region Import to Tenant
+
+        /// <summary>
+        /// Imports all staged items that have full policy data into the destination tenant.
+        /// </summary>
+        private async Task ImportToTenantAsync()
+        {
+            if (ContentList.Count == 0)
+            {
+                AppendToDetailsRichTextBlock("No items to import. Load items from a JSON file first.");
+                return;
+            }
+
+            // Filter to items that have cached policy data
+            var importableItems = ContentList
+                .Where(c => !string.IsNullOrEmpty(c.ContentId) && _policyDataCache.ContainsKey(c.ContentId!))
+                .ToList();
+
+            if (importableItems.Count == 0)
+            {
+                AppendToDetailsRichTextBlock("No items have full policy data for import. Export from a source tenant first to include policy data.");
+                return;
+            }
+
+            if (destinationGraphServiceClient == null)
+            {
+                AppendToDetailsRichTextBlock("No destination tenant authenticated. Please authenticate with a destination tenant first.");
+                return;
+            }
+
+            // Confirm with user
+            var dialog = new ContentDialog
+            {
+                Title = "Import to Tenant",
+                Content = $"You are about to import {importableItems.Count} item(s) to the destination tenant ({destinationTenantName}). Continue?",
+                PrimaryButtonText = "Import",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+
+            var dialogResult = await dialog.ShowAsync();
+            if (dialogResult != ContentDialogResult.Primary)
+            {
+                AppendToDetailsRichTextBlock("Import to tenant cancelled.");
+                return;
+            }
+
+            int total = importableItems.Count;
+            int current = 0;
+            int successCount = 0;
+            int errorCount = 0;
+
+            ShowOperationProgress("Importing to tenant...", 0, total);
+            AppendToDetailsRichTextBlock($"Starting import of {total} item(s) to {destinationTenantName}...");
+
+            foreach (var item in importableItems)
+            {
+                current++;
+                ShowOperationProgress($"Importing '{item.ContentName}'...", current, total);
+
+                try
+                {
+                    var policyData = _policyDataCache[item.ContentId!];
+
+                    if (string.Equals(item.ContentType, ContentTypes.SettingsCatalog, StringComparison.OrdinalIgnoreCase))
+                    {
+                        var importedName = await ImportSettingsCatalogFromJsonDataAsync(destinationGraphServiceClient, policyData);
+                        if (importedName != null)
+                        {
+                            AppendToDetailsRichTextBlock($"Imported: {importedName}");
+                            successCount++;
+                        }
+                        else
+                        {
+                            AppendToDetailsRichTextBlock($"Failed to import: {item.ContentName}");
+                            errorCount++;
+                        }
+                    }
+                    // Future: add other content types here
+                    else
+                    {
+                        AppendToDetailsRichTextBlock($"Skipped '{item.ContentName}' — content type '{item.ContentType}' not yet supported for JSON import.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    AppendToDetailsRichTextBlock($"Error importing '{item.ContentName}': {ex.Message}");
+                    errorCount++;
+                }
+            }
+
+            if (errorCount == 0)
+            {
+                ShowOperationSuccess($"Import completed: {successCount} item(s) imported successfully");
+            }
+            else
+            {
+                ShowOperationError($"Import completed with errors: {successCount} succeeded, {errorCount} failed");
+            }
+
+            AppendToDetailsRichTextBlock("Import to tenant finished.");
         }
 
         #endregion
@@ -327,6 +474,11 @@ namespace IntuneTools.Pages
         private async void ImportButton_Click(object sender, RoutedEventArgs e)
         {
             await ImportFromJsonAsync();
+        }
+
+        private async void ImportToTenantButton_Click(object sender, RoutedEventArgs e)
+        {
+            await ImportToTenantAsync();
         }
 
         private async void ListAllButton_Click(object sender, RoutedEventArgs e)

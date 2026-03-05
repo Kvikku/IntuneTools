@@ -112,6 +112,17 @@
                                 <TextBlock Text="Import from JSON" VerticalAlignment="Center" FontWeight="SemiBold"/>
                             </StackPanel>
                         </Button>
+                        <AppBarSeparator/>
+                        <Button x:Name="ImportToTenantButton"
+                                Click="ImportToTenantButton_Click"
+                                ToolTipService.ToolTip="Import staged items (loaded from JSON) into the destination tenant."
+                                Height="40"
+                                Padding="16,0">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE8B5;" FontSize="16"/>
+                                <TextBlock Text="Import to Tenant" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </Button>
                     </StackPanel>
                 </StackPanel>
             </Border>

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
 
 namespace IntuneTools.Utilities
 {
@@ -23,5 +24,11 @@ namespace IntuneTools.Utilities
         public string? Platform { get; set; }
         public string? Id { get; set; }
         public string? Description { get; set; }
+
+        /// <summary>
+        /// Full policy payload serialized via Kiota. Used to recreate the policy in another tenant.
+        /// Only populated during "Export to JSON" when full data is fetched from Graph.
+        /// </summary>
+        public JsonElement? PolicyData { get; set; }
     }
 }
