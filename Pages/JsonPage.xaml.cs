@@ -56,6 +56,20 @@ namespace IntuneTools.Pages
             { ContentTypes.DeviceCompliancePolicy, "devicecompliance.json" },
         };
 
+        /// <summary>
+        /// Registry of export/import delegates per content type.
+        /// Adding a new content type only requires adding an entry here
+        /// (plus the helper methods and the arrays above).
+        /// </summary>
+        private static readonly Dictionary<string, (
+            Func<GraphServiceClient, string, Task<JsonElement?>> Export,
+            Func<GraphServiceClient, JsonElement, Task<string?>> Import
+        )> JsonContentTypeOperations = new(StringComparer.OrdinalIgnoreCase)
+        {
+            { ContentTypes.SettingsCatalog, (ExportSettingsCatalogPolicyDataAsync, ImportSettingsCatalogFromJsonDataAsync) },
+            { ContentTypes.DeviceCompliancePolicy, (ExportDeviceCompliancePolicyDataAsync, ImportDeviceComplianceFromJsonDataAsync) },
+        };
+
         #endregion
 
         #region Constructor & Configuration
@@ -246,6 +260,7 @@ namespace IntuneTools.Pages
                 int totalWithData = 0;
                 int filesWritten = 0;
                 ShowOperationProgress("Exporting to folder...", 0, totalItems);
+                LogToFunctionFile(appFunction.Main, $"JSON Export: Starting export of {totalItems} item(s) to '{folder.Path}'.");
 
                 foreach (var group in itemsByType)
                 {
@@ -260,16 +275,10 @@ namespace IntuneTools.Pages
 
                         JsonElement? policyData = null;
 
-                        if (sourceGraphServiceClient != null && !string.IsNullOrEmpty(c.ContentId))
+                        if (sourceGraphServiceClient != null && !string.IsNullOrEmpty(c.ContentId)
+                            && JsonContentTypeOperations.TryGetValue(contentType, out var ops))
                         {
-                            if (string.Equals(contentType, ContentTypes.SettingsCatalog, StringComparison.OrdinalIgnoreCase))
-                            {
-                                policyData = await ExportSettingsCatalogPolicyDataAsync(sourceGraphServiceClient, c.ContentId);
-                            }
-                            else if (string.Equals(contentType, ContentTypes.DeviceCompliancePolicy, StringComparison.OrdinalIgnoreCase))
-                            {
-                                policyData = await ExportDeviceCompliancePolicyDataAsync(sourceGraphServiceClient, c.ContentId);
-                            }
+                            policyData = await ops.Export(sourceGraphServiceClient, c.ContentId);
                         }
 
                         if (policyData.HasValue) totalWithData++;
@@ -305,11 +314,13 @@ namespace IntuneTools.Pages
                 }
 
                 ShowOperationSuccess($"Exported {totalItems} items ({totalWithData} with full data) across {filesWritten} file(s) to '{folder.Name}'");
+                LogToFunctionFile(appFunction.Main, $"JSON Export: Completed. {totalItems} items ({totalWithData} with full data) across {filesWritten} file(s) to '{folder.Path}'.");
                 AppendToDetailsRichTextBlock($"Export complete. {filesWritten} file(s) written to '{folder.Path}'.");
             }
             catch (Exception ex)
             {
                 ShowOperationError($"Export failed: {ex.Message}");
+                LogToFunctionFile(appFunction.Main, $"JSON Export: Failed: {ex.Message}", LogLevels.Error);
                 AppendToDetailsRichTextBlock($"Error exporting to folder: {ex.Message}");
             }
         }
@@ -503,6 +514,7 @@ namespace IntuneTools.Pages
             int errorCount = 0;
 
             ShowOperationProgress("Importing to tenant...", 0, total);
+            LogToFunctionFile(appFunction.Main, $"JSON Import: Starting import of {total} item(s) to {destinationTenantName}.");
             AppendToDetailsRichTextBlock($"Starting import of {total} item(s) to {destinationTenantName}...");
 
             foreach (var item in importableItems)
@@ -514,36 +526,31 @@ namespace IntuneTools.Pages
                 {
                     var policyData = _policyDataCache[item.ContentId!];
 
-                    string? importedName = null;
-
-                    if (string.Equals(item.ContentType, ContentTypes.SettingsCatalog, StringComparison.OrdinalIgnoreCase))
-                    {
-                        importedName = await ImportSettingsCatalogFromJsonDataAsync(destinationGraphServiceClient, policyData);
-                    }
-                    else if (string.Equals(item.ContentType, ContentTypes.DeviceCompliancePolicy, StringComparison.OrdinalIgnoreCase))
-                    {
-                        importedName = await ImportDeviceComplianceFromJsonDataAsync(destinationGraphServiceClient, policyData);
-                    }
-                    else
+                    if (!JsonContentTypeOperations.TryGetValue(item.ContentType ?? "", out var ops))
                     {
                         AppendToDetailsRichTextBlock($"Skipped '{item.ContentName}' — content type '{item.ContentType}' not yet supported for JSON import.");
                         continue;
                     }
 
+                    var importedName = await ops.Import(destinationGraphServiceClient, policyData);
+
                     if (importedName != null)
                     {
                         AppendToDetailsRichTextBlock($"Imported: {importedName}");
                         successCount++;
+                        UpdateTotalTimeSaved(secondsSavedOnImporting, appFunction.Import);
                     }
                     else
                     {
                         AppendToDetailsRichTextBlock($"Failed to import: {item.ContentName}");
+                        LogToFunctionFile(appFunction.Main, $"JSON Import: Failed to import '{item.ContentName}'.", LogLevels.Warning);
                         errorCount++;
                     }
                 }
                 catch (Exception ex)
                 {
                     AppendToDetailsRichTextBlock($"Error importing '{item.ContentName}': {ex.Message}");
+                    LogToFunctionFile(appFunction.Main, $"JSON Import: Error importing '{item.ContentName}': {ex.Message}", LogLevels.Error);
                     errorCount++;
                 }
             }
@@ -551,10 +558,12 @@ namespace IntuneTools.Pages
             if (errorCount == 0)
             {
                 ShowOperationSuccess($"Import completed: {successCount} item(s) imported successfully");
+                LogToFunctionFile(appFunction.Main, $"JSON Import: Completed successfully. {successCount} item(s) imported.");
             }
             else
             {
                 ShowOperationError($"Import completed with errors: {successCount} succeeded, {errorCount} failed");
+                LogToFunctionFile(appFunction.Main, $"JSON Import: Completed with errors. {successCount} succeeded, {errorCount} failed.", LogLevels.Warning);
             }
 
             AppendToDetailsRichTextBlock("Import to tenant finished.");
