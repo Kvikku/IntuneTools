@@ -1,8 +1,12 @@
 ﻿using IntuneTools.Utilities;
 using Microsoft.Graph;
+using Microsoft.Kiota.Serialization.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
@@ -569,6 +573,108 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
 
             return content;
+        }
+
+        /// <summary>
+        /// Exports a device compliance policy's full data as a JsonElement for JSON file export.
+        /// Uses Kiota serialization to preserve OData type annotations and polymorphic types.
+        /// </summary>
+        public static async Task<JsonElement?> ExportDeviceCompliancePolicyDataAsync(GraphServiceClient graphServiceClient, string policyId)
+        {
+            try
+            {
+                var result = await graphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyId].GetAsync((requestConfiguration) =>
+                {
+                    requestConfiguration.QueryParameters.Expand = new[] { "scheduledActionsForRule" };
+                });
+
+                if (result == null)
+                {
+                    LogToFunctionFile(appFunction.Main, $"Device compliance policy {policyId} not found for export.", LogLevels.Warning);
+                    return null;
+                }
+
+                using var writer = new JsonSerializationWriter();
+                writer.WriteObjectValue(null, result);
+                using var stream = writer.GetSerializedContent();
+                var doc = await JsonDocument.ParseAsync(stream);
+                return doc.RootElement.Clone();
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error exporting device compliance policy {policyId}: {ex.Message}", LogLevels.Error);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Imports a device compliance policy from previously exported JSON data into the destination tenant.
+        /// </summary>
+        public static async Task<string?> ImportDeviceComplianceFromJsonDataAsync(GraphServiceClient graphServiceClient, JsonElement policyData)
+        {
+            try
+            {
+                var json = policyData.GetRawText();
+                using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+                var parseNode = new JsonParseNode(JsonDocument.Parse(stream).RootElement);
+                var exportedPolicy = parseNode.GetObjectValue(DeviceCompliancePolicy.CreateFromDiscriminatorValue);
+
+                if (exportedPolicy == null)
+                {
+                    LogToFunctionFile(appFunction.Main, "Failed to deserialize device compliance policy data from JSON.", LogLevels.Error);
+                    return null;
+                }
+
+                // Use reflection to create a clean copy of the specific derived type
+                var type = exportedPolicy.GetType();
+                var newPolicy = (DeviceCompliancePolicy)Activator.CreateInstance(type)!;
+
+                foreach (var property in type.GetProperties())
+                {
+                    if (property.CanWrite
+                        && property.Name != "Id"
+                        && property.Name != "CreatedDateTime"
+                        && property.Name != "LastModifiedDateTime")
+                    {
+                        var value = property.GetValue(exportedPolicy);
+                        if (value != null)
+                        {
+                            property.SetValue(newPolicy, value);
+                        }
+                    }
+                }
+
+                // Always rebuild ScheduledActionsForRule with clean objects (no server-generated IDs).
+                // The Graph API rejects POSTs that include IDs on child action items.
+                // This matches the pattern used in the working tenant-to-tenant import.
+                newPolicy.ScheduledActionsForRule = new List<DeviceComplianceScheduledActionForRule>
+                {
+                    new DeviceComplianceScheduledActionForRule
+                    {
+                        RuleName = "PasswordRequired",
+                        ScheduledActionConfigurations = new List<DeviceComplianceActionItem>
+                        {
+                            new DeviceComplianceActionItem
+                            {
+                                ActionType = DeviceComplianceActionType.Block,
+                                GracePeriodHours = 0,
+                                NotificationMessageCCList = new List<string>(),
+                                NotificationTemplateId = ""
+                            }
+                        }
+                    }
+                };
+
+                var imported = await graphServiceClient.DeviceManagement.DeviceCompliancePolicies.PostAsync(newPolicy);
+
+                LogToFunctionFile(appFunction.Main, $"Imported device compliance policy: {imported?.DisplayName}");
+                return imported?.DisplayName;
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error importing device compliance policy from JSON: {ex.Message}", LogLevels.Error);
+                return null;
+            }
         }
     }
 

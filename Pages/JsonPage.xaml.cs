@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using static IntuneTools.Graph.IntuneHelperClasses.DeviceCompliancePolicyHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.SettingsCatalogHelper;
 
 namespace IntuneTools.Pages
@@ -43,6 +44,16 @@ namespace IntuneTools.Pages
         private static readonly string[] SupportedContentTypes = new[]
         {
             ContentTypes.SettingsCatalog,
+            ContentTypes.DeviceCompliancePolicy,
+        };
+
+        /// <summary>
+        /// Maps content type constants to their JSON file names.
+        /// </summary>
+        private static readonly Dictionary<string, string> ContentTypeFileNames = new(StringComparer.OrdinalIgnoreCase)
+        {
+            { ContentTypes.SettingsCatalog, "settingscatalog.json" },
+            { ContentTypes.DeviceCompliancePolicy, "devicecompliance.json" },
         };
 
         #endregion
@@ -160,7 +171,7 @@ namespace IntuneTools.Pages
         {
             if (ContentList.Count == 0)
             {
-                AppendToDetailsRichTextBlock("No items to export. Load items first using 'List All', 'Search', or 'Import from JSON'.");
+                AppendToDetailsRichTextBlock("No items to export. Load items first using 'List All' or 'Search'.");
                 return;
             }
 
@@ -170,7 +181,7 @@ namespace IntuneTools.Pages
                 var noAuthDialog = new ContentDialog
                 {
                     Title = "No Source Tenant Authenticated",
-                    Content = "Without an authenticated source tenant, the exported JSON will only contain item metadata (names, types, IDs) and will NOT include full policy data.\n\nThe resulting file cannot be used to import policies into another tenant. To include full policy data, authenticate with a source tenant first.",
+                    Content = "Without an authenticated source tenant, the exported JSON will only contain item metadata (names, types, IDs) and will NOT include full policy data.\n\nThe resulting files cannot be used to import policies into another tenant. To include full policy data, authenticate with a source tenant first.",
                     PrimaryButtonText = "Export Anyway",
                     CloseButtonText = "Cancel",
                     DefaultButton = ContentDialogButton.Close,
@@ -184,11 +195,24 @@ namespace IntuneTools.Pages
                 }
             }
 
+            // Group staged items by content type
+            var itemsByType = ContentList
+                .Where(c => ContentTypeFileNames.ContainsKey(c.ContentType ?? ""))
+                .GroupBy(c => c.ContentType!, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var unsupportedItems = ContentList.Where(c => !ContentTypeFileNames.ContainsKey(c.ContentType ?? "")).ToList();
+
+            var typeList = string.Join("\n", itemsByType.Select(g => $"  • {g.Key}: {g.Count()} item(s) → {ContentTypeFileNames[g.Key]}"));
+            var unsupportedNote = unsupportedItems.Count > 0
+                ? $"\n\n{unsupportedItems.Count} item(s) of unsupported type(s) will be skipped."
+                : "";
+
             // Confirm export
             var confirmDialog = new ContentDialog
             {
-                Title = "Export to JSON",
-                Content = $"This will fetch full policy data for {ContentList.Count} item(s) from the source tenant and save it to a JSON file.\n\nThe exported file can later be used to recreate these policies in another tenant using 'Import from JSON' → 'Import to Tenant'.",
+                Title = "Export to Folder",
+                Content = $"This will fetch full policy data and save one JSON file per content type to the selected folder:\n\n{typeList}{unsupportedNote}\n\nExisting files in the folder with the same names will be overwritten.",
                 PrimaryButtonText = "Export",
                 CloseButtonText = "Cancel",
                 DefaultButton = ContentDialogButton.Primary,
@@ -201,17 +225,15 @@ namespace IntuneTools.Pages
                 return;
             }
 
-            var savePicker = new Windows.Storage.Pickers.FileSavePicker();
-            savePicker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
-            savePicker.FileTypeChoices.Add("JSON File", new List<string> { ".json" });
-            savePicker.SuggestedFileName = $"IntuneExport_{DateTime.Now:yyyyMMdd_HHmmss}";
+            var folderPicker = new Windows.Storage.Pickers.FolderPicker();
+            folderPicker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
+            folderPicker.FileTypeFilter.Add("*");
 
-            // Initialize the picker with the window handle
             var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindowInstance);
-            WinRT.Interop.InitializeWithWindow.Initialize(savePicker, hwnd);
+            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
 
-            var file = await savePicker.PickSaveFileAsync();
-            if (file == null)
+            var folder = await folderPicker.PickSingleFolderAsync();
+            if (folder == null)
             {
                 AppendToDetailsRichTextBlock("Export cancelled.");
                 return;
@@ -219,58 +241,76 @@ namespace IntuneTools.Pages
 
             try
             {
-                int totalItems = ContentList.Count;
+                int totalItems = itemsByType.Sum(g => g.Count());
                 int currentItem = 0;
-                ShowOperationProgress("Exporting to JSON...", 0, totalItems);
+                int totalWithData = 0;
+                int filesWritten = 0;
+                ShowOperationProgress("Exporting to folder...", 0, totalItems);
 
-                var items = new List<JsonExportItem>();
-
-                foreach (var c in ContentList)
+                foreach (var group in itemsByType)
                 {
-                    currentItem++;
-                    ShowOperationProgress($"Exporting '{c.ContentName}'...", currentItem, totalItems);
+                    var contentType = group.Key;
+                    var fileName = ContentTypeFileNames[contentType];
+                    var items = new List<JsonExportItem>();
 
-                    JsonElement? policyData = null;
-
-                    // Fetch full policy data from Graph for supported types
-                    if (sourceGraphServiceClient != null && !string.IsNullOrEmpty(c.ContentId))
+                    foreach (var c in group)
                     {
-                        if (string.Equals(c.ContentType, ContentTypes.SettingsCatalog, StringComparison.OrdinalIgnoreCase))
+                        currentItem++;
+                        ShowOperationProgress($"Exporting '{c.ContentName}'...", currentItem, totalItems);
+
+                        JsonElement? policyData = null;
+
+                        if (sourceGraphServiceClient != null && !string.IsNullOrEmpty(c.ContentId))
                         {
-                            policyData = await ExportSettingsCatalogPolicyDataAsync(sourceGraphServiceClient, c.ContentId);
+                            if (string.Equals(contentType, ContentTypes.SettingsCatalog, StringComparison.OrdinalIgnoreCase))
+                            {
+                                policyData = await ExportSettingsCatalogPolicyDataAsync(sourceGraphServiceClient, c.ContentId);
+                            }
+                            else if (string.Equals(contentType, ContentTypes.DeviceCompliancePolicy, StringComparison.OrdinalIgnoreCase))
+                            {
+                                policyData = await ExportDeviceCompliancePolicyDataAsync(sourceGraphServiceClient, c.ContentId);
+                            }
                         }
-                        // Future: add other content types here
+
+                        if (policyData.HasValue) totalWithData++;
+
+                        items.Add(new JsonExportItem
+                        {
+                            Name = c.ContentName,
+                            Type = c.ContentType,
+                            Platform = c.ContentPlatform,
+                            Id = c.ContentId,
+                            Description = c.ContentDescription,
+                            PolicyData = policyData
+                        });
                     }
 
-                    items.Add(new JsonExportItem
+                    var document = new JsonExportDocument
                     {
-                        Name = c.ContentName,
-                        Type = c.ContentType,
-                        Platform = c.ContentPlatform,
-                        Id = c.ContentId,
-                        Description = c.ContentDescription,
-                        PolicyData = policyData
-                    });
+                        ExportedAt = DateTime.UtcNow.ToString("o"),
+                        TenantName = string.IsNullOrEmpty(sourceTenantName) ? "Unknown" : sourceTenantName,
+                        Items = items
+                    };
+
+                    var json = JsonSerializer.Serialize(document, ExportSerializerOptions);
+                    var filePath = Path.Combine(folder.Path, fileName);
+                    await File.WriteAllTextAsync(filePath, json);
+                    filesWritten++;
+                    AppendToDetailsRichTextBlock($"Wrote {items.Count} item(s) to '{fileName}'.");
                 }
 
-                var document = new JsonExportDocument
+                if (unsupportedItems.Count > 0)
                 {
-                    ExportedAt = DateTime.UtcNow.ToString("o"),
-                    TenantName = string.IsNullOrEmpty(sourceTenantName) ? "Unknown" : sourceTenantName,
-                    Items = items
-                };
+                    AppendToDetailsRichTextBlock($"Skipped {unsupportedItems.Count} item(s) of unsupported content type(s).");
+                }
 
-                var json = JsonSerializer.Serialize(document, ExportSerializerOptions);
-                await File.WriteAllTextAsync(file.Path, json);
-
-                int withData = items.Count(i => i.PolicyData.HasValue);
-                ShowOperationSuccess($"Exported {document.Items.Count} items ({withData} with full policy data) to {file.Name}");
-                AppendToDetailsRichTextBlock($"Successfully exported {document.Items.Count} item(s) to '{file.Path}'. {withData} item(s) include full policy data for tenant import.");
+                ShowOperationSuccess($"Exported {totalItems} items ({totalWithData} with full data) across {filesWritten} file(s) to '{folder.Name}'");
+                AppendToDetailsRichTextBlock($"Export complete. {filesWritten} file(s) written to '{folder.Path}'.");
             }
             catch (Exception ex)
             {
                 ShowOperationError($"Export failed: {ex.Message}");
-                AppendToDetailsRichTextBlock($"Error exporting to JSON: {ex.Message}");
+                AppendToDetailsRichTextBlock($"Error exporting to folder: {ex.Message}");
             }
         }
 
@@ -290,7 +330,7 @@ namespace IntuneTools.Pages
                 var replaceDialog = new ContentDialog
                 {
                     Title = "Replace Staging Area?",
-                    Content = $"The staging area currently contains {ContentList.Count} item(s). Importing from a JSON file will replace all current items.\n\nDo you want to continue?",
+                    Content = $"The staging area currently contains {ContentList.Count} item(s). Importing from a folder will replace all current items.\n\nDo you want to continue?",
                     PrimaryButtonText = "Replace",
                     CloseButtonText = "Cancel",
                     DefaultButton = ContentDialogButton.Close,
@@ -299,21 +339,20 @@ namespace IntuneTools.Pages
 
                 if (await replaceDialog.ShowAsync() != ContentDialogResult.Primary)
                 {
-                    AppendToDetailsRichTextBlock("Import from JSON cancelled.");
+                    AppendToDetailsRichTextBlock("Import from folder cancelled.");
                     return;
                 }
             }
 
-            var openPicker = new Windows.Storage.Pickers.FileOpenPicker();
-            openPicker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
-            openPicker.FileTypeFilter.Add(".json");
+            var folderPicker = new Windows.Storage.Pickers.FolderPicker();
+            folderPicker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
+            folderPicker.FileTypeFilter.Add("*");
 
-            // Initialize the picker with the window handle
             var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindowInstance);
-            WinRT.Interop.InitializeWithWindow.Initialize(openPicker, hwnd);
+            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
 
-            var file = await openPicker.PickSingleFileAsync();
-            if (file == null)
+            var folder = await folderPicker.PickSingleFolderAsync();
+            if (folder == null)
             {
                 AppendToDetailsRichTextBlock("Import cancelled.");
                 return;
@@ -321,54 +360,79 @@ namespace IntuneTools.Pages
 
             try
             {
-                ShowOperationProgress("Importing from JSON...");
-
-                var json = await File.ReadAllTextAsync(file.Path);
-                var document = JsonSerializer.Deserialize<JsonExportDocument>(json, ImportSerializerOptions);
-
-                if (document?.Items == null || document.Items.Count == 0)
-                {
-                    ShowOperationError("The JSON file contains no items.");
-                    AppendToDetailsRichTextBlock("The selected JSON file contains no items to import.");
-                    return;
-                }
+                ShowOperationProgress("Importing from folder...");
 
                 ContentList.Clear();
                 _policyDataCache.Clear();
-                int itemsWithData = 0;
 
-                foreach (var item in document.Items)
+                int totalItems = 0;
+                int totalWithData = 0;
+                int filesRead = 0;
+
+                // Build reverse lookup: filename → content type
+                var fileNameToContentType = ContentTypeFileNames
+                    .ToDictionary(kv => kv.Value, kv => kv.Key, StringComparer.OrdinalIgnoreCase);
+
+                foreach (var kvp in ContentTypeFileNames)
                 {
-                    ContentList.Add(new CustomContentInfo
+                    var filePath = Path.Combine(folder.Path, kvp.Value);
+                    if (!File.Exists(filePath))
                     {
-                        ContentName = item.Name,
-                        ContentType = item.Type,
-                        ContentPlatform = item.Platform,
-                        ContentId = item.Id,
-                        ContentDescription = item.Description
-                    });
-
-                    // Cache full policy data if present
-                    if (item.PolicyData.HasValue && !string.IsNullOrEmpty(item.Id))
-                    {
-                        _policyDataCache[item.Id] = item.PolicyData.Value;
-                        itemsWithData++;
+                        continue;
                     }
+
+                    var json = await File.ReadAllTextAsync(filePath);
+                    var document = JsonSerializer.Deserialize<JsonExportDocument>(json, ImportSerializerOptions);
+
+                    if (document?.Items == null || document.Items.Count == 0)
+                    {
+                        AppendToDetailsRichTextBlock($"'{kvp.Value}' contains no items, skipping.");
+                        continue;
+                    }
+
+                    filesRead++;
+
+                    foreach (var item in document.Items)
+                    {
+                        ContentList.Add(new CustomContentInfo
+                        {
+                            ContentName = item.Name,
+                            ContentType = item.Type,
+                            ContentPlatform = item.Platform,
+                            ContentId = item.Id,
+                            ContentDescription = item.Description
+                        });
+
+                        if (item.PolicyData.HasValue && !string.IsNullOrEmpty(item.Id))
+                        {
+                            _policyDataCache[item.Id] = item.PolicyData.Value;
+                            totalWithData++;
+                        }
+
+                        totalItems++;
+                    }
+
+                    var tenantInfo = !string.IsNullOrEmpty(document.TenantName) ? $" (tenant: {document.TenantName})" : "";
+                    AppendToDetailsRichTextBlock($"Loaded {document.Items.Count} item(s) from '{kvp.Value}'{tenantInfo}.");
+                }
+
+                if (totalItems == 0)
+                {
+                    ShowOperationError("No supported JSON files found in the selected folder.");
+                    AppendToDetailsRichTextBlock($"No files matching known content types found in '{folder.Path}'. Expected files: {string.Join(", ", ContentTypeFileNames.Values)}");
+                    return;
                 }
 
                 JsonDataGrid.ItemsSource = ContentList;
 
-                var tenantInfo = !string.IsNullOrEmpty(document.TenantName) ? $" (from tenant: {document.TenantName})" : "";
-                var exportDate = !string.IsNullOrEmpty(document.ExportedAt) ? $" exported at {document.ExportedAt}" : "";
-                ShowOperationSuccess($"Imported {document.Items.Count} items from {file.Name}");
-                AppendToDetailsRichTextBlock($"Successfully imported {document.Items.Count} item(s) from '{file.Name}'{tenantInfo}{exportDate}.");
-                if (itemsWithData > 0)
+                ShowOperationSuccess($"Imported {totalItems} items from {filesRead} file(s) in '{folder.Name}'");
+                if (totalWithData > 0)
                 {
-                    AppendToDetailsRichTextBlock($"{itemsWithData} item(s) have full policy data and can be imported to a destination tenant.");
+                    AppendToDetailsRichTextBlock($"{totalWithData} item(s) have full policy data and can be imported to a destination tenant.");
                 }
                 else
                 {
-                    AppendToDetailsRichTextBlock("No items contain full policy data. Use 'Export to JSON' from a source tenant to include importable data.");
+                    AppendToDetailsRichTextBlock("No items contain full policy data. Use 'Export to Folder' from a source tenant to include importable data.");
                 }
             }
             catch (JsonException ex)
@@ -379,7 +443,7 @@ namespace IntuneTools.Pages
             catch (Exception ex)
             {
                 ShowOperationError($"Import failed: {ex.Message}");
-                AppendToDetailsRichTextBlock($"Error importing from JSON: {ex.Message}");
+                AppendToDetailsRichTextBlock($"Error importing from folder: {ex.Message}");
             }
         }
 
@@ -450,24 +514,31 @@ namespace IntuneTools.Pages
                 {
                     var policyData = _policyDataCache[item.ContentId!];
 
+                    string? importedName = null;
+
                     if (string.Equals(item.ContentType, ContentTypes.SettingsCatalog, StringComparison.OrdinalIgnoreCase))
                     {
-                        var importedName = await ImportSettingsCatalogFromJsonDataAsync(destinationGraphServiceClient, policyData);
-                        if (importedName != null)
-                        {
-                            AppendToDetailsRichTextBlock($"Imported: {importedName}");
-                            successCount++;
-                        }
-                        else
-                        {
-                            AppendToDetailsRichTextBlock($"Failed to import: {item.ContentName}");
-                            errorCount++;
-                        }
+                        importedName = await ImportSettingsCatalogFromJsonDataAsync(destinationGraphServiceClient, policyData);
                     }
-                    // Future: add other content types here
+                    else if (string.Equals(item.ContentType, ContentTypes.DeviceCompliancePolicy, StringComparison.OrdinalIgnoreCase))
+                    {
+                        importedName = await ImportDeviceComplianceFromJsonDataAsync(destinationGraphServiceClient, policyData);
+                    }
                     else
                     {
                         AppendToDetailsRichTextBlock($"Skipped '{item.ContentName}' — content type '{item.ContentType}' not yet supported for JSON import.");
+                        continue;
+                    }
+
+                    if (importedName != null)
+                    {
+                        AppendToDetailsRichTextBlock($"Imported: {importedName}");
+                        successCount++;
+                    }
+                    else
+                    {
+                        AppendToDetailsRichTextBlock($"Failed to import: {item.ContentName}");
+                        errorCount++;
                     }
                 }
                 catch (Exception ex)

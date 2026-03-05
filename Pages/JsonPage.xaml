@@ -93,23 +93,23 @@
                     <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                         <Button x:Name="ExportButton"
                                 Click="ExportButton_Click"
-                                ToolTipService.ToolTip="Save staged items to a JSON file. Fetches full policy data from the source tenant so items can later be imported to another tenant."
+                                ToolTipService.ToolTip="Export staged items to a folder. Creates one JSON file per content type (e.g. settingscatalog.json, devicecompliance.json)."
                                 Height="40"
                                 Padding="16,0"
                                 Style="{StaticResource AccentButtonStyle}">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <FontIcon Glyph="&#xEDE1;" FontSize="16"/>
-                                <TextBlock Text="Export to JSON" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                <TextBlock Text="Export to Folder" VerticalAlignment="Center" FontWeight="SemiBold"/>
                             </StackPanel>
                         </Button>
                         <Button x:Name="ImportButton"
                                 Click="ImportButton_Click"
-                                ToolTipService.ToolTip="Load items from a previously exported JSON file into the staging area. This replaces the current staging area contents. No tenant authentication required."
+                                ToolTipService.ToolTip="Import items from a folder containing exported JSON files. Reads all supported content type files from the selected folder."
                                 Height="40"
                                 Padding="16,0">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <FontIcon Glyph="&#xE8E5;" FontSize="16"/>
-                                <TextBlock Text="Import from JSON" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                <TextBlock Text="Import from Folder" VerticalAlignment="Center" FontWeight="SemiBold"/>
                             </StackPanel>
                         </Button>
                         <AppBarSeparator/>
@@ -151,7 +151,7 @@
                          IsOpen="True"
                          Severity="Informational"
                          Title="Staging Area"
-                         Message="Step 1: Use 'List All' or 'Search' to load items from a source tenant. Step 2: 'Export to JSON' saves them with full policy data. Step 3: On another machine or later, use 'Import from JSON' to load the file, then 'Import to Tenant' to create the policies in the destination tenant."
+                         Message="Step 1: Use 'List All' or 'Search' to load items from a source tenant. Step 2: 'Export to Folder' saves each content type to its own JSON file. Step 3: On another machine or later, use 'Import from Folder' to load the files, then 'Import to Tenant' to create the policies in the destination tenant."
                          IsClosable="True"
                          Margin="0,0,12,12"/>
                 
