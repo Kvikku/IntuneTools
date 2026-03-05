@@ -144,7 +144,30 @@ namespace IntuneTools.Pages
             // Always keep the JSON action buttons and import button enabled regardless of auth
             ImportButton.IsEnabled = true;
             ExportButton.IsEnabled = true;
-            ImportToTenantButton.IsEnabled = !string.IsNullOrEmpty(Variables.destinationTenantName);
+
+            bool hasDestination = !string.IsNullOrEmpty(Variables.destinationTenantName);
+            ImportToTenantButton.IsEnabled = hasDestination;
+
+            // Update the Import to Tenant button to show the destination tenant name
+            ImportToTenantButtonText.Text = hasDestination
+                ? $"Import to {Variables.destinationTenantName}"
+                : "Import to Tenant (no destination)";
+
+            // Update the TenantInfoBar to show both source and destination tenants
+            var tenantInfoBar = FindName("TenantInfoBar") as InfoBar;
+            if (tenantInfoBar != null)
+            {
+                bool hasSource = !string.IsNullOrEmpty(Variables.sourceTenantName);
+
+                var parts = new List<string>();
+                parts.Add(hasSource ? $"Source: {Variables.sourceTenantName}" : "Source: Not authenticated");
+                parts.Add(hasDestination ? $"Destination: {Variables.destinationTenantName}" : "Destination: Not authenticated");
+
+                tenantInfoBar.Title = "Tenant Status";
+                tenantInfoBar.Message = string.Join(" | ", parts);
+                tenantInfoBar.Severity = hasSource || hasDestination ? InfoBarSeverity.Informational : InfoBarSeverity.Warning;
+                tenantInfoBar.IsOpen = true;
+            }
         }
 
         #endregion
@@ -556,6 +579,7 @@ namespace IntuneTools.Pages
             int current = 0;
             int successCount = 0;
             int errorCount = 0;
+            var failedItems = new List<(string Name, string Type, string Reason)>();
 
             ShowOperationProgress("Importing to tenant...", 0, total);
             LogToFunctionFile(appFunction.Main, $"JSON Import: Starting import of {total} item(s) to {destinationTenantName}.");
@@ -572,7 +596,10 @@ namespace IntuneTools.Pages
 
                     if (!JsonContentTypeOperations.TryGetValue(item.ContentType ?? "", out var ops))
                     {
-                        AppendToDetailsRichTextBlock($"Skipped '{item.ContentName}' — content type '{item.ContentType}' not yet supported for JSON import.");
+                        var reason = $"Content type '{item.ContentType}' not yet supported for JSON import.";
+                        AppendToDetailsRichTextBlock($"Skipped '{item.ContentName}' — {reason}");
+                        failedItems.Add((item.ContentName ?? "Unknown", item.ContentType ?? "Unknown", reason));
+                        errorCount++;
                         continue;
                     }
 
@@ -588,6 +615,7 @@ namespace IntuneTools.Pages
                     {
                         AppendToDetailsRichTextBlock($"Failed to import: {item.ContentName}");
                         LogToFunctionFile(appFunction.Main, $"JSON Import: Failed to import '{item.ContentName}'.", LogLevels.Warning);
+                        failedItems.Add((item.ContentName ?? "Unknown", item.ContentType ?? "Unknown", "Import returned null — check the log file for details."));
                         errorCount++;
                     }
                 }
@@ -595,6 +623,7 @@ namespace IntuneTools.Pages
                 {
                     AppendToDetailsRichTextBlock($"Error importing '{item.ContentName}': {ex.Message}");
                     LogToFunctionFile(appFunction.Main, $"JSON Import: Error importing '{item.ContentName}': {ex.Message}", LogLevels.Error);
+                    failedItems.Add((item.ContentName ?? "Unknown", item.ContentType ?? "Unknown", ex.Message));
                     errorCount++;
                 }
             }
@@ -611,6 +640,18 @@ namespace IntuneTools.Pages
             }
 
             AppendToDetailsRichTextBlock("Import to tenant finished.");
+
+            // Show summary of failed items
+            if (failedItems.Count > 0)
+            {
+                AppendToDetailsRichTextBlock("");
+                AppendToDetailsRichTextBlock($"--- IMPORT FAILURE SUMMARY ({failedItems.Count} item(s)) ---");
+                foreach (var (name, type, reason) in failedItems)
+                {
+                    AppendToDetailsRichTextBlock($"  [{type}] {name}: {reason}");
+                }
+                AppendToDetailsRichTextBlock("---");
+            }
         }
 
         #endregion
