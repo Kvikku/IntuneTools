@@ -123,10 +123,8 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     {
                         var result = await sourceGraphServiceClient.DeviceManagement.DeviceCompliancePolicies[policy].GetAsync((requestConfiguration) =>
                         {
-                            requestConfiguration.QueryParameters.Expand = new string[] { "scheduledActionsForRule" };
+                            requestConfiguration.QueryParameters.Expand = new string[] { "scheduledActionsForRule($expand=scheduledActionConfigurations)" };
                         });
-
-                        //var rules = await sourceGraphServiceClient.DeviceManagement.DeviceCompliancePolicies[policy].ScheduledActionsForRule.GetAsync();
 
                         policyName = result.DisplayName;
 
@@ -137,9 +135,15 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         var newPolicy = Activator.CreateInstance(type);
 
                         // Copy all settings from the source policy to the new policy
+                        // Copy all properties except server-generated ones and ScheduledActionsForRule
+                        // (ScheduledActionsForRule is rebuilt separately to strip server-generated IDs)
                         foreach (var property in result.GetType().GetProperties())
                         {
-                            if (property.CanWrite && property.Name != "Id" && property.Name != "CreatedDateTime" && property.Name != "LastModifiedDateTime")
+                            if (property.CanWrite
+                                && property.Name != "Id"
+                                && property.Name != "CreatedDateTime"
+                                && property.Name != "LastModifiedDateTime"
+                                && property.Name != "ScheduledActionsForRule")
                             {
                                 var value = property.GetValue(result);
                                 if (value != null)
@@ -149,53 +153,62 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                             }
                         }
 
-
-
-
                         // Cast the new policy to DeviceCompliancePolicy
                         var deviceCompliancePolicy = newPolicy as DeviceCompliancePolicy;
 
-
-                        // new device compliance scheduled action rule
-
-                        // Note - this manual test works. Need to copy the scheduled actions for rule
-
-                        var testRule = new DeviceComplianceScheduledActionForRule
+                        // Rebuild ScheduledActionsForRule with clean objects (no server-generated IDs).
+                        // The Graph API requires exactly one rule with exactly one Block action.
+                        // Collect all action configs from all source rules into a single rule.
+                        var allConfigs = new List<DeviceComplianceActionItem>();
+                        if (result.ScheduledActionsForRule != null)
                         {
-                            RuleName = "Test Rule",
-                            ScheduledActionConfigurations = new List<DeviceComplianceActionItem>()
+                            foreach (var action in result.ScheduledActionsForRule)
                             {
-                                new DeviceComplianceActionItem
+                                if (action.ScheduledActionConfigurations != null)
                                 {
-                                    ActionType = DeviceComplianceActionType.Block,
-                                    GracePeriodHours = 8,
-                                    NotificationMessageCCList = new List<string>(),
-                                    NotificationTemplateId = ""
+                                    foreach (var config in action.ScheduledActionConfigurations)
+                                    {
+                                        allConfigs.Add(new DeviceComplianceActionItem
+                                        {
+                                            ActionType = config.ActionType,
+                                            GracePeriodHours = config.GracePeriodHours,
+                                            NotificationMessageCCList = config.NotificationMessageCCList ?? new List<string>(),
+                                            NotificationTemplateId = config.NotificationTemplateId ?? ""
+                                        });
+                                    }
                                 }
                             }
-                        };
+                        }
+
+                        // Ensure exactly one Block action exists
+                        var blockActions = allConfigs.Where(c => c.ActionType == DeviceComplianceActionType.Block).ToList();
+                        var nonBlockActions = allConfigs.Where(c => c.ActionType != DeviceComplianceActionType.Block).ToList();
+
+                        var finalConfigs = new List<DeviceComplianceActionItem>();
+                        if (blockActions.Count > 0)
+                        {
+                            finalConfigs.Add(blockActions.First());
+                        }
+                        else
+                        {
+                            finalConfigs.Add(new DeviceComplianceActionItem
+                            {
+                                ActionType = DeviceComplianceActionType.Block,
+                                GracePeriodHours = 0,
+                                NotificationMessageCCList = new List<string>(),
+                                NotificationTemplateId = ""
+                            });
+                        }
+                        finalConfigs.AddRange(nonBlockActions);
 
                         deviceCompliancePolicy.ScheduledActionsForRule = new List<DeviceComplianceScheduledActionForRule>
                         {
-                            testRule
+                            new DeviceComplianceScheduledActionForRule
+                            {
+                                RuleName = "PasswordRequired",
+                                ScheduledActionConfigurations = finalConfigs
+                            }
                         };
-
-
-                        //// Ensure the ScheduledActionsForRule is copied
-                        //if (result.ScheduledActionsForRule != null)
-                        //{
-                        //    deviceCompliancePolicy.ScheduledActionsForRule = new List<DeviceComplianceScheduledActionForRule>();
-                        //    foreach (var action in result.ScheduledActionsForRule)
-                        //    {
-                        //        var newAction = new DeviceComplianceScheduledActionForRule
-                        //        {
-                        //            RuleName = action.RuleName,
-                        //            ScheduledActionConfigurations = action.ScheduledActionConfigurations
-
-                        //        };
-                        //        deviceCompliancePolicy.ScheduledActionsForRule.Add(newAction);
-                        //    }
-                        //}
 
 
                         var import = await destinationGraphServiceClient.DeviceManagement.DeviceCompliancePolicies.PostAsync(deviceCompliancePolicy);
@@ -585,7 +598,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             {
                 var result = await graphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyId].GetAsync((requestConfiguration) =>
                 {
-                    requestConfiguration.QueryParameters.Expand = new[] { "scheduledActionsForRule" };
+                    requestConfiguration.QueryParameters.Expand = new[] { "scheduledActionsForRule($expand=scheduledActionConfigurations)" };
                 });
 
                 if (result == null)
@@ -629,12 +642,15 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 var type = exportedPolicy.GetType();
                 var newPolicy = (DeviceCompliancePolicy)Activator.CreateInstance(type)!;
 
+                // Copy all properties except server-generated ones and ScheduledActionsForRule
+                // (ScheduledActionsForRule is rebuilt separately to strip server-generated IDs)
                 foreach (var property in type.GetProperties())
                 {
                     if (property.CanWrite
                         && property.Name != "Id"
                         && property.Name != "CreatedDateTime"
-                        && property.Name != "LastModifiedDateTime")
+                        && property.Name != "LastModifiedDateTime"
+                        && property.Name != "ScheduledActionsForRule")
                     {
                         var value = property.GetValue(exportedPolicy);
                         if (value != null)
@@ -644,24 +660,57 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     }
                 }
 
-                // Always rebuild ScheduledActionsForRule with clean objects (no server-generated IDs).
-                // The Graph API rejects POSTs that include IDs on child action items.
-                // This matches the pattern used in the working tenant-to-tenant import.
+                // Rebuild ScheduledActionsForRule with clean objects (no server-generated IDs).
+                // The Graph API requires exactly one rule with exactly one Block action.
+                // Collect all action configs from all source rules into a single rule.
+                var allConfigs = new List<DeviceComplianceActionItem>();
+                if (exportedPolicy.ScheduledActionsForRule != null)
+                {
+                    foreach (var action in exportedPolicy.ScheduledActionsForRule)
+                    {
+                        if (action.ScheduledActionConfigurations != null)
+                        {
+                            foreach (var config in action.ScheduledActionConfigurations)
+                            {
+                                allConfigs.Add(new DeviceComplianceActionItem
+                                {
+                                    ActionType = config.ActionType,
+                                    GracePeriodHours = config.GracePeriodHours,
+                                    NotificationMessageCCList = config.NotificationMessageCCList ?? new List<string>(),
+                                    NotificationTemplateId = config.NotificationTemplateId ?? ""
+                                });
+                            }
+                        }
+                    }
+                }
+
+                // Ensure exactly one Block action exists
+                var blockActions = allConfigs.Where(c => c.ActionType == DeviceComplianceActionType.Block).ToList();
+                var nonBlockActions = allConfigs.Where(c => c.ActionType != DeviceComplianceActionType.Block).ToList();
+
+                var finalConfigs = new List<DeviceComplianceActionItem>();
+                if (blockActions.Count > 0)
+                {
+                    finalConfigs.Add(blockActions.First());
+                }
+                else
+                {
+                    finalConfigs.Add(new DeviceComplianceActionItem
+                    {
+                        ActionType = DeviceComplianceActionType.Block,
+                        GracePeriodHours = 0,
+                        NotificationMessageCCList = new List<string>(),
+                        NotificationTemplateId = ""
+                    });
+                }
+                finalConfigs.AddRange(nonBlockActions);
+
                 newPolicy.ScheduledActionsForRule = new List<DeviceComplianceScheduledActionForRule>
                 {
                     new DeviceComplianceScheduledActionForRule
                     {
                         RuleName = "PasswordRequired",
-                        ScheduledActionConfigurations = new List<DeviceComplianceActionItem>
-                        {
-                            new DeviceComplianceActionItem
-                            {
-                                ActionType = DeviceComplianceActionType.Block,
-                                GracePeriodHours = 0,
-                                NotificationMessageCCList = new List<string>(),
-                                NotificationTemplateId = ""
-                            }
-                        }
+                        ScheduledActionConfigurations = finalConfigs
                     }
                 };
 
