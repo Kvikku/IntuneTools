@@ -183,6 +183,11 @@ namespace IntuneTools.Pages
             NavigateToPage(typeof(RenamingPage), "Renaming");
         }
 
+        private void QuickAction_Json_Click(object sender, RoutedEventArgs e)
+        {
+            NavigateToPage(typeof(JsonPage), "Json");
+        }
+
         private void NavigateToPage(Type pageType, string navTag)
         {
             this.Frame.Navigate(pageType);

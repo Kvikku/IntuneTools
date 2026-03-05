@@ -63,6 +63,7 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
                     <Button Grid.Column="0"
@@ -133,6 +134,24 @@
                             <SymbolIcon Symbol="Rename" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" HorizontalAlignment="Left"/>
                             <TextBlock Text="Renaming" FontSize="16" FontWeight="SemiBold"/>
                             <TextBlock Text="Rename objects with customizable prefixes."
+                                       FontSize="13" Opacity="0.65" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Grid.Column="4"
+                            Click="QuickAction_Json_Click"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Stretch"
+                            VerticalAlignment="Stretch"
+                            Padding="20"
+                            CornerRadius="8"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1">
+                        <StackPanel Spacing="8">
+                            <FontIcon Glyph="&#xE8AB;" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" HorizontalAlignment="Left"/>
+                            <TextBlock Text="JSON" FontSize="16" FontWeight="SemiBold"/>
+                            <TextBlock Text="Import from and export to JSON files."
                                        FontSize="13" Opacity="0.65" TextWrapping="Wrap"/>
                         </StackPanel>
                     </Button>
