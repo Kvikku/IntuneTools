@@ -1002,10 +1002,10 @@ namespace IntuneTools.Pages
 
                     // Log the selected options
                     AppendToLog("Application Deployment Options Configured:");
-                    AppendToLog($" � Intent: {_selectedInstallIntent}");
-                    AppendToLog($" � Group Mode: {_selectedDeploymentMode}");
-                    AppendToLog($" � Notifications: {_selectedNotificationSetting}");
-                    AppendToLog($" � Delivery Opt: {_selectedDeliveryOptimizationPriority}");
+                    AppendToLog($" - Intent: {_selectedInstallIntent}");
+                    AppendToLog($" - Group Mode: {_selectedDeploymentMode}");
+                    AppendToLog($" - Notifications: {_selectedNotificationSetting}");
+                    AppendToLog($" - Delivery Opt: {_selectedDeliveryOptimizationPriority}");
 
                     return true;
                 }
