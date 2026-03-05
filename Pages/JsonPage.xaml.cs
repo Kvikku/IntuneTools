@@ -20,6 +20,7 @@ using static IntuneTools.Graph.IntuneHelperClasses.ProactiveRemediationsHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.macOSShellScript;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsAutoPilotHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.AppleBYODEnrollmentProfileHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.FilterHelperClass;
 
 namespace IntuneTools.Pages
 {
@@ -65,6 +66,7 @@ namespace IntuneTools.Pages
             ContentTypes.MacOSShellScript,
             ContentTypes.WindowsAutoPilotProfile,
             ContentTypes.AppleBYODEnrollmentProfile,
+            ContentTypes.AssignmentFilter,
         };
 
         /// <summary>
@@ -84,6 +86,7 @@ namespace IntuneTools.Pages
             { ContentTypes.MacOSShellScript, "macosshellscript.json" },
             { ContentTypes.WindowsAutoPilotProfile, "windowsautopilot.json" },
             { ContentTypes.AppleBYODEnrollmentProfile, "applebyodenrollment.json" },
+            { ContentTypes.AssignmentFilter, "assignmentfilter.json" },
         };
 
         /// <summary>
@@ -108,6 +111,7 @@ namespace IntuneTools.Pages
             { ContentTypes.MacOSShellScript, (ExportMacOSShellScriptDataAsync, ImportMacOSShellScriptFromJsonDataAsync) },
             { ContentTypes.WindowsAutoPilotProfile, (ExportWindowsAutoPilotProfileDataAsync, ImportWindowsAutoPilotProfileFromJsonDataAsync) },
             { ContentTypes.AppleBYODEnrollmentProfile, (ExportAppleBYODEnrollmentProfileDataAsync, ImportAppleBYODEnrollmentProfileFromJsonDataAsync) },
+            { ContentTypes.AssignmentFilter, (ExportAssignmentFilterDataAsync, ImportAssignmentFilterFromJsonDataAsync) },
         };
 
         #endregion
