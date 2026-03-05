@@ -28,6 +28,10 @@
                        HorizontalAlignment="Left"
                        FontSize="38"
                        FontWeight="Bold"/>
+            <TextBlock Text="Bulk delete policies and configurations from a tenant."
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       FontSize="14"
+                       Margin="0,4,0,0"/>
             <InfoBar x:Name="TenantInfoBar"
                      Severity="Informational"
                      IsClosable="False"
