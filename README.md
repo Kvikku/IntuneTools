@@ -43,12 +43,6 @@ You can also grab a release from the [Releases page](https://github.com/Kvikku/I
 
 For detailed walkthroughs, check out [the wiki](https://github.com/Kvikku/IntuneTools/wiki).
 
-### Required permissions
-
-| Tenant | Access | Key scopes |
-|--------|--------|------------|
-| Source | Read-only | `DeviceManagementConfiguration.Read.All`, `Policy.Read.All`, `Directory.Read.All` |
-| Destination | Read-write | `DeviceManagementConfiguration.ReadWrite.All`, `Group.ReadWrite.All` |
 
 ## Building from source
 
