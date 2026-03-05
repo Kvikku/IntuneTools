@@ -398,7 +398,7 @@ namespace IntuneTools.Pages
             }
             catch (Exception ex)
             {
-                AppendToLog($"? Assignment operation failed: {ex.Message}");
+                AppendToLog($"Error: Assignment operation failed: {ex.Message}");
                 await ShowValidationDialogAsync("Assignment Error",
                     $"An error occurred during assignment:\n{ex.Message}");
             }
