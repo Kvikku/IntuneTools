@@ -24,6 +24,7 @@ using static IntuneTools.Graph.IntuneHelperClasses.WindowsAutoPilotHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsDriverUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsFeatureUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdatePolicyHandler;
+using static IntuneTools.Graph.EntraHelperClasses.ConditionalAccessHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHelper;
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -418,6 +419,10 @@ namespace IntuneTools.Pages
 
             new(ContentTypes.Application, "Application",
                 async (id, p) => await RenameApplication(sourceGraphServiceClient, id, p)),
+
+            new(ContentTypes.ConditionalAccessPolicy, "Conditional Access Policy",
+                async (id, p) => await RenameConditionalAccessPolicy(sourceGraphServiceClient, id, p),
+                async id => await GetConditionalAccessPolicyDisplayName(sourceGraphServiceClient, id)),
         ];
 
         #endregion

@@ -259,5 +259,6 @@ namespace IntuneTools.Utilities
         public const string WindowsQualityUpdatePolicy = "Windows Quality Update Policy";
         public const string WindowsQualityUpdateProfile = "Windows Quality Update Profile";
         public const string Application = "Application";
+        public const string ConditionalAccessPolicy = "Conditional Access Policy";
     }
 }

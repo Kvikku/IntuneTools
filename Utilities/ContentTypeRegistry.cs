@@ -15,6 +15,7 @@ using static IntuneTools.Graph.IntuneHelperClasses.WindowsAutoPilotHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsDriverUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsFeatureUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdatePolicyHandler;
+using static IntuneTools.Graph.EntraHelperClasses.ConditionalAccessHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHelper;
 
 namespace IntuneTools.Utilities
@@ -100,6 +101,10 @@ namespace IntuneTools.Utilities
             new(ContentTypes.Application, "applications",
                 async client => await GetAllApplicationContentAsync(client),
                 async (client, query) => await SearchApplicationContentAsync(client, query)),
+
+            new(ContentTypes.ConditionalAccessPolicy, "Conditional Access policies",
+                async client => await GetAllConditionalAccessContentAsync(client),
+                async (client, query) => await SearchConditionalAccessContentAsync(client, query)),
         };
 
         /// <summary>
