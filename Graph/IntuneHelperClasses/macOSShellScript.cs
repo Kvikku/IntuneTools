@@ -1,8 +1,12 @@
 ﻿using IntuneTools.Utilities;
 using Microsoft.Graph;
+using Microsoft.Kiota.Serialization.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
@@ -448,6 +452,77 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
 
             return content;
+        }
+
+        /// <summary>
+        /// Exports a macOS shell script's full data as a JsonElement for JSON file export.
+        /// </summary>
+        public static async Task<JsonElement?> ExportMacOSShellScriptDataAsync(GraphServiceClient graphServiceClient, string scriptId)
+        {
+            try
+            {
+                var result = await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptId].GetAsync();
+
+                if (result == null)
+                {
+                    LogToFunctionFile(appFunction.Main, $"macOS shell script {scriptId} not found for export.", LogLevels.Warning);
+                    return null;
+                }
+
+                using var writer = new JsonSerializationWriter();
+                writer.WriteObjectValue(null, result);
+                using var stream = writer.GetSerializedContent();
+                var doc = await JsonDocument.ParseAsync(stream);
+                return doc.RootElement.Clone();
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error exporting macOS shell script {scriptId}: {ex.Message}", LogLevels.Error);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Imports a macOS shell script from previously exported JSON data into the destination tenant.
+        /// </summary>
+        public static async Task<string?> ImportMacOSShellScriptFromJsonDataAsync(GraphServiceClient graphServiceClient, JsonElement policyData)
+        {
+            try
+            {
+                var json = policyData.GetRawText();
+                using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+                var parseNode = new JsonParseNode(JsonDocument.Parse(stream).RootElement);
+                var exported = parseNode.GetObjectValue(DeviceShellScript.CreateFromDiscriminatorValue);
+
+                if (exported == null)
+                {
+                    LogToFunctionFile(appFunction.Main, "Failed to deserialize macOS shell script data from JSON.", LogLevels.Error);
+                    return null;
+                }
+
+                var newScript = new DeviceShellScript();
+
+                foreach (var property in exported.GetType().GetProperties())
+                {
+                    var value = property.GetValue(exported);
+                    if (value != null && property.CanWrite)
+                    {
+                        property.SetValue(newScript, value);
+                    }
+                }
+
+                newScript.Id = "";
+
+                var imported = await graphServiceClient.DeviceManagement.DeviceShellScripts.PostAsync(newScript);
+
+                LogToFunctionFile(appFunction.Main, $"Imported macOS shell script: {imported?.DisplayName}");
+                return imported?.DisplayName;
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error importing macOS shell script from JSON: {ex.Message}", LogLevels.Error);
+                return null;
+            }
         }
     }
 }

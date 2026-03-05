@@ -1,7 +1,11 @@
 ﻿using IntuneTools.Utilities;
 using Microsoft.Graph;
+using Microsoft.Kiota.Serialization.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
@@ -421,6 +425,77 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
 
             return content;
+        }
+
+        /// <summary>
+        /// Exports a proactive remediation script's full data as a JsonElement for JSON file export.
+        /// </summary>
+        public static async Task<JsonElement?> ExportProactiveRemediationDataAsync(GraphServiceClient graphServiceClient, string scriptId)
+        {
+            try
+            {
+                var result = await graphServiceClient.DeviceManagement.DeviceHealthScripts[scriptId].GetAsync();
+
+                if (result == null)
+                {
+                    LogToFunctionFile(appFunction.Main, $"Proactive remediation {scriptId} not found for export.", LogLevels.Warning);
+                    return null;
+                }
+
+                using var writer = new JsonSerializationWriter();
+                writer.WriteObjectValue(null, result);
+                using var stream = writer.GetSerializedContent();
+                var doc = await JsonDocument.ParseAsync(stream);
+                return doc.RootElement.Clone();
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error exporting proactive remediation {scriptId}: {ex.Message}", LogLevels.Error);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Imports a proactive remediation script from previously exported JSON data into the destination tenant.
+        /// </summary>
+        public static async Task<string?> ImportProactiveRemediationFromJsonDataAsync(GraphServiceClient graphServiceClient, JsonElement policyData)
+        {
+            try
+            {
+                var json = policyData.GetRawText();
+                using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+                var parseNode = new JsonParseNode(JsonDocument.Parse(stream).RootElement);
+                var exported = parseNode.GetObjectValue(DeviceHealthScript.CreateFromDiscriminatorValue);
+
+                if (exported == null)
+                {
+                    LogToFunctionFile(appFunction.Main, "Failed to deserialize proactive remediation data from JSON.", LogLevels.Error);
+                    return null;
+                }
+
+                var newScript = new DeviceHealthScript();
+
+                foreach (var property in exported.GetType().GetProperties())
+                {
+                    var value = property.GetValue(exported);
+                    if (value != null && property.CanWrite)
+                    {
+                        property.SetValue(newScript, value);
+                    }
+                }
+
+                newScript.Id = "";
+
+                var imported = await graphServiceClient.DeviceManagement.DeviceHealthScripts.PostAsync(newScript);
+
+                LogToFunctionFile(appFunction.Main, $"Imported proactive remediation: {imported?.DisplayName}");
+                return imported?.DisplayName;
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error importing proactive remediation from JSON: {ex.Message}", LogLevels.Error);
+                return null;
+            }
         }
     }
 }

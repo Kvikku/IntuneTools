@@ -15,6 +15,9 @@ using static IntuneTools.Graph.IntuneHelperClasses.WindowsDriverUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsFeatureUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdatePolicyHandler;
+using static IntuneTools.Graph.IntuneHelperClasses.PowerShellScriptsHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.ProactiveRemediationsHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.macOSShellScript;
 
 namespace IntuneTools.Pages
 {
@@ -55,6 +58,9 @@ namespace IntuneTools.Pages
             ContentTypes.WindowsFeatureUpdate,
             ContentTypes.WindowsQualityUpdateProfile,
             ContentTypes.WindowsQualityUpdatePolicy,
+            ContentTypes.PowerShellScript,
+            ContentTypes.ProactiveRemediation,
+            ContentTypes.MacOSShellScript,
         };
 
         /// <summary>
@@ -69,6 +75,9 @@ namespace IntuneTools.Pages
             { ContentTypes.WindowsFeatureUpdate, "windowsfeatureupdate.json" },
             { ContentTypes.WindowsQualityUpdateProfile, "windowsqualityupdateprofile.json" },
             { ContentTypes.WindowsQualityUpdatePolicy, "windowsqualityupdatepolicy.json" },
+            { ContentTypes.PowerShellScript, "powershellscript.json" },
+            { ContentTypes.ProactiveRemediation, "proactiveremediation.json" },
+            { ContentTypes.MacOSShellScript, "macosshellscript.json" },
         };
 
         /// <summary>
@@ -88,6 +97,9 @@ namespace IntuneTools.Pages
             { ContentTypes.WindowsFeatureUpdate, (ExportWindowsFeatureUpdatePolicyDataAsync, ImportWindowsFeatureUpdateFromJsonDataAsync) },
             { ContentTypes.WindowsQualityUpdateProfile, (ExportWindowsQualityUpdateProfileDataAsync, ImportWindowsQualityUpdateProfileFromJsonDataAsync) },
             { ContentTypes.WindowsQualityUpdatePolicy, (ExportWindowsQualityUpdatePolicyDataAsync, ImportWindowsQualityUpdatePolicyFromJsonDataAsync) },
+            { ContentTypes.PowerShellScript, (ExportPowerShellScriptDataAsync, ImportPowerShellScriptFromJsonDataAsync) },
+            { ContentTypes.ProactiveRemediation, (ExportProactiveRemediationDataAsync, ImportProactiveRemediationFromJsonDataAsync) },
+            { ContentTypes.MacOSShellScript, (ExportMacOSShellScriptDataAsync, ImportMacOSShellScriptFromJsonDataAsync) },
         };
 
         #endregion
