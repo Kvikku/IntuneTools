@@ -4,7 +4,9 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using static IntuneTools.Graph.EntraHelperClasses.GroupHelperClass;
 using static IntuneTools.Graph.IntuneHelperClasses.AppleBYODEnrollmentProfileHelper;
@@ -362,6 +364,104 @@ namespace IntuneTools.Pages
                 async id => await DeleteConditionalAccessPolicy(sourceGraphServiceClient, id)),
         ];
 
+        /// <summary>
+        /// Exports the current ContentList to JSON files so the user can back up before deleting.
+        /// Reuses the export registries from JsonPage.
+        /// </summary>
+        private async Task<bool> BackupContentToJsonAsync()
+        {
+            var itemsByType = ContentList
+                .Where(c => JsonPage.ContentTypeFileNames.ContainsKey(c.ContentType ?? ""))
+                .GroupBy(c => c.ContentType!, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var unsupportedCount = ContentList.Count(c => !JsonPage.ContentTypeFileNames.ContainsKey(c.ContentType ?? ""));
+
+            if (itemsByType.Count == 0)
+            {
+                AppendToDetailsRichTextBlock("No exportable content types to back up.");
+                return false;
+            }
+
+            var folderPicker = new Windows.Storage.Pickers.FolderPicker();
+            folderPicker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
+            folderPicker.FileTypeFilter.Add("*");
+
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindowInstance);
+            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
+
+            var folder = await folderPicker.PickSingleFolderAsync();
+            if (folder == null)
+            {
+                AppendToDetailsRichTextBlock("Backup cancelled.");
+                return false;
+            }
+
+            try
+            {
+                int totalItems = itemsByType.Sum(g => g.Count());
+                int currentItem = 0;
+                int filesWritten = 0;
+                ShowOperationProgress("Backing up content...", 0, totalItems);
+
+                foreach (var group in itemsByType)
+                {
+                    var contentType = group.Key;
+                    var fileName = JsonPage.ContentTypeFileNames[contentType];
+                    var items = new List<JsonExportItem>();
+
+                    foreach (var c in group)
+                    {
+                        currentItem++;
+                        ShowOperationProgress($"Backing up '{c.ContentName}'...", currentItem, totalItems);
+
+                        JsonElement? policyData = null;
+                        if (sourceGraphServiceClient != null && !string.IsNullOrEmpty(c.ContentId)
+                            && JsonPage.JsonContentTypeOperations.TryGetValue(contentType, out var ops))
+                        {
+                            policyData = await ops.Export(sourceGraphServiceClient, c.ContentId);
+                        }
+
+                        items.Add(new JsonExportItem
+                        {
+                            Name = c.ContentName,
+                            Type = c.ContentType,
+                            Platform = c.ContentPlatform,
+                            Id = c.ContentId,
+                            Description = c.ContentDescription,
+                            PolicyData = policyData
+                        });
+                    }
+
+                    var document = new JsonExportDocument
+                    {
+                        ExportedAt = DateTime.UtcNow.ToString("o"),
+                        TenantName = string.IsNullOrEmpty(Variables.sourceTenantName) ? "Unknown" : Variables.sourceTenantName,
+                        Items = items
+                    };
+
+                    var json = JsonSerializer.Serialize(document, JsonPage.ExportSerializerOptions);
+                    var filePath = Path.Combine(folder.Path, fileName);
+                    await File.WriteAllTextAsync(filePath, json);
+                    filesWritten++;
+                }
+
+                var msg = $"Backup complete. {totalItems} item(s) exported across {filesWritten} file(s) to '{folder.Path}'.";
+                if (unsupportedCount > 0)
+                    msg += $" {unsupportedCount} item(s) of unsupported type(s) were skipped.";
+
+                ShowOperationSuccess(msg);
+                AppendToDetailsRichTextBlock(msg);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                ShowOperationError($"Backup failed: {ex.Message}");
+                AppendToDetailsRichTextBlock($"Error during backup: {ex.Message}");
+                return false;
+            }
+        }
+
         #endregion
 
         #region Content Type Filter
@@ -507,20 +607,46 @@ namespace IntuneTools.Pages
             {
                 Title = "Delete content?",
                 Content = $"You are about to permanently delete {numberOfItems} item(s). This action cannot be undone.\n\n" +
-                          "Have you taken a backup? You can easily export your policies to JSON using the Export page in this app before proceeding.",
+                          "Have you taken a backup? You can back up these items to JSON right now using the button below.",
                 PrimaryButtonText = "Delete",
+                SecondaryButtonText = "Backup First",
                 CloseButtonText = "Cancel",
                 DefaultButton = ContentDialogButton.Close,
                 XamlRoot = this.XamlRoot
             };
 
             var result = await dialog.ShowAsync().AsTask();
-            if (result == ContentDialogResult.Primary)
+            if (result == ContentDialogResult.Secondary)
             {
-                await DeleteContent();
-                ContentList.Clear();
-                AppendToDetailsRichTextBlock("Cleared the data grid.");
+                var backupOk = await BackupContentToJsonAsync();
+                if (backupOk)
+                {
+                    // Re-prompt to delete after successful backup
+                    var postBackupDialog = new ContentDialog
+                    {
+                        Title = "Backup complete — proceed with delete?",
+                        Content = $"Your backup was saved successfully. Do you want to delete the {numberOfItems} item(s) now?",
+                        PrimaryButtonText = "Delete",
+                        CloseButtonText = "Cancel",
+                        DefaultButton = ContentDialogButton.Close,
+                        XamlRoot = this.XamlRoot
+                    };
+                    var postResult = await postBackupDialog.ShowAsync().AsTask();
+                    if (postResult != ContentDialogResult.Primary) return;
+                }
+                else
+                {
+                    return;
+                }
             }
+            else if (result != ContentDialogResult.Primary)
+            {
+                return;
+            }
+
+            await DeleteContent();
+            ContentList.Clear();
+            AppendToDetailsRichTextBlock("Cleared the data grid.");
         }
 
         private async void ListAllButton_Click(object sender, RoutedEventArgs e)

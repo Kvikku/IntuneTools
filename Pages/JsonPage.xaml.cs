@@ -31,7 +31,7 @@ namespace IntuneTools.Pages
     {
         #region Fields
 
-        private static readonly JsonSerializerOptions ExportSerializerOptions = new()
+        internal static readonly JsonSerializerOptions ExportSerializerOptions = new()
         {
             WriteIndented = true,
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
@@ -73,7 +73,7 @@ namespace IntuneTools.Pages
         /// <summary>
         /// Maps content type constants to their JSON file names.
         /// </summary>
-        private static readonly Dictionary<string, string> ContentTypeFileNames = new(StringComparer.OrdinalIgnoreCase)
+        internal static readonly Dictionary<string, string> ContentTypeFileNames = new(StringComparer.OrdinalIgnoreCase)
         {
             { ContentTypes.SettingsCatalog, "settingscatalog.json" },
             { ContentTypes.DeviceCompliancePolicy, "devicecompliance.json" },
@@ -95,7 +95,7 @@ namespace IntuneTools.Pages
         /// Adding a new content type only requires adding an entry here
         /// (plus the helper methods and the arrays above).
         /// </summary>
-        private static readonly Dictionary<string, (
+        internal static readonly Dictionary<string, (
             Func<GraphServiceClient, string, Task<JsonElement?>> Export,
             Func<GraphServiceClient, JsonElement, Task<string?>> Import
         )> JsonContentTypeOperations = new(StringComparer.OrdinalIgnoreCase)
