@@ -290,6 +290,14 @@ namespace IntuneTools.Graph.EntraHelperClasses
                 dict.Remove("modifiedDateTime");
                 dict.Remove("templateId");
 
+                // Remove OData metadata properties (e.g., @odata.context, @odata.type, @odata.etag)
+                // These are returned by GET requests but should not be included in POST requests
+                var odataKeys = dict.Keys.Where(k => k.StartsWith("@odata.", StringComparison.OrdinalIgnoreCase)).ToList();
+                foreach (var key in odataKeys)
+                {
+                    dict.Remove(key);
+                }
+
                 // CRITICAL: Force state to disabled — never import a CA policy that is enabled or report-only
                 dict["state"] = JsonSerializer.SerializeToElement("disabled");
 
@@ -314,6 +322,61 @@ namespace IntuneTools.Graph.EntraHelperClasses
             {
                 LogToFunctionFile(appFunction.Main, $"Error importing Conditional Access policy from JSON: {ex.Message}", LogLevels.Error);
                 return null;
+            }
+        }
+
+        /// <summary>
+        /// Tenant-to-tenant import of Conditional Access policies.
+        /// Reuses ExportConditionalAccessPolicyDataAsync and ImportConditionalAccessPolicyFromJsonDataAsync
+        /// so the import logic is identical to the JSON import path.
+        /// Policies are always created in a disabled state.
+        /// </summary>
+        public static async Task ImportMultipleConditionalAccessPolicies(
+            GraphServiceClient sourceGraphServiceClient,
+            GraphServiceClient destinationGraphServiceClient,
+            List<string> policyIds)
+        {
+            try
+            {
+                LogToFunctionFile(appFunction.Main, $"Importing {policyIds.Count} Conditional Access policies (state will be forced to disabled).");
+
+                foreach (var policyId in policyIds)
+                {
+                    try
+                    {
+                        // Export full policy data from source tenant
+                        var policyData = await ExportConditionalAccessPolicyDataAsync(sourceGraphServiceClient, policyId);
+                        if (policyData == null)
+                        {
+                            LogToFunctionFile(appFunction.Main, $"Skipping policy ID {policyId}: Not found in source tenant.", LogLevels.Warning);
+                            continue;
+                        }
+
+                        // Import into destination tenant (state forced to disabled)
+                        var importedName = await ImportConditionalAccessPolicyFromJsonDataAsync(destinationGraphServiceClient, policyData.Value);
+
+                        if (importedName != null)
+                        {
+                            LogToFunctionFile(appFunction.Main, $"Successfully imported Conditional Access policy: {importedName}");
+                        }
+                        else
+                        {
+                            LogToFunctionFile(appFunction.Main, $"Failed to import Conditional Access policy ID {policyId}.", LogLevels.Error);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        LogToFunctionFile(appFunction.Main, $"Failed to import Conditional Access policy {policyId}: {ex.Message}", LogLevels.Error);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"An unexpected error occurred during Conditional Access import: {ex.Message}", LogLevels.Error);
+            }
+            finally
+            {
+                LogToFunctionFile(appFunction.Main, $"Finished importing {policyIds.Count} Conditional Access policies.");
             }
         }
 

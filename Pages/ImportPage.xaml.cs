@@ -23,6 +23,7 @@ using static IntuneTools.Graph.IntuneHelperClasses.WindowsDriverUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsFeatureUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdatePolicyHandler;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHelper;
+using static IntuneTools.Graph.EntraHelperClasses.ConditionalAccessHelper;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -90,6 +91,7 @@ namespace IntuneTools.Pages
             ["WindowsQualityUpdateProfile"] = ContentTypes.WindowsQualityUpdateProfile,
             ["Filters"] = ContentTypes.AssignmentFilter,
             ["EntraGroups"] = ContentTypes.EntraGroup,
+            ["ConditionalAccess"] = ContentTypes.ConditionalAccessPolicy,
         };
 
         #endregion
@@ -404,6 +406,11 @@ namespace IntuneTools.Pages
                 ContentTypes.WindowsQualityUpdateProfile,
                 "Windows Quality Update Profiles",
                 async (ids, grpIds) => await ImportMultipleWindowsQualityUpdateProfiles(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+
+            yield return new ImportTypeDefinition(
+                ContentTypes.ConditionalAccessPolicy,
+                "Conditional Access Policies",
+                async (ids, _) => await ImportMultipleConditionalAccessPolicies(sourceGraphServiceClient, destinationGraphServiceClient, ids));
         }
 
         /// <summary>
