@@ -398,7 +398,7 @@ namespace IntuneTools.Pages
 
                     if (item.ContentType == null || item.ContentId == null)
                     {
-                        unassignedItems.Add(item);
+                        AppendToDetailsRichTextBlock($"Skipping item with missing type or ID.");
                         continue;
                     }
 
@@ -412,8 +412,7 @@ namespace IntuneTools.Pages
                     }
                     else
                     {
-                        // If no check function, include it (conservative approach)
-                        unassignedItems.Add(item);
+                        AppendToDetailsRichTextBlock($"No assignment check available for type '{item.ContentType}'. Skipping.");
                     }
                 }
 
