@@ -39,6 +39,31 @@ namespace IntuneTools.Pages
         private int _deleteSuccessCount;
         private int _deleteErrorCount;
 
+        // Content type filter support
+        private bool _suppressOptionEvents = false;
+        private bool _suppressSelectAllEvents = false;
+
+        /// <summary>
+        /// Maps checkbox names to ContentTypes constants for registry lookup.
+        /// </summary>
+        private static readonly Dictionary<string, string> CheckboxToContentType = new()
+        {
+            ["SettingsCatalog"] = ContentTypes.SettingsCatalog,
+            ["DeviceCompliance"] = ContentTypes.DeviceCompliancePolicy,
+            ["DeviceConfiguration"] = ContentTypes.DeviceConfigurationPolicy,
+            ["AppleBYODEnrollmentProfile"] = ContentTypes.AppleBYODEnrollmentProfile,
+            ["macOSShellScript"] = ContentTypes.MacOSShellScript,
+            ["PowerShellScript"] = ContentTypes.PowerShellScript,
+            ["ProactiveRemediation"] = ContentTypes.ProactiveRemediation,
+            ["WindowsAutopilot"] = ContentTypes.WindowsAutoPilotProfile,
+            ["WindowsDriverUpdate"] = ContentTypes.WindowsDriverUpdate,
+            ["WindowsFeatureUpdate"] = ContentTypes.WindowsFeatureUpdate,
+            ["WindowsQualityUpdatePolicy"] = ContentTypes.WindowsQualityUpdatePolicy,
+            ["WindowsQualityUpdateProfile"] = ContentTypes.WindowsQualityUpdateProfile,
+            ["Filters"] = ContentTypes.AssignmentFilter,
+            ["EntraGroups"] = ContentTypes.EntraGroup,
+        };
+
         /// <summary>
         /// Defines a delete operation for a specific content type.
         /// </summary>
@@ -87,7 +112,8 @@ namespace IntuneTools.Pages
         protected override IEnumerable<string> GetManagedControlNames() => new[]
         {
             "InputTextBox", "SearchButton", "ListAllButton", "ClearSelectedButton",
-            "ClearAllButton", "DeleteButton", "CleanupDataGrid", "ClearLogButton"
+            "ClearAllButton", "DeleteButton", "CleanupDataGrid", "ClearLogButton",
+            "ContentTypesButton"
         };
 
         #endregion
@@ -165,7 +191,9 @@ namespace IntuneTools.Pages
             try
             {
                 ContentList.Clear();
-                await LoadContentTypesAsync(graphServiceClient, SupportedContentTypes, AppendToDetailsRichTextBlock);
+                var selectedTypes = GetSelectedContentTypes().ToList();
+                IEnumerable<string> typesToLoad = selectedTypes.Count > 0 ? selectedTypes : SupportedContentTypes;
+                await LoadContentTypesAsync(graphServiceClient, typesToLoad, AppendToDetailsRichTextBlock);
                 CleanupDataGrid.ItemsSource = ContentList;
             }
             catch (Exception ex)
@@ -188,7 +216,9 @@ namespace IntuneTools.Pages
             try
             {
                 ContentList.Clear();
-                await SearchContentTypesAsync(graphServiceClient, searchQuery, SupportedContentTypes, AppendToDetailsRichTextBlock);
+                var selectedTypes = GetSelectedContentTypes().ToList();
+                IEnumerable<string> typesToLoad = selectedTypes.Count > 0 ? selectedTypes : SupportedContentTypes;
+                await SearchContentTypesAsync(graphServiceClient, searchQuery, typesToLoad, AppendToDetailsRichTextBlock);
                 CleanupDataGrid.ItemsSource = ContentList;
             }
             catch (Exception ex)
@@ -325,6 +355,88 @@ namespace IntuneTools.Pages
             new(ContentTypes.WindowsQualityUpdateProfile, "Windows Quality Update Profile",
                 async id => { await DeleteWindowsQualityUpdateProfile(sourceGraphServiceClient, id); return true; }),
         ];
+
+        #endregion
+
+        #region Content Type Filter
+
+        private IEnumerable<string> GetSelectedContentTypes()
+        {
+            var checkedNames = GetCheckedOptionNames();
+            foreach (var name in checkedNames)
+            {
+                if (CheckboxToContentType.TryGetValue(name, out var contentType))
+                {
+                    yield return contentType;
+                }
+            }
+        }
+
+        public List<string> GetCheckedOptionNames()
+        {
+            var checkedNames = new List<string>();
+            foreach (var child in ContentTypesPanel.Children)
+            {
+                if (child is CheckBox cb && cb.IsChecked == true)
+                {
+                    checkedNames.Add(cb.Name);
+                }
+            }
+            return checkedNames;
+        }
+
+        private void SelectAll_Checked(object sender, RoutedEventArgs e)
+        {
+            foreach (var checkbox in ContentTypesPanel.Children.OfType<CheckBox>())
+            {
+                checkbox.IsChecked = true;
+            }
+        }
+
+        private void SelectAll_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (_suppressSelectAllEvents) return;
+            _suppressOptionEvents = true;
+            foreach (var child in ContentTypesPanel.Children)
+            {
+                if (child is CheckBox cb && cb.Name != "OptionsAllCheckBox")
+                {
+                    cb.IsChecked = false;
+                }
+            }
+            _suppressOptionEvents = false;
+        }
+
+        private void SelectAll_Indeterminate(object sender, RoutedEventArgs e) { }
+
+        private void Option_Checked(object sender, RoutedEventArgs e)
+        {
+            if (_suppressOptionEvents) return;
+            UpdateSelectAllCheckBox();
+        }
+
+        private void Option_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (_suppressOptionEvents) return;
+            UpdateSelectAllCheckBox();
+        }
+
+        private void UpdateSelectAllCheckBox()
+        {
+            var optionCheckBoxes = ContentTypesPanel.Children.OfType<CheckBox>().Where(cb => cb.Name != "OptionsAllCheckBox").ToList();
+            if (!optionCheckBoxes.Any())
+                return;
+
+            bool?[] states = optionCheckBoxes.Select(cb => cb.IsChecked).ToArray();
+            _suppressSelectAllEvents = true;
+            if (states.All(x => x == true))
+                OptionsAllCheckBox.IsChecked = true;
+            else if (states.All(x => x == false))
+                OptionsAllCheckBox.IsChecked = false;
+            else
+                OptionsAllCheckBox.IsChecked = null;
+            _suppressSelectAllEvents = false;
+        }
 
         #endregion
 
