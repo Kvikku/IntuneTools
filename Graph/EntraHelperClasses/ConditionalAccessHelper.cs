@@ -60,6 +60,21 @@ namespace IntuneTools.Graph.EntraHelperClasses
             await graphServiceClient.RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo);
         }
 
+        private static async Task<JsonElement?> SendGraphPostAsync(GraphServiceClient graphServiceClient, string url, string jsonBody)
+        {
+            var requestInfo = new RequestInformation
+            {
+                HttpMethod = Method.POST,
+                URI = new Uri(url),
+            };
+            requestInfo.Headers.Add("Content-Type", "application/json");
+            requestInfo.SetStreamContent(new MemoryStream(Encoding.UTF8.GetBytes(jsonBody)), "application/json");
+            using var stream = await graphServiceClient.RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo);
+            if (stream == null) return null;
+            var doc = await JsonDocument.ParseAsync(stream);
+            return doc.RootElement.Clone();
+        }
+
         private static List<ConditionalAccessPolicyInfo> ParsePoliciesFromJson(JsonElement root)
         {
             var policies = new List<ConditionalAccessPolicyInfo>();
@@ -228,6 +243,77 @@ namespace IntuneTools.Graph.EntraHelperClasses
             {
                 LogToFunctionFile(appFunction.Main, $"An error occurred while deleting Conditional Access policy: {ex.Message}", LogLevels.Error);
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// Exports the full JSON data for a single Conditional Access policy.
+        /// </summary>
+        public static async Task<JsonElement?> ExportConditionalAccessPolicyDataAsync(GraphServiceClient graphServiceClient, string policyId)
+        {
+            try
+            {
+                var root = await SendGraphGetAsync(graphServiceClient, $"{BaseUrl}/{policyId}");
+                if (root == null)
+                {
+                    LogToFunctionFile(appFunction.Main, $"Conditional Access policy {policyId} not found for export.", LogLevels.Warning);
+                    return null;
+                }
+                return root;
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error exporting Conditional Access policy {policyId}: {ex.Message}", LogLevels.Error);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Imports a Conditional Access policy from previously exported JSON data.
+        /// SAFETY: The policy state is always forced to "disabled" regardless of the source state.
+        /// </summary>
+        public static async Task<string?> ImportConditionalAccessPolicyFromJsonDataAsync(GraphServiceClient graphServiceClient, JsonElement policyData)
+        {
+            try
+            {
+                // Parse the exported JSON and build a clean object for import
+                var dict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(policyData.GetRawText());
+                if (dict == null)
+                {
+                    LogToFunctionFile(appFunction.Main, "Failed to deserialize Conditional Access policy data from JSON.", LogLevels.Error);
+                    return null;
+                }
+
+                // Remove read-only / server-generated properties
+                dict.Remove("id");
+                dict.Remove("createdDateTime");
+                dict.Remove("modifiedDateTime");
+                dict.Remove("templateId");
+
+                // CRITICAL: Force state to disabled — never import a CA policy that is enabled or report-only
+                dict["state"] = JsonSerializer.SerializeToElement("disabled");
+
+                var body = JsonSerializer.Serialize(dict);
+                var result = await SendGraphPostAsync(graphServiceClient, BaseUrl, body);
+
+                var displayName = result?.TryGetProperty("displayName", out var nameProp) == true
+                    ? nameProp.GetString()
+                    : "Unknown";
+
+                LogToFunctionFile(appFunction.Main, $"Imported Conditional Access policy: {displayName} (state forced to disabled)");
+                return displayName;
+            }
+            catch (ApiException apiEx)
+            {
+                LogToFunctionFile(appFunction.Main, $"API error importing Conditional Access policy: {apiEx.Message}", LogLevels.Error);
+                if (apiEx.ResponseStatusCode == 403)
+                    LogToFunctionFile(appFunction.Main, "Please ensure the app has Policy.ReadWrite.ConditionalAccess permissions.", LogLevels.Warning);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error importing Conditional Access policy from JSON: {ex.Message}", LogLevels.Error);
+                return null;
             }
         }
 
