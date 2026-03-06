@@ -497,5 +497,24 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 return null;
             }
         }
+
+        /// <summary>
+        /// Checks if a proactive remediation script has any group assignments.
+        /// </summary>
+        public static async Task<bool> HasProactiveRemediationAssignmentsAsync(GraphServiceClient graphServiceClient, string scriptId)
+        {
+            try
+            {
+                var result = await graphServiceClient.DeviceManagement.DeviceHealthScripts[scriptId].Assignments.GetAsync(rc =>
+                {
+                    rc.QueryParameters.Top = 1;
+                });
+                return result?.Value != null && result.Value.Count > 0;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }

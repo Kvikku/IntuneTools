@@ -532,5 +532,24 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 return null;
             }
         }
+
+        /// <summary>
+        /// Checks if a settings catalog policy has any group assignments.
+        /// </summary>
+        public static async Task<bool> HasSettingsCatalogAssignmentsAsync(GraphServiceClient graphServiceClient, string policyId)
+        {
+            try
+            {
+                var result = await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyId].Assignments.GetAsync(rc =>
+                {
+                    rc.QueryParameters.Top = 1;
+                });
+                return result?.Value != null && result.Value.Count > 0;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }
