@@ -33,7 +33,8 @@ public static class DestinationUserAuthentication
             "DeviceManagementRBAC.ReadWrite.All",
             "DeviceManagementScripts.ReadWrite.All",
             "DeviceManagementServiceConfig.ReadWrite.All",
-            "Group.ReadWrite.All"
+            "Group.ReadWrite.All",
+            "Policy.ReadWrite.ConditionalAccess"
         };
 
     private const string PublicClientId = "14d82eec-204b-4c2f-b7e8-296a70dab67e";
