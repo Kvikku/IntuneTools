@@ -19,6 +19,7 @@ using static IntuneTools.Graph.IntuneHelperClasses.WindowsAutoPilotHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsDriverUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsFeatureUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdatePolicyHandler;
+using static IntuneTools.Graph.EntraHelperClasses.ConditionalAccessHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHelper;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -62,6 +63,7 @@ namespace IntuneTools.Pages
             ["WindowsQualityUpdateProfile"] = ContentTypes.WindowsQualityUpdateProfile,
             ["Filters"] = ContentTypes.AssignmentFilter,
             ["EntraGroups"] = ContentTypes.EntraGroup,
+            ["ConditionalAccess"] = ContentTypes.ConditionalAccessPolicy,
         };
 
         /// <summary>
@@ -94,6 +96,7 @@ namespace IntuneTools.Pages
             ContentTypes.WindowsFeatureUpdate,
             ContentTypes.WindowsQualityUpdatePolicy,
             ContentTypes.WindowsQualityUpdateProfile,
+            ContentTypes.ConditionalAccessPolicy,
         };
 
         #endregion
@@ -354,6 +357,9 @@ namespace IntuneTools.Pages
 
             new(ContentTypes.WindowsQualityUpdateProfile, "Windows Quality Update Profile",
                 async id => { await DeleteWindowsQualityUpdateProfile(sourceGraphServiceClient, id); return true; }),
+
+            new(ContentTypes.ConditionalAccessPolicy, "Conditional Access Policy",
+                async id => await DeleteConditionalAccessPolicy(sourceGraphServiceClient, id)),
         ];
 
         #endregion
@@ -500,7 +506,8 @@ namespace IntuneTools.Pages
             var dialog = new ContentDialog
             {
                 Title = "Delete content?",
-                Content = $"Are you sure you want to delete all {numberOfItems} items? This action cannot be undone.",
+                Content = $"You are about to permanently delete {numberOfItems} item(s). This action cannot be undone.\n\n" +
+                          "Have you taken a backup? You can easily export your policies to JSON using the Export page in this app before proceeding.",
                 PrimaryButtonText = "Delete",
                 CloseButtonText = "Cancel",
                 DefaultButton = ContentDialogButton.Close,
