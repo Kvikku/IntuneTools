@@ -289,6 +289,8 @@ namespace IntuneTools.Graph.EntraHelperClasses
                 dict.Remove("createdDateTime");
                 dict.Remove("modifiedDateTime");
                 dict.Remove("templateId");
+                dict.Remove("deletedDateTime");
+                dict.Remove("partialEnablementStrategy");
 
                 // Remove OData metadata properties (e.g., @odata.context, @odata.type, @odata.etag)
                 // These are returned by GET requests but should not be included in POST requests
