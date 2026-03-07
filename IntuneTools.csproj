@@ -12,6 +12,7 @@
     <UseWinUI>true</UseWinUI>
     <EnableMsixTooling>false</EnableMsixTooling>
     <Nullable>enable</Nullable>
+    <Version>1.2.0.0</Version>
 	<!--<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>-->
 	<EnableDefaultPriGen>true</EnableDefaultPriGen>
 	<EnableDefaultResourceCopying>true</EnableDefaultResourceCopying>
