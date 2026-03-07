@@ -212,6 +212,8 @@ namespace IntuneTools.Pages
             // Validate the folder path is a fully-qualified, rooted path within the expected log directory
             var fullPath = Path.GetFullPath(folderToOpen);
             var expectedBase = Path.GetFullPath(Path.Combine(appDataPath, appFolderName));
+            if (!expectedBase.EndsWith(Path.DirectorySeparatorChar))
+                expectedBase += Path.DirectorySeparatorChar;
             if (!fullPath.StartsWith(expectedBase, StringComparison.OrdinalIgnoreCase))
             {
                 LogToFunctionFile(appFunction.Main, "Log file folder path is outside the expected directory.", LogLevels.Warning);

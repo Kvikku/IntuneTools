@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
 
@@ -187,12 +188,7 @@ namespace IntuneTools.Utilities
         /// </summary>
         private static bool IsValidLookupId(string id)
         {
-            foreach (var c in id)
-            {
-                if (!char.IsLetterOrDigit(c) && c != '-' && c != '_')
-                    return false;
-            }
-            return true;
+            return id.All(c => char.IsLetterOrDigit(c) || c == '-' || c == '_');
         }
 
         private static bool TryGetLookupUrlTemplate(string contentType, out string template)
