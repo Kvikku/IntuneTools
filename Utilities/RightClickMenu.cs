@@ -83,7 +83,7 @@ namespace IntuneTools.Utilities
                 }
                 catch (Exception ex)
                 {
-                    HelperClass.LogToFunctionFile(appFunction.Main, $"Copy failed to set clipboard content. {ex}", LogLevels.Error);
+                    HelperClass.LogToFunctionFile(appFunction.Main, $"Copy failed to set clipboard content. {ex.Message}", LogLevels.Error);
                     await ShowLookupErrorDialogAsync("Copy failed", "The clipboard is unavailable or blocked. Please try again.");
                 }
             };
@@ -110,10 +110,11 @@ namespace IntuneTools.Utilities
                     return;
                 }
 
-                if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+                if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
+                    (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp))
                 {
-                    HelperClass.LogToFunctionFile(appFunction.Main, $"Lookup failed: invalid URL '{url}'.", LogLevels.Warning);
-                    await ShowLookupErrorDialogAsync("Lookup failed", $"The lookup URL is invalid:\n{url}");
+                    HelperClass.LogToFunctionFile(appFunction.Main, "Lookup failed: invalid or non-HTTPS URL.", LogLevels.Warning);
+                    await ShowLookupErrorDialogAsync("Lookup failed", "The lookup URL is invalid or uses an unsupported protocol.");
                     return;
                 }
 
@@ -127,7 +128,7 @@ namespace IntuneTools.Utilities
                 }
                 catch (Exception ex)
                 {
-                    HelperClass.LogToFunctionFile(appFunction.Main, $"Lookup failed to open URL '{uri.AbsoluteUri}'. {ex}", LogLevels.Error);
+                    HelperClass.LogToFunctionFile(appFunction.Main, $"Lookup failed to open URL. {ex.Message}", LogLevels.Error);
                     await ShowLookupErrorDialogAsync("Lookup failed", "The lookup page could not be opened. Please try again.");
                 }
             };
@@ -170,10 +171,28 @@ namespace IntuneTools.Utilities
             if (string.IsNullOrWhiteSpace(contentType) || string.IsNullOrWhiteSpace(id))
                 return null;
 
+            // Validate ID contains only safe characters (GUIDs, alphanumeric, hyphens, underscores)
+            if (!IsValidLookupId(id))
+                return null;
+
             if (!TryGetLookupUrlTemplate(contentType, out var template))
                 return null;
 
             return template.Replace("INSERT_ID_HERE", id, StringComparison.Ordinal);
+        }
+
+        /// <summary>
+        /// Validates that a lookup ID contains only safe characters to prevent URL injection.
+        /// Accepts GUIDs and alphanumeric strings with hyphens/underscores.
+        /// </summary>
+        private static bool IsValidLookupId(string id)
+        {
+            foreach (var c in id)
+            {
+                if (!char.IsLetterOrDigit(c) && c != '-' && c != '_')
+                    return false;
+            }
+            return true;
         }
 
         private static bool TryGetLookupUrlTemplate(string contentType, out string template)

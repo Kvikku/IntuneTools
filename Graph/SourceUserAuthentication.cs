@@ -82,7 +82,10 @@ public static class SourceUserAuthentication
                 var idToken = handler.ReadJwtToken(result.IdToken);
                 TenantId = idToken.Claims.FirstOrDefault(c => c.Type == "tid")?.Value;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to parse tenant ID from token: {ex.Message}");
+            }
 
             _tokenProvider = new MsalAccessTokenProvider(_pca, scopes);
             _authProvider = new BaseBearerTokenAuthenticationProvider(_tokenProvider);

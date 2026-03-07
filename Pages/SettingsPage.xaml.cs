@@ -203,20 +203,28 @@ namespace IntuneTools.Pages
         {
             var folderToOpen = timestampedAppFolder;
 
-            if (Directory.Exists(folderToOpen))
+            if (!Directory.Exists(folderToOpen))
             {
-                var startInfo = new ProcessStartInfo
-                {
-                    FileName = "explorer.exe",
-                    Arguments = folderToOpen,
-                    UseShellExecute = true
-                };
-                System.Diagnostics.Process.Start(startInfo);
+                LogToFunctionFile(appFunction.Main, "Log file folder does not exist.");
+                return;
             }
-            else
+
+            // Validate the folder path is a fully-qualified, rooted path within the expected log directory
+            var fullPath = Path.GetFullPath(folderToOpen);
+            var expectedBase = Path.GetFullPath(Path.Combine(appDataPath, appFolderName));
+            if (!fullPath.StartsWith(expectedBase, StringComparison.OrdinalIgnoreCase))
             {
-                LogToFunctionFile(appFunction.Main, $"Invalid log file folder path: {folderToOpen}");
+                LogToFunctionFile(appFunction.Main, "Log file folder path is outside the expected directory.", LogLevels.Warning);
+                return;
             }
+
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = "explorer.exe",
+                Arguments = fullPath,
+                UseShellExecute = true
+            };
+            System.Diagnostics.Process.Start(startInfo);
         }
 
         private void SwapTenantsButton_Click(object sender, RoutedEventArgs e)
@@ -321,9 +329,10 @@ namespace IntuneTools.Pages
             }
             catch (Exception ex)
             {
+                LogToFunctionFile(appFunction.Main, $"Failed to retrieve permissions: {ex.Message}", LogLevels.Error);
                 infoBar.Severity = InfoBarSeverity.Error;
                 infoBar.Title = "Error";
-                infoBar.Message = $"Failed to retrieve permissions: {ex.Message}";
+                infoBar.Message = "Failed to retrieve permissions. Please check the log for details.";
                 await dialog.ShowAsync();
                 return;
             }
