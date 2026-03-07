@@ -11,9 +11,9 @@ namespace IntuneTools.Utilities
     {
         private static readonly HttpClient HttpClient = CreateHttpClient();
         private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(15);
+        private static readonly SemaphoreSlim _cacheSemaphore = new(1, 1);
         private static VersionStatus? _cachedStatus;
         private static DateTime _cacheExpiry = DateTime.MinValue;
-        private static readonly object _cacheLock = new();
 
         public sealed class VersionStatus
         {
@@ -59,49 +59,51 @@ namespace IntuneTools.Utilities
         /// </summary>
         public static async Task<VersionStatus> CheckAsync(CancellationToken cancellationToken = default)
         {
-            lock (_cacheLock)
+            await _cacheSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
             {
                 if (_cachedStatus is not null && DateTime.UtcNow < _cacheExpiry)
                 {
                     return _cachedStatus;
                 }
-            }
 
-            var current = GetCurrentVersionString();
-            string latest;
+                var current = GetCurrentVersionString();
+                string latest;
 
-            try
-            {
-                latest = await GetLatestVersionAsync(cancellationToken).ConfigureAwait(false);
-            }
-            catch
-            {
-                // On failure, report no update with unknown latest.
-                // Do not cache failures so the next navigation retries.
-                return new VersionStatus
+                try
+                {
+                    latest = await GetLatestVersionAsync(cancellationToken).ConfigureAwait(false);
+                }
+                catch
+                {
+                    // On failure, report no update with unknown latest.
+                    // Do not cache failures so the next navigation retries.
+                    return new VersionStatus
+                    {
+                        CurrentVersion = current,
+                        LatestVersion = "unknown",
+                        IsUpdateAvailable = false
+                    };
+                }
+
+                var isNewer = IsLatestNewer(latest, current);
+
+                var status = new VersionStatus
                 {
                     CurrentVersion = current,
-                    LatestVersion = "unknown",
-                    IsUpdateAvailable = false
+                    LatestVersion = latest,
+                    IsUpdateAvailable = isNewer
                 };
-            }
 
-            var isNewer = IsLatestNewer(latest, current);
-
-            var status = new VersionStatus
-            {
-                CurrentVersion = current,
-                LatestVersion = latest,
-                IsUpdateAvailable = isNewer
-            };
-
-            lock (_cacheLock)
-            {
                 _cachedStatus = status;
                 _cacheExpiry = DateTime.UtcNow + CacheDuration;
-            }
 
-            return status;
+                return status;
+            }
+            finally
+            {
+                _cacheSemaphore.Release();
+            }
         }
 
         internal static bool IsLatestNewer(string latestTag, string currentTag)

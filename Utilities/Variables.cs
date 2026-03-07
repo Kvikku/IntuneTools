@@ -18,7 +18,15 @@ namespace IntuneTools.Utilities
             {
                 // Strip build metadata, e.g. "1.2.0.0+commitsha" → "1.2.0.0"
                 var plusIdx = info.IndexOf('+');
-                return plusIdx >= 0 ? info[..plusIdx] : info;
+                var clean = plusIdx >= 0 ? info[..plusIdx] : info;
+
+                // Ensure consistent 4-component format (e.g. "1.2.0" → "1.2.0.0")
+                if (Version.TryParse(clean, out var parsed))
+                {
+                    return $"{parsed.Major}.{parsed.Minor}.{Math.Max(0, parsed.Build)}.{Math.Max(0, parsed.Revision)}";
+                }
+
+                return clean;
             }
 
             var version = asm.GetName().Version;
