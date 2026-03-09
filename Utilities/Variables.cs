@@ -5,7 +5,7 @@ namespace IntuneTools.Utilities
     public class Variables
     {
         // Application version (consider retrieving this dynamically from assembly info in the future)
-        public static readonly string appVersion = "1.2.0.0";
+        public static readonly string appVersion = "1.3.0.0";
 
         // Log file
         public static readonly string appDataPath = @"C:\ProgramData\";
