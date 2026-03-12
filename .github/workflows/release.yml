@@ -43,7 +43,7 @@ jobs:
 
       - name: Publish self-contained app
         run: >
-          dotnet publish
+          dotnet publish IntuneTools.csproj
           --configuration Release
           --runtime win-x64
           --self-contained true
