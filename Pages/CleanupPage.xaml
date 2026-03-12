@@ -77,6 +77,11 @@
                                  VerticalAlignment="Center"/>
                         <AppBarButton x:Name="SearchButton" Icon="Find" Label="Search" Click="SearchButton_Click" ToolTipService.ToolTip="Search for specific items."/>
                         <AppBarButton x:Name="ListAllButton" Icon="ViewAll" Label="List All" Click="ListAllButton_Click" ToolTipService.ToolTip="List all items."/>
+                        <AppBarButton x:Name="FindUnassignedButton" Label="Find Unassigned" Click="FindUnassignedButton_Click" ToolTipService.ToolTip="Find content with no group assignments.">
+                            <AppBarButton.Icon>
+                                <FontIcon Glyph="&#xE7B3;"/>
+                            </AppBarButton.Icon>
+                        </AppBarButton>
                         <AppBarSeparator/>
                         <AppBarButton x:Name="ClearSelectedButton" Icon="Remove" Label="Clear Selected" Click="ClearSelectedButton_Click" ToolTipService.ToolTip="Remove selected items from staging area."/>
                         <AppBarButton x:Name="ClearAllButton" Icon="Clear" Label="Clear All" Click="ClearAllButton_Click" ToolTipService.ToolTip="Clear all items from staging area."/>

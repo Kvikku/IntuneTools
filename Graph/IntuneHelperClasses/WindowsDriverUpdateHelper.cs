@@ -536,5 +536,24 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 return null;
             }
         }
+
+        /// <summary>
+        /// Checks if a Windows driver update profile has any group assignments.
+        /// </summary>
+        public static async Task<bool?> HasWindowsDriverUpdateAssignmentsAsync(GraphServiceClient graphServiceClient, string profileId)
+        {
+            try
+            {
+                var result = await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileId].Assignments.GetAsync(rc =>
+                {
+                    rc.QueryParameters.Top = 1;
+                });
+                return result?.Value != null && result.Value.Count > 0;
+            }
+            catch
+            {
+                return null;
+            }
+        }
     }
 }
