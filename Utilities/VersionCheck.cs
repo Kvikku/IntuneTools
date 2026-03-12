@@ -11,6 +11,7 @@ namespace IntuneTools.Utilities
     {
         private static readonly HttpClient HttpClient = CreateHttpClient();
         private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(15);
+        private static readonly TimeSpan FailureCacheDuration = TimeSpan.FromMinutes(2);
         private static readonly SemaphoreSlim _cacheSemaphore = new(1, 1);
         private static VersionStatus? _cachedStatus;
         private static DateTime _cacheExpiry = DateTime.MinValue;
@@ -77,13 +78,16 @@ namespace IntuneTools.Utilities
                 catch
                 {
                     // On failure, report no update with unknown latest.
-                    // Do not cache failures so the next navigation retries.
-                    return new VersionStatus
+                    // Cache failures briefly (2 min) to avoid hanging on every navigation during outages.
+                    var failureStatus = new VersionStatus
                     {
                         CurrentVersion = current,
                         LatestVersion = "unknown",
                         IsUpdateAvailable = false
                     };
+                    _cachedStatus = failureStatus;
+                    _cacheExpiry = DateTime.UtcNow + FailureCacheDuration;
+                    return failureStatus;
                 }
 
                 var isNewer = IsLatestNewer(latest, current);

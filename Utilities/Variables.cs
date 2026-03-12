@@ -64,6 +64,7 @@ namespace IntuneTools.Utilities
             Assignment,
             Rename,
             Delete,
+            FindUnassigned,
         }
 
         public static string selectedRenameMode = "Prefix"; // Default rename mode
@@ -127,9 +128,11 @@ namespace IntuneTools.Utilities
         public static readonly int secondsSavedOnRenaming = 20;
         public static readonly int secondsSavedOnDeleting = 10;
         public static readonly int secondsSavedOnImporting = 90;
+        public static readonly int secondsSavedOnFindingUnassigned = 30;
         public static int numberOfItemsRenamed = 0;
         public static int numberOfItemsDeleted = 0;
         public static int numberOfItemsAssigned = 0;
         public static int numberOfItemsImported = 0;
+        public static int numberOfItemsCheckedForAssignments = 0;
     }
 }

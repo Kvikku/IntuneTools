@@ -86,8 +86,8 @@ namespace IntuneTools.Pages
 
         protected override IEnumerable<string> GetManagedControlNames() => new[]
         {
-            "InputTextBox", "SearchButton", "ListAllButton", "ClearSelectedButton",
-            "ClearAllButton", "DeleteButton", "CleanupDataGrid", "ClearLogButton"
+            "InputTextBox", "SearchButton", "ListAllButton", "FindUnassignedButton",
+            "ClearSelectedButton", "ClearAllButton", "DeleteButton", "CleanupDataGrid", "ClearLogButton"
         };
 
         #endregion
@@ -99,6 +99,7 @@ namespace IntuneTools.Pages
             base.ShowLoading(message);
             ListAllButton.IsEnabled = false;
             SearchButton.IsEnabled = false;
+            FindUnassignedButton.IsEnabled = false;
         }
 
         protected override void HideLoading()
@@ -106,6 +107,7 @@ namespace IntuneTools.Pages
             base.HideLoading();
             ListAllButton.IsEnabled = true;
             SearchButton.IsEnabled = true;
+            FindUnassignedButton.IsEnabled = true;
         }
 
         // Convenience method for logging - calls base class AppendToLog
@@ -245,7 +247,13 @@ namespace IntuneTools.Pages
         {
             var isAssigned = await CheckIfAutoPilotProfileHasAssignments(sourceGraphServiceClient, id);
 
-            if (isAssigned)
+            if (isAssigned == null)
+            {
+                AppendToDetailsRichTextBlock($"Failed to check assignments for AutoPilot profile {id}. Skipping deletion to be safe.");
+                return false;
+            }
+
+            if (isAssigned.Value)
             {
                 var dialog = new ContentDialog
                 {
@@ -328,6 +336,122 @@ namespace IntuneTools.Pages
 
         #endregion
 
+        #region Unassigned Content Detection
+
+        /// <summary>
+        /// Content types that support group assignments (excludes Assignment Filter and Entra Group).
+        /// </summary>
+        private static readonly string[] AssignableContentTypes = new[]
+        {
+            ContentTypes.SettingsCatalog,
+            ContentTypes.DeviceCompliancePolicy,
+            ContentTypes.DeviceConfigurationPolicy,
+            ContentTypes.AppleBYODEnrollmentProfile,
+            ContentTypes.PowerShellScript,
+            ContentTypes.ProactiveRemediation,
+            ContentTypes.MacOSShellScript,
+            ContentTypes.WindowsAutoPilotProfile,
+            ContentTypes.WindowsDriverUpdate,
+            ContentTypes.WindowsFeatureUpdate,
+            ContentTypes.WindowsQualityUpdatePolicy,
+            ContentTypes.WindowsQualityUpdateProfile,
+        };
+
+        /// <summary>
+        /// Returns a mapping of content type to its assignment-checking function.
+        /// </summary>
+        private Dictionary<string, Func<GraphServiceClient, string, Task<bool?>>> GetAssignmentCheckRegistry() => new()
+        {
+            [ContentTypes.SettingsCatalog] = HasSettingsCatalogAssignmentsAsync,
+            [ContentTypes.DeviceCompliancePolicy] = HasDeviceCompliancePolicyAssignmentsAsync,
+            [ContentTypes.DeviceConfigurationPolicy] = HasDeviceConfigurationAssignmentsAsync,
+            [ContentTypes.AppleBYODEnrollmentProfile] = HasAppleBYODEnrollmentProfileAssignmentsAsync,
+            [ContentTypes.PowerShellScript] = HasPowerShellScriptAssignmentsAsync,
+            [ContentTypes.ProactiveRemediation] = HasProactiveRemediationAssignmentsAsync,
+            [ContentTypes.MacOSShellScript] = HasMacOSShellScriptAssignmentsAsync,
+            [ContentTypes.WindowsAutoPilotProfile] = CheckIfAutoPilotProfileHasAssignments,
+            [ContentTypes.WindowsDriverUpdate] = HasWindowsDriverUpdateAssignmentsAsync,
+            [ContentTypes.WindowsFeatureUpdate] = HasWindowsFeatureUpdateAssignmentsAsync,
+            [ContentTypes.WindowsQualityUpdatePolicy] = HasWindowsQualityUpdatePolicyAssignmentsAsync,
+            [ContentTypes.WindowsQualityUpdateProfile] = HasWindowsQualityUpdateProfileAssignmentsAsync,
+        };
+
+        /// <summary>
+        /// Loads all assignable content types and filters to show only items without assignments.
+        /// </summary>
+        private async Task FindUnassignedOrchestrator(GraphServiceClient graphServiceClient)
+        {
+            ShowLoading("Loading content from Microsoft Graph...");
+            DeleteButton.IsEnabled = false;
+            ClearSelectedButton.IsEnabled = false;
+            ClearAllButton.IsEnabled = false;
+            AppendToDetailsRichTextBlock("Loading all assignable content types. This may take a while...");
+            try
+            {
+                // Load into a temporary list so items don't appear in the grid before being checked
+                ContentList.Clear();
+                await LoadContentTypesAsync(graphServiceClient, AssignableContentTypes, AppendToDetailsRichTextBlock);
+                var allItems = ContentList.ToList();
+                ContentList.Clear();
+
+                var totalItems = allItems.Count;
+                AppendToDetailsRichTextBlock($"Loaded {totalItems} items. Checking assignments...");
+
+                ShowOperationProgress("Checking assignments...", 0, totalItems);
+
+                var assignmentChecks = GetAssignmentCheckRegistry();
+                var checkedCount = 0;
+
+                foreach (var item in allItems)
+                {
+                    checkedCount++;
+                    ShowOperationProgress($"Checking assignments ({checkedCount}/{totalItems})", checkedCount, totalItems);
+
+                    if (item.ContentType == null || item.ContentId == null)
+                    {
+                        AppendToDetailsRichTextBlock($"Skipping item with missing type or ID.");
+                        continue;
+                    }
+
+                    if (assignmentChecks.TryGetValue(item.ContentType, out var checkFunc))
+                    {
+                        var hasAssignments = await checkFunc(graphServiceClient, item.ContentId);
+                        UpdateTotalTimeSaved(secondsSavedOnFindingUnassigned, appFunction.FindUnassigned);
+                        if (hasAssignments == null)
+                        {
+                            AppendToDetailsRichTextBlock($"Failed to check assignments for '{item.ContentName}'. Skipping to be safe.");
+                        }
+                        else if (!hasAssignments.Value)
+                        {
+                            ContentList.Add(item);
+                        }
+                    }
+                    else
+                    {
+                        AppendToDetailsRichTextBlock($"No assignment check available for type '{item.ContentType}'. Skipping.");
+                    }
+                }
+
+                CleanupDataGrid.ItemsSource = ContentList;
+                AppendToDetailsRichTextBlock($"Found {ContentList.Count} unassigned item(s) out of {totalItems} total.");
+                ShowOperationSuccess($"Found {ContentList.Count} unassigned item(s)");
+            }
+            catch (Exception ex)
+            {
+                AppendToDetailsRichTextBlock($"Error finding unassigned content: {ex.Message}");
+                ShowOperationError($"Error: {ex.Message}");
+            }
+            finally
+            {
+                HideLoading();
+                DeleteButton.IsEnabled = true;
+                ClearSelectedButton.IsEnabled = true;
+                ClearAllButton.IsEnabled = true;
+            }
+        }
+
+        #endregion
+
         #region Event Handlers
 
         private void ClearAllButton_Click(object sender, RoutedEventArgs e)
@@ -407,6 +531,11 @@ namespace IntuneTools.Pages
         private async void ListAllButton_Click(object sender, RoutedEventArgs e)
         {
             await ListAllOrchestrator(sourceGraphServiceClient);
+        }
+
+        private async void FindUnassignedButton_Click(object sender, RoutedEventArgs e)
+        {
+            await FindUnassignedOrchestrator(sourceGraphServiceClient);
         }
 
         private async void SearchButton_Click(object sender, RoutedEventArgs e)
