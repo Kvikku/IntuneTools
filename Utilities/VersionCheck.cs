@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Reflection;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,6 +10,11 @@ namespace IntuneTools.Utilities
     public static class VersionCheck
     {
         private static readonly HttpClient HttpClient = CreateHttpClient();
+        private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(15);
+        private static readonly TimeSpan FailureCacheDuration = TimeSpan.FromMinutes(2);
+        private static readonly SemaphoreSlim _cacheSemaphore = new(1, 1);
+        private static VersionStatus? _cachedStatus;
+        private static DateTime _cacheExpiry = DateTime.MinValue;
 
         public sealed class VersionStatus
         {
@@ -23,13 +27,13 @@ namespace IntuneTools.Utilities
         /// Gets the latest release version string from the GitHub API.
         /// </summary>
         /// <param name="cancellationToken">A cancellation token.</param>
-        /// <returns>The latest version string (e.g., "v1.2.3"). Throws on HTTP/network or parse errors.</returns>
-        public static async Task<string> GetLatestVersionAsync(CancellationToken cancellationToken = default)
+        /// <returns>The latest version string (e.g., "1.2.0.0"). Throws on HTTP/network or parse errors.</returns>
+        private static async Task<string> GetLatestVersionAsync(CancellationToken cancellationToken = default)
         {
             const string url = "https://api.github.com/repos/kvikku/IntuneTools/releases/latest";
 
             using var request = new HttpRequestMessage(HttpMethod.Get, url);
-            var response = await HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+            using var response = await HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
             await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
@@ -52,38 +56,66 @@ namespace IntuneTools.Utilities
 
         /// <summary>
         /// Checks the running app's version against GitHub's latest release.
+        /// Results are cached for 15 minutes to avoid unnecessary API calls.
         /// </summary>
         public static async Task<VersionStatus> CheckAsync(CancellationToken cancellationToken = default)
         {
-            var current = GetCurrentVersionString();
-            string latest;
-
+            await _cacheSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
-                latest = await GetLatestVersionAsync(cancellationToken).ConfigureAwait(false);
-            }
-            catch
-            {
-                // On failure, report no update with unknown latest.
-                return new VersionStatus
+                if (_cachedStatus is not null && DateTime.UtcNow < _cacheExpiry)
+                {
+                    return _cachedStatus;
+                }
+
+                var current = GetCurrentVersionString();
+                string latest;
+
+                try
+                {
+                    latest = await GetLatestVersionAsync(cancellationToken).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    // Allow cooperative cancellation to propagate to the caller.
+                    if (cancellationToken.IsCancellationRequested || ex is OperationCanceledException)
+                    {
+                        throw;
+                    }
+                    // On failure, report no update with unknown latest.
+                    // Cache failures briefly (2 min) to avoid hanging on every navigation during outages.
+                    var failureStatus = new VersionStatus
+                    {
+                        CurrentVersion = current,
+                        LatestVersion = "unknown",
+                        IsUpdateAvailable = false
+                    };
+                    _cachedStatus = failureStatus;
+                    _cacheExpiry = DateTime.UtcNow + FailureCacheDuration;
+                    return failureStatus;
+                }
+
+                var isNewer = IsLatestNewer(latest, current);
+
+                var status = new VersionStatus
                 {
                     CurrentVersion = current,
-                    LatestVersion = "unknown",
-                    IsUpdateAvailable = false
+                    LatestVersion = latest,
+                    IsUpdateAvailable = isNewer
                 };
+
+                _cachedStatus = status;
+                _cacheExpiry = DateTime.UtcNow + CacheDuration;
+
+                return status;
             }
-
-            var isNewer = IsLatestNewer(latest, current);
-
-            return new VersionStatus
+            finally
             {
-                CurrentVersion = current,
-                LatestVersion = latest,
-                IsUpdateAvailable = isNewer
-            };
+                _cacheSemaphore.Release();
+            }
         }
 
-        private static bool IsLatestNewer(string latestTag, string currentTag)
+        internal static bool IsLatestNewer(string latestTag, string currentTag)
         {
             // Normalize tags like "v1.2.3" -> "1.2.3"
             static string Normalize(string v)
@@ -105,36 +137,22 @@ namespace IntuneTools.Utilities
                 return latest > current;
             }
 
-            // Fallback: if parse fails, do a string compare which is imperfect but safe.
-            return string.Compare(latestNorm, currentNorm, StringComparison.OrdinalIgnoreCase) > 0;
+            // If either version string can't be parsed, we can't reliably compare.
+            // Assume no update rather than risk a false positive from string comparison.
+            return false;
         }
 
-        private static string GetCurrentVersionString()
+        internal static string GetCurrentVersionString()
         {
-
             return appVersion;
-
-            // TODO : The code below is the more robust way to get the version from assembly attributes,
-
-            // Prefer informational version if present, otherwise assembly version.
-            var asm = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
-            var info = asm.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
-            if (!string.IsNullOrWhiteSpace(info))
-            {
-                // e.g., "1.2.3+commit" -> "1.2.3"
-                var plusIdx = info.IndexOf('+');
-                var clean = plusIdx >= 0 ? info[..plusIdx] : info;
-                return clean.StartsWith("v", StringComparison.OrdinalIgnoreCase) ? clean : $"v{clean}";
-            }
-
-            var version = asm.GetName().Version;
-            var v = version is null ? "0.0.0" : $"{version.Major}.{version.Minor}.{version.Build}";
-            return $"v{v}";
         }
 
         private static HttpClient CreateHttpClient()
         {
-            var client = new HttpClient();
+            var client = new HttpClient
+            {
+                Timeout = TimeSpan.FromSeconds(10)
+            };
             client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("IntuneTools", "1.0"));
             client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("(compatible; +https://github.com/Kvikku/IntuneTools)"));
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));

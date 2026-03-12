@@ -1,11 +1,39 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Reflection;
 
 namespace IntuneTools.Utilities
 {
     public class Variables
     {
-        // Application version (consider retrieving this dynamically from assembly info in the future)
-        public static readonly string appVersion = "1.3.0.0";
+        // Application version derived from assembly metadata (set via <Version> in csproj)
+        public static readonly string appVersion = GetAppVersion();
+
+        private static string GetAppVersion()
+        {
+            var asm = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
+
+            var info = asm.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+            if (!string.IsNullOrWhiteSpace(info))
+            {
+                // Strip build metadata, e.g. "1.2.0.0+commitsha" → "1.2.0.0"
+                var plusIdx = info.IndexOf('+');
+                var clean = plusIdx >= 0 ? info[..plusIdx] : info;
+
+                // Ensure consistent 4-component format (e.g. "1.2.0" → "1.2.0.0")
+                if (Version.TryParse(clean, out var parsed))
+                {
+                    return $"{parsed.Major}.{parsed.Minor}.{Math.Max(0, parsed.Build)}.{Math.Max(0, parsed.Revision)}";
+                }
+
+                return clean;
+            }
+
+            var version = asm.GetName().Version;
+            return version is null
+                ? "0.0.0.0"
+                : $"{version.Major}.{version.Minor}.{version.Build}.{version.Revision}";
+        }
 
         // Log file
         public static readonly string appDataPath = @"C:\ProgramData\";
