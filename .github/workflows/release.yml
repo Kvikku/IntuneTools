@@ -8,8 +8,8 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version number (e.g. 1.4.0.0)'
-        required: true
+        description: 'Version number (e.g. 1.4.0.0). Leave empty to auto-increment patch.'
+        required: false
 
 permissions:
   contents: write        # needed to create releases and upload assets
@@ -29,12 +29,26 @@ jobs:
         id: version
         shell: pwsh
         run: |
-          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+          if ("${{ github.event_name }}" -eq "workflow_dispatch" -and "${{ github.event.inputs.version }}" -ne "") {
             $ver = "${{ github.event.inputs.version }}"
-          } else {
+          } elseif ("${{ github.event_name }}" -eq "push") {
             $ver = "${{ github.ref_name }}"
+          } else {
+            # Auto-increment: read current version from csproj and bump patch
+            $csproj = Get-Content IntuneTools.csproj -Raw
+            if ($csproj -match '<Version>(\d+)\.(\d+)\.(\d+)\.(\d+)</Version>') {
+              $major = [int]$Matches[1]
+              $minor = [int]$Matches[2]
+              $patch = [int]$Matches[3] + 1
+              $build = [int]$Matches[4]
+              $ver = "$major.$minor.$patch.$build"
+            } else {
+              Write-Error "Could not read version from IntuneTools.csproj"
+              exit 1
+            }
           }
           echo "VERSION=$ver" >> $env:GITHUB_OUTPUT
+          echo "Version: $ver"
 
       - name: Update version in project files
         shell: pwsh
@@ -110,18 +124,33 @@ jobs:
         with:
           path: artifacts
 
+      - name: Generate release notes
+        id: notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NOTES=$(gh api repos/${{ github.repository }}/releases/generate-notes \
+            -f tag_name="${{ steps.version.outputs.VERSION }}" \
+            -f target_commitish="master" \
+            --jq '.body')
+          {
+            echo "BODY<<EOF"
+            echo "$NOTES"
+            echo ""
+            echo "## Download"
+            echo ""
+            echo "As always, the app and this new update is available on the [Microsoft Store](https://apps.microsoft.com/detail/9phqrcx3gkxd)."
+            echo ""
+            echo "## Manual install"
+            echo "If you prefer to install manually and not use the store, I've attached a zip of the packaged version of the app. Install the root certificate and run the install.ps1 to install it."
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2
         with:
           tag_name: ${{ steps.version.outputs.VERSION }}
           name: ${{ steps.version.outputs.VERSION }}
           draft: true
-          generate_release_notes: true
-          body: |
-            ## Download
-
-            As always, the app and this new update is available on the [Microsoft Store](https://apps.microsoft.com/detail/9phqrcx3gkxd).
-
-            ## Manual install
-            If you prefer to install manually and not use the store, I've attached a zip of the packaged version of the app. Install the root certificate and run the install.ps1 to install it.
+          body: ${{ steps.notes.outputs.BODY }}
           files: artifacts/**/*.zip
