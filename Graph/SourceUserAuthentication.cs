@@ -84,7 +84,7 @@ public static class SourceUserAuthentication
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[SourceAuth] Failed to parse ID token for tenant ID: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[SourceAuth] Failed to parse ID token for tenant ID: {ex.GetType().Name} - {ex.Message}");
             }
 
             _tokenProvider = new MsalAccessTokenProvider(_pca, scopes);
