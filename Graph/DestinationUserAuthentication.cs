@@ -82,7 +82,10 @@ public static class DestinationUserAuthentication
                 var idToken = handler.ReadJwtToken(result.IdToken);
                 TenantId = idToken.Claims.FirstOrDefault(c => c.Type == "tid")?.Value;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DestinationAuth] Failed to parse ID token for tenant ID: {ex.GetType().Name} - {ex.Message}");
+            }
 
             _tokenProvider = new MsalAccessTokenProvider(_pca, scopes);
             _authProvider = new BaseBearerTokenAuthenticationProvider(_tokenProvider);
@@ -160,7 +163,7 @@ public static class DestinationUserAuthentication
         {
             _pca = pca;
             _scopes = scopes;
-            AllowedHostsValidator = new AllowedHostsValidator();
+            AllowedHostsValidator = new AllowedHostsValidator(new[] { "graph.microsoft.com" });
         }
 
         public AllowedHostsValidator AllowedHostsValidator { get; }
