@@ -12,9 +12,6 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
-    strategy:
-      matrix:
-        platform: [x64, ARM64]
 
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -25,7 +22,7 @@ jobs:
           dotnet-version: 8.0.x
 
       - name: Restore dependencies
-        run: dotnet restore -p:Platform=${{ matrix.platform }}
+        run: dotnet restore -p:Platform=x64
 
       - name: Build
-        run: dotnet build --no-restore --configuration Release -p:Platform=${{ matrix.platform }}
+        run: dotnet build --no-restore --configuration Release -p:Platform=x64

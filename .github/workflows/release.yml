@@ -21,14 +21,6 @@ concurrency:
 jobs:
   build:
     runs-on: windows-latest
-    strategy:
-      matrix:
-        platform: [x64, ARM64]
-        include:
-          - platform: x64
-            rid: win-x64
-          - platform: ARM64
-            rid: win-arm64
 
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -53,9 +45,9 @@ jobs:
         run: >
           dotnet publish
           --configuration Release
-          --runtime ${{ matrix.rid }}
+          --runtime win-x64
           --self-contained true
-          -p:Platform=${{ matrix.platform }}
+          -p:Platform=x64
           -p:Version=${{ steps.version.outputs.VERSION }}
           -p:WindowsAppSDKSelfContained=true
           -p:PublishReadyToRun=false
@@ -64,8 +56,8 @@ jobs:
       - name: Create zip archive
         shell: pwsh
         run: |
-          $publishDir = "bin\Release\net8.0-windows10.0.22621.0\${{ matrix.rid }}\publish"
-          $zipName = "IntuneTools_${{ steps.version.outputs.VERSION }}_${{ matrix.platform }}.zip"
+          $publishDir = "bin\Release\net8.0-windows10.0.22621.0\win-x64\publish"
+          $zipName = "IntuneTools_${{ steps.version.outputs.VERSION }}_x64.zip"
           Compress-Archive -Path "$publishDir\*" -DestinationPath $zipName
           echo "ZIP_NAME=$zipName" >> $env:GITHUB_OUTPUT
         id: zip
@@ -73,7 +65,7 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: IntuneTools-${{ matrix.platform }}
+          name: IntuneTools-x64
           path: ${{ steps.zip.outputs.ZIP_NAME }}
 
   release:
