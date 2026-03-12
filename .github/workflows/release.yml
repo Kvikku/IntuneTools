@@ -36,6 +36,19 @@ jobs:
           }
           echo "VERSION=$ver" >> $env:GITHUB_OUTPUT
 
+      - name: Update version in project files
+        shell: pwsh
+        run: |
+          $ver = "${{ steps.version.outputs.VERSION }}"
+          # Update IntuneTools.csproj
+          $csproj = Get-Content IntuneTools.csproj -Raw
+          $csproj = $csproj -replace '<Version>[^<]+</Version>', "<Version>$ver</Version>"
+          Set-Content IntuneTools.csproj $csproj -NoNewline
+          # Update Package.appxmanifest
+          $manifest = Get-Content Package.appxmanifest -Raw
+          $manifest = $manifest -replace '(Identity[^>]*Version=")[^"]+(")', "`${1}$ver`${2}"
+          Set-Content Package.appxmanifest $manifest -NoNewline
+
       - name: Setup .NET
         uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
@@ -68,6 +81,16 @@ jobs:
           name: IntuneTools-x64
           path: ${{ steps.zip.outputs.ZIP_NAME }}
 
+      - name: Commit version bump
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add IntuneTools.csproj Package.appxmanifest
+          git diff --cached --quiet && echo "No version changes to commit" && exit 0
+          git commit -m "Bump version to ${{ steps.version.outputs.VERSION }}"
+          git push origin HEAD:master
+
   release:
     needs: build
     runs-on: ubuntu-latest
@@ -94,4 +117,11 @@ jobs:
           name: ${{ steps.version.outputs.VERSION }}
           draft: true
           generate_release_notes: true
+          body: |
+            ## Download
+
+            As always, the app and this new update is available on the [Microsoft Store](https://apps.microsoft.com/detail/9phqrcx3gkxd).
+
+            ## Manual install
+            If you prefer to install manually and not use the store, I've attached a zip of the packaged version of the app. Install the root certificate and run the install.ps1 to install it.
           files: artifacts/**/*.zip
