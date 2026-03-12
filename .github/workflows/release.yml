@@ -1,0 +1,97 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '*.*.*.*'   # matches version tags like 1.4.0.0
+
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g. 1.4.0.0)'
+        required: true
+
+permissions:
+  contents: write        # needed to create releases and upload assets
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Determine version
+        id: version
+        shell: pwsh
+        run: |
+          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+            $ver = "${{ github.event.inputs.version }}"
+          } else {
+            $ver = "${{ github.ref_name }}"
+          }
+          echo "VERSION=$ver" >> $env:GITHUB_OUTPUT
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Publish self-contained app
+        run: >
+          dotnet publish IntuneTools.csproj
+          --configuration Release
+          --runtime win-x64
+          --self-contained true
+          -p:Platform=x64
+          -p:Version=${{ steps.version.outputs.VERSION }}
+          -p:WindowsAppSDKSelfContained=true
+          -p:PublishReadyToRun=false
+          -p:PublishTrimmed=false
+
+      - name: Create zip archive
+        shell: pwsh
+        run: |
+          $publishDir = "bin\Release\net8.0-windows10.0.22621.0\win-x64\publish"
+          $zipName = "IntuneTools_${{ steps.version.outputs.VERSION }}_x64.zip"
+          Compress-Archive -Path "$publishDir\*" -DestinationPath $zipName
+          echo "ZIP_NAME=$zipName" >> $env:GITHUB_OUTPUT
+        id: zip
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: IntuneTools-x64
+          path: ${{ steps.zip.outputs.ZIP_NAME }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "VERSION=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "VERSION=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2
+        with:
+          tag_name: ${{ steps.version.outputs.VERSION }}
+          name: ${{ steps.version.outputs.VERSION }}
+          draft: true
+          generate_release_notes: true
+          files: artifacts/**/*.zip

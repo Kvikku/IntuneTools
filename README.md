@@ -5,6 +5,7 @@
 **Bulk management for Microsoft Intune — stop clicking a million times.**
 
 [![GitHub release](https://img.shields.io/github/v/release/Kvikku/IntuneTools?style=flat-square&color=blue)](https://github.com/Kvikku/IntuneTools/releases)
+[![CI Build](https://github.com/Kvikku/IntuneTools/actions/workflows/ci.yml/badge.svg)](https://github.com/Kvikku/IntuneTools/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE.txt)
 [![Microsoft Store](https://img.shields.io/badge/Microsoft_Store-Available-blue?style=flat-square&logo=microsoft)](https://apps.microsoft.com/detail/9phqrcx3gkxd)
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-purple?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/)
@@ -74,6 +75,25 @@ git clone https://github.com/Kvikku/IntuneTools.git
 cd IntuneTools
 dotnet build
 ```
+
+## Releasing a new version
+
+Version is managed through the `<Version>` property in `IntuneTools.csproj`. The `Package.appxmanifest` identity version is automatically kept in sync via an MSBuild target — no manual update needed.
+
+**To ship a new release:**
+
+1. Update the `<Version>` in `IntuneTools.csproj` (e.g. `1.4.0.0`).
+2. Commit, push, and tag:
+   ```powershell
+   git add .
+   git commit -m "Bump version to 1.4.0.0"
+   git tag 1.4.0.0
+   git push origin master --tags
+   ```
+3. The **Release** workflow builds the app for x64 and ARM64, then creates a **draft** GitHub Release with the zip files attached.
+4. Open the draft release on GitHub, add release notes, and publish it.
+
+> You can also trigger a release manually from the **Actions** tab using the _Release_ workflow dispatch.
 
 ## Roadmap
 
