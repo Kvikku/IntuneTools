@@ -100,9 +100,6 @@ namespace IntuneTools.Pages
             ListAllButton.IsEnabled = false;
             SearchButton.IsEnabled = false;
             FindUnassignedButton.IsEnabled = false;
-            DeleteButton.IsEnabled = false;
-            ClearSelectedButton.IsEnabled = false;
-            ClearAllButton.IsEnabled = false;
         }
 
         protected override void HideLoading()
@@ -111,9 +108,6 @@ namespace IntuneTools.Pages
             ListAllButton.IsEnabled = true;
             SearchButton.IsEnabled = true;
             FindUnassignedButton.IsEnabled = true;
-            DeleteButton.IsEnabled = true;
-            ClearSelectedButton.IsEnabled = true;
-            ClearAllButton.IsEnabled = true;
         }
 
         // Convenience method for logging - calls base class AppendToLog
@@ -388,6 +382,9 @@ namespace IntuneTools.Pages
         private async Task FindUnassignedOrchestrator(GraphServiceClient graphServiceClient)
         {
             ShowLoading("Loading content from Microsoft Graph...");
+            DeleteButton.IsEnabled = false;
+            ClearSelectedButton.IsEnabled = false;
+            ClearAllButton.IsEnabled = false;
             AppendToDetailsRichTextBlock("Loading all assignable content types. This may take a while...");
             try
             {
@@ -447,6 +444,9 @@ namespace IntuneTools.Pages
             finally
             {
                 HideLoading();
+                DeleteButton.IsEnabled = true;
+                ClearSelectedButton.IsEnabled = true;
+                ClearAllButton.IsEnabled = true;
             }
         }
 
