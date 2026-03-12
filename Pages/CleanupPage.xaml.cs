@@ -379,19 +379,21 @@ namespace IntuneTools.Pages
             AppendToDetailsRichTextBlock("Loading all assignable content types. This may take a while...");
             try
             {
+                // Load into a temporary list so items don't appear in the grid before being checked
                 ContentList.Clear();
                 await LoadContentTypesAsync(graphServiceClient, AssignableContentTypes, AppendToDetailsRichTextBlock);
+                var allItems = ContentList.ToList();
+                ContentList.Clear();
 
-                var totalItems = ContentList.Count;
+                var totalItems = allItems.Count;
                 AppendToDetailsRichTextBlock($"Loaded {totalItems} items. Checking assignments...");
 
                 ShowOperationProgress("Checking assignments...", 0, totalItems);
 
                 var assignmentChecks = GetAssignmentCheckRegistry();
-                var unassignedItems = new List<CustomContentInfo>();
                 var checkedCount = 0;
 
-                foreach (var item in ContentList.ToList())
+                foreach (var item in allItems)
                 {
                     checkedCount++;
                     ShowOperationProgress($"Checking assignments ({checkedCount}/{totalItems})", checkedCount, totalItems);
@@ -407,7 +409,7 @@ namespace IntuneTools.Pages
                         var hasAssignments = await checkFunc(graphServiceClient, item.ContentId);
                         if (!hasAssignments)
                         {
-                            unassignedItems.Add(item);
+                            ContentList.Add(item);
                         }
                     }
                     else
@@ -416,15 +418,9 @@ namespace IntuneTools.Pages
                     }
                 }
 
-                ContentList.Clear();
-                foreach (var item in unassignedItems)
-                {
-                    ContentList.Add(item);
-                }
-
                 CleanupDataGrid.ItemsSource = ContentList;
-                AppendToDetailsRichTextBlock($"Found {unassignedItems.Count} unassigned item(s) out of {totalItems} total.");
-                ShowOperationSuccess($"Found {unassignedItems.Count} unassigned item(s)");
+                AppendToDetailsRichTextBlock($"Found {ContentList.Count} unassigned item(s) out of {totalItems} total.");
+                ShowOperationSuccess($"Found {ContentList.Count} unassigned item(s)");
             }
             catch (Exception ex)
             {
