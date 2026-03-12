@@ -27,7 +27,7 @@ namespace IntuneTools.Utilities
         /// Gets the latest release version string from the GitHub API.
         /// </summary>
         /// <param name="cancellationToken">A cancellation token.</param>
-        /// <returns>The latest version string (e.g., "1.2.0.0"). Throws on HTTP/network or parse errors.</returns>
+        /// <returns>The raw tag or release name (e.g., "v1.3.0.0"). Throws on HTTP/network or parse errors.</returns>
         private static async Task<string> GetLatestVersionAsync(CancellationToken cancellationToken = default)
         {
             const string url = "https://api.github.com/repos/kvikku/IntuneTools/releases/latest";
