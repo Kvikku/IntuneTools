@@ -129,4 +129,13 @@
 		<SupportedOSPlatformVersion>10.0.22621.0</SupportedOSPlatformVersion>
 		<WindowsSdkVersion>10.0.26100.0</WindowsSdkVersion>
 	</PropertyGroup>
+
+  <!-- Keep Package.appxmanifest Identity Version in sync with the <Version> property above -->
+  <Target Name="SyncAppxManifestVersion" BeforeTargets="Build;Publish"
+          Condition="Exists('$(MSBuildProjectDirectory)\Package.appxmanifest')">
+    <XmlPoke XmlInputPath="$(MSBuildProjectDirectory)\Package.appxmanifest"
+             Query="/ns:Package/ns:Identity/@Version"
+             Value="$(Version)"
+             Namespaces="&lt;Namespace Prefix='ns' Uri='http://schemas.microsoft.com/appx/manifest/foundation/windows10'/&gt;" />
+  </Target>
 </Project>
