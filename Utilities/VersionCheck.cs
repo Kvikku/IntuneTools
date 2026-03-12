@@ -56,7 +56,8 @@ namespace IntuneTools.Utilities
 
         /// <summary>
         /// Checks the running app's version against GitHub's latest release.
-        /// Results are cached for 15 minutes to avoid unnecessary API calls.
+        /// Successful results are cached for 15 minutes; failures are cached for 2 minutes
+        /// to avoid hanging on every navigation during network outages.
         /// </summary>
         public static async Task<VersionStatus> CheckAsync(CancellationToken cancellationToken = default)
         {
