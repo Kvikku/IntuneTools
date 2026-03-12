@@ -537,5 +537,43 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 return null;
             }
         }
+
+        /// <summary>
+        /// Gets detailed assignment information for a Windows Quality Update profile.
+        /// </summary>
+        public static async Task<List<AssignmentInfo>?> GetWindowsQualityUpdateProfileAssignmentDetailsAsync(GraphServiceClient graphServiceClient, string profileId)
+        {
+            try
+            {
+                var result = await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileId].Assignments.GetAsync();
+                if (result?.Value == null) return new List<AssignmentInfo>();
+
+                var details = new List<AssignmentInfo>();
+                foreach (var assignment in result.Value)
+                {
+                    details.Add(AssignmentInfo.FromTarget(assignment.Id, assignment.Target));
+                }
+                return details;
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error getting assignment details for Windows Quality Update Profile {profileId}: {ex.Message}", LogLevels.Error);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Removes all assignments from a Windows Quality Update profile.
+        /// </summary>
+        public static async Task RemoveAllWindowsQualityUpdateProfileAssignmentsAsync(GraphServiceClient graphServiceClient, string profileId)
+        {
+            var requestBody = new Microsoft.Graph.Beta.DeviceManagement.WindowsQualityUpdateProfiles.Item.Assign.AssignPostRequestBody
+            {
+                Assignments = new List<WindowsQualityUpdateProfileAssignment>()
+            };
+
+            await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileId].Assign.PostAsync(requestBody);
+            LogToFunctionFile(appFunction.Main, $"Removed all assignments from Windows Quality Update Profile {profileId}.");
+        }
     }
 }
