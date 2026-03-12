@@ -100,6 +100,9 @@ namespace IntuneTools.Pages
             ListAllButton.IsEnabled = false;
             SearchButton.IsEnabled = false;
             FindUnassignedButton.IsEnabled = false;
+            DeleteButton.IsEnabled = false;
+            ClearSelectedButton.IsEnabled = false;
+            ClearAllButton.IsEnabled = false;
         }
 
         protected override void HideLoading()
@@ -108,6 +111,9 @@ namespace IntuneTools.Pages
             ListAllButton.IsEnabled = true;
             SearchButton.IsEnabled = true;
             FindUnassignedButton.IsEnabled = true;
+            DeleteButton.IsEnabled = true;
+            ClearSelectedButton.IsEnabled = true;
+            ClearAllButton.IsEnabled = true;
         }
 
         // Convenience method for logging - calls base class AppendToLog
