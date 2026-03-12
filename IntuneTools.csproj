@@ -36,6 +36,7 @@
   <ItemGroup>
     <None Remove="Pages\CleanupPage.xaml" />
     <None Remove="Pages\JsonPage.xaml" />
+    <None Remove="Pages\ManageAssignmentsPage.xaml" />
     <None Remove="Pages\RenamingPage.xaml" />
   </ItemGroup>
   <!--<ItemGroup>
@@ -90,6 +91,11 @@
   </ItemGroup>
   <ItemGroup>
     <Page Update="Pages\JsonPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Pages\ManageAssignmentsPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>

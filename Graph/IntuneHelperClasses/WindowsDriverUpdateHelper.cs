@@ -555,5 +555,43 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 return null;
             }
         }
+
+        /// <summary>
+        /// Gets detailed assignment information for a Windows Driver Update profile.
+        /// </summary>
+        public static async Task<List<AssignmentInfo>?> GetWindowsDriverUpdateAssignmentDetailsAsync(GraphServiceClient graphServiceClient, string profileId)
+        {
+            try
+            {
+                var result = await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileId].Assignments.GetAsync();
+                if (result?.Value == null) return new List<AssignmentInfo>();
+
+                var details = new List<AssignmentInfo>();
+                foreach (var assignment in result.Value)
+                {
+                    details.Add(AssignmentInfo.FromTarget(assignment.Id, assignment.Target));
+                }
+                return details;
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error getting assignment details for Windows Driver Update {profileId}: {ex.Message}", LogLevels.Error);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Removes all assignments from a Windows Driver Update profile.
+        /// </summary>
+        public static async Task RemoveAllWindowsDriverUpdateAssignmentsAsync(GraphServiceClient graphServiceClient, string profileId)
+        {
+            var requestBody = new Microsoft.Graph.Beta.DeviceManagement.WindowsDriverUpdateProfiles.Item.Assign.AssignPostRequestBody
+            {
+                Assignments = new List<WindowsDriverUpdateProfileAssignment>()
+            };
+
+            await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileId].Assign.PostAsync(requestBody);
+            LogToFunctionFile(appFunction.Main, $"Removed all assignments from Windows Driver Update profile {profileId}.");
+        }
     }
 }

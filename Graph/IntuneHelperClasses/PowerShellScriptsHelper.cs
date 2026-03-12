@@ -508,5 +508,43 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 return null;
             }
         }
+
+        /// <summary>
+        /// Gets detailed assignment information for a PowerShell script.
+        /// </summary>
+        public static async Task<List<AssignmentInfo>?> GetPowerShellScriptAssignmentDetailsAsync(GraphServiceClient graphServiceClient, string scriptId)
+        {
+            try
+            {
+                var result = await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptId].Assignments.GetAsync();
+                if (result?.Value == null) return new List<AssignmentInfo>();
+
+                var details = new List<AssignmentInfo>();
+                foreach (var assignment in result.Value)
+                {
+                    details.Add(AssignmentInfo.FromTarget(assignment.Id, assignment.Target));
+                }
+                return details;
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error getting assignment details for PowerShell Script {scriptId}: {ex.Message}", LogLevels.Error);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Removes all assignments from a PowerShell script.
+        /// </summary>
+        public static async Task RemoveAllPowerShellScriptAssignmentsAsync(GraphServiceClient graphServiceClient, string scriptId)
+        {
+            var requestBody = new Microsoft.Graph.Beta.DeviceManagement.DeviceManagementScripts.Item.Assign.AssignPostRequestBody
+            {
+                DeviceManagementScriptAssignments = new List<DeviceManagementScriptAssignment>()
+            };
+
+            await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptId].Assign.PostAsync(requestBody);
+            LogToFunctionFile(appFunction.Main, $"Removed all assignments from PowerShell Script {scriptId}.");
+        }
     }
 }
