@@ -253,7 +253,13 @@ namespace IntuneTools.Pages
         {
             var isAssigned = await CheckIfAutoPilotProfileHasAssignments(sourceGraphServiceClient, id);
 
-            if (isAssigned)
+            if (isAssigned == null)
+            {
+                AppendToDetailsRichTextBlock($"Failed to check assignments for AutoPilot profile {id}. Skipping deletion to be safe.");
+                return false;
+            }
+
+            if (isAssigned.Value)
             {
                 var dialog = new ContentDialog
                 {
@@ -360,7 +366,7 @@ namespace IntuneTools.Pages
         /// <summary>
         /// Returns a mapping of content type to its assignment-checking function.
         /// </summary>
-        private Dictionary<string, Func<GraphServiceClient, string, Task<bool>>> GetAssignmentCheckRegistry() => new()
+        private Dictionary<string, Func<GraphServiceClient, string, Task<bool?>>> GetAssignmentCheckRegistry() => new()
         {
             [ContentTypes.SettingsCatalog] = HasSettingsCatalogAssignmentsAsync,
             [ContentTypes.DeviceCompliancePolicy] = HasDeviceCompliancePolicyAssignmentsAsync,
@@ -414,7 +420,11 @@ namespace IntuneTools.Pages
                     {
                         var hasAssignments = await checkFunc(graphServiceClient, item.ContentId);
                         UpdateTotalTimeSaved(secondsSavedOnFindingUnassigned, appFunction.FindUnassigned);
-                        if (!hasAssignments)
+                        if (hasAssignments == null)
+                        {
+                            AppendToDetailsRichTextBlock($"Failed to check assignments for '{item.ContentName}'. Skipping to be safe.");
+                        }
+                        else if (!hasAssignments.Value)
                         {
                             ContentList.Add(item);
                         }

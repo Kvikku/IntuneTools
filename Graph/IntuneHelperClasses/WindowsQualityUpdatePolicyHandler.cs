@@ -533,7 +533,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         /// <summary>
         /// Checks if a Windows quality update policy has any group assignments.
         /// </summary>
-        public static async Task<bool> HasWindowsQualityUpdatePolicyAssignmentsAsync(GraphServiceClient graphServiceClient, string policyId)
+        public static async Task<bool?> HasWindowsQualityUpdatePolicyAssignmentsAsync(GraphServiceClient graphServiceClient, string policyId)
         {
             try
             {
@@ -545,7 +545,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch
             {
-                return false;
+                return null;
             }
         }
     }

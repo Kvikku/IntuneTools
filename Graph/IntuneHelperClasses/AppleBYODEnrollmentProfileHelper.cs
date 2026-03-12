@@ -595,7 +595,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         /// <summary>
         /// Checks if an Apple BYOD enrollment profile has any group assignments.
         /// </summary>
-        public static async Task<bool> HasAppleBYODEnrollmentProfileAssignmentsAsync(GraphServiceClient graphServiceClient, string profileId)
+        public static async Task<bool?> HasAppleBYODEnrollmentProfileAssignmentsAsync(GraphServiceClient graphServiceClient, string profileId)
         {
             try
             {
@@ -607,7 +607,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch
             {
-                return false;
+                return null;
             }
         }
     }

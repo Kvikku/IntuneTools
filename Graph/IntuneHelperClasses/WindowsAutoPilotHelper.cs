@@ -356,7 +356,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task<bool> CheckIfAutoPilotProfileHasAssignments(GraphServiceClient graphServiceClient, string profileID)
+        public static async Task<bool?> CheckIfAutoPilotProfileHasAssignments(GraphServiceClient graphServiceClient, string profileID)
         {
             try
             {
@@ -390,12 +390,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             catch (ODataError error)
             {
 
-                return false;
+                return null;
             }
             catch (Exception ex)
             {
 
-                return false;
+                return null;
             }
         }
         public static async Task DeleteWindowsAutopilotProfile(GraphServiceClient graphServiceClient, string profileID)

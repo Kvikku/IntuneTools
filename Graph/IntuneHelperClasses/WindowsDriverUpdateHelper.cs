@@ -540,7 +540,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         /// <summary>
         /// Checks if a Windows driver update profile has any group assignments.
         /// </summary>
-        public static async Task<bool> HasWindowsDriverUpdateAssignmentsAsync(GraphServiceClient graphServiceClient, string profileId)
+        public static async Task<bool?> HasWindowsDriverUpdateAssignmentsAsync(GraphServiceClient graphServiceClient, string profileId)
         {
             try
             {
@@ -552,7 +552,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch
             {
-                return false;
+                return null;
             }
         }
     }

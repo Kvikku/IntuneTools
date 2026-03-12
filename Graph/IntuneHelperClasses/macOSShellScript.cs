@@ -528,7 +528,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         /// <summary>
         /// Checks if a macOS shell script has any group assignments.
         /// </summary>
-        public static async Task<bool> HasMacOSShellScriptAssignmentsAsync(GraphServiceClient graphServiceClient, string scriptId)
+        public static async Task<bool?> HasMacOSShellScriptAssignmentsAsync(GraphServiceClient graphServiceClient, string scriptId)
         {
             try
             {
@@ -540,7 +540,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch
             {
-                return false;
+                return null;
             }
         }
     }

@@ -611,7 +611,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         /// <summary>
         /// Checks if a device configuration policy has any group assignments.
         /// </summary>
-        public static async Task<bool> HasDeviceConfigurationAssignmentsAsync(GraphServiceClient graphServiceClient, string configId)
+        public static async Task<bool?> HasDeviceConfigurationAssignmentsAsync(GraphServiceClient graphServiceClient, string configId)
         {
             try
             {
@@ -623,7 +623,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch
             {
-                return false;
+                return null;
             }
         }
     }

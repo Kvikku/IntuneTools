@@ -501,7 +501,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         /// <summary>
         /// Checks if a proactive remediation script has any group assignments.
         /// </summary>
-        public static async Task<bool> HasProactiveRemediationAssignmentsAsync(GraphServiceClient graphServiceClient, string scriptId)
+        public static async Task<bool?> HasProactiveRemediationAssignmentsAsync(GraphServiceClient graphServiceClient, string scriptId)
         {
             try
             {
@@ -513,7 +513,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch
             {
-                return false;
+                return null;
             }
         }
     }

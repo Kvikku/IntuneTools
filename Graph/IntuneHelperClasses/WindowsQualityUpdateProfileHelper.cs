@@ -522,7 +522,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         /// <summary>
         /// Checks if a Windows quality update profile has any group assignments.
         /// </summary>
-        public static async Task<bool> HasWindowsQualityUpdateProfileAssignmentsAsync(GraphServiceClient graphServiceClient, string profileId)
+        public static async Task<bool?> HasWindowsQualityUpdateProfileAssignmentsAsync(GraphServiceClient graphServiceClient, string profileId)
         {
             try
             {
@@ -534,7 +534,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch
             {
-                return false;
+                return null;
             }
         }
     }

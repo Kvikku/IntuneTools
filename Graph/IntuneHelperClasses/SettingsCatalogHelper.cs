@@ -536,7 +536,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         /// <summary>
         /// Checks if a settings catalog policy has any group assignments.
         /// </summary>
-        public static async Task<bool> HasSettingsCatalogAssignmentsAsync(GraphServiceClient graphServiceClient, string policyId)
+        public static async Task<bool?> HasSettingsCatalogAssignmentsAsync(GraphServiceClient graphServiceClient, string policyId)
         {
             try
             {
@@ -548,7 +548,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch
             {
-                return false;
+                return null;
             }
         }
     }
