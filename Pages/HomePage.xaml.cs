@@ -99,6 +99,7 @@ namespace IntuneTools.Pages
             LogBreakdown("Assignment", numberOfItemsAssigned, secondsSavedOnAssignments);
             LogBreakdown("Delete", numberOfItemsDeleted, secondsSavedOnDeleting);
             LogBreakdown("Import", numberOfItemsImported, secondsSavedOnImporting);
+            LogBreakdown("Find Unassigned", numberOfItemsCheckedForAssignments, secondsSavedOnFindingUnassigned);
 
             TimeSavedMinutesText.Text = totalMinutes.ToString();
             TimeSavedProgress.Value = Math.Min(TimeSavedProgress.Maximum, totalMinutes);
@@ -123,6 +124,7 @@ namespace IntuneTools.Pages
             anyVisible |= UpdateBreakdownRow(AssignedItemsPanel, AssignedItemsCountText, numberOfItemsAssigned);
             anyVisible |= UpdateBreakdownRow(DeletedItemsPanel, DeletedItemsCountText, numberOfItemsDeleted);
             anyVisible |= UpdateBreakdownRow(ImportedItemsPanel, ImportedItemsCountText, numberOfItemsImported);
+            anyVisible |= UpdateBreakdownRow(CheckedAssignmentsPanel, CheckedAssignmentsCountText, numberOfItemsCheckedForAssignments);
 
             TimeSavedBreakdownPanel.Visibility = anyVisible ? Visibility.Visible : Visibility.Collapsed;
         }

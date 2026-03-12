@@ -20,6 +20,9 @@
                 case appFunction.Assignment:
                     Variables.numberOfItemsAssigned++;
                     break;
+                case appFunction.FindUnassigned:
+                    Variables.numberOfItemsCheckedForAssignments++;
+                    break;
             }
 
             return totalTimeSavedInSeconds;

@@ -407,6 +407,7 @@ namespace IntuneTools.Pages
                     if (assignmentChecks.TryGetValue(item.ContentType, out var checkFunc))
                     {
                         var hasAssignments = await checkFunc(graphServiceClient, item.ContentId);
+                        UpdateTotalTimeSaved(secondsSavedOnFindingUnassigned, appFunction.FindUnassigned);
                         if (!hasAssignments)
                         {
                             ContentList.Add(item);
