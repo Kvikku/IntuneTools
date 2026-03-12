@@ -35,8 +35,8 @@ namespace IntuneTools.Utilities
                 : $"{version.Major}.{version.Minor}.{version.Build}.{version.Revision}";
         }
 
-        // Log file
-        public static readonly string appDataPath = @"C:\ProgramData\";
+        // Log file – use per-user local app data to avoid exposing logs to other local users.
+        public static readonly string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         public static readonly string appFolderName = "InToolz";
         public static string timestampedAppFolder = string.Empty; // Mutable, so keep as is or consider property
 
