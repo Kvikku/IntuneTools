@@ -49,6 +49,8 @@ namespace IntuneTools.Utilities
         /// Helper to extract assignment info from a DeviceAndAppManagementAssignmentTarget.
         /// This is the common target type used across most Intune assignment types.
         /// </summary>
+        /// <param name="assignmentId">The assignment ID from the Graph API, or null if unavailable.</param>
+        /// <param name="target">The assignment target. When null, returns an AssignmentInfo with TargetType set to "Unknown".</param>
         public static AssignmentInfo FromTarget(string? assignmentId, DeviceAndAppManagementAssignmentTarget? target)
         {
             if (target == null)
