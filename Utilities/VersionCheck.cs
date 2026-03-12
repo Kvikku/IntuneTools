@@ -75,8 +75,13 @@ namespace IntuneTools.Utilities
                 {
                     latest = await GetLatestVersionAsync(cancellationToken).ConfigureAwait(false);
                 }
-                catch
+                catch (Exception ex)
                 {
+                    // Allow cooperative cancellation to propagate to the caller.
+                    if (cancellationToken.IsCancellationRequested || ex is OperationCanceledException)
+                    {
+                        throw;
+                    }
                     // On failure, report no update with unknown latest.
                     // Cache failures briefly (2 min) to avoid hanging on every navigation during outages.
                     var failureStatus = new VersionStatus
