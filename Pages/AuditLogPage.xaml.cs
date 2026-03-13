@@ -286,8 +286,13 @@ namespace IntuneTools.Pages
             if (string.IsNullOrEmpty(value))
                 return "\"\"";
 
-            // Escape quotes by doubling them and wrap in quotes
-            return $"\"{value.Replace("\"", "\"\"")}\"";
+            // Escape quotes by doubling them, replace newlines, and wrap in quotes
+            var escaped = value
+                .Replace("\"", "\"\"")
+                .Replace("\r\n", " ")
+                .Replace("\n", " ")
+                .Replace("\r", " ");
+            return $"\"{escaped}\"";
         }
 
         #endregion
