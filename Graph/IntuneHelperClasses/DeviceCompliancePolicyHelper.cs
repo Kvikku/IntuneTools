@@ -435,7 +435,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while deleting settings catalog policies: {ex.Message}", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while deleting device compliance policy with ID '{policyID}': {ex.Message}", LogLevels.Error);
             }
         }
 

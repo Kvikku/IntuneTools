@@ -88,7 +88,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for settings catalog policies: {ex.Message}", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while retrieving all settings catalog policies: {ex.Message}", LogLevels.Warning);
                 return new List<DeviceManagementConfigurationPolicy>();
             }
         }
@@ -134,13 +134,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     }
                     catch (Exception ex)
                     {
-                        LogToFunctionFile(appFunction.Main, $"An error occurred while searching for settings catalog policies: {ex.Message}", LogLevels.Warning);
+                        LogToFunctionFile(appFunction.Main, $"An error occurred while importing settings catalog policy '{policyName}': {ex.Message}", LogLevels.Warning);
                     }
                 }
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for settings catalog policies: {ex.Message}", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, $"An error occurred during settings catalog import: {ex.Message}", LogLevels.Warning);
             }
         }
 
@@ -323,7 +323,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for settings catalog policies: {ex.Message}", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while deleting settings catalog policy: {ex.Message}", LogLevels.Warning);
             }
         }
 

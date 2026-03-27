@@ -331,7 +331,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             catch (ServiceException svcex) when (svcex.ResponseStatusCode == (int)System.Net.HttpStatusCode.NotFound) // Corrected comparison
             {
                 // Handle case where the profile doesn't exist (might have been deleted already)
-                LogToFunctionFile(appFunction.Main, $"Windows Driver Update Profile with ID {profileID} not found. It might have already been deleted. Details: {svcex.Message}");
+                LogToFunctionFile(appFunction.Main, $"Windows Driver Update Profile with ID {profileID} not found. It might have already been deleted. Details: {svcex.Message}", LogLevels.Warning);
             }
             catch (Exception ex)
             {
