@@ -252,10 +252,7 @@ namespace IntuneTools.Utilities
         public static void GetDeploymentMode(string input)
         {
             // TODO when fixing exclusion assignments
-            _selectedDeploymentMode = input switch
-            {
-
-            };
+            _selectedDeploymentMode = input;
         }
 
         public static void GetInstallIntent(string input)
@@ -419,6 +416,34 @@ namespace IntuneTools.Utilities
             }
         }
         /// <summary>
+        /// Normalizes double brackets (e.g. [[...]] → [...], ((...)) → (...), {{...}} → {...})
+        /// in a policy name to single brackets.
+        /// </summary>
+        private static string NormalizeDoubleBrackets(string name)
+        {
+            (string openDouble, string closeDouble)[] pairs =
+            {
+                ("[[", "]]"),
+                ("((", "))"),
+                ("{{", "}}")
+            };
+
+            foreach (var (openDouble, closeDouble) in pairs)
+            {
+                if (name.StartsWith(openDouble) && name.Contains(closeDouble))
+                {
+                    int closingIndex = name.IndexOf(closeDouble);
+                    if (closingIndex > 1)
+                    {
+                        return name.Remove(closingIndex, 1).Remove(0, 1);
+                    }
+                }
+            }
+
+            return name;
+        }
+
+        /// <summary>
         /// Removes any bracket-style prefix from a policy name.
         /// Handles (prefix), [prefix], and {prefix} formats.
         /// </summary>
@@ -433,31 +458,10 @@ namespace IntuneTools.Utilities
 
             policyName = policyName.Trim();
 
-            // Clean up double brackets like [[...]] or ((...)) or {{...}}
-            if (policyName.StartsWith("[[") && policyName.Contains("]]"))
-            {
-                int doubleBracketClosingIndex = policyName.IndexOf("]]");
-                if (doubleBracketClosingIndex > 1)
-                {
-                    policyName = policyName.Remove(doubleBracketClosingIndex, 1).Remove(0, 1);
-                }
-            }
-            else if (policyName.StartsWith("((") && policyName.Contains("))"))
-            {
-                int doubleBracketClosingIndex = policyName.IndexOf("))");
-                if (doubleBracketClosingIndex > 1)
-                {
-                    policyName = policyName.Remove(doubleBracketClosingIndex, 1).Remove(0, 1);
-                }
-            }
-            else if (policyName.StartsWith("{{") && policyName.Contains("}}"))
-            {
-                int doubleBracketClosingIndex = policyName.IndexOf("}}");
-                if (doubleBracketClosingIndex > 1)
-                {
-                    policyName = policyName.Remove(doubleBracketClosingIndex, 1).Remove(0, 1);
-                }
-            }
+            if (policyName.Length == 0)
+                return policyName;
+
+            policyName = NormalizeDoubleBrackets(policyName);
 
             char firstChar = policyName[0];
             char expectedClosingChar;
@@ -495,31 +499,10 @@ namespace IntuneTools.Utilities
             // Trim leading/trailing whitespace from the policy name.
             policyName = policyName.Trim();
 
-            // Clean up double brackets like [[...]] or ((...)) or {{...}}
-            if (policyName.StartsWith("[[") && policyName.Contains("]]"))
-            {
-                int doubleBracketClosingIndex = policyName.IndexOf("]]");
-                if (doubleBracketClosingIndex > 1)
-                {
-                    policyName = policyName.Remove(doubleBracketClosingIndex, 1).Remove(0, 1);
-                }
-            }
-            else if (policyName.StartsWith("((") && policyName.Contains("))"))
-            {
-                int doubleBracketClosingIndex = policyName.IndexOf("))");
-                if (doubleBracketClosingIndex > 1)
-                {
-                    policyName = policyName.Remove(doubleBracketClosingIndex, 1).Remove(0, 1);
-                }
-            }
-            else if (policyName.StartsWith("{{") && policyName.Contains("}}"))
-            {
-                int doubleBracketClosingIndex = policyName.IndexOf("}}");
-                if (doubleBracketClosingIndex > 1)
-                {
-                    policyName = policyName.Remove(doubleBracketClosingIndex, 1).Remove(0, 1);
-                }
-            }
+            if (policyName.Length == 0)
+                return newPolicyName + " " + policyName;
+
+            policyName = NormalizeDoubleBrackets(policyName);
 
             char firstChar = policyName[0];
             char expectedClosingChar;

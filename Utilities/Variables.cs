@@ -36,7 +36,7 @@ namespace IntuneTools.Utilities
         }
 
         // Log file
-        public static readonly string appDataPath = @"C:\ProgramData\";
+        public static readonly string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         public static readonly string appFolderName = "InToolz";
         public static string timestampedAppFolder = string.Empty; // Mutable, so keep as is or consider property
 

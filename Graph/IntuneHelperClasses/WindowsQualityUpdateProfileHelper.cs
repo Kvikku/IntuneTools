@@ -29,7 +29,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while searching for Windows Quality Update profiles", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for Windows Quality Update profiles: {ex.Message}", LogLevels.Error);
                 return new List<WindowsQualityUpdateProfile>();
             }
         }
@@ -66,7 +66,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while retrieving all Windows Quality Update profiles", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while retrieving all Windows Quality Update profiles: {ex.Message}", LogLevels.Error);
                 return new List<WindowsQualityUpdateProfile>();
             }
         }
@@ -133,7 +133,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     catch (Exception ex)
                     {
                         LogToFunctionFile(appFunction.Main, $"Error importing profile {profileName}: {ex.Message}", LogLevels.Error);
-                        LogToFunctionFile(appFunction.Main, "There is currently a known bug with importing Windows Quality Update profiles. " +
+                        LogToFunctionFile(appFunction.Main, $"There is currently a known bug with importing Windows Quality Update profiles. : {ex.Message}" +
                                                 "This will be fixed in a future release. " +
                                                 "For now, please manually assign the groups to the imported profiles.", LogLevels.Warning);
                     }
@@ -306,7 +306,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while deleting a Windows Quality Update profile", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while deleting a Windows Quality Update profile: {ex.Message}", LogLevels.Error);
             }
         }
         public static async Task RenameWindowsQualityUpdateProfile(GraphServiceClient graphServiceClient, string profileID, string newName)
@@ -392,8 +392,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while renaming Windows Quality Update profile", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while renaming Windows Quality Update profile: {ex.Message}", LogLevels.Warning);
             }
         }
 
@@ -514,7 +513,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             catch (Exception ex)
             {
                 LogToFunctionFile(appFunction.Main, $"Error importing Windows Quality Update profile from JSON: {ex.Message}", LogLevels.Error);
-                LogToFunctionFile(appFunction.Main, "This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, $"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active: {ex.Message}", LogLevels.Warning);
                 return null;
             }
         }

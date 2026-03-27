@@ -43,7 +43,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while searching for macOS shell scripts", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for macOS shell scripts: {ex.Message}", LogLevels.Error);
                 return new List<DeviceShellScript>();
             }
         }
@@ -73,7 +73,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while retrieving all macOS shell scripts", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while retrieving all macOS shell scripts: {ex.Message}", LogLevels.Error);
                 return new List<DeviceShellScript>();
             }
         }
@@ -136,7 +136,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         LogToFunctionFile(appFunction.Main, $"Failed to import script  (ID: {scriptId}): {ex.Message}", LogLevels.Error);
                     }
                 }
-                LogToFunctionFile(appFunction.Main, "macOS shell script import process finished.");
+                LogToFunctionFile(appFunction.Main, $"macOS shell script import process finished.: {ex.Message}");
             }
             catch (Exception ex)
             {
@@ -283,14 +283,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }
                 catch (Exception ex)
                 {
-                    LogToFunctionFile(appFunction.Main, "An error occurred while assigning groups to macOS shell script", LogLevels.Warning);
-                    LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
+                    LogToFunctionFile(appFunction.Main, $"An error occurred while assigning groups to macOS shell script: {ex.Message}", LogLevels.Warning);
                 }
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while assigning groups to macOS shell script", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while assigning groups to macOS shell script: {ex.Message}", LogLevels.Warning);
             }
         }
         public static async Task DeleteMacosShellScript(GraphServiceClient graphServiceClient, string profileID)
@@ -310,7 +308,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while deleting macOS shell script", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while deleting macOS shell script: {ex.Message}", LogLevels.Error);
             }
         }
         public static async Task RenameMacOSShellScript(GraphServiceClient graphServiceClient, string scriptID, string newName)
@@ -409,8 +407,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while renaming macOS shell scripts", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while renaming macOS shell scripts: {ex.Message}", LogLevels.Warning);
             }
         }
 

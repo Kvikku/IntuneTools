@@ -38,7 +38,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while searching for Windows AutoPilot profiles", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for Windows AutoPilot profiles: {ex.Message}", LogLevels.Error);
                 return new List<WindowsAutopilotDeploymentProfile>();
             }
         }
@@ -68,7 +68,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while retrieving all Windows AutoPilot profiles", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while retrieving all Windows AutoPilot profiles: {ex.Message}", LogLevels.Error);
                 return new List<WindowsAutopilotDeploymentProfile>();
             }
         }
@@ -142,13 +142,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     }
                     catch (Exception ex)
                     {
-                        LogToFunctionFile(appFunction.Main, $"Error importing profile {profile}", LogLevels.Error);
+                        LogToFunctionFile(appFunction.Main, $"Error importing profile {profile}: {ex.Message}", LogLevels.Error);
                     }
                 }
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred during the import process", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred during the import process: {ex.Message}", LogLevels.Error);
             }
         }
 
@@ -309,8 +309,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while assigning groups to a single Windows AutoPilot profile", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while assigning groups to a single Windows AutoPilot profile: {ex.Message}", LogLevels.Warning);
             }
         }
 
@@ -352,7 +351,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while attempting to delete Autopilot profile assignments", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while attempting to delete Autopilot profile assignments: {ex.Message}", LogLevels.Error);
             }
         }
 
@@ -389,12 +388,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (ODataError error)
             {
-
+                LogToFunctionFile(appFunction.Main, $"OData error checking AutoPilot profile assignments: {error.Error?.Message}", LogLevels.Error);
                 return null;
             }
             catch (Exception ex)
             {
-
+                LogToFunctionFile(appFunction.Main, $"Error checking AutoPilot profile assignments: {ex.Message}", LogLevels.Error);
                 return null;
             }
         }
@@ -418,7 +417,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while deleting Windows Autopilot profiles", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while deleting Windows Autopilot profiles: {ex.Message}", LogLevels.Error);
             }
         }
 
@@ -533,8 +532,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while renaming Windows Autopilot profiles", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while renaming Windows Autopilot profiles: {ex.Message}", LogLevels.Warning);
             }
         }
 

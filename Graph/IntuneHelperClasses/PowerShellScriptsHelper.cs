@@ -37,7 +37,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while searching for PowerShell scripts", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for PowerShell scripts: {ex.Message}", LogLevels.Error);
                 return new List<DeviceManagementScript>();
             }
         }
@@ -67,7 +67,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while retrieving all PowerShell scripts", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while retrieving all PowerShell scripts: {ex.Message}", LogLevels.Error);
                 return new List<DeviceManagementScript>();
             }
         }
@@ -109,13 +109,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     }
                     catch (Exception ex)
                     {
-                        LogToFunctionFile(appFunction.Main, $"Error importing script {script}", LogLevels.Error);
+                        LogToFunctionFile(appFunction.Main, $"Error importing script {script}: {ex.Message}", LogLevels.Error);
                     }
                 }
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred during the import process", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred during the import process: {ex.Message}", LogLevels.Error);
             }
         }
 
@@ -261,14 +261,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }
                 catch (Exception ex)
                 {
-                    LogToFunctionFile(appFunction.Main, "An error occurred while assigning groups to PowerShell script", LogLevels.Warning);
-                    LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
+                    LogToFunctionFile(appFunction.Main, $"An error occurred while assigning groups to PowerShell script: {ex.Message}", LogLevels.Warning);
                 }
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while assigning groups to a single PowerShell script", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while assigning groups to a single PowerShell script: {ex.Message}", LogLevels.Warning);
             }
         }
         public static async Task DeletePowerShellScript(GraphServiceClient graphServiceClient, string scriptID)
@@ -288,7 +286,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while deleting PowerShell scripts", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while deleting PowerShell scripts: {ex.Message}", LogLevels.Error);
             }
         }
         public static async Task RenamePowerShellScript(GraphServiceClient graphServiceClient, string scriptID, string newName)
@@ -374,8 +372,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while renaming PowerShell scripts", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while renaming PowerShell scripts: {ex.Message}", LogLevels.Warning);
             }
         }
 

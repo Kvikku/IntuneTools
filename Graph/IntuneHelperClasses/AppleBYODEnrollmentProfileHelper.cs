@@ -45,7 +45,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"Search returned null or empty result.", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"Search returned null or empty result.: {ex.Message}", LogLevels.Error);
                 return new List<AppleUserInitiatedEnrollmentProfile>();
             }
         }
@@ -81,7 +81,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"Search returned null or empty result.", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"Search returned null or empty result.: {ex.Message}", LogLevels.Error);
                 return new List<AppleUserInitiatedEnrollmentProfile>();
             }
         }
@@ -371,7 +371,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while deleting Apple BYOD Enrollment profiles", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while deleting Apple BYOD Enrollment profiles: {ex.Message}", LogLevels.Error);
             }
         }
         public static async Task RenameAppleBYODEnrollmentProfile(GraphServiceClient graphServiceClient, string profileID, string newName)
@@ -475,8 +475,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while renaming Apple BYOD Enrollment profiles", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while renaming Apple BYOD Enrollment profiles: {ex.Message}", LogLevels.Warning);
             }
         }
 

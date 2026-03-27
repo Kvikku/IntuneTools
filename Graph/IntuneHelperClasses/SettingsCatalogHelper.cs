@@ -58,8 +58,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while searching for settings catalog policies", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for settings catalog policies: {ex.Message}", LogLevels.Warning);
                 return new List<DeviceManagementConfigurationPolicy>();
             }
         }
@@ -89,8 +88,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while searching for settings catalog policies", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for settings catalog policies: {ex.Message}", LogLevels.Warning);
                 return new List<DeviceManagementConfigurationPolicy>();
             }
         }
@@ -136,15 +134,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     }
                     catch (Exception ex)
                     {
-                        LogToFunctionFile(appFunction.Main, "An error occurred while searching for settings catalog policies", LogLevels.Warning);
-                        LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
+                        LogToFunctionFile(appFunction.Main, $"An error occurred while searching for settings catalog policies: {ex.Message}", LogLevels.Warning);
                     }
                 }
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while searching for settings catalog policies", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for settings catalog policies: {ex.Message}", LogLevels.Warning);
             }
         }
 
@@ -301,14 +297,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }
                 catch (Exception ex)
                 {
-                    LogToFunctionFile(appFunction.Main, "An error occurred while assigning groups to settings catalog policy", LogLevels.Warning);
-                    LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
+                    LogToFunctionFile(appFunction.Main, $"An error occurred while assigning groups to settings catalog policy: {ex.Message}", LogLevels.Warning);
                 }
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while assigning groups to settings catalog policy", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while assigning groups to settings catalog policy: {ex.Message}", LogLevels.Warning);
             }
         }
 
@@ -329,8 +323,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while searching for settings catalog policies", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for settings catalog policies: {ex.Message}", LogLevels.Warning);
             }
         }
 
@@ -413,8 +406,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while renaming settings catalog policies", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while renaming settings catalog policies: {ex.Message}", LogLevels.Warning);
             }
         }
 

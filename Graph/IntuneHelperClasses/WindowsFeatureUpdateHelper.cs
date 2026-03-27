@@ -32,7 +32,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while searching for Windows Feature Update profiles", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for Windows Feature Update profiles: {ex.Message}", LogLevels.Error);
                 return new List<WindowsFeatureUpdateProfile>();
             }
         }
@@ -71,7 +71,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while retrieving all Windows Feature Update profiles", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while retrieving all Windows Feature Update profiles: {ex.Message}", LogLevels.Error);
                 return new List<WindowsFeatureUpdateProfile>();
             }
         }
@@ -147,7 +147,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     catch (Exception ex)
                     {
                         LogToFunctionFile(appFunction.Main, $"Failed to import Windows Feature Update profile {profileName}: {ex.Message}", LogLevels.Error);
-                        LogToFunctionFile(appFunction.Main, "This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", LogLevels.Warning);
+                        LogToFunctionFile(appFunction.Main, $"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active: {ex.Message}", LogLevels.Warning);
                     }
                 }
                 LogToFunctionFile(appFunction.Main, "Windows Feature Update profile import process finished.");
@@ -317,7 +317,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while deleting a Windows Feature Update profile", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while deleting a Windows Feature Update profile: {ex.Message}", LogLevels.Error);
             }
         }
         public static async Task RenameWindowsFeatureUpdateProfile(GraphServiceClient graphServiceClient, string profileID, string newName)
@@ -403,8 +403,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while renaming Windows Feature Update profile", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while renaming Windows Feature Update profile: {ex.Message}", LogLevels.Warning);
             }
         }
 
@@ -512,7 +511,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             catch (Exception ex)
             {
                 LogToFunctionFile(appFunction.Main, $"Error importing Windows Feature Update profile from JSON: {ex.Message}", LogLevels.Error);
-                LogToFunctionFile(appFunction.Main, "This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, $"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active: {ex.Message}", LogLevels.Warning);
                 return null;
             }
         }
