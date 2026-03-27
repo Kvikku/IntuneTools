@@ -67,7 +67,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for {PolicyType} policies", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for {PolicyType} policies: {ex.Message}", LogLevels.Error);
                 return new List<DeviceAndAppManagementAssignmentFilter>();
             }
         }
@@ -164,7 +164,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     }
                     catch (Exception ex)
                     {
-                        LogToFunctionFile(appFunction.Main, $"Failed to import {filterName}\n", LogLevels.Error);
+                        LogToFunctionFile(appFunction.Main, $"Failed to import {filterName}: {ex.Message}", LogLevels.Error);
                     }
                 }
             }
@@ -198,10 +198,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (ODataError odataError)
             {
+                LogToFunctionFile(appFunction.Main, $"OData error deleting assignment filter {filterID}: {odataError.Error?.Message}", LogLevels.Error);
                 return false;
             }
             catch (Exception ex)
             {
+                LogToFunctionFile(appFunction.Main, $"Error deleting assignment filter {filterID}: {ex.Message}", LogLevels.Error);
                 return false;
             }
         }
@@ -288,8 +290,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while renaming assignment filter", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while renaming assignment filter: {ex.Message}", LogLevels.Warning);
             }
         }
 
