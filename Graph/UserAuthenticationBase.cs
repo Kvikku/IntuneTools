@@ -62,11 +62,17 @@ internal sealed class UserAuthenticationBase
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Failed to parse tenant ID from JWT: {ex.Message}");
+                LogToFunctionFile(appFunction.Main, $"Failed to parse tenant ID from JWT: {ex.Message}", LogLevels.Warning);
             }
 
             _tokenProvider = new MsalAccessTokenProvider(_pca, scopes);
             _authProvider = new BaseBearerTokenAuthenticationProvider(_tokenProvider);
+            GraphClient = new GraphServiceClient(_authProvider);
+        }
+        else if (GraphClient == null)
+        {
+            // Re-create GraphClient if it was cleared externally while _tokenProvider remained set.
+            _authProvider ??= new BaseBearerTokenAuthenticationProvider(_tokenProvider);
             GraphClient = new GraphServiceClient(_authProvider);
         }
 
@@ -98,7 +104,7 @@ internal sealed class UserAuthenticationBase
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Failed to read granted scopes: {ex.Message}");
+            LogToFunctionFile(appFunction.Main, $"Failed to read granted scopes: {ex.Message}", LogLevels.Warning);
             return Array.Empty<string>();
         }
     }
@@ -136,7 +142,7 @@ internal sealed class UserAuthenticationBase
     {
         private readonly IPublicClientApplication _pca;
         private readonly string[] _scopes;
-        private AuthenticationResult _cached;
+        private AuthenticationResult? _cached;
         private readonly SemaphoreSlim _lock = new(1, 1);
 
         public MsalAccessTokenProvider(IPublicClientApplication pca, string[] scopes)
@@ -144,13 +150,14 @@ internal sealed class UserAuthenticationBase
             _pca = pca;
             _scopes = scopes;
             AllowedHostsValidator = new AllowedHostsValidator();
+            AllowedHostsValidator.SetAllowedHosts(new List<string> { "graph.microsoft.com" });
         }
 
         public AllowedHostsValidator AllowedHostsValidator { get; }
 
         public async Task<string> GetAuthorizationTokenAsync(
             Uri uri,
-            Dictionary<string, object> additionalAuthenticationContext = default,
+            Dictionary<string, object>? additionalAuthenticationContext = default,
             CancellationToken cancellationToken = default)
         {
             await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);

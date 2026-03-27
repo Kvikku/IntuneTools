@@ -28,7 +28,7 @@ public static class SourceUserAuthentication
             "DeviceManagementRBAC.Read.All",
             "DeviceManagementScripts.Read.All",
             "DeviceManagementServiceConfig.Read.All",
-            "Group.ReadWrite.All"
+            "Group.Read.All"
         };
 
     private static readonly UserAuthenticationBase _instance = new(DefaultScopes);
