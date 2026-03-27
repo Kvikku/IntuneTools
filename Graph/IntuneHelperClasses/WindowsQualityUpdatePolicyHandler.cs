@@ -146,7 +146,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     {
                         //rtb.AppendText($"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active\n");
                         LogToFunctionFile(appFunction.Main, $"Failed to import Windows Quality Update policy {profileName}: {ex.Message}", LogLevels.Error);
-                        LogToFunctionFile(appFunction.Main, $"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active: {ex.Message}", LogLevels.Warning);
+                        LogToFunctionFile(appFunction.Main, $"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", LogLevels.Warning);
                     }
                 }
                 LogToFunctionFile(appFunction.Main, "Windows Quality Update policy import process finished.");
@@ -524,7 +524,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             catch (Exception ex)
             {
                 LogToFunctionFile(appFunction.Main, $"Error importing Windows Quality Update policy from JSON: {ex.Message}", LogLevels.Error);
-                LogToFunctionFile(appFunction.Main, $"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active: {ex.Message}", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, $"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", LogLevels.Warning);
                 return null;
             }
         }

@@ -45,7 +45,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"Search returned null or empty result.: {ex.Message}", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"Search returned null or empty result: {ex.Message}", LogLevels.Error);
                 return new List<AppleUserInitiatedEnrollmentProfile>();
             }
         }
@@ -81,7 +81,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"Search returned null or empty result.: {ex.Message}", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"Search returned null or empty result: {ex.Message}", LogLevels.Error);
                 return new List<AppleUserInitiatedEnrollmentProfile>();
             }
         }

@@ -147,7 +147,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     catch (Exception ex)
                     {
                         LogToFunctionFile(appFunction.Main, $"Failed to import Windows Feature Update profile {profileName}: {ex.Message}", LogLevels.Error);
-                        LogToFunctionFile(appFunction.Main, $"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active: {ex.Message}", LogLevels.Warning);
+                        LogToFunctionFile(appFunction.Main, $"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", LogLevels.Warning);
                     }
                 }
                 LogToFunctionFile(appFunction.Main, "Windows Feature Update profile import process finished.");
@@ -511,7 +511,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             catch (Exception ex)
             {
                 LogToFunctionFile(appFunction.Main, $"Error importing Windows Feature Update profile from JSON: {ex.Message}", LogLevels.Error);
-                LogToFunctionFile(appFunction.Main, $"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active: {ex.Message}", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, $"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", LogLevels.Warning);
                 return null;
             }
         }

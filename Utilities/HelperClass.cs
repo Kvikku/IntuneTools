@@ -500,7 +500,7 @@ namespace IntuneTools.Utilities
             policyName = policyName.Trim();
 
             if (policyName.Length == 0)
-                return newPolicyName + " " + policyName;
+                return newPolicyName;
 
             policyName = NormalizeDoubleBrackets(policyName);
 

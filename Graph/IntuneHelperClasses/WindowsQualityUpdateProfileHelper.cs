@@ -133,7 +133,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     catch (Exception ex)
                     {
                         LogToFunctionFile(appFunction.Main, $"Error importing profile {profileName}: {ex.Message}", LogLevels.Error);
-                        LogToFunctionFile(appFunction.Main, $"There is currently a known bug with importing Windows Quality Update profiles. : {ex.Message}" +
+                        LogToFunctionFile(appFunction.Main, "There is currently a known bug with importing Windows Quality Update profiles. " +
                                                 "This will be fixed in a future release. " +
                                                 "For now, please manually assign the groups to the imported profiles.", LogLevels.Warning);
                     }
@@ -513,7 +513,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             catch (Exception ex)
             {
                 LogToFunctionFile(appFunction.Main, $"Error importing Windows Quality Update profile from JSON: {ex.Message}", LogLevels.Error);
-                LogToFunctionFile(appFunction.Main, $"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active: {ex.Message}", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, $"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", LogLevels.Warning);
                 return null;
             }
         }

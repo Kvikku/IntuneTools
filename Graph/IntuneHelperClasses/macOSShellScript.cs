@@ -136,7 +136,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         LogToFunctionFile(appFunction.Main, $"Failed to import script  (ID: {scriptId}): {ex.Message}", LogLevels.Error);
                     }
                 }
-                LogToFunctionFile(appFunction.Main, $"macOS shell script import process finished.: {ex.Message}");
+                LogToFunctionFile(appFunction.Main, "macOS shell script import process finished.");
             }
             catch (Exception ex)
             {

@@ -154,7 +154,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     {
                         //rtb.AppendText($"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active\n");
                         LogToFunctionFile(appFunction.Main, $"Failed to import Windows Driver Update policy {profileName}: {ex.Message}", LogLevels.Error);
-                        LogToFunctionFile(appFunction.Main, $"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active: {ex.Message}", LogLevels.Warning);
+                        LogToFunctionFile(appFunction.Main, $"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", LogLevels.Warning);
                     }
                 }
                 LogToFunctionFile(appFunction.Main, "Windows Driver Update policy import process finished.");
@@ -303,13 +303,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (ArgumentNullException argEx)
             {
-                LogToFunctionFile(appFunction.Main, $"Argument null exception during group assignment setup.: {argEx.Message}", LogLevels.Error);
-                LogToFunctionFile(appFunction.Main, argEx.Message, LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"Argument null exception during group assignment setup: {argEx.Message}", LogLevels.Error);
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An unexpected error occurred while preparing group assignments for a driver profile.", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An unexpected error occurred while preparing group assignments for a driver profile: {ex.Message}", LogLevels.Warning);
             }
         }
         public static async Task DeleteDriverProfile(GraphServiceClient graphServiceClient, string profileID)
@@ -333,7 +331,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             catch (ServiceException svcex) when (svcex.ResponseStatusCode == (int)System.Net.HttpStatusCode.NotFound) // Corrected comparison
             {
                 // Handle case where the profile doesn't exist (might have been deleted already)
-                LogToFunctionFile(appFunction.Main, $"Windows Driver Update Profile with ID {profileID} not found. It might have already been deleted.: {svcex.Message}");
+                LogToFunctionFile(appFunction.Main, $"Windows Driver Update Profile with ID {profileID} not found. It might have already been deleted. Details: {svcex.Message}");
             }
             catch (Exception ex)
             {
@@ -531,7 +529,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             catch (Exception ex)
             {
                 LogToFunctionFile(appFunction.Main, $"Error importing Windows Driver Update profile from JSON: {ex.Message}", LogLevels.Error);
-                LogToFunctionFile(appFunction.Main, $"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active: {ex.Message}", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, $"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", LogLevels.Warning);
                 return null;
             }
         }
