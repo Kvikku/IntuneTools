@@ -162,9 +162,8 @@ namespace IntuneTools.Pages
         /// </summary>
         private void SwapTenants()
         {
-            // Swap GraphServiceClients (via global using static)
-            (sourceGraphServiceClient, destinationGraphServiceClient) = 
-                (destinationGraphServiceClient, sourceGraphServiceClient);
+            // Swap the full auth instances (GraphClient, token provider, signed-in account, etc.)
+            DestinationUserAuthentication.SwapAuthInstances();
 
             // Swap tenant names (via global using static - these ARE Variables.*)
             (sourceTenantName, destinationTenantName) = 

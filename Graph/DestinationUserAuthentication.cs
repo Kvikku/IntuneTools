@@ -31,7 +31,7 @@ public static class DestinationUserAuthentication
             "Group.ReadWrite.All"
         };
 
-    private static readonly UserAuthenticationBase _instance = new(DefaultScopes);
+    internal static UserAuthenticationBase _instance = new(DefaultScopes);
 
     public static GraphServiceClient? destinationGraphServiceClient
     {
@@ -53,4 +53,15 @@ public static class DestinationUserAuthentication
 
     public static Task<bool> ClearSessionAsync()
         => _instance.ClearSessionAsync();
+
+    /// <summary>
+    /// Swaps the underlying auth instances between source and destination facades.
+    /// After this call, all facade members (GraphClient, SignedInAccount, TenantId,
+    /// GetAccessTokenAsync, GetGrantedScopesAsync, etc.) reflect the swapped tenant.
+    /// </summary>
+    public static void SwapAuthInstances()
+    {
+        (SourceUserAuthentication._instance, _instance) =
+            (_instance, SourceUserAuthentication._instance);
+    }
 }

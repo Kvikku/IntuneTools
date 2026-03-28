@@ -31,7 +31,7 @@ public static class SourceUserAuthentication
             "Group.Read.All"
         };
 
-    private static readonly UserAuthenticationBase _instance = new(DefaultScopes);
+    internal static UserAuthenticationBase _instance = new(DefaultScopes);
 
     public static GraphServiceClient? sourceGraphServiceClient
     {
