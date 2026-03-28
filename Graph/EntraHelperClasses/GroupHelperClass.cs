@@ -144,9 +144,6 @@ namespace IntuneTools.Graph.EntraHelperClasses
 
             try
             {
-                Console.WriteLine($"{DateTime.Now.ToString()} - Importing {groupIds.Count} Security groups.\n");
-                LogToFunctionFile(appFunction.Main, " ");
-                LogToFunctionFile(appFunction.Main, $"{DateTime.Now.ToString()} - Importing {groupIds.Count} Security groups.");
                 LogToFunctionFile(appFunction.Main, " ");
                 LogToFunctionFile(appFunction.Main, $"{DateTime.Now.ToString()} - Importing {groupIds.Count} Security groups.");
 
@@ -228,7 +225,6 @@ namespace IntuneTools.Graph.EntraHelperClasses
                     }
                     catch (Exception ex)
                     {
-                        LogToFunctionFile(appFunction.Main, $"Failed to import {groupName}\n", LogLevels.Error);
                         LogToFunctionFile(appFunction.Main, $"Failed to import {groupName}: {ex.Message}", LogLevels.Error);
                     }
                 }
@@ -274,7 +270,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while deleting a security group", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while deleting a security group: {ex.Message}", LogLevels.Error);
             }
         }
         public static async Task RenameGroup(GraphServiceClient graphServiceClient, string groupID, string newName)
@@ -372,8 +368,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while renaming group", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while renaming group: {ex.Message}", LogLevels.Warning);
             }
         }
 
