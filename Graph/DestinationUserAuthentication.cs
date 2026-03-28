@@ -31,6 +31,8 @@ public static class DestinationUserAuthentication
             "Group.ReadWrite.All"
         };
 
+    private static readonly object _swapLock = new();
+
     internal static UserAuthenticationBase _instance = new(DefaultScopes);
 
     public static GraphServiceClient? destinationGraphServiceClient
@@ -58,10 +60,14 @@ public static class DestinationUserAuthentication
     /// Swaps the underlying auth instances between source and destination facades.
     /// After this call, all facade members (GraphClient, SignedInAccount, TenantId,
     /// GetAccessTokenAsync, GetGrantedScopesAsync, etc.) reflect the swapped tenant.
+    /// Thread-safe via lock; typically called from the UI thread only.
     /// </summary>
     public static void SwapAuthInstances()
     {
-        (SourceUserAuthentication._instance, _instance) =
-            (_instance, SourceUserAuthentication._instance);
+        lock (_swapLock)
+        {
+            (SourceUserAuthentication._instance, _instance) =
+                (_instance, SourceUserAuthentication._instance);
+        }
     }
 }
