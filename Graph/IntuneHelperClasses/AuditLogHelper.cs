@@ -46,7 +46,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             {
                 LogToFunctionFile(appFunction.Main, "An error occurred while retrieving audit events.", LogLevels.Warning);
                 LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
-                return new List<AuditEvent>();
+                throw;
             }
         }
     }
