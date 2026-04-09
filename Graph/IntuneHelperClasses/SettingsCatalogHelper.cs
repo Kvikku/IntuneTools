@@ -35,64 +35,22 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         public static async Task<List<DeviceManagementConfigurationPolicy>> SearchForSettingsCatalog(GraphServiceClient graphServiceClient, string searchQuery)
         {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, "Searching for settings catalog policies. Search query: " + searchQuery);
-
-                var result = await graphServiceClient.DeviceManagement.ConfigurationPolicies.GetAsync((requestConfiguration) =>
-                {
-                    requestConfiguration.QueryParameters.Filter = $"contains(Name,'{searchQuery}')";
-                });
-
-                List<DeviceManagementConfigurationPolicy> configurationPolicies = new List<DeviceManagementConfigurationPolicy>();
-                var pageIterator = PageIterator<DeviceManagementConfigurationPolicy, DeviceManagementConfigurationPolicyCollectionResponse>.CreatePageIterator(graphServiceClient, result, (policy) =>
-                {
-                    configurationPolicies.Add(policy);
-                    return true;
-                });
-                await pageIterator.IterateAsync();
-
-                LogToFunctionFile(appFunction.Main, $"Found {configurationPolicies.Count} settings catalog policies.");
-
-                return configurationPolicies;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, "An error occurred while searching for settings catalog policies", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
-                return new List<DeviceManagementConfigurationPolicy>();
-            }
+            return await GraphPageIteratorHelper.SearchAsync<DeviceManagementConfigurationPolicy, DeviceManagementConfigurationPolicyCollectionResponse>(
+                graphServiceClient,
+                () => graphServiceClient.DeviceManagement.ConfigurationPolicies.GetAsync(),
+                policy => policy.Name != null && policy.Name.Contains(searchQuery, StringComparison.OrdinalIgnoreCase),
+                "settings catalog policies");
         }
 
         public static async Task<List<DeviceManagementConfigurationPolicy>> GetAllSettingsCatalogPolicies(GraphServiceClient graphServiceClient)
         {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, "Retrieving all settings catalog policies.");
-
-                var result = await graphServiceClient.DeviceManagement.ConfigurationPolicies.GetAsync((requestConfiguration) =>
+            return await GraphPageIteratorHelper.GetAllAsync<DeviceManagementConfigurationPolicy, DeviceManagementConfigurationPolicyCollectionResponse>(
+                graphServiceClient,
+                () => graphServiceClient.DeviceManagement.ConfigurationPolicies.GetAsync(rc =>
                 {
-                    requestConfiguration.QueryParameters.Top = GraphConstants.DefaultPageSize;
-                });
-
-                List<DeviceManagementConfigurationPolicy> configurationPolicies = new List<DeviceManagementConfigurationPolicy>();
-                var pageIterator = PageIterator<DeviceManagementConfigurationPolicy, DeviceManagementConfigurationPolicyCollectionResponse>.CreatePageIterator(graphServiceClient, result, (policy) =>
-                {
-                    configurationPolicies.Add(policy);
-                    return true;
-                });
-                await pageIterator.IterateAsync();
-
-                LogToFunctionFile(appFunction.Main, $"Found {configurationPolicies.Count} settings catalog policies.");
-
-                return configurationPolicies;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, "An error occurred while searching for settings catalog policies", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
-                return new List<DeviceManagementConfigurationPolicy>();
-            }
+                    rc.QueryParameters.Top = GraphConstants.DefaultPageSize;
+                }),
+                "settings catalog policies");
         }
 
         public static async Task ImportMultipleSettingsCatalog(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> policies, bool assignments, bool filter, List<string> groups)
