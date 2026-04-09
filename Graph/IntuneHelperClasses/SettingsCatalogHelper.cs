@@ -1,10 +1,7 @@
-﻿using IntuneTools.Utilities;
+using IntuneTools.Utilities;
 using Microsoft.Graph;
-using Microsoft.Kiota.Serialization.Json;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -12,582 +9,295 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 {
     public class SettingsCatalogHelper
     {
-        private static void ApplySelectedFilter(DeviceAndAppManagementAssignmentTarget target)
+        private class Helper : GraphHelper<DeviceManagementConfigurationPolicy, DeviceManagementConfigurationPolicyCollectionResponse>
         {
-            if (target == null)
-            {
-                return;
-            }
+            protected override string ResourceName => "settings catalog policies";
+            protected override string ContentTypeName => "Settings Catalog";
 
-            if (IsFilterSelected
-                && !string.IsNullOrWhiteSpace(SelectedFilterID)
-                && Guid.TryParse(SelectedFilterID, out _)
-                && deviceAndAppManagementAssignmentFilterType != DeviceAndAppManagementAssignmentFilterType.None)
-            {
-                target.DeviceAndAppManagementAssignmentFilterId = SelectedFilterID;
-                target.DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType;
-                return;
-            }
+            protected override string? GetPolicyPlatform(DeviceManagementConfigurationPolicy policy)
+                => HelperClass.TranslatePolicyPlatformName(policy.Platforms.ToString());
 
-            target.DeviceAndAppManagementAssignmentFilterId = null;
-            target.DeviceAndAppManagementAssignmentFilterType = DeviceAndAppManagementAssignmentFilterType.None;
-        }
+            protected override string? GetPolicyName(DeviceManagementConfigurationPolicy policy) => policy.Name;
+            protected override string? GetPolicyId(DeviceManagementConfigurationPolicy policy) => policy.Id;
+            protected override string? GetPolicyDescription(DeviceManagementConfigurationPolicy policy) => policy.Description;
 
-        public static async Task<List<DeviceManagementConfigurationPolicy>> SearchForSettingsCatalog(GraphServiceClient graphServiceClient, string searchQuery)
-        {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, "Searching for settings catalog policies. Search query: " + searchQuery);
-
-                var result = await graphServiceClient.DeviceManagement.ConfigurationPolicies.GetAsync((requestConfiguration) =>
+            protected override Task<DeviceManagementConfigurationPolicyCollectionResponse?> GetCollectionAsync(GraphServiceClient client)
+                => client.DeviceManagement.ConfigurationPolicies.GetAsync(rc =>
                 {
-                    requestConfiguration.QueryParameters.Filter = $"contains(Name,'{searchQuery}')";
+                    rc.QueryParameters.Top = 1000;
                 });
 
-                List<DeviceManagementConfigurationPolicy> configurationPolicies = new List<DeviceManagementConfigurationPolicy>();
-                var pageIterator = PageIterator<DeviceManagementConfigurationPolicy, DeviceManagementConfigurationPolicyCollectionResponse>.CreatePageIterator(graphServiceClient, result, (policy) =>
+            protected override Task<DeviceManagementConfigurationPolicyCollectionResponse?> SearchCollectionAsync(GraphServiceClient client, string searchQuery)
+                => client.DeviceManagement.ConfigurationPolicies.GetAsync(rc =>
                 {
-                    configurationPolicies.Add(policy);
-                    return true;
-                });
-                await pageIterator.IterateAsync();
-
-                LogToFunctionFile(appFunction.Main, $"Found {configurationPolicies.Count} settings catalog policies.");
-
-                return configurationPolicies;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for settings catalog policies: {ex.Message}", LogLevels.Warning);
-                return new List<DeviceManagementConfigurationPolicy>();
-            }
-        }
-
-        public static async Task<List<DeviceManagementConfigurationPolicy>> GetAllSettingsCatalogPolicies(GraphServiceClient graphServiceClient)
-        {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, "Retrieving all settings catalog policies.");
-
-                var result = await graphServiceClient.DeviceManagement.ConfigurationPolicies.GetAsync((requestConfiguration) =>
-                {
-                    requestConfiguration.QueryParameters.Top = 1000;
+                    rc.QueryParameters.Filter = $"contains(Name,'{searchQuery}')";
                 });
 
-                List<DeviceManagementConfigurationPolicy> configurationPolicies = new List<DeviceManagementConfigurationPolicy>();
-                var pageIterator = PageIterator<DeviceManagementConfigurationPolicy, DeviceManagementConfigurationPolicyCollectionResponse>.CreatePageIterator(graphServiceClient, result, (policy) =>
+            protected override Task<DeviceManagementConfigurationPolicy?> GetByIdAsync(GraphServiceClient client, string id)
+                => client.DeviceManagement.ConfigurationPolicies[id].GetAsync();
+
+            protected override Task DeleteByIdAsync(GraphServiceClient client, string id)
+                => client.DeviceManagement.ConfigurationPolicies[id].DeleteAsync();
+
+            protected override async Task PatchNameAsync(GraphServiceClient client, string id, string newName)
+            {
+                var policy = new DeviceManagementConfigurationPolicy { Name = newName };
+                await client.DeviceManagement.ConfigurationPolicies[id].PatchAsync(policy);
+            }
+
+            protected override async Task PatchDescriptionAsync(GraphServiceClient client, string id, string description)
+            {
+                var policy = new DeviceManagementConfigurationPolicy { Description = description };
+                await client.DeviceManagement.ConfigurationPolicies[id].PatchAsync(policy);
+            }
+
+            protected override Task<DeviceManagementConfigurationPolicy?> GetByIdForExportAsync(GraphServiceClient client, string id)
+                => client.DeviceManagement.ConfigurationPolicies[id].GetAsync(requestConfiguration =>
                 {
-                    configurationPolicies.Add(policy);
-                    return true;
+                    requestConfiguration.QueryParameters.Expand = new[] { "settings" };
                 });
-                await pageIterator.IterateAsync();
 
-                LogToFunctionFile(appFunction.Main, $"Found {configurationPolicies.Count} settings catalog policies.");
-
-                return configurationPolicies;
-            }
-            catch (Exception ex)
+            public override async Task<string?> ImportFromJsonDataAsync(GraphServiceClient client, JsonElement policyData)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while retrieving all settings catalog policies: {ex.Message}", LogLevels.Warning);
-                return new List<DeviceManagementConfigurationPolicy>();
-            }
-        }
-
-        public static async Task ImportMultipleSettingsCatalog(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> policies, bool assignments, bool filter, List<string> groups)
-        {
-            try
-            {
-
-                LogToFunctionFile(appFunction.Main, $"Importing {policies.Count} settings catalog policies.");
-
-                foreach (var policy in policies)
+                try
                 {
-                    var policyName = "";
+                    var exportedPolicy = GraphImportHelper.DeserializeFromJson(policyData, DeviceManagementConfigurationPolicy.CreateFromDiscriminatorValue);
+
+                    if (exportedPolicy == null)
+                    {
+                        LogToFunctionFile(appFunction.Main, "Failed to deserialize settings catalog policy data from JSON.", LogLevels.Error);
+                        return null;
+                    }
+
+                    var newPolicy = new DeviceManagementConfigurationPolicy
+                    {
+                        Name = exportedPolicy.Name,
+                        Description = exportedPolicy.Description,
+                        Platforms = exportedPolicy.Platforms,
+                        Technologies = exportedPolicy.Technologies,
+                        RoleScopeTagIds = exportedPolicy.RoleScopeTagIds,
+                        Settings = exportedPolicy.Settings,
+                        Assignments = new List<DeviceManagementConfigurationPolicyAssignment>()
+                    };
+
+                    var imported = await client.DeviceManagement.ConfigurationPolicies.PostAsync(newPolicy);
+
+                    LogToFunctionFile(appFunction.Main, $"Imported settings catalog policy: {imported?.Name}");
+                    return imported?.Name;
+                }
+                catch (Exception ex)
+                {
+                    GraphErrorHandler.HandleException(ex, "importing from JSON", ResourceName);
+                    return null;
+                }
+            }
+
+            public override async Task<bool?> HasAssignmentsAsync(GraphServiceClient client, string id)
+            {
+                try
+                {
+                    var result = await client.DeviceManagement.ConfigurationPolicies[id].Assignments.GetAsync(rc =>
+                    {
+                        rc.QueryParameters.Top = 1;
+                    });
+                    return result?.Value != null && result.Value.Count > 0;
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+
+            public override async Task<List<AssignmentInfo>?> GetAssignmentDetailsAsync(GraphServiceClient client, string id)
+            {
+                try
+                {
+                    var details = new List<AssignmentInfo>();
+                    var result = await client.DeviceManagement.ConfigurationPolicies[id].Assignments.GetAsync();
+
+                    while (result?.Value != null)
+                    {
+                        foreach (var assignment in result.Value)
+                        {
+                            details.Add(AssignmentInfo.FromTarget(assignment.Id, assignment.Target));
+                        }
+
+                        if (string.IsNullOrEmpty(result.OdataNextLink)) break;
+
+                        result = await client.DeviceManagement.ConfigurationPolicies[id]
+                            .Assignments.WithUrl(result.OdataNextLink).GetAsync();
+                    }
+
+                    return details;
+                }
+                catch (Exception ex)
+                {
+                    GraphErrorHandler.HandleException(ex, "getting assignment details for", $"Settings Catalog {id}");
+                    return null;
+                }
+            }
+
+            public override async Task RemoveAllAssignmentsAsync(GraphServiceClient client, string id)
+            {
+                var requestBody = new Microsoft.Graph.Beta.DeviceManagement.ConfigurationPolicies.Item.Assign.AssignPostRequestBody
+                {
+                    Assignments = new List<DeviceManagementConfigurationPolicyAssignment>()
+                };
+
+                await client.DeviceManagement.ConfigurationPolicies[id].Assign.PostAsAssignPostResponseAsync(requestBody);
+                LogToFunctionFile(appFunction.Main, $"Removed all assignments from Settings Catalog policy {id}.");
+            }
+
+            public override async Task ImportMultipleAsync(
+                GraphServiceClient sourceClient,
+                GraphServiceClient destinationClient,
+                List<string> ids,
+                bool assignments,
+                bool filter,
+                List<string> groups)
+            {
+                await GraphImportHelper.ImportBatchAsync(ids, ResourceName, async id =>
+                {
+                    var result = await sourceClient.DeviceManagement.ConfigurationPolicies[id].GetAsync(requestConfiguration =>
+                    {
+                        requestConfiguration.QueryParameters.Expand = new[] { "settings" };
+                    });
+
+                    var newPolicy = new DeviceManagementConfigurationPolicy
+                    {
+                        Name = result.Name,
+                        Description = result.Description,
+                        Platforms = result.Platforms,
+                        Technologies = result.Technologies,
+                        RoleScopeTagIds = result.RoleScopeTagIds,
+                        Settings = result.Settings,
+                        Assignments = new List<DeviceManagementConfigurationPolicyAssignment>()
+                    };
+
+                    var import = await destinationClient.DeviceManagement.ConfigurationPolicies.PostAsync(newPolicy);
+
+                    LogToFunctionFile(appFunction.Main, $"Imported policy: {import.Name}");
+
+                    if (assignments)
+                    {
+                        await AssignGroupsToSingleSettingsCatalog(import.Id, groups, destinationClient);
+                    }
+                });
+            }
+
+            public override async Task AssignGroupsAsync(string id, List<string> groupIds, GraphServiceClient client)
+            {
+                try
+                {
+                    ArgumentNullException.ThrowIfNull(id);
+                    ArgumentNullException.ThrowIfNull(groupIds);
+                    ArgumentNullException.ThrowIfNull(client);
+
+                    var assignments = new List<DeviceManagementConfigurationPolicyAssignment>();
+
+                    var buildResult = GraphAssignmentHelper.BuildAssignments<DeviceManagementConfigurationPolicyAssignment>(
+                        groupIds,
+                        (target, groupId) =>
+                        {
+                            var assignment = new DeviceManagementConfigurationPolicyAssignment
+                            {
+                                OdataType = "#microsoft.graph.deviceManagementConfigurationPolicyAssignment",
+                                Target = target,
+                                Source = DeviceAndAppManagementAssignmentSource.Direct
+                            };
+
+                            if (groupId != null)
+                            {
+                                assignment.Id = groupId;
+                                assignment.SourceId = groupId;
+                            }
+
+                            return assignment;
+                        },
+                        assignments);
+
+                    // Merge existing assignments
+                    var existingAssignments = await client
+                        .DeviceManagement
+                        .ConfigurationPolicies[id]
+                        .Assignments
+                        .GetAsync();
+
+                    GraphAssignmentHelper.MergeExistingAssignments(
+                        existingAssignments?.Value,
+                        assignments,
+                        buildResult,
+                        a => a.Target);
+
+                    var requestBody = new Microsoft.Graph.Beta.DeviceManagement.ConfigurationPolicies.Item.Assign.AssignPostRequestBody
+                    {
+                        Assignments = assignments
+                    };
+
                     try
                     {
-                        var result = await sourceGraphServiceClient.DeviceManagement.ConfigurationPolicies[policy].GetAsync((requestConfiguration) =>
-                        {
-                            requestConfiguration.QueryParameters.Expand = new[] { "settings" };
-                        });
+                        await client
+                            .DeviceManagement
+                            .ConfigurationPolicies[id]
+                            .Assign
+                            .PostAsAssignPostResponseAsync(requestBody);
 
-                        var newPolicy = new DeviceManagementConfigurationPolicy
-                        {
-                            Name = result.Name,
-                            Description = result.Description,
-                            Platforms = result.Platforms,
-                            Technologies = result.Technologies,
-                            RoleScopeTagIds = result.RoleScopeTagIds,
-                            Settings = result.Settings,
-                            Assignments = new List<DeviceManagementConfigurationPolicyAssignment>()
-                        };
-
-                        policyName = newPolicy.Name;
-
-                        var import = await destinationGraphServiceClient.DeviceManagement.ConfigurationPolicies.PostAsync(newPolicy);
-
-                        LogToFunctionFile(appFunction.Main, $"Imported policy: {import.Name}");
-
-                        if (assignments)
-                        {
-                            await AssignGroupsToSingleSettingsCatalog(import.Id, groups, destinationGraphServiceClient);
-                        }
+                        LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to policy {id} with filter type {deviceAndAppManagementAssignmentFilterType}.");
+                        UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
                     }
                     catch (Exception ex)
                     {
-                        LogToFunctionFile(appFunction.Main, $"An error occurred while importing settings catalog policy '{policyName}': {ex.Message}", LogLevels.Warning);
+                        LogToFunctionFile(appFunction.Main, $"An error occurred while assigning groups to settings catalog policy: {ex.Message}", LogLevels.Warning);
                     }
-                }
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred during settings catalog import: {ex.Message}", LogLevels.Warning);
-            }
-        }
-
-        public static async Task AssignGroupsToSingleSettingsCatalog(string policyID, List<string> groupID, GraphServiceClient _graphServiceClient)
-        {
-            try
-            {
-                if (policyID == null)
-                {
-                    throw new ArgumentNullException(nameof(policyID));
-                }
-                if (groupID == null)
-                {
-                    throw new ArgumentNullException(nameof(groupID));
-                }
-                if (_graphServiceClient == null)
-                {
-                    throw new ArgumentNullException(nameof(_graphServiceClient));
-                }
-
-                var assignments = new List<DeviceManagementConfigurationPolicyAssignment>();
-                var seenGroupIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                var hasAllUsers = false;
-                var hasAllDevices = false;
-
-                // Step 1: Add new assignments to request body
-                foreach (var group in groupID)
-                {
-                    if (string.IsNullOrWhiteSpace(group) || !seenGroupIds.Add(group))
-                    {
-                        continue;
-                    }
-
-                    DeviceManagementConfigurationPolicyAssignment assignment;
-
-                    // Check if this is a virtual group (All Users or All Devices)
-                    if (group.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
-                    {
-                        hasAllUsers = true;
-                        var target = new AllLicensedUsersAssignmentTarget
-                        {
-                            OdataType = "#microsoft.graph.allLicensedUsersAssignmentTarget"
-                        };
-                        ApplySelectedFilter(target);
-
-                        assignment = new DeviceManagementConfigurationPolicyAssignment
-                        {
-                            OdataType = "#microsoft.graph.deviceManagementConfigurationPolicyAssignment",
-                            Target = target,
-                            Source = DeviceAndAppManagementAssignmentSource.Direct
-                        };
-                    }
-                    else if (group.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
-                    {
-                        hasAllDevices = true;
-                        var target = new AllDevicesAssignmentTarget
-                        {
-                            OdataType = "#microsoft.graph.allDevicesAssignmentTarget"
-                        };
-                        ApplySelectedFilter(target);
-
-                        assignment = new DeviceManagementConfigurationPolicyAssignment
-                        {
-                            OdataType = "#microsoft.graph.deviceManagementConfigurationPolicyAssignment",
-                            Target = target,
-                            Source = DeviceAndAppManagementAssignmentSource.Direct
-                        };
-                    }
-                    else
-                    {
-                        // Regular group assignment
-                        var target = new GroupAssignmentTarget
-                        {
-                            OdataType = "#microsoft.graph.groupAssignmentTarget",
-                            GroupId = group
-                        };
-                        ApplySelectedFilter(target);
-
-                        assignment = new DeviceManagementConfigurationPolicyAssignment
-                        {
-                            OdataType = "#microsoft.graph.deviceManagementConfigurationPolicyAssignment",
-                            Id = group,
-                            Target = target,
-                            Source = DeviceAndAppManagementAssignmentSource.Direct,
-                            SourceId = group
-                        };
-                    }
-
-                    assignments.Add(assignment);
-                }
-
-                // Step 2: Check for existing assignments and add only if not already present
-                var existingAssignments = await _graphServiceClient
-                    .DeviceManagement
-                    .ConfigurationPolicies[policyID]
-                    .Assignments
-                    .GetAsync();
-
-                if (existingAssignments?.Value != null)
-                {
-                    foreach (var existing in existingAssignments.Value)
-                    {
-                        // Check the type of assignment target
-                        if (existing.Target is AllLicensedUsersAssignmentTarget)
-                        {
-                            // Skip if we're already adding All Users
-                            if (!hasAllUsers)
-                            {
-                                assignments.Add(existing);
-                            }
-                        }
-                        else if (existing.Target is AllDevicesAssignmentTarget)
-                        {
-                            // Skip if we're already adding All Devices
-                            if (!hasAllDevices)
-                            {
-                                assignments.Add(existing);
-                            }
-                        }
-                        else if (existing.Target is GroupAssignmentTarget groupTarget)
-                        {
-                            var existingGroupId = groupTarget.GroupId;
-
-                            // Only add if not already in the new assignments
-                            if (!string.IsNullOrWhiteSpace(existingGroupId) && seenGroupIds.Add(existingGroupId))
-                            {
-                                assignments.Add(existing);
-                            }
-                        }
-                        else
-                        {
-                            // Include any other assignment types (e.g., exclusions, all users with exclusions, etc.)
-                            assignments.Add(existing);
-                        }
-                    }
-                }
-
-                // Step 3: Update the policy with the request body
-                var requestBody = new Microsoft.Graph.Beta.DeviceManagement.ConfigurationPolicies.Item.Assign.AssignPostRequestBody
-                {
-                    Assignments = assignments
-                };
-
-                try
-                {
-                    await _graphServiceClient
-                        .DeviceManagement
-                        .ConfigurationPolicies[policyID]
-                        .Assign
-                        .PostAsAssignPostResponseAsync(requestBody);
-
-                    LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to policy {policyID} with filter type {deviceAndAppManagementAssignmentFilterType}.");
-                    UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
                 }
                 catch (Exception ex)
                 {
                     LogToFunctionFile(appFunction.Main, $"An error occurred while assigning groups to settings catalog policy: {ex.Message}", LogLevels.Warning);
                 }
             }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while assigning groups to settings catalog policy: {ex.Message}", LogLevels.Warning);
-            }
         }
 
-        public static async Task DeleteSettingsCatalog(GraphServiceClient graphServiceClient, string policyID)
-        {
-            try
-            {
-                if (graphServiceClient == null)
-                {
-                    throw new ArgumentNullException(nameof(graphServiceClient));
-                }
+        private static readonly Helper _helper = new();
 
-                if (policyID == null)
-                {
-                    throw new InvalidOperationException("Policy ID cannot be null.");
-                }
-                await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].DeleteAsync();
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while deleting settings catalog policy: {ex.Message}", LogLevels.Warning);
-            }
-        }
+        // ── Public static methods (signatures preserved for using static consumers) ──
 
-        public static async Task RenameSettingsCatalogPolicy(GraphServiceClient graphServiceClient, string policyID, string newName)
-        {
-            try
-            {
-                if (graphServiceClient == null)
-                {
-                    throw new ArgumentNullException(nameof(graphServiceClient));
-                }
+        public static Task<List<DeviceManagementConfigurationPolicy>> SearchForSettingsCatalog(GraphServiceClient graphServiceClient, string searchQuery)
+            => _helper.SearchAsync(graphServiceClient, searchQuery);
 
-                if (policyID == null)
-                {
-                    throw new InvalidOperationException("Policy ID cannot be null.");
-                }
+        public static Task<List<DeviceManagementConfigurationPolicy>> GetAllSettingsCatalogPolicies(GraphServiceClient graphServiceClient)
+            => _helper.GetAllAsync(graphServiceClient);
 
-                if (string.IsNullOrWhiteSpace(newName))
-                {
-                    throw new InvalidOperationException("New name cannot be null or empty.");
-                }
+        public static Task ImportMultipleSettingsCatalog(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> policies, bool assignments, bool filter, List<string> groups)
+            => _helper.ImportMultipleAsync(sourceGraphServiceClient, destinationGraphServiceClient, policies, assignments, filter, groups);
 
+        public static Task AssignGroupsToSingleSettingsCatalog(string policyID, List<string> groupID, GraphServiceClient _graphServiceClient)
+            => _helper.AssignGroupsAsync(policyID, groupID, _graphServiceClient);
 
-                if (selectedRenameMode == "Prefix")
-                {
-                    var existingPolicy = await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].GetAsync();
+        public static Task DeleteSettingsCatalog(GraphServiceClient graphServiceClient, string policyID)
+            => _helper.DeleteAsync(graphServiceClient, policyID);
 
-                    var name = FindPreFixInPolicyName(existingPolicy.Name, newName);
+        public static Task RenameSettingsCatalogPolicy(GraphServiceClient graphServiceClient, string policyID, string newName)
+            => _helper.RenameAsync(graphServiceClient, policyID, newName);
 
-                    var policy = new DeviceManagementConfigurationPolicy
-                    {
-                        Name = name
-                    };
+        public static Task<List<CustomContentInfo>> GetAllSettingsCatalogContentAsync(GraphServiceClient graphServiceClient)
+            => _helper.GetAllContentAsync(graphServiceClient);
 
-                    await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].PatchAsync(policy);
-                    LogToFunctionFile(appFunction.Main, $"Renamed policy {policyID} to {name}");
-                }
-                else if (selectedRenameMode == "Suffix")
-                {
+        public static Task<List<CustomContentInfo>> SearchSettingsCatalogContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
+            => _helper.SearchContentAsync(graphServiceClient, searchQuery);
 
-                }
-                else if (selectedRenameMode == "Description")
-                {
-                    //var existingPolicy = await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].GetAsync();
+        public static Task<JsonElement?> ExportSettingsCatalogPolicyDataAsync(GraphServiceClient graphServiceClient, string policyId)
+            => _helper.ExportDataAsync(graphServiceClient, policyId);
 
+        public static Task<string?> ImportSettingsCatalogFromJsonDataAsync(GraphServiceClient graphServiceClient, JsonElement policyData)
+            => _helper.ImportFromJsonDataAsync(graphServiceClient, policyData);
 
-                    var policy = new DeviceManagementConfigurationPolicy
-                    {
-                        Description = newName
-                    };
+        public static Task<bool?> HasSettingsCatalogAssignmentsAsync(GraphServiceClient graphServiceClient, string policyId)
+            => _helper.HasAssignmentsAsync(graphServiceClient, policyId);
 
-                    await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].PatchAsync(policy);
-                    LogToFunctionFile(appFunction.Main, $"Updated description for {policyID} to {newName}");
-                }
-                else if (selectedRenameMode == "RemovePrefix")
-                {
-                    var existingPolicy = await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].GetAsync();
+        public static Task<List<AssignmentInfo>?> GetSettingsCatalogAssignmentDetailsAsync(GraphServiceClient graphServiceClient, string policyId)
+            => _helper.GetAssignmentDetailsAsync(graphServiceClient, policyId);
 
-                    if (existingPolicy == null)
-                    {
-                        LogToFunctionFile(appFunction.Main, $"Unable to remove prefix: policy with ID {policyID} was not found.", LogLevels.Warning);
-                        return;
-                    }
-
-                    if (string.IsNullOrWhiteSpace(existingPolicy.Name))
-                    {
-                        LogToFunctionFile(appFunction.Main, $"Unable to remove prefix from policy {policyID}: policy name is null or empty.", LogLevels.Warning);
-                        return;
-                    }
-                    var name = RemovePrefixFromPolicyName(existingPolicy.Name);
-
-                    var policy = new DeviceManagementConfigurationPolicy
-                    {
-                        Name = name
-                    };
-
-                    await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].PatchAsync(policy);
-                    LogToFunctionFile(appFunction.Main, $"Removed prefix from policy {policyID}, new name: {name}");
-                }
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while renaming settings catalog policies: {ex.Message}", LogLevels.Warning);
-            }
-        }
-
-        public static async Task<List<CustomContentInfo>> GetAllSettingsCatalogContentAsync(GraphServiceClient graphServiceClient)
-        {
-            var policies = await GetAllSettingsCatalogPolicies(graphServiceClient);
-            var content = new List<CustomContentInfo>();
-
-            foreach (var policy in policies)
-            {
-                content.Add(new CustomContentInfo
-                {
-                    ContentName = policy.Name,
-                    ContentType = "Settings Catalog",
-                    ContentPlatform = HelperClass.TranslatePolicyPlatformName(policy.Platforms.ToString()),
-                    ContentId = policy.Id,
-                    ContentDescription = policy.Description
-                });
-            }
-
-            return content;
-        }
-
-        public static async Task<List<CustomContentInfo>> SearchSettingsCatalogContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
-        {
-            var policies = await SearchForSettingsCatalog(graphServiceClient, searchQuery);
-            var content = new List<CustomContentInfo>();
-
-            foreach (var policy in policies)
-            {
-                content.Add(new CustomContentInfo
-                {
-                    ContentName = policy.Name,
-                    ContentType = "Settings Catalog",
-                    ContentPlatform = HelperClass.TranslatePolicyPlatformName(policy.Platforms.ToString()),
-                    ContentId = policy.Id,
-                    ContentDescription = policy.Description
-                });
-            }
-
-            return content;
-        }
-
-        /// <summary>
-        /// Exports a settings catalog policy's full data as a JsonElement for JSON file export.
-        /// Uses Kiota serialization to preserve OData type annotations and polymorphic settings.
-        /// </summary>
-        public static async Task<JsonElement?> ExportSettingsCatalogPolicyDataAsync(GraphServiceClient graphServiceClient, string policyId)
-        {
-            try
-            {
-                var result = await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyId].GetAsync((requestConfiguration) =>
-                {
-                    requestConfiguration.QueryParameters.Expand = new[] { "settings" };
-                });
-
-                if (result == null)
-                {
-                    LogToFunctionFile(appFunction.Main, $"Policy {policyId} not found for export.", LogLevels.Warning);
-                    return null;
-                }
-
-                using var writer = new JsonSerializationWriter();
-                writer.WriteObjectValue(null, result);
-                using var stream = writer.GetSerializedContent();
-                var doc = await JsonDocument.ParseAsync(stream);
-                return doc.RootElement.Clone();
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"Error exporting settings catalog policy {policyId}: {ex.Message}", LogLevels.Error);
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Imports a settings catalog policy from previously exported JSON data into the destination tenant.
-        /// </summary>
-        public static async Task<string?> ImportSettingsCatalogFromJsonDataAsync(GraphServiceClient graphServiceClient, JsonElement policyData)
-        {
-            try
-            {
-                // Deserialize the exported data back into a typed policy object
-                var json = policyData.GetRawText();
-                using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
-                var parseNode = new JsonParseNode(JsonDocument.Parse(stream).RootElement);
-                var exportedPolicy = parseNode.GetObjectValue(DeviceManagementConfigurationPolicy.CreateFromDiscriminatorValue);
-
-                if (exportedPolicy == null)
-                {
-                    LogToFunctionFile(appFunction.Main, "Failed to deserialize policy data from JSON.", LogLevels.Error);
-                    return null;
-                }
-
-                // Create a clean policy object for import (exclude read-only properties like Id)
-                var newPolicy = new DeviceManagementConfigurationPolicy
-                {
-                    Name = exportedPolicy.Name,
-                    Description = exportedPolicy.Description,
-                    Platforms = exportedPolicy.Platforms,
-                    Technologies = exportedPolicy.Technologies,
-                    RoleScopeTagIds = exportedPolicy.RoleScopeTagIds,
-                    Settings = exportedPolicy.Settings,
-                    Assignments = new List<DeviceManagementConfigurationPolicyAssignment>()
-                };
-
-                var imported = await graphServiceClient.DeviceManagement.ConfigurationPolicies.PostAsync(newPolicy);
-
-                LogToFunctionFile(appFunction.Main, $"Imported settings catalog policy: {imported?.Name}");
-                return imported?.Name;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"Error importing settings catalog policy from JSON: {ex.Message}", LogLevels.Error);
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Checks if a settings catalog policy has any group assignments.
-        /// </summary>
-        public static async Task<bool?> HasSettingsCatalogAssignmentsAsync(GraphServiceClient graphServiceClient, string policyId)
-        {
-            try
-            {
-                var result = await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyId].Assignments.GetAsync(rc =>
-                {
-                    rc.QueryParameters.Top = 1;
-                });
-                return result?.Value != null && result.Value.Count > 0;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Gets detailed assignment information for a Settings Catalog policy.
-        /// </summary>
-        public static async Task<List<AssignmentInfo>?> GetSettingsCatalogAssignmentDetailsAsync(GraphServiceClient graphServiceClient, string policyId)
-        {
-            try
-            {
-                var details = new List<AssignmentInfo>();
-                var result = await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyId].Assignments.GetAsync();
-
-                while (result?.Value != null)
-                {
-                    foreach (var assignment in result.Value)
-                    {
-                        details.Add(AssignmentInfo.FromTarget(assignment.Id, assignment.Target));
-                    }
-
-                    if (string.IsNullOrEmpty(result.OdataNextLink)) break;
-
-                    result = await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyId]
-                        .Assignments.WithUrl(result.OdataNextLink).GetAsync();
-                }
-
-                return details;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"Error getting assignment details for Settings Catalog {policyId}: {ex.Message}", LogLevels.Error);
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Removes all assignments from a Settings Catalog policy.
-        /// </summary>
-        public static async Task RemoveAllSettingsCatalogAssignmentsAsync(GraphServiceClient graphServiceClient, string policyId)
-        {
-            var requestBody = new Microsoft.Graph.Beta.DeviceManagement.ConfigurationPolicies.Item.Assign.AssignPostRequestBody
-            {
-                Assignments = new List<DeviceManagementConfigurationPolicyAssignment>()
-            };
-
-            await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyId].Assign.PostAsAssignPostResponseAsync(requestBody);
-            LogToFunctionFile(appFunction.Main, $"Removed all assignments from Settings Catalog policy {policyId}.");
-        }
+        public static Task RemoveAllSettingsCatalogAssignmentsAsync(GraphServiceClient graphServiceClient, string policyId)
+            => _helper.RemoveAllAssignmentsAsync(graphServiceClient, policyId);
     }
 }
