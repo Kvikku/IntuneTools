@@ -563,14 +563,22 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                var result = await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileId].Assignments.GetAsync();
-                if (result?.Value == null) return new List<AssignmentInfo>();
-
                 var details = new List<AssignmentInfo>();
-                foreach (var assignment in result.Value)
+                var result = await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileId].Assignments.GetAsync();
+
+                while (result?.Value != null)
                 {
-                    details.Add(AssignmentInfo.FromTarget(assignment.Id, assignment.Target));
+                    foreach (var assignment in result.Value)
+                    {
+                        details.Add(AssignmentInfo.FromTarget(assignment.Id, assignment.Target));
+                    }
+
+                    if (string.IsNullOrEmpty(result.OdataNextLink)) break;
+
+                    result = await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileId]
+                        .Assignments.WithUrl(result.OdataNextLink).GetAsync();
                 }
+
                 return details;
             }
             catch (Exception ex)

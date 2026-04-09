@@ -618,14 +618,22 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                var result = await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileId].Assignments.GetAsync();
-                if (result?.Value == null) return new List<AssignmentInfo>();
-
                 var details = new List<AssignmentInfo>();
-                foreach (var assignment in result.Value)
+                var result = await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileId].Assignments.GetAsync();
+
+                while (result?.Value != null)
                 {
-                    details.Add(AssignmentInfo.FromTarget(assignment.Id, assignment.Target));
+                    foreach (var assignment in result.Value)
+                    {
+                        details.Add(AssignmentInfo.FromTarget(assignment.Id, assignment.Target));
+                    }
+
+                    if (string.IsNullOrEmpty(result.OdataNextLink)) break;
+
+                    result = await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileId]
+                        .Assignments.WithUrl(result.OdataNextLink).GetAsync();
                 }
+
                 return details;
             }
             catch (Exception ex)
@@ -643,12 +651,17 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             var result = await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileId].Assignments.GetAsync();
 
-            if (result?.Value != null && result.Value.Count > 0)
+            while (result?.Value != null && result.Value.Count > 0)
             {
                 foreach (var assignment in result.Value)
                 {
                     await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileId].Assignments[assignment.Id].DeleteAsync();
                 }
+
+                if (string.IsNullOrEmpty(result.OdataNextLink)) break;
+
+                result = await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileId]
+                    .Assignments.WithUrl(result.OdataNextLink).GetAsync();
             }
 
             LogToFunctionFile(appFunction.Main, $"Removed all assignments from Apple BYOD Enrollment Profile {profileId}.");

@@ -29,14 +29,6 @@ namespace IntuneTools.Pages
         #region Fields & Types
 
         /// <summary>
-        /// Defines a view operation for a specific content type's assignments.
-        /// </summary>
-        private record ViewAssignmentDefinition(
-            string TypeKey,
-            string DisplayName,
-            Func<GraphServiceClient, string, Task<List<AssignmentInfo>?>> GetDetailsAsync);
-
-        /// <summary>
         /// Defines a remove operation for a specific content type's assignments.
         /// </summary>
         private record RemoveAssignmentDefinition(
@@ -250,25 +242,33 @@ namespace IntuneTools.Pages
                     continue;
                 }
 
-                var details = await getDetailsFunc(graphServiceClient, item.ContentId);
+                try
+                {
+                    var details = await getDetailsFunc(graphServiceClient, item.ContentId);
 
-                if (details == null)
-                {
-                    LogError($"Failed to retrieve assignments for '{item.ContentName}'.");
-                    continue;
-                }
-
-                if (details.Count == 0)
-                {
-                    LogInfo($"'{item.ContentName}' ({item.ContentType}) — No assignments.");
-                }
-                else
-                {
-                    LogInfo($"'{item.ContentName}' ({item.ContentType}) — {details.Count} assignment(s):");
-                    foreach (var assignment in details)
+                    if (details == null)
                     {
-                        LogInfo($"  • {assignment}");
+                        LogError($"Failed to retrieve assignments for '{item.ContentName}'.");
+                        continue;
                     }
+
+                    if (details.Count == 0)
+                    {
+                        LogInfo($"'{item.ContentName}' ({item.ContentType}) — No assignments.");
+                    }
+                    else
+                    {
+                        LogInfo($"'{item.ContentName}' ({item.ContentType}) — {details.Count} assignment(s):");
+                        foreach (var assignment in details)
+                        {
+                            LogInfo($"  • {assignment}");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogError($"Error retrieving assignments for '{item.ContentName}' ({item.ContentType}): {ex.Message}");
+                    continue;
                 }
             }
 
