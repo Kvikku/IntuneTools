@@ -13,7 +13,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 {
     public class macOSShellScript
     {
-        public static async Task<List<DeviceShellScript>> SearchForShellScriptmacOS(GraphServiceClient graphServiceClient, string searchQuery)
+        public static async Task<List<DeviceShellScript>> SearchForShellScriptmacOSAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
             return await GraphPageIteratorHelper.GetAllAsync<DeviceShellScript, DeviceShellScriptCollectionResponse>(
                 graphServiceClient,
@@ -25,7 +25,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 "macOS shell scripts");
         }
 
-        public static async Task<List<DeviceShellScript>> GetAllmacOSShellScripts(GraphServiceClient graphServiceClient)
+        public static async Task<List<DeviceShellScript>> GetAllmacOSShellScriptsAsync(GraphServiceClient graphServiceClient)
         {
             return await GraphPageIteratorHelper.GetAllAsync<DeviceShellScript, DeviceShellScriptCollectionResponse>(
                 graphServiceClient,
@@ -35,7 +35,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }),
                 "macOS shell scripts");
         }
-        public static async Task ImportMultiplemacOSShellScripts(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> scriptIDs, bool assignments, bool filter, List<string> groups)
+        public static async Task ImportMultiplemacOSShellScriptsAsync(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> scriptIDs, bool assignments, bool filter, List<string> groups)
         {
             try
             {
@@ -80,7 +80,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                             if (assignments && groups != null && groups.Any())
                             {
                                 // Shell script assignments use a different structure
-                                await AssignGroupsToSingleShellScriptmacOS(importResult.Id, groups, destinationGraphServiceClient); // Pass filter bool if needed for assignment logic
+                                await AssignGroupsToSingleShellScriptmacOSAsync(importResult.Id, groups, destinationGraphServiceClient); // Pass filter bool if needed for assignment logic
                             }
                         }
                         else
@@ -104,7 +104,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
 
         // Note: Assignment structure for Shell Scripts is different from Configuration Policies
-        public static async Task AssignGroupsToSingleShellScriptmacOS(string scriptId, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
+        public static async Task AssignGroupsToSingleShellScriptmacOSAsync(string scriptId, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
         {
             try
             {
@@ -251,7 +251,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
         }
-        public static async Task DeleteMacosShellScript(GraphServiceClient graphServiceClient, string profileID)
+        public static async Task DeleteMacosShellScriptAsync(GraphServiceClient graphServiceClient, string profileID)
         {
             try
             {
@@ -271,7 +271,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 LogToFunctionFile(appFunction.Main, "An error occurred while deleting macOS shell script", LogLevels.Error);
             }
         }
-        public static async Task RenameMacOSShellScript(GraphServiceClient graphServiceClient, string scriptID, string newName)
+        public static async Task RenameMacOSShellScriptAsync(GraphServiceClient graphServiceClient, string scriptID, string newName)
         {
             try
             {
@@ -374,7 +374,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         public static async Task<List<CustomContentInfo>> GetAllMacOSShellScriptContentAsync(GraphServiceClient graphServiceClient)
         {
-            var scripts = await GetAllmacOSShellScripts(graphServiceClient);
+            var scripts = await GetAllmacOSShellScriptsAsync(graphServiceClient);
             var content = new List<CustomContentInfo>();
 
             foreach (var script in scripts)
@@ -394,7 +394,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         public static async Task<List<CustomContentInfo>> SearchMacOSShellScriptContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
-            var scripts = await SearchForShellScriptmacOS(graphServiceClient, searchQuery);
+            var scripts = await SearchForShellScriptmacOSAsync(graphServiceClient, searchQuery);
             var content = new List<CustomContentInfo>();
 
             foreach (var script in scripts)

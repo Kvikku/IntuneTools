@@ -12,7 +12,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 {
     public class PowerShellScriptsHelper
     {
-        public static async Task<List<DeviceManagementScript>> SearchForPowerShellScripts(GraphServiceClient graphServiceClient, string searchQuery)
+        public static async Task<List<DeviceManagementScript>> SearchForPowerShellScriptsAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
             return await GraphPageIteratorHelper.GetAllAsync<DeviceManagementScript, DeviceManagementScriptCollectionResponse>(
                 graphServiceClient,
@@ -23,7 +23,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 "PowerShell scripts");
         }
 
-        public static async Task<List<DeviceManagementScript>> GetAllPowerShellScripts(GraphServiceClient graphServiceClient)
+        public static async Task<List<DeviceManagementScript>> GetAllPowerShellScriptsAsync(GraphServiceClient graphServiceClient)
         {
             return await GraphPageIteratorHelper.GetAllAsync<DeviceManagementScript, DeviceManagementScriptCollectionResponse>(
                 graphServiceClient,
@@ -34,7 +34,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 "PowerShell scripts");
         }
 
-        public static async Task ImportMultiplePowerShellScripts(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> scripts, bool assignments, bool filter, List<string> groups)
+        public static async Task ImportMultiplePowerShellScriptsAsync(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> scripts, bool assignments, bool filter, List<string> groups)
         {
             try
             {
@@ -66,7 +66,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         if (assignments)
                         {
-                            await AssignGroupsToSinglePowerShellScript(import.Id, groups, destinationGraphServiceClient);
+                            await AssignGroupsToSinglePowerShellScriptAsync(import.Id, groups, destinationGraphServiceClient);
                         }
                     }
                     catch (Exception ex)
@@ -81,7 +81,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task AssignGroupsToSinglePowerShellScript(string scriptID, List<string> groupID, GraphServiceClient destinationGraphServiceClient)
+        public static async Task AssignGroupsToSinglePowerShellScriptAsync(string scriptID, List<string> groupID, GraphServiceClient destinationGraphServiceClient)
         {
             try
             {
@@ -233,7 +233,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
         }
-        public static async Task DeletePowerShellScript(GraphServiceClient graphServiceClient, string scriptID)
+        public static async Task DeletePowerShellScriptAsync(GraphServiceClient graphServiceClient, string scriptID)
         {
             try
             {
@@ -253,7 +253,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 LogToFunctionFile(appFunction.Main, "An error occurred while deleting PowerShell scripts", LogLevels.Error);
             }
         }
-        public static async Task RenamePowerShellScript(GraphServiceClient graphServiceClient, string scriptID, string newName)
+        public static async Task RenamePowerShellScriptAsync(GraphServiceClient graphServiceClient, string scriptID, string newName)
         {
             try
             {
@@ -343,7 +343,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         public static async Task<List<CustomContentInfo>> GetAllPowerShellScriptContentAsync(GraphServiceClient graphServiceClient)
         {
-            var scripts = await GetAllPowerShellScripts(graphServiceClient);
+            var scripts = await GetAllPowerShellScriptsAsync(graphServiceClient);
             var content = new List<CustomContentInfo>();
 
             foreach (var script in scripts)
@@ -363,7 +363,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         public static async Task<List<CustomContentInfo>> SearchPowerShellScriptContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
-            var scripts = await SearchForPowerShellScripts(graphServiceClient, searchQuery);
+            var scripts = await SearchForPowerShellScriptsAsync(graphServiceClient, searchQuery);
             var content = new List<CustomContentInfo>();
 
             foreach (var script in scripts)

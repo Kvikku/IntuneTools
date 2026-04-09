@@ -13,7 +13,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 {
     public class WindowsFeatureUpdateHelper
     {
-        public static async Task<List<WindowsFeatureUpdateProfile>> SearchForWindowsFeatureUpdateProfiles(GraphServiceClient graphServiceClient, string searchQuery)
+        public static async Task<List<WindowsFeatureUpdateProfile>> SearchForWindowsFeatureUpdateProfilesAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
             return await GraphPageIteratorHelper.SearchAsync<WindowsFeatureUpdateProfile, WindowsFeatureUpdateProfileCollectionResponse>(
                 graphServiceClient,
@@ -22,14 +22,14 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 "Windows Feature Update profiles");
         }
 
-        public static async Task<List<WindowsFeatureUpdateProfile>> GetAllWindowsFeatureUpdateProfiles(GraphServiceClient graphServiceClient)
+        public static async Task<List<WindowsFeatureUpdateProfile>> GetAllWindowsFeatureUpdateProfilesAsync(GraphServiceClient graphServiceClient)
         {
             return await GraphPageIteratorHelper.GetAllAsync<WindowsFeatureUpdateProfile, WindowsFeatureUpdateProfileCollectionResponse>(
                 graphServiceClient,
                 () => graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles.GetAsync(),
                 "Windows Feature Update profiles");
         }
-        public static async Task ImportMultipleWindowsFeatureUpdateProfiles(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> profileIDs, bool assignments, bool filter, List<string> groups)
+        public static async Task ImportMultipleWindowsFeatureUpdateProfilesAsync(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> profileIDs, bool assignments, bool filter, List<string> groups)
         {
             try
             {
@@ -95,7 +95,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         // Handle assignments if requested
                         if (assignments && groups != null && groups.Any() && importedProfile?.Id != null)
                         {
-                            await AssignGroupsToSingleWindowsFeatureUpdateProfile(importedProfile.Id, groups, destinationGraphServiceClient); // Pass filter flag if needed for assignment logic
+                            await AssignGroupsToSingleWindowsFeatureUpdateProfileAsync(importedProfile.Id, groups, destinationGraphServiceClient); // Pass filter flag if needed for assignment logic
                         }
                     }
                     catch (Exception ex)
@@ -121,7 +121,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         /// <param name="destinationGraphServiceClient">GraphServiceClient for the destination tenant.</param>
         /// <param name="applyFilter">Whether to apply assignment filters.</param>
         /// <returns>A Task representing the asynchronous assignment operation.</returns>
-        public static async Task AssignGroupsToSingleWindowsFeatureUpdateProfile(string profileID, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
+        public static async Task AssignGroupsToSingleWindowsFeatureUpdateProfileAsync(string profileID, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
         {
             try
             {
@@ -253,7 +253,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 LogToFunctionFile(appFunction.Main, $"An error occurred while preparing assignment for profile {profileID}: {ex.Message}", LogLevels.Warning);
             }
         }
-        public static async Task DeleteWindowsFeatureUpdateProfile(GraphServiceClient graphServiceClient, string profileID)
+        public static async Task DeleteWindowsFeatureUpdateProfileAsync(GraphServiceClient graphServiceClient, string profileID)
         {
             try
             {
@@ -274,7 +274,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 LogToFunctionFile(appFunction.Main, "An error occurred while deleting a Windows Feature Update profile", LogLevels.Error);
             }
         }
-        public static async Task RenameWindowsFeatureUpdateProfile(GraphServiceClient graphServiceClient, string profileID, string newName)
+        public static async Task RenameWindowsFeatureUpdateProfileAsync(GraphServiceClient graphServiceClient, string profileID, string newName)
         {
             try
             {
@@ -364,7 +364,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         public static async Task<List<CustomContentInfo>> GetAllWindowsFeatureUpdateContentAsync(GraphServiceClient graphServiceClient)
         {
-            var profiles = await GetAllWindowsFeatureUpdateProfiles(graphServiceClient);
+            var profiles = await GetAllWindowsFeatureUpdateProfilesAsync(graphServiceClient);
             var content = new List<CustomContentInfo>();
 
             foreach (var profile in profiles)
@@ -384,7 +384,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         public static async Task<List<CustomContentInfo>> SearchWindowsFeatureUpdateContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
-            var profiles = await SearchForWindowsFeatureUpdateProfiles(graphServiceClient, searchQuery);
+            var profiles = await SearchForWindowsFeatureUpdateProfilesAsync(graphServiceClient, searchQuery);
             var content = new List<CustomContentInfo>();
 
             foreach (var profile in profiles)

@@ -14,7 +14,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 {
     public class AppleBYODEnrollmentProfileHelper
     {
-        public static async Task<List<AppleUserInitiatedEnrollmentProfile>> SearchForAppleBYODEnrollmentProfiles(GraphServiceClient graphServiceClient, string searchQuery)
+        public static async Task<List<AppleUserInitiatedEnrollmentProfile>> SearchForAppleBYODEnrollmentProfilesAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
             return await GraphPageIteratorHelper.GetAllAsync<AppleUserInitiatedEnrollmentProfile, AppleUserInitiatedEnrollmentProfileCollectionResponse>(
                 graphServiceClient,
@@ -25,7 +25,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 "Apple BYOD enrollment profiles");
         }
 
-        public static async Task<List<AppleUserInitiatedEnrollmentProfile>> GetAllAppleBYODEnrollmentProfiles(GraphServiceClient graphServiceClient)
+        public static async Task<List<AppleUserInitiatedEnrollmentProfile>> GetAllAppleBYODEnrollmentProfilesAsync(GraphServiceClient graphServiceClient)
         {
             return await GraphPageIteratorHelper.GetAllAsync<AppleUserInitiatedEnrollmentProfile, AppleUserInitiatedEnrollmentProfileCollectionResponse>(
                 graphServiceClient,
@@ -37,7 +37,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task ImportMultipleAppleBYODEnrollmentProfiles(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> profileIds, bool assignments, bool filter, List<string> groups)
+        public static async Task ImportMultipleAppleBYODEnrollmentProfilesAsync(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> profileIds, bool assignments, bool filter, List<string> groups)
         {
             try
             {
@@ -92,7 +92,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         if (assignments && groups != null && groups.Any())
                         {
-                            await AssignGroupsToSingleAppleBYODEnrollmentProfile(importedProfile.Id, groups, destinationGraphServiceClient);
+                            await AssignGroupsToSingleAppleBYODEnrollmentProfileAsync(importedProfile.Id, groups, destinationGraphServiceClient);
                         }
 
                         // TODO - delete this code block if not needed
@@ -104,7 +104,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         //    if (assignments && groups != null && groups.Any())
                         //    {
-                        //        await AssignGroupsToSingleAppleBYODEnrollmentProfile(importedProfile.Id, groups, destinationGraphServiceClient, filter);
+                        //        await AssignGroupsToSingleAppleBYODEnrollmentProfileAsync(importedProfile.Id, groups, destinationGraphServiceClient, filter);
                         //    }
                         //}
                         //else
@@ -138,7 +138,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         /// <param name="destinationGraphServiceClient">GraphServiceClient for the destination tenant.</param>
         /// <param name="applyFilter">Whether to apply assignment filters.</param>
         /// <returns>A Task representing the asynchronous assignment operation.</returns>
-        public static async Task AssignGroupsToSingleAppleBYODEnrollmentProfile(string profileId, List<string> groupIds, GraphServiceClient destinationGraphServiceClient)
+        public static async Task AssignGroupsToSingleAppleBYODEnrollmentProfileAsync(string profileId, List<string> groupIds, GraphServiceClient destinationGraphServiceClient)
         {
             try
             {
@@ -305,7 +305,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task DeleteAppleBYODEnrollmentProfile(GraphServiceClient graphServiceClient, string profileID)
+        public static async Task DeleteAppleBYODEnrollmentProfileAsync(GraphServiceClient graphServiceClient, string profileID)
         {
             try
             {
@@ -325,7 +325,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 LogToFunctionFile(appFunction.Main, "An error occurred while deleting Apple BYOD Enrollment profiles", LogLevels.Error);
             }
         }
-        public static async Task RenameAppleBYODEnrollmentProfile(GraphServiceClient graphServiceClient, string profileID, string newName)
+        public static async Task RenameAppleBYODEnrollmentProfileAsync(GraphServiceClient graphServiceClient, string profileID, string newName)
         {
             try
             {
@@ -433,7 +433,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         public static async Task<List<CustomContentInfo>> GetAllAppleBYODEnrollmentContentAsync(GraphServiceClient graphServiceClient)
         {
-            var profiles = await GetAllAppleBYODEnrollmentProfiles(graphServiceClient);
+            var profiles = await GetAllAppleBYODEnrollmentProfilesAsync(graphServiceClient);
             var content = new List<CustomContentInfo>();
 
             foreach (var profile in profiles)
@@ -453,7 +453,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         public static async Task<List<CustomContentInfo>> SearchAppleBYODEnrollmentContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
-            var profiles = await SearchForAppleBYODEnrollmentProfiles(graphServiceClient, searchQuery);
+            var profiles = await SearchForAppleBYODEnrollmentProfilesAsync(graphServiceClient, searchQuery);
             var content = new List<CustomContentInfo>();
 
             foreach (var profile in profiles)

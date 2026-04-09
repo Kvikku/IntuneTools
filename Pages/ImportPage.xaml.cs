@@ -209,7 +209,7 @@ namespace IntuneTools.Pages
             try
             {
                 // Search for groups using the provided query
-                var groups = await SearchForGroups(destinationGraphServiceClient, searchQuery);
+                var groups = await SearchForGroupsAsync(destinationGraphServiceClient, searchQuery);
                 // Update GroupList for DataGrid
                 foreach (var group in groups)
                 {
@@ -236,7 +236,7 @@ namespace IntuneTools.Pages
             try
             {
                 // Retrieve all groups
-                var groups = await GetAllGroups(destinationGraphServiceClient);
+                var groups = await GetAllGroupsAsync(destinationGraphServiceClient);
                 // Update ContentList for DataGrid
                 foreach (var group in groups)
                 {
@@ -273,7 +273,7 @@ namespace IntuneTools.Pages
                 FilterOptions.Clear();
 
                 // Retrieve all assignment filters
-                var filters = await GetAllAssignmentFilters(destinationGraphServiceClient);
+                var filters = await GetAllAssignmentFiltersAsync(destinationGraphServiceClient);
                 // Update FilterOptions for ComboBox
                 foreach (var filter in filters)
                 {
@@ -307,72 +307,72 @@ namespace IntuneTools.Pages
             yield return new ImportTypeDefinition(
                 ContentTypes.EntraGroup,
                 "Entra Groups",
-                async (ids, _) => await ImportMultipleGroups(sourceGraphServiceClient, destinationGraphServiceClient, ids));
+                async (ids, _) => await ImportMultipleGroupsAsync(sourceGraphServiceClient, destinationGraphServiceClient, ids));
 
             yield return new ImportTypeDefinition(
                 ContentTypes.SettingsCatalog,
                 "Settings Catalog policies",
-                async (ids, grpIds) => await ImportMultipleSettingsCatalog(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+                async (ids, grpIds) => await ImportMultipleSettingsCatalogAsync(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
 
             yield return new ImportTypeDefinition(
                 ContentTypes.DeviceCompliancePolicy,
                 "Device Compliance policies",
-                async (ids, grpIds) => await ImportMultipleDeviceCompliancePolicies(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+                async (ids, grpIds) => await ImportMultipleDeviceCompliancePoliciesAsync(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
 
             yield return new ImportTypeDefinition(
                 ContentTypes.DeviceConfigurationPolicy,
                 "Device Configuration policies",
-                async (ids, grpIds) => await ImportMultipleDeviceConfigurations(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+                async (ids, grpIds) => await ImportMultipleDeviceConfigurationsAsync(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
 
             yield return new ImportTypeDefinition(
                 ContentTypes.AppleBYODEnrollmentProfile,
                 "Apple BYOD Enrollment Profiles",
-                async (ids, grpIds) => await ImportMultipleAppleBYODEnrollmentProfiles(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+                async (ids, grpIds) => await ImportMultipleAppleBYODEnrollmentProfilesAsync(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
 
             yield return new ImportTypeDefinition(
                 ContentTypes.AssignmentFilter,
                 "Assignment Filters",
-                async (ids, _) => await ImportMultipleAssignmentFilters(sourceGraphServiceClient, destinationGraphServiceClient, ids));
+                async (ids, _) => await ImportMultipleAssignmentFiltersAsync(sourceGraphServiceClient, destinationGraphServiceClient, ids));
 
             yield return new ImportTypeDefinition(
                 ContentTypes.PowerShellScript,
                 "PowerShell Scripts",
-                async (ids, grpIds) => await ImportMultiplePowerShellScripts(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+                async (ids, grpIds) => await ImportMultiplePowerShellScriptsAsync(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
 
             yield return new ImportTypeDefinition(
                 ContentTypes.ProactiveRemediation,
                 "Proactive Remediations",
-                async (ids, grpIds) => await ImportMultipleProactiveRemediations(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+                async (ids, grpIds) => await ImportMultipleProactiveRemediationsAsync(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
 
             yield return new ImportTypeDefinition(
                 ContentTypes.MacOSShellScript,
                 "macOS Shell Scripts",
-                async (ids, grpIds) => await ImportMultiplemacOSShellScripts(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+                async (ids, grpIds) => await ImportMultiplemacOSShellScriptsAsync(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
 
             yield return new ImportTypeDefinition(
                 ContentTypes.WindowsAutoPilotProfile,
                 "Windows AutoPilot Profiles",
-                async (ids, grpIds) => await ImportMultipleWindowsAutoPilotProfiles(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+                async (ids, grpIds) => await ImportMultipleWindowsAutoPilotProfilesAsync(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
 
             yield return new ImportTypeDefinition(
                 ContentTypes.WindowsDriverUpdate,
                 "Windows Driver Updates",
-                async (ids, grpIds) => await ImportMultipleDriverProfiles(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+                async (ids, grpIds) => await ImportMultipleDriverProfilesAsync(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
 
             yield return new ImportTypeDefinition(
                 ContentTypes.WindowsFeatureUpdate,
                 "Windows Feature Updates",
-                async (ids, grpIds) => await ImportMultipleWindowsFeatureUpdateProfiles(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+                async (ids, grpIds) => await ImportMultipleWindowsFeatureUpdateProfilesAsync(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
 
             yield return new ImportTypeDefinition(
                 ContentTypes.WindowsQualityUpdatePolicy,
                 "Windows Quality Update Policies",
-                async (ids, grpIds) => await ImportMultipleWindowsQualityUpdatePolicies(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+                async (ids, grpIds) => await ImportMultipleWindowsQualityUpdatePoliciesAsync(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
 
             yield return new ImportTypeDefinition(
                 ContentTypes.WindowsQualityUpdateProfile,
                 "Windows Quality Update Profiles",
-                async (ids, grpIds) => await ImportMultipleWindowsQualityUpdateProfiles(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+                async (ids, grpIds) => await ImportMultipleWindowsQualityUpdateProfilesAsync(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
         }
 
         /// <summary>

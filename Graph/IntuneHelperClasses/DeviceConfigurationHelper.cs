@@ -12,7 +12,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 {
     public class DeviceConfigurationHelper
     {
-        public static async Task<List<Microsoft.Graph.Beta.Models.DeviceConfiguration>> SearchForDeviceConfigurations(GraphServiceClient graphServiceClient, string searchQuery)
+        public static async Task<List<Microsoft.Graph.Beta.Models.DeviceConfiguration>> SearchForDeviceConfigurationsAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
             return await GraphPageIteratorHelper.GetAllAsync<Microsoft.Graph.Beta.Models.DeviceConfiguration, DeviceConfigurationCollectionResponse>(
                 graphServiceClient,
@@ -23,7 +23,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 "device configuration policies");
         }
 
-        public static async Task<List<Microsoft.Graph.Beta.Models.DeviceConfiguration>> GetAllDeviceConfigurations(GraphServiceClient graphServiceClient)
+        public static async Task<List<Microsoft.Graph.Beta.Models.DeviceConfiguration>> GetAllDeviceConfigurationsAsync(GraphServiceClient graphServiceClient)
         {
             return await GraphPageIteratorHelper.GetAllAsync<Microsoft.Graph.Beta.Models.DeviceConfiguration, DeviceConfigurationCollectionResponse>(
                 graphServiceClient,
@@ -34,7 +34,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 "device configuration policies");
         }
 
-        public static async Task ImportMultipleDeviceConfigurations(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> configurationIds, bool assignments, bool filter, List<string> groups)
+        public static async Task ImportMultipleDeviceConfigurationsAsync(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> configurationIds, bool assignments, bool filter, List<string> groups)
         {
             try
             {
@@ -115,7 +115,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         if (assignments)
                         {
-                            await AssignGroupsToSingleDeviceConfiguration(import.Id, groups, destinationGraphServiceClient);
+                            await AssignGroupsToSingleDeviceConfigurationAsync(import.Id, groups, destinationGraphServiceClient);
                         }
                     }
                     catch (Exception ex)
@@ -138,7 +138,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task AssignGroupsToSingleDeviceConfiguration(string configId, List<string> groupIds, GraphServiceClient destinationGraphServiceClient)
+        public static async Task AssignGroupsToSingleDeviceConfigurationAsync(string configId, List<string> groupIds, GraphServiceClient destinationGraphServiceClient)
         {
             try
             {
@@ -291,7 +291,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
         }
-        public static async Task DeleteDeviceConfigurationPolicy(GraphServiceClient graphServiceClient, string policyID)
+        public static async Task DeleteDeviceConfigurationPolicyAsync(GraphServiceClient graphServiceClient, string policyID)
         {
             try
             {
@@ -311,7 +311,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 LogToFunctionFile(appFunction.Main, $"An error occurred while deleting the device configuration policy: {ex.Message}", LogLevels.Error);
             }
         }
-        public static async Task RenameDeviceConfigurationPolicy(GraphServiceClient graphServiceClient, string policyID, string newName)
+        public static async Task RenameDeviceConfigurationPolicyAsync(GraphServiceClient graphServiceClient, string policyID, string newName)
         {
             try
             {
@@ -419,7 +419,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         public static async Task<List<CustomContentInfo>> GetAllDeviceConfigurationContentAsync(GraphServiceClient graphServiceClient)
         {
-            var policies = await GetAllDeviceConfigurations(graphServiceClient);
+            var policies = await GetAllDeviceConfigurationsAsync(graphServiceClient);
             var content = new List<CustomContentInfo>();
 
             foreach (var policy in policies)
@@ -439,7 +439,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         public static async Task<List<CustomContentInfo>> SearchDeviceConfigurationContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
-            var policies = await SearchForDeviceConfigurations(graphServiceClient, searchQuery);
+            var policies = await SearchForDeviceConfigurationsAsync(graphServiceClient, searchQuery);
             var content = new List<CustomContentInfo>();
 
             foreach (var policy in policies)
@@ -488,7 +488,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         /// <summary>
         /// Imports a device configuration policy from previously exported JSON data into the destination tenant.
-        /// Mirrors the logic in ImportMultipleDeviceConfigurations.
+        /// Mirrors the logic in ImportMultipleDeviceConfigurationsAsync.
         /// </summary>
         public static async Task<string?> ImportDeviceConfigurationFromJsonDataAsync(GraphServiceClient graphServiceClient, JsonElement policyData)
         {

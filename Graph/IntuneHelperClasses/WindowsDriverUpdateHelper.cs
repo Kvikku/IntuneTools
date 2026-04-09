@@ -18,7 +18,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         /// <param name="graphServiceClient">The GraphServiceClient instance for Microsoft Graph calls.</param>
         /// <param name="searchQuery">The string to search for in profile DisplayName.</param>
         /// <returns>A list of WindowsDriverUpdateProfile objects that match the search criteria.</returns>
-        public static async Task<List<WindowsDriverUpdateProfile>> SearchForDriverProfiles(GraphServiceClient graphServiceClient, string searchQuery)
+        public static async Task<List<WindowsDriverUpdateProfile>> SearchForDriverProfilesAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
             return await GraphPageIteratorHelper.SearchAsync<WindowsDriverUpdateProfile, WindowsDriverUpdateProfileCollectionResponse>(
                 graphServiceClient,
@@ -32,7 +32,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         /// </summary>
         /// <param name="graphServiceClient">The GraphServiceClient instance for Microsoft Graph calls.</param>
         /// <returns>A list of all WindowsDriverUpdateProfile objects.</returns>
-        public static async Task<List<WindowsDriverUpdateProfile>> GetAllDriverProfiles(GraphServiceClient graphServiceClient)
+        public static async Task<List<WindowsDriverUpdateProfile>> GetAllDriverProfilesAsync(GraphServiceClient graphServiceClient)
         {
             return await GraphPageIteratorHelper.GetAllAsync<WindowsDriverUpdateProfile, WindowsDriverUpdateProfileCollectionResponse>(
                 graphServiceClient,
@@ -50,7 +50,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         /// <param name="filter">Whether to apply an assignment filter.</param>
         /// <param name="groups">List of group IDs for assignment.</param>
         /// <returns>A Task representing the asynchronous import operation.</returns>
-        public static async Task ImportMultipleDriverProfiles(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> profileIds, bool assignments, bool filter, List<string> groups)
+        public static async Task ImportMultipleDriverProfilesAsync(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> profileIds, bool assignments, bool filter, List<string> groups)
         {
             try
             {
@@ -90,7 +90,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         if (assignments && importResult?.Id != null)
                         {
                             // Assign groups using the specific method for Driver Update Profiles
-                            await AssignGroupsToSingleDriverProfile(importResult.Id, groups, destinationGraphServiceClient); // Pass filter status
+                            await AssignGroupsToSingleDriverProfileAsync(importResult.Id, groups, destinationGraphServiceClient); // Pass filter status
                         }
                     }
                     catch (Exception ex)
@@ -119,7 +119,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         /// <param name="groupIDs">List of group IDs to assign.</param>
         /// <param name="destinationGraphServiceClient">GraphServiceClient for the destination tenant.</param>
         /// <returns>A Task representing the asynchronous assignment operation.</returns>
-        public static async Task AssignGroupsToSingleDriverProfile(string profileID, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
+        public static async Task AssignGroupsToSingleDriverProfileAsync(string profileID, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
         {
             try
             {
@@ -255,7 +255,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
         }
-        public static async Task DeleteDriverProfile(GraphServiceClient graphServiceClient, string profileID)
+        public static async Task DeleteDriverProfileAsync(GraphServiceClient graphServiceClient, string profileID)
         {
             try
             {
@@ -283,7 +283,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 LogToFunctionFile(appFunction.Main, $"An error occurred while deleting Windows Driver Update Profile with ID: {profileID}", LogLevels.Error);
             }
         }
-        public static async Task RenameDriverProfile(GraphServiceClient graphServiceClient, string profileID, string newName)
+        public static async Task RenameDriverProfileAsync(GraphServiceClient graphServiceClient, string profileID, string newName)
         {
             try
             {
@@ -373,7 +373,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         public static async Task<List<CustomContentInfo>> GetAllWindowsDriverUpdateContentAsync(GraphServiceClient graphServiceClient)
         {
-            var profiles = await GetAllDriverProfiles(graphServiceClient);
+            var profiles = await GetAllDriverProfilesAsync(graphServiceClient);
             var content = new List<CustomContentInfo>();
 
             foreach (var profile in profiles)
@@ -393,7 +393,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         public static async Task<List<CustomContentInfo>> SearchWindowsDriverUpdateContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
-            var profiles = await SearchForDriverProfiles(graphServiceClient, searchQuery);
+            var profiles = await SearchForDriverProfilesAsync(graphServiceClient, searchQuery);
             var content = new List<CustomContentInfo>();
 
             foreach (var profile in profiles)

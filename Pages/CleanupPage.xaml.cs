@@ -239,7 +239,7 @@ namespace IntuneTools.Pages
         /// </summary>
         private async Task<bool> HandleAutoPilotProfileDeletion(string id)
         {
-            var isAssigned = await CheckIfAutoPilotProfileHasAssignments(sourceGraphServiceClient, id);
+            var isAssigned = await CheckIfAutoPilotProfileHasAssignmentsAsync(sourceGraphServiceClient, id);
 
             if (isAssigned == null)
             {
@@ -262,9 +262,9 @@ namespace IntuneTools.Pages
 
                 if (result == ContentDialogResult.Primary)
                 {
-                    await DeleteWindowsAutoPilotProfileAssignments(sourceGraphServiceClient, id);
+                    await DeleteWindowsAutoPilotProfileAssignmentsAsync(sourceGraphServiceClient, id);
                     LogToFunctionFile(appFunction.Main, $"Deleted assignments for Windows AutoPilot profile with ID: {id}");
-                    await DeleteWindowsAutopilotProfile(sourceGraphServiceClient, id);
+                    await DeleteWindowsAutopilotProfileAsync(sourceGraphServiceClient, id);
                     return true;
                 }
                 else
@@ -275,7 +275,7 @@ namespace IntuneTools.Pages
             }
             else
             {
-                await DeleteWindowsAutopilotProfile(sourceGraphServiceClient, id);
+                await DeleteWindowsAutopilotProfileAsync(sourceGraphServiceClient, id);
                 return true;
             }
         }
@@ -286,46 +286,46 @@ namespace IntuneTools.Pages
         private IEnumerable<DeleteTypeDefinition> GetDeleteTypeRegistry() =>
         [
             new(ContentTypes.SettingsCatalog, "Settings Catalog",
-                async id => { await DeleteSettingsCatalog(sourceGraphServiceClient, id); return true; }),
+                async id => { await DeleteSettingsCatalogAsync(sourceGraphServiceClient, id); return true; }),
 
             new(ContentTypes.DeviceCompliancePolicy, "Device Compliance Policy",
-                async id => { await DeleteDeviceCompliancePolicy(sourceGraphServiceClient, id); return true; }),
+                async id => { await DeleteDeviceCompliancePolicyAsync(sourceGraphServiceClient, id); return true; }),
 
             new(ContentTypes.DeviceConfigurationPolicy, "Device Configuration Policy",
-                async id => { await DeleteDeviceConfigurationPolicy(sourceGraphServiceClient, id); return true; }),
+                async id => { await DeleteDeviceConfigurationPolicyAsync(sourceGraphServiceClient, id); return true; }),
 
             new(ContentTypes.AppleBYODEnrollmentProfile, "Apple BYOD Enrollment Profile",
-                async id => { await DeleteAppleBYODEnrollmentProfile(sourceGraphServiceClient, id); return true; }),
+                async id => { await DeleteAppleBYODEnrollmentProfileAsync(sourceGraphServiceClient, id); return true; }),
 
             new(ContentTypes.AssignmentFilter, "Assignment Filter",
-                async id => { await DeleteAssignmentFilter(sourceGraphServiceClient, id); return true; }),
+                async id => { await DeleteAssignmentFilterAsync(sourceGraphServiceClient, id); return true; }),
 
             new(ContentTypes.EntraGroup, "Entra Group",
-                async id => { await DeleteSecurityGroup(sourceGraphServiceClient, id); return true; }),
+                async id => { await DeleteSecurityGroupAsync(sourceGraphServiceClient, id); return true; }),
 
             new(ContentTypes.PowerShellScript, "PowerShell Script",
-                async id => { await DeletePowerShellScript(sourceGraphServiceClient, id); return true; }),
+                async id => { await DeletePowerShellScriptAsync(sourceGraphServiceClient, id); return true; }),
 
             new(ContentTypes.ProactiveRemediation, "Proactive Remediation",
-                async id => { await DeleteProactiveRemediationScript(sourceGraphServiceClient, id); return true; }),
+                async id => { await DeleteProactiveRemediationScriptAsync(sourceGraphServiceClient, id); return true; }),
 
             new(ContentTypes.MacOSShellScript, "macOS Shell Script",
-                async id => { await DeleteMacosShellScript(sourceGraphServiceClient, id); return true; }),
+                async id => { await DeleteMacosShellScriptAsync(sourceGraphServiceClient, id); return true; }),
 
             new(ContentTypes.WindowsAutoPilotProfile, "Windows AutoPilot Profile",
                 HandleAutoPilotProfileDeletion),
 
             new(ContentTypes.WindowsDriverUpdate, "Windows Driver Update",
-                async id => { await DeleteDriverProfile(sourceGraphServiceClient, id); return true; }),
+                async id => { await DeleteDriverProfileAsync(sourceGraphServiceClient, id); return true; }),
 
             new(ContentTypes.WindowsFeatureUpdate, "Windows Feature Update",
-                async id => { await DeleteWindowsFeatureUpdateProfile(sourceGraphServiceClient, id); return true; }),
+                async id => { await DeleteWindowsFeatureUpdateProfileAsync(sourceGraphServiceClient, id); return true; }),
 
             new(ContentTypes.WindowsQualityUpdatePolicy, "Windows Quality Update Policy",
-                async id => { await DeleteWindowsQualityUpdatePolicy(sourceGraphServiceClient, id); return true; }),
+                async id => { await DeleteWindowsQualityUpdatePolicyAsync(sourceGraphServiceClient, id); return true; }),
 
             new(ContentTypes.WindowsQualityUpdateProfile, "Windows Quality Update Profile",
-                async id => { await DeleteWindowsQualityUpdateProfile(sourceGraphServiceClient, id); return true; }),
+                async id => { await DeleteWindowsQualityUpdateProfileAsync(sourceGraphServiceClient, id); return true; }),
         ];
 
         #endregion
@@ -363,7 +363,7 @@ namespace IntuneTools.Pages
             [ContentTypes.PowerShellScript] = HasPowerShellScriptAssignmentsAsync,
             [ContentTypes.ProactiveRemediation] = HasProactiveRemediationAssignmentsAsync,
             [ContentTypes.MacOSShellScript] = HasMacOSShellScriptAssignmentsAsync,
-            [ContentTypes.WindowsAutoPilotProfile] = CheckIfAutoPilotProfileHasAssignments,
+            [ContentTypes.WindowsAutoPilotProfile] = CheckIfAutoPilotProfileHasAssignmentsAsync,
             [ContentTypes.WindowsDriverUpdate] = HasWindowsDriverUpdateAssignmentsAsync,
             [ContentTypes.WindowsFeatureUpdate] = HasWindowsFeatureUpdateAssignmentsAsync,
             [ContentTypes.WindowsQualityUpdatePolicy] = HasWindowsQualityUpdatePolicyAssignmentsAsync,

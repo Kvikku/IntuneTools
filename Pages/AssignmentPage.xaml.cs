@@ -119,51 +119,51 @@ namespace IntuneTools.Pages
         {
             yield return new AssignTypeDefinition(
                 "Device Compliance Policy",
-                async (id, groups, client) => await AssignGroupsToSingleDeviceCompliance(id, groups, client));
+                async (id, groups, client) => await AssignGroupsToSingleDeviceComplianceAsync(id, groups, client));
 
             yield return new AssignTypeDefinition(
                 "Settings Catalog",
-                async (id, groups, client) => await AssignGroupsToSingleSettingsCatalog(id, groups, client));
+                async (id, groups, client) => await AssignGroupsToSingleSettingsCatalogAsync(id, groups, client));
 
             yield return new AssignTypeDefinition(
                 "Device Configuration Policy",
-                async (id, groups, client) => await AssignGroupsToSingleDeviceConfiguration(id, groups, client));
+                async (id, groups, client) => await AssignGroupsToSingleDeviceConfigurationAsync(id, groups, client));
 
             yield return new AssignTypeDefinition(
                 "MacOS Shell Script",
-                async (id, groups, client) => await AssignGroupsToSingleShellScriptmacOS(id, groups, client));
+                async (id, groups, client) => await AssignGroupsToSingleShellScriptmacOSAsync(id, groups, client));
 
             yield return new AssignTypeDefinition(
                 "PowerShell Script",
-                async (id, groups, client) => await AssignGroupsToSinglePowerShellScript(id, groups, client));
+                async (id, groups, client) => await AssignGroupsToSinglePowerShellScriptAsync(id, groups, client));
 
             yield return new AssignTypeDefinition(
                 "Proactive Remediation",
-                async (id, groups, client) => await AssignGroupsToSingleProactiveRemediation(id, groups, client));
+                async (id, groups, client) => await AssignGroupsToSingleProactiveRemediationAsync(id, groups, client));
 
             yield return new AssignTypeDefinition(
                 "Windows AutoPilot Profile",
-                async (id, groups, client) => await AssignGroupsToSingleWindowsAutoPilotProfile(id, groups, client));
+                async (id, groups, client) => await AssignGroupsToSingleWindowsAutoPilotProfileAsync(id, groups, client));
 
             yield return new AssignTypeDefinition(
                 "Windows Driver Update",
-                async (id, groups, client) => await AssignGroupsToSingleDriverProfile(id, groups, client));
+                async (id, groups, client) => await AssignGroupsToSingleDriverProfileAsync(id, groups, client));
 
             yield return new AssignTypeDefinition(
                 "Windows Feature Update",
-                async (id, groups, client) => await AssignGroupsToSingleWindowsFeatureUpdateProfile(id, groups, client));
+                async (id, groups, client) => await AssignGroupsToSingleWindowsFeatureUpdateProfileAsync(id, groups, client));
 
             yield return new AssignTypeDefinition(
                 "Windows Quality Update Policy",
-                async (id, groups, client) => await AssignGroupsToSingleWindowsQualityUpdatePolicy(id, groups, client));
+                async (id, groups, client) => await AssignGroupsToSingleWindowsQualityUpdatePolicyAsync(id, groups, client));
 
             yield return new AssignTypeDefinition(
                 "Windows Quality Update Profile",
-                async (id, groups, client) => await AssignGroupsToSingleWindowsQualityUpdateProfile(id, groups, client));
+                async (id, groups, client) => await AssignGroupsToSingleWindowsQualityUpdateProfileAsync(id, groups, client));
 
             yield return new AssignTypeDefinition(
                 "Apple BYOD Enrollment Profile",
-                async (id, groups, client) => await AssignGroupsToSingleAppleBYODEnrollmentProfile(id, groups, client));
+                async (id, groups, client) => await AssignGroupsToSingleAppleBYODEnrollmentProfileAsync(id, groups, client));
         }
 
         /// <summary>
@@ -177,7 +177,7 @@ namespace IntuneTools.Pages
             // Handle apps specially (they have "App - " prefix)
             if (item.ContentType.StartsWith("App - "))
             {
-                await PrepareApplicationForAssignment(
+                await PrepareApplicationForAssignmentAsync(
                     new KeyValuePair<string, CustomContentInfo>(item.ContentId, item),
                     groupList,
                     graphServiceClient);
@@ -468,7 +468,7 @@ namespace IntuneTools.Pages
             ShowLoading("Loading groups from Microsoft Graph...");
             try
             {
-                var groups = await GetAllGroups(sourceGraphServiceClient);
+                var groups = await GetAllGroupsAsync(sourceGraphServiceClient);
                 foreach (var group in groups)
                 {
                     GroupList.Add(new GroupSelectionInfo
@@ -494,7 +494,7 @@ namespace IntuneTools.Pages
             ShowLoading("Searching for groups in Microsoft Graph...");
             try
             {
-                var groups = await SearchForGroups(sourceGraphServiceClient, searchQuery);
+                var groups = await SearchForGroupsAsync(sourceGraphServiceClient, searchQuery);
                 foreach (var group in groups)
                 {
                     GroupList.Add(new GroupSelectionInfo
@@ -520,7 +520,7 @@ namespace IntuneTools.Pages
             try
             {
                 FilterOptions.Clear();
-                var filters = await GetAllAssignmentFilters(sourceGraphServiceClient);
+                var filters = await GetAllAssignmentFiltersAsync(sourceGraphServiceClient);
                 foreach (var filter in filters)
                 {
                     FilterOptions.Add(filter);

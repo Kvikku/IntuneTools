@@ -13,7 +13,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 {
     public class DeviceCompliancePolicyHelper
     {
-        public static async Task<List<DeviceCompliancePolicy>> GetAllDeviceCompliancePolicies(GraphServiceClient graphServiceClient)
+        public static async Task<List<DeviceCompliancePolicy>> GetAllDeviceCompliancePoliciesAsync(GraphServiceClient graphServiceClient)
         {
             return await GraphPageIteratorHelper.GetAllAsync<DeviceCompliancePolicy, DeviceCompliancePolicyCollectionResponse>(
                 graphServiceClient,
@@ -24,7 +24,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 "device compliance policies");
         }
 
-        public static async Task<List<DeviceCompliancePolicy>> SearchForDeviceCompliancePolicies(GraphServiceClient graphServiceClient, string searchQuery)
+        public static async Task<List<DeviceCompliancePolicy>> SearchForDeviceCompliancePoliciesAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
             return await GraphPageIteratorHelper.SearchAsync<DeviceCompliancePolicy, DeviceCompliancePolicyCollectionResponse>(
                 graphServiceClient,
@@ -33,7 +33,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 "device compliance policies");
         }
 
-        public static async Task ImportMultipleDeviceCompliancePolicies(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> policies, bool assignments, bool filter, List<string> groups)
+        public static async Task ImportMultipleDeviceCompliancePoliciesAsync(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> policies, bool assignments, bool filter, List<string> groups)
         {
             try
             {
@@ -140,7 +140,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         if (assignments)
                         {
-                            await AssignGroupsToSingleDeviceCompliance(import.Id, groups, destinationGraphServiceClient);
+                            await AssignGroupsToSingleDeviceComplianceAsync(import.Id, groups, destinationGraphServiceClient);
                         }
                     }
                     catch (Exception ex)
@@ -161,7 +161,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task AssignGroupsToSingleDeviceCompliance(string policyID, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
+        public static async Task AssignGroupsToSingleDeviceComplianceAsync(string policyID, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
         {
             try
             {
@@ -345,7 +345,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             return platform;
         }
 
-        public static async Task DeleteDeviceCompliancePolicy(GraphServiceClient graphServiceClient, string policyID)
+        public static async Task DeleteDeviceCompliancePolicyAsync(GraphServiceClient graphServiceClient, string policyID)
         {
             try
             {
@@ -366,7 +366,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task RenameDeviceCompliancePolicy(GraphServiceClient graphServiceClient, string policyID, string newName)
+        public static async Task RenameDeviceCompliancePolicyAsync(GraphServiceClient graphServiceClient, string policyID, string newName)
         {
             try
             {
@@ -474,7 +474,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         public static async Task<List<CustomContentInfo>> GetAllDeviceComplianceContentAsync(GraphServiceClient graphServiceClient)
         {
-            var policies = await GetAllDeviceCompliancePolicies(graphServiceClient);
+            var policies = await GetAllDeviceCompliancePoliciesAsync(graphServiceClient);
             var content = new List<CustomContentInfo>();
 
             foreach (var policy in policies)
@@ -494,7 +494,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         public static async Task<List<CustomContentInfo>> SearchDeviceComplianceContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
-            var policies = await SearchForDeviceCompliancePolicies(graphServiceClient, searchQuery);
+            var policies = await SearchForDeviceCompliancePoliciesAsync(graphServiceClient, searchQuery);
             var content = new List<CustomContentInfo>();
 
             foreach (var policy in policies)

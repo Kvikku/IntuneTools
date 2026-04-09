@@ -33,7 +33,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             target.DeviceAndAppManagementAssignmentFilterType = DeviceAndAppManagementAssignmentFilterType.None;
         }
 
-        public static async Task<List<DeviceManagementConfigurationPolicy>> SearchForSettingsCatalog(GraphServiceClient graphServiceClient, string searchQuery)
+        public static async Task<List<DeviceManagementConfigurationPolicy>> SearchForSettingsCatalogAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
             return await GraphPageIteratorHelper.SearchAsync<DeviceManagementConfigurationPolicy, DeviceManagementConfigurationPolicyCollectionResponse>(
                 graphServiceClient,
@@ -42,7 +42,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 "settings catalog policies");
         }
 
-        public static async Task<List<DeviceManagementConfigurationPolicy>> GetAllSettingsCatalogPolicies(GraphServiceClient graphServiceClient)
+        public static async Task<List<DeviceManagementConfigurationPolicy>> GetAllSettingsCatalogPoliciesAsync(GraphServiceClient graphServiceClient)
         {
             return await GraphPageIteratorHelper.GetAllAsync<DeviceManagementConfigurationPolicy, DeviceManagementConfigurationPolicyCollectionResponse>(
                 graphServiceClient,
@@ -53,7 +53,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 "settings catalog policies");
         }
 
-        public static async Task ImportMultipleSettingsCatalog(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> policies, bool assignments, bool filter, List<string> groups)
+        public static async Task ImportMultipleSettingsCatalogAsync(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> policies, bool assignments, bool filter, List<string> groups)
         {
             try
             {
@@ -89,7 +89,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         if (assignments)
                         {
-                            await AssignGroupsToSingleSettingsCatalog(import.Id, groups, destinationGraphServiceClient);
+                            await AssignGroupsToSingleSettingsCatalogAsync(import.Id, groups, destinationGraphServiceClient);
                         }
                     }
                     catch (Exception ex)
@@ -106,7 +106,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task AssignGroupsToSingleSettingsCatalog(string policyID, List<string> groupID, GraphServiceClient _graphServiceClient)
+        public static async Task AssignGroupsToSingleSettingsCatalogAsync(string policyID, List<string> groupID, GraphServiceClient _graphServiceClient)
         {
             try
             {
@@ -270,7 +270,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task DeleteSettingsCatalog(GraphServiceClient graphServiceClient, string policyID)
+        public static async Task DeleteSettingsCatalogAsync(GraphServiceClient graphServiceClient, string policyID)
         {
             try
             {
@@ -292,7 +292,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task RenameSettingsCatalogPolicy(GraphServiceClient graphServiceClient, string policyID, string newName)
+        public static async Task RenameSettingsCatalogPolicyAsync(GraphServiceClient graphServiceClient, string policyID, string newName)
         {
             try
             {
@@ -378,7 +378,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         public static async Task<List<CustomContentInfo>> GetAllSettingsCatalogContentAsync(GraphServiceClient graphServiceClient)
         {
-            var policies = await GetAllSettingsCatalogPolicies(graphServiceClient);
+            var policies = await GetAllSettingsCatalogPoliciesAsync(graphServiceClient);
             var content = new List<CustomContentInfo>();
 
             foreach (var policy in policies)
@@ -398,7 +398,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         public static async Task<List<CustomContentInfo>> SearchSettingsCatalogContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
-            var policies = await SearchForSettingsCatalog(graphServiceClient, searchQuery);
+            var policies = await SearchForSettingsCatalogAsync(graphServiceClient, searchQuery);
             var content = new List<CustomContentInfo>();
 
             foreach (var policy in policies)

@@ -14,7 +14,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
     public class WindowsQualityUpdateProfileHelper
     {
         // Expedite policies (not regular quality update policies)
-        public static async Task<List<WindowsQualityUpdateProfile>> SearchForWindowsQualityUpdateProfiles(GraphServiceClient graphServiceClient, string searchQuery)
+        public static async Task<List<WindowsQualityUpdateProfile>> SearchForWindowsQualityUpdateProfilesAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
             return await GraphPageIteratorHelper.SearchAsync<WindowsQualityUpdateProfile, WindowsQualityUpdateProfileCollectionResponse>(
                 graphServiceClient,
@@ -23,14 +23,14 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 "Windows Quality Update profiles");
         }
 
-        public static async Task<List<WindowsQualityUpdateProfile>> GetAllWindowsQualityUpdateProfiles(GraphServiceClient graphServiceClient)
+        public static async Task<List<WindowsQualityUpdateProfile>> GetAllWindowsQualityUpdateProfilesAsync(GraphServiceClient graphServiceClient)
         {
             return await GraphPageIteratorHelper.GetAllAsync<WindowsQualityUpdateProfile, WindowsQualityUpdateProfileCollectionResponse>(
                 graphServiceClient,
                 () => graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles.GetAsync(),
                 "Windows Quality Update profiles");
         }
-        public static async Task ImportMultipleWindowsQualityUpdateProfiles(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> profileIDs, bool assignments, bool filter, List<string> groups)
+        public static async Task ImportMultipleWindowsQualityUpdateProfilesAsync(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> profileIDs, bool assignments, bool filter, List<string> groups)
         {
             try
             {
@@ -87,7 +87,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         if (assignments && groups != null && groups.Any() && importedProfile?.Id != null)
                         {
-                            await AssignGroupsToSingleWindowsQualityUpdateProfile(importedProfile.Id, groups, destinationGraphServiceClient);
+                            await AssignGroupsToSingleWindowsQualityUpdateProfileAsync(importedProfile.Id, groups, destinationGraphServiceClient);
                         }
                     }
                     catch (Exception ex)
@@ -116,7 +116,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         /// <param name="destinationGraphServiceClient">GraphServiceClient for the destination tenant.</param>
         /// <param name="applyFilter">Whether to apply assignment filters.</param>
         /// <returns>A Task representing the asynchronous assignment operation.</returns>
-        public static async Task AssignGroupsToSingleWindowsQualityUpdateProfile(string profileID, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
+        public static async Task AssignGroupsToSingleWindowsQualityUpdateProfileAsync(string profileID, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
         {
             try
             {
@@ -248,7 +248,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 LogToFunctionFile(appFunction.Main, $"An error occurred while preparing assignment for profile {profileID}: {ex.Message}", LogLevels.Warning);
             }
         }
-        public static async Task DeleteWindowsQualityUpdateProfile(GraphServiceClient graphServiceClient, string profileID)
+        public static async Task DeleteWindowsQualityUpdateProfileAsync(GraphServiceClient graphServiceClient, string profileID)
         {
             try
             {
@@ -269,7 +269,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 LogToFunctionFile(appFunction.Main, "An error occurred while deleting a Windows Quality Update profile", LogLevels.Error);
             }
         }
-        public static async Task RenameWindowsQualityUpdateProfile(GraphServiceClient graphServiceClient, string profileID, string newName)
+        public static async Task RenameWindowsQualityUpdateProfileAsync(GraphServiceClient graphServiceClient, string profileID, string newName)
         {
             try
             {
@@ -359,7 +359,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         public static async Task<List<CustomContentInfo>> GetAllWindowsQualityUpdateProfileContentAsync(GraphServiceClient graphServiceClient)
         {
-            var profiles = await GetAllWindowsQualityUpdateProfiles(graphServiceClient);
+            var profiles = await GetAllWindowsQualityUpdateProfilesAsync(graphServiceClient);
             var content = new List<CustomContentInfo>();
 
             foreach (var profile in profiles)
@@ -379,7 +379,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         public static async Task<List<CustomContentInfo>> SearchWindowsQualityUpdateProfileContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
-            var profiles = await SearchForWindowsQualityUpdateProfiles(graphServiceClient, searchQuery);
+            var profiles = await SearchForWindowsQualityUpdateProfilesAsync(graphServiceClient, searchQuery);
             var content = new List<CustomContentInfo>();
 
             foreach (var profile in profiles)

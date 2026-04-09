@@ -8,7 +8,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
 {
     public class GroupHelperClass
     {
-        public static async Task<List<Group>> GetAllGroups(GraphServiceClient graphServiceClient)
+        public static async Task<List<Group>> GetAllGroupsAsync(GraphServiceClient graphServiceClient)
         {
             // This method gets all the groups in the tenant and returns them as a list of Group objects
 
@@ -80,7 +80,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
             }
         }
 
-        public static async Task<List<Group>> SearchForGroups(GraphServiceClient graphServiceClient, string searchQuery)
+        public static async Task<List<Group>> SearchForGroupsAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
             // This method searches for groups in the tenant based on a search query and returns the results as a list of Group objects
 
@@ -129,7 +129,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
             }
         }
 
-        public static async Task ImportMultipleGroups(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> groupIds)
+        public static async Task ImportMultipleGroupsAsync(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> groupIds)
         {
             // This method imports multiple groups from the source tenant to the destination tenant
             const string ItemType = "Group"; // Define item type for logging/messages
@@ -137,7 +137,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
             // Basic null checks for arguments
             if (sourceGraphServiceClient == null || destinationGraphServiceClient == null || groupIds == null)
             {
-                LogToFunctionFile(appFunction.Main, "ImportMultipleGroups called with null arguments.");
+                LogToFunctionFile(appFunction.Main, "ImportMultipleGroupsAsync called with null arguments.");
                 return;
             }
 
@@ -238,7 +238,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
                 LogToFunctionFile(appFunction.Main, $"{DateTime.Now.ToString()} - Finished importing Security groups.");
             }
         }
-        public static async Task DeleteSecurityGroup(GraphServiceClient graphServiceClient, string groupId)
+        public static async Task DeleteSecurityGroupAsync(GraphServiceClient graphServiceClient, string groupId)
         {
             try
             {
@@ -273,7 +273,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
                 LogToFunctionFile(appFunction.Main, "An error occurred while deleting a security group", LogLevels.Error);
             }
         }
-        public static async Task RenameGroup(GraphServiceClient graphServiceClient, string groupID, string newName)
+        public static async Task RenameGroupAsync(GraphServiceClient graphServiceClient, string groupID, string newName)
         {
             try
             {
@@ -375,7 +375,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
 
         public static async Task<List<CustomContentInfo>> GetAllGroupContentAsync(GraphServiceClient graphServiceClient)
         {
-            var groups = await GetAllGroups(graphServiceClient) ?? new List<Group>();
+            var groups = await GetAllGroupsAsync(graphServiceClient) ?? new List<Group>();
             var content = new List<CustomContentInfo>();
 
             foreach (var group in groups)
@@ -395,7 +395,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
 
         public static async Task<List<CustomContentInfo>> SearchGroupContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
-            var groups = await SearchForGroups(graphServiceClient, searchQuery) ?? new List<Group>();
+            var groups = await SearchForGroupsAsync(graphServiceClient, searchQuery) ?? new List<Group>();
             var content = new List<CustomContentInfo>();
 
             foreach (var group in groups)

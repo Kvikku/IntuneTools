@@ -10,7 +10,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 {
     public class ApplicationHelper
     {
-        public static async Task<List<MobileApp>> GetAllMobileApps(GraphServiceClient graphServiceClient)
+        public static async Task<List<MobileApp>> GetAllMobileAppsAsync(GraphServiceClient graphServiceClient)
         {
             try
             {
@@ -59,7 +59,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task<List<MobileApp>> SearchMobileApps(GraphServiceClient graphServiceClient, string searchQuery)
+        public static async Task<List<MobileApp>> SearchMobileAppsAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
             try
             {
@@ -96,7 +96,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task PrepareApplicationForAssignment(KeyValuePair<string, CustomContentInfo> appInfo, List<string> groups, GraphServiceClient graphServiceClient)
+        public static async Task PrepareApplicationForAssignmentAsync(KeyValuePair<string, CustomContentInfo> appInfo, List<string> groups, GraphServiceClient graphServiceClient)
         {
             // Get the application type
             var appType = TranslateODataTypeFromApplicationType(appInfo.Value.ContentType);
@@ -148,7 +148,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
             try
             {
-                await AssignGroupsToApplication(appInfo.Value.ContentId, groups, graphServiceClient, assignmentSettings);
+                await AssignGroupsToApplicationAsync(appInfo.Value.ContentId, groups, graphServiceClient, assignmentSettings);
             }
             catch (Exception)
             {
@@ -198,7 +198,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             };
         }
 
-        public static async Task AssignGroupsToApplication(string appId, List<string> groupIds, GraphServiceClient graphServiceClient, MobileAppAssignmentSettings? assignmentSettings = null)
+        public static async Task AssignGroupsToApplicationAsync(string appId, List<string> groupIds, GraphServiceClient graphServiceClient, MobileAppAssignmentSettings? assignmentSettings = null)
         {
             try
             {
@@ -405,7 +405,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task RenameApplication(GraphServiceClient graphServiceClient, string appId, string newName)
+        public static async Task RenameApplicationAsync(GraphServiceClient graphServiceClient, string appId, string newName)
         {
             try
             {
@@ -497,7 +497,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         public static async Task<List<CustomContentInfo>> GetAllApplicationContentAsync(GraphServiceClient graphServiceClient)
         {
-            var apps = await GetAllMobileApps(graphServiceClient);
+            var apps = await GetAllMobileAppsAsync(graphServiceClient);
             var content = new List<CustomContentInfo>();
 
             foreach (var app in apps)
@@ -517,7 +517,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         public static async Task<List<CustomContentInfo>> SearchApplicationContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
-            var apps = await SearchMobileApps(graphServiceClient, searchQuery);
+            var apps = await SearchMobileAppsAsync(graphServiceClient, searchQuery);
             var content = new List<CustomContentInfo>();
 
             foreach (var app in apps)

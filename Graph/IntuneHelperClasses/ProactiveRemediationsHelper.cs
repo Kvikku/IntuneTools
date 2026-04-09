@@ -12,7 +12,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 {
     public class ProactiveRemediationsHelper
     {
-        public static async Task<List<DeviceHealthScript>> SearchForProactiveRemediations(GraphServiceClient graphServiceClient, string searchQuery)
+        public static async Task<List<DeviceHealthScript>> SearchForProactiveRemediationsAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
             var all = await GraphPageIteratorHelper.GetAllAsync<DeviceHealthScript, DeviceHealthScriptCollectionResponse>(
                 graphServiceClient,
@@ -25,7 +25,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             return all.FindAll(script => !script.Publisher.Equals("Microsoft", StringComparison.OrdinalIgnoreCase));
         }
 
-        public static async Task<List<DeviceHealthScript>> GetAllProactiveRemediations(GraphServiceClient graphServiceClient)
+        public static async Task<List<DeviceHealthScript>> GetAllProactiveRemediationsAsync(GraphServiceClient graphServiceClient)
         {
             var all = await GraphPageIteratorHelper.GetAllAsync<DeviceHealthScript, DeviceHealthScriptCollectionResponse>(
                 graphServiceClient,
@@ -38,7 +38,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             return all.FindAll(script => !script.Publisher.Equals("Microsoft", StringComparison.OrdinalIgnoreCase));
         }
 
-        public static async Task ImportMultipleProactiveRemediations(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> scripts, bool assignments, bool filter, List<string> groups)
+        public static async Task ImportMultipleProactiveRemediationsAsync(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> scripts, bool assignments, bool filter, List<string> groups)
         {
             try
             {
@@ -71,7 +71,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         if (assignments)
                         {
-                            await AssignGroupsToSingleProactiveRemediation(import.Id, groups, destinationGraphServiceClient);
+                            await AssignGroupsToSingleProactiveRemediationAsync(import.Id, groups, destinationGraphServiceClient);
                         }
                     }
                     catch (Exception ex)
@@ -86,7 +86,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task AssignGroupsToSingleProactiveRemediation(string scriptID, List<string> groupID, GraphServiceClient destinationGraphServiceClient)
+        public static async Task AssignGroupsToSingleProactiveRemediationAsync(string scriptID, List<string> groupID, GraphServiceClient destinationGraphServiceClient)
         {
             try
             {
@@ -238,7 +238,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
             }
         }
-        public static async Task DeleteProactiveRemediationScript(GraphServiceClient graphServiceClient, string policyID)
+        public static async Task DeleteProactiveRemediationScriptAsync(GraphServiceClient graphServiceClient, string policyID)
         {
             try
             {
@@ -259,7 +259,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task RenameProactiveRemediation(GraphServiceClient graphServiceClient, string scriptID, string newName)
+        public static async Task RenameProactiveRemediationAsync(GraphServiceClient graphServiceClient, string scriptID, string newName)
         {
             try
             {
@@ -349,7 +349,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         public static async Task<List<CustomContentInfo>> GetAllProactiveRemediationContentAsync(GraphServiceClient graphServiceClient)
         {
-            var scripts = await GetAllProactiveRemediations(graphServiceClient);
+            var scripts = await GetAllProactiveRemediationsAsync(graphServiceClient);
             var content = new List<CustomContentInfo>();
 
             foreach (var script in scripts)
@@ -369,7 +369,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         public static async Task<List<CustomContentInfo>> SearchProactiveRemediationContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
-            var scripts = await SearchForProactiveRemediations(graphServiceClient, searchQuery);
+            var scripts = await SearchForProactiveRemediationsAsync(graphServiceClient, searchQuery);
             var content = new List<CustomContentInfo>();
 
             foreach (var script in scripts)

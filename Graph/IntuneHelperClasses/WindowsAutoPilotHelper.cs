@@ -13,7 +13,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 {
     public class WindowsAutoPilotHelper
     {
-        public static async Task<List<WindowsAutopilotDeploymentProfile>> SearchForWindowsAutoPilotProfiles(GraphServiceClient graphServiceClient, string searchQuery)
+        public static async Task<List<WindowsAutopilotDeploymentProfile>> SearchForWindowsAutoPilotProfilesAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
             return await GraphPageIteratorHelper.GetAllAsync<WindowsAutopilotDeploymentProfile, WindowsAutopilotDeploymentProfileCollectionResponse>(
                 graphServiceClient,
@@ -24,7 +24,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 "Windows AutoPilot profiles");
         }
 
-        public static async Task<List<WindowsAutopilotDeploymentProfile>> GetAllWindowsAutoPilotProfiles(GraphServiceClient graphServiceClient)
+        public static async Task<List<WindowsAutopilotDeploymentProfile>> GetAllWindowsAutoPilotProfilesAsync(GraphServiceClient graphServiceClient)
         {
             return await GraphPageIteratorHelper.GetAllAsync<WindowsAutopilotDeploymentProfile, WindowsAutopilotDeploymentProfileCollectionResponse>(
                 graphServiceClient,
@@ -34,7 +34,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }),
                 "Windows AutoPilot profiles");
         }
-        public static async Task ImportMultipleWindowsAutoPilotProfiles(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> profiles, bool assignments, bool filter, List<string> groups)
+        public static async Task ImportMultipleWindowsAutoPilotProfilesAsync(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> profiles, bool assignments, bool filter, List<string> groups)
         {
             try
             {
@@ -72,7 +72,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                             LogToFunctionFile(appFunction.Main, $"Imported profile: {requestBody.DisplayName}");
                             if (assignments)
                             {
-                                await AssignGroupsToSingleWindowsAutoPilotProfile(import.Id, groups, destinationGraphServiceClient);
+                                await AssignGroupsToSingleWindowsAutoPilotProfileAsync(import.Id, groups, destinationGraphServiceClient);
                             }
                         }
                     }
@@ -88,7 +88,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task AssignGroupsToSingleWindowsAutoPilotProfile(string profileID, List<string> groupID, GraphServiceClient destinationGraphServiceClient)
+        public static async Task AssignGroupsToSingleWindowsAutoPilotProfileAsync(string profileID, List<string> groupID, GraphServiceClient destinationGraphServiceClient)
         {
             try
             {
@@ -250,7 +250,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task DeleteWindowsAutoPilotProfileAssignments(GraphServiceClient graphServiceClient, string profileID)
+        public static async Task DeleteWindowsAutoPilotProfileAssignmentsAsync(GraphServiceClient graphServiceClient, string profileID)
         {
             try
             {
@@ -292,7 +292,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task<bool?> CheckIfAutoPilotProfileHasAssignments(GraphServiceClient graphServiceClient, string profileID)
+        public static async Task<bool?> CheckIfAutoPilotProfileHasAssignmentsAsync(GraphServiceClient graphServiceClient, string profileID)
         {
             try
             {
@@ -334,7 +334,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 return null;
             }
         }
-        public static async Task DeleteWindowsAutopilotProfile(GraphServiceClient graphServiceClient, string profileID)
+        public static async Task DeleteWindowsAutopilotProfileAsync(GraphServiceClient graphServiceClient, string profileID)
         {
             try
             {
@@ -358,7 +358,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task RenameWindowsAutoPilotProfile(GraphServiceClient graphServiceClient, string profileID, string newName)
+        public static async Task RenameWindowsAutoPilotProfileAsync(GraphServiceClient graphServiceClient, string profileID, string newName)
         {
             try
             {
@@ -476,7 +476,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         public static async Task<List<CustomContentInfo>> GetAllWindowsAutoPilotContentAsync(GraphServiceClient graphServiceClient)
         {
-            var profiles = await GetAllWindowsAutoPilotProfiles(graphServiceClient);
+            var profiles = await GetAllWindowsAutoPilotProfilesAsync(graphServiceClient);
             var content = new List<CustomContentInfo>();
 
             foreach (var profile in profiles)
@@ -496,7 +496,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         public static async Task<List<CustomContentInfo>> SearchWindowsAutoPilotContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
-            var profiles = await SearchForWindowsAutoPilotProfiles(graphServiceClient, searchQuery);
+            var profiles = await SearchForWindowsAutoPilotProfilesAsync(graphServiceClient, searchQuery);
             var content = new List<CustomContentInfo>();
 
             foreach (var profile in profiles)

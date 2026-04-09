@@ -17,7 +17,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         private const string PolicyType = "Assignment Filter";
 
-        public static async Task<List<DeviceAndAppManagementAssignmentFilter>> SearchForAssignmentFilters(GraphServiceClient graphServiceClient, string searchQuery)
+        public static async Task<List<DeviceAndAppManagementAssignmentFilter>> SearchForAssignmentFiltersAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
             try
             {
@@ -62,7 +62,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             {
                 LogToFunctionFile(appFunction.Main, $"Server-side filtering might not be supported or the query is invalid for {PolicyType}. Trying client-side filtering. Error: {odataError.Error?.Message}", LogLevels.Error);
                 // Fallback: Get all and filter client-side
-                var allFilters = await GetAllAssignmentFilters(graphServiceClient);
+                var allFilters = await GetAllAssignmentFiltersAsync(graphServiceClient);
                 return allFilters.Where(f => f.DisplayName != null && f.DisplayName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)).ToList();
             }
             catch (Exception ex)
@@ -72,7 +72,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task<List<DeviceAndAppManagementAssignmentFilter>> GetAllAssignmentFilters(GraphServiceClient graphServiceClient)
+        public static async Task<List<DeviceAndAppManagementAssignmentFilter>> GetAllAssignmentFiltersAsync(GraphServiceClient graphServiceClient)
         {
             // Method to get the assignment filters for a policy
             // Create a new instance of the GraphServiceClient class
@@ -119,7 +119,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             return assignmentFilters;
         }
 
-        public static async Task ImportMultipleAssignmentFilters(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> filterIds)
+        public static async Task ImportMultipleAssignmentFiltersAsync(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> filterIds)
         {
             try
             {
@@ -177,7 +177,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 LogToFunctionFile(appFunction.Main, $"{DateTime.Now.ToString()} - Finished importing {filterIds.Count} Assignment filters.");
             }
         }
-        public static async Task<bool> DeleteAssignmentFilter(GraphServiceClient graphServiceClient, string filterID)
+        public static async Task<bool> DeleteAssignmentFilterAsync(GraphServiceClient graphServiceClient, string filterID)
         {
             try
             {
@@ -205,7 +205,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 return false;
             }
         }
-        public static async Task RenameAssignmentFilter(GraphServiceClient graphServiceClient, string filterID, string newName)
+        public static async Task RenameAssignmentFilterAsync(GraphServiceClient graphServiceClient, string filterID, string newName)
         {
             try
             {
@@ -295,7 +295,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         public static async Task<List<CustomContentInfo>> GetAllAssignmentFilterContentAsync(GraphServiceClient graphServiceClient)
         {
-            var filters = await GetAllAssignmentFilters(graphServiceClient);
+            var filters = await GetAllAssignmentFiltersAsync(graphServiceClient);
             var content = new List<CustomContentInfo>();
 
             foreach (var filter in filters)
@@ -315,7 +315,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         public static async Task<List<CustomContentInfo>> SearchAssignmentFilterContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
-            var filters = await SearchForAssignmentFilters(graphServiceClient, searchQuery);
+            var filters = await SearchForAssignmentFiltersAsync(graphServiceClient, searchQuery);
             var content = new List<CustomContentInfo>();
 
             foreach (var filter in filters)

@@ -15,7 +15,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
     {
         // For Windows Quality Updates (Not expedite policy)
 
-        public static async Task<List<WindowsQualityUpdatePolicy>> SearchForWindowsQualityUpdatePolicies(GraphServiceClient graphServiceClient, string searchQuery)
+        public static async Task<List<WindowsQualityUpdatePolicy>> SearchForWindowsQualityUpdatePoliciesAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
             return await GraphPageIteratorHelper.SearchAsync<WindowsQualityUpdatePolicy, WindowsQualityUpdatePolicyCollectionResponse>(
                 graphServiceClient,
@@ -24,14 +24,14 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 "Windows Quality Update policies");
         }
 
-        public static async Task<List<WindowsQualityUpdatePolicy>> GetAllWindowsQualityUpdatePolicies(GraphServiceClient graphServiceClient)
+        public static async Task<List<WindowsQualityUpdatePolicy>> GetAllWindowsQualityUpdatePoliciesAsync(GraphServiceClient graphServiceClient)
         {
             return await GraphPageIteratorHelper.GetAllAsync<WindowsQualityUpdatePolicy, WindowsQualityUpdatePolicyCollectionResponse>(
                 graphServiceClient,
                 () => graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies.GetAsync(),
                 "Windows Quality Update policies");
         }
-        public static async Task ImportMultipleWindowsQualityUpdatePolicies(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> policyIDs, bool assignments, bool filter, List<string> groups)
+        public static async Task ImportMultipleWindowsQualityUpdatePoliciesAsync(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> policyIDs, bool assignments, bool filter, List<string> groups)
         {
             try
             {
@@ -95,7 +95,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         // Handle assignments if requested
                         if (assignments && groups != null && groups.Any() && importedPolicy?.Id != null)
                         {
-                            await AssignGroupsToSingleWindowsQualityUpdatePolicy(importedPolicy.Id, groups, destinationGraphServiceClient);
+                            await AssignGroupsToSingleWindowsQualityUpdatePolicyAsync(importedPolicy.Id, groups, destinationGraphServiceClient);
                         }
                     }
                     catch (Exception ex)
@@ -122,7 +122,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         /// <param name="destinationGraphServiceClient">GraphServiceClient for the destination tenant.</param>
         /// <param name="applyFilter">Whether to apply assignment filters.</param>
         /// <returns>A Task representing the asynchronous assignment operation.</returns>
-        public static async Task AssignGroupsToSingleWindowsQualityUpdatePolicy(string policyID, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
+        public static async Task AssignGroupsToSingleWindowsQualityUpdatePolicyAsync(string policyID, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
         {
             try
             {
@@ -254,7 +254,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 LogToFunctionFile(appFunction.Main, $"An error occurred while preparing assignment for policy {policyID}: {ex.Message}", LogLevels.Warning);
             }
         }
-        public static async Task DeleteWindowsQualityUpdatePolicy(GraphServiceClient graphServiceClient, string policyID)
+        public static async Task DeleteWindowsQualityUpdatePolicyAsync(GraphServiceClient graphServiceClient, string policyID)
         {
             try
             {
@@ -276,7 +276,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task RenameWindowsQualityUpdatePolicy(GraphServiceClient graphServiceClient, string policyID, string newName)
+        public static async Task RenameWindowsQualityUpdatePolicyAsync(GraphServiceClient graphServiceClient, string policyID, string newName)
         {
             try
             {
@@ -366,7 +366,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         public static async Task<List<CustomContentInfo>> GetAllWindowsQualityUpdatePolicyContentAsync(GraphServiceClient graphServiceClient)
         {
-            var policies = await GetAllWindowsQualityUpdatePolicies(graphServiceClient);
+            var policies = await GetAllWindowsQualityUpdatePoliciesAsync(graphServiceClient);
             var content = new List<CustomContentInfo>();
 
             foreach (var policy in policies)
@@ -386,7 +386,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         public static async Task<List<CustomContentInfo>> SearchWindowsQualityUpdatePolicyContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
-            var policies = await SearchForWindowsQualityUpdatePolicies(graphServiceClient, searchQuery);
+            var policies = await SearchForWindowsQualityUpdatePoliciesAsync(graphServiceClient, searchQuery);
             var content = new List<CustomContentInfo>();
 
             foreach (var policy in policies)
