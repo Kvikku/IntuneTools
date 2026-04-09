@@ -37,6 +37,11 @@
             <muxc:NavigationView.MenuItems>
                 <muxc:NavigationViewItem Content="Home" Tag="Home" Icon="Home"/>
                 <muxc:NavigationViewItem Content="Assignment" Tag="Application" Icon="AllApps"/>
+                <muxc:NavigationViewItem Content="Manage Assignments" Tag="ManageAssignments">
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE71D;"/>
+                    </muxc:NavigationViewItem.Icon>
+                </muxc:NavigationViewItem>
                 <muxc:NavigationViewItem Content="Import" Tag="Import" Icon="Import"/>
                 <muxc:NavigationViewItem Content="Cleanup" Tag="Cleanup" Icon="Delete"/>
                 <muxc:NavigationViewItem Content="Renaming" Tag="Renaming" Icon="Rename"/>
