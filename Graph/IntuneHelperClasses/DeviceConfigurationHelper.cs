@@ -40,7 +40,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while searching for device configuration policies", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for device configuration policies: {ex.Message}", LogLevels.Error);
                 return new List<Microsoft.Graph.Beta.Models.DeviceConfiguration>();
             }
         }
@@ -72,7 +72,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while retrieving all device configuration policies", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while retrieving all device configuration policies: {ex.Message}", LogLevels.Error);
                 return new List<Microsoft.Graph.Beta.Models.DeviceConfiguration>();
             }
         }
@@ -324,14 +324,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }
                 catch (Exception ex)
                 {
-                    LogToFunctionFile(appFunction.Main, "An error occurred while assigning groups to device configuration policy", LogLevels.Warning);
-                    LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
+                    LogToFunctionFile(appFunction.Main, $"An error occurred while assigning groups to device configuration policy: {ex.Message}", LogLevels.Warning);
                 }
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while assigning groups to a single device configuration policy", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while assigning groups to a single device configuration policy: {ex.Message}", LogLevels.Warning);
             }
         }
         public static async Task DeleteDeviceConfigurationPolicy(GraphServiceClient graphServiceClient, string policyID)
@@ -455,8 +453,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while renaming device configuration policies", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while renaming device configuration policies: {ex.Message}", LogLevels.Warning);
             }
         }
 

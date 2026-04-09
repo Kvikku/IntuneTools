@@ -47,13 +47,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Microsoft.Graph.Beta.Models.ODataErrors.ODataError me)
             {
-                LogToFunctionFile(appFunction.Main, "ODataError occurred", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, me.Message, LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, $"ODataError retrieving device compliance policies: {me.Message}", LogLevels.Warning);
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An unexpected error occurred", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, $"An unexpected error occurred while retrieving device compliance policies: {ex.Message}", LogLevels.Warning);
             }
 
             // Return an empty list if an exception occurs
@@ -96,13 +94,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Microsoft.Graph.Beta.Models.ODataErrors.ODataError me)
             {
-                LogToFunctionFile(appFunction.Main, "ODataError occurred", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, me.Message, LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, $"ODataError searching for device compliance policies: {me.Message}", LogLevels.Warning);
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An unexpected error occurred", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, $"An unexpected error occurred while searching for device compliance policies: {ex.Message}", LogLevels.Warning);
             }
 
             // Return an empty list if an exception occurs
@@ -221,7 +217,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     }
                     catch (Exception ex)
                     {
-                        LogToFunctionFile(appFunction.Main, $"Failed to import {policyName}\n", LogLevels.Error);
                         LogToFunctionFile(appFunction.Main, $"Failed to import {policyName}: {ex.Message}", LogLevels.Error);
                     }
                 }
@@ -229,7 +224,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             catch (Exception ex)
             {
                 LogToFunctionFile(appFunction.Main, $"An unexpected error occurred during the import process: {ex.Message}", LogLevels.Error);
-                LogToFunctionFile(appFunction.Main, "An unexpected error occurred during the import process. Please check the log file for more information.", LogLevels.Error);
             }
             finally
             {
@@ -376,14 +370,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }
                 catch (Exception ex)
                 {
-                    LogToFunctionFile(appFunction.Main, "An error occurred while assigning groups to device compliance policy", LogLevels.Warning);
-                    LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
+                    LogToFunctionFile(appFunction.Main, $"An error occurred while assigning groups to device compliance policy: {ex.Message}", LogLevels.Warning);
                 }
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while assigning groups to device compliance policy", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while assigning groups to device compliance policy: {ex.Message}", LogLevels.Warning);
             }
         }
 
@@ -438,7 +430,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while deleting settings catalog policies", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while deleting device compliance policy with ID '{policyID}': {ex.Message}", LogLevels.Error);
             }
         }
 
@@ -543,8 +535,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while renaming device compliance policies", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while renaming device compliance policies: {ex.Message}", LogLevels.Warning);
             }
         }
 

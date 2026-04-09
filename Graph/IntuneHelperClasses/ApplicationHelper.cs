@@ -52,9 +52,9 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 return mobileApps;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while retrieving all Mobile Apps", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while retrieving all Mobile Apps: {ex.Message}", LogLevels.Error);
                 return new List<MobileApp>();
             }
         }
@@ -89,9 +89,9 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 return mobileApps;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for Mobile Apps with query '{searchQuery}'", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for Mobile Apps with query '{searchQuery}': {ex.Message}", LogLevels.Error);
                 return new List<MobileApp>();
             }
         }
@@ -150,9 +150,9 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             {
                 await AssignGroupsToApplication(appInfo.Value.ContentId, groups, graphServiceClient, assignmentSettings);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while preparing application of type '{appInfo.Value.ContentPlatform}' for assignment", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while preparing application of type '{appInfo.Value.ContentPlatform}' for assignment: {ex.Message}", LogLevels.Error);
             }
         }
 
@@ -376,8 +376,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while assigning groups to application", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while assigning groups to application: {ex.Message}", LogLevels.Warning);
             }
         }
 
@@ -490,8 +489,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while renaming applications", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while renaming applications: {ex.Message}", LogLevels.Warning);
             }
         }
 
