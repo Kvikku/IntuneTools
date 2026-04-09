@@ -1,11 +1,8 @@
-﻿using IntuneTools.Utilities;
+using IntuneTools.Utilities;
 using Microsoft.Graph;
-using Microsoft.Kiota.Serialization.Json;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -13,425 +10,300 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 {
     public class WindowsQualityUpdatePolicyHandler
     {
-        // For Windows Quality Updates (Not expedite policy)
-
-        public static async Task<List<WindowsQualityUpdatePolicy>> SearchForWindowsQualityUpdatePolicies(GraphServiceClient graphServiceClient, string searchQuery)
+        private class Helper : GraphHelper<WindowsQualityUpdatePolicy, WindowsQualityUpdatePolicyCollectionResponse>
         {
-            try
+            protected override string ResourceName => "Windows Quality Update policies";
+            protected override string ContentTypeName => "Windows Quality Update Policy";
+            protected override string? FixedPlatform => "Windows";
+
+            protected override string? GetPolicyName(WindowsQualityUpdatePolicy policy) => policy.DisplayName;
+            protected override string? GetPolicyId(WindowsQualityUpdatePolicy policy) => policy.Id;
+            protected override string? GetPolicyDescription(WindowsQualityUpdatePolicy policy) => policy.Description;
+
+            protected override Task<WindowsQualityUpdatePolicyCollectionResponse?> GetCollectionAsync(GraphServiceClient client)
+                => client.DeviceManagement.WindowsQualityUpdatePolicies.GetAsync();
+
+            // No server-side filter support; client-side filtering is done in the public static methods
+            protected override Task<WindowsQualityUpdatePolicyCollectionResponse?> SearchCollectionAsync(GraphServiceClient client, string searchQuery)
+                => client.DeviceManagement.WindowsQualityUpdatePolicies.GetAsync();
+
+            protected override Task<WindowsQualityUpdatePolicy?> GetByIdAsync(GraphServiceClient client, string id)
+                => client.DeviceManagement.WindowsQualityUpdatePolicies[id].GetAsync();
+
+            protected override Task DeleteByIdAsync(GraphServiceClient client, string id)
+                => client.DeviceManagement.WindowsQualityUpdatePolicies[id].DeleteAsync();
+
+            protected override async Task PatchNameAsync(GraphServiceClient client, string id, string newName)
             {
-                LogToFunctionFile(appFunction.Main, "Searching for Windows Quality Update policies. Search query: " + searchQuery);
-
-                // Fetch all first and then filter locally as a safer approach.
-                var allPolicies = await GetAllWindowsQualityUpdatePolicies(graphServiceClient);
-                // Add null checks for policy and DisplayName
-                var filteredPolicies = allPolicies.Where(p => p?.DisplayName != null && p.DisplayName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)).ToList();
-
-                LogToFunctionFile(appFunction.Main, $"Found {filteredPolicies.Count} Windows Quality Update policies matching the search query.");
-
-                return filteredPolicies;
+                var policy = new WindowsQualityUpdatePolicy { DisplayName = newName };
+                await client.DeviceManagement.WindowsQualityUpdatePolicies[id].PatchAsync(policy);
             }
-            catch (Exception ex)
+
+            protected override async Task PatchDescriptionAsync(GraphServiceClient client, string id, string description)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for Windows Quality Update policies: {ex.Message}", LogLevels.Error);
-                return new List<WindowsQualityUpdatePolicy>();
+                var policy = new WindowsQualityUpdatePolicy { Description = description };
+                await client.DeviceManagement.WindowsQualityUpdatePolicies[id].PatchAsync(policy);
             }
-        }
 
-        public static async Task<List<WindowsQualityUpdatePolicy>> GetAllWindowsQualityUpdatePolicies(GraphServiceClient graphServiceClient)
-        {
-            try
+            public override async Task<string?> ImportFromJsonDataAsync(GraphServiceClient client, JsonElement policyData)
             {
-                LogToFunctionFile(appFunction.Main, "Retrieving all Windows Quality Update policies.");
-
-                var result = await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies.GetAsync((requestConfiguration) =>
+                try
                 {
-                    //requestConfiguration.QueryParameters.Top = 1000; // Adjust as needed
-                });
+                    var exportedPolicy = GraphImportHelper.DeserializeFromJson(policyData, WindowsQualityUpdatePolicy.CreateFromDiscriminatorValue);
 
-                List<WindowsQualityUpdatePolicy> policies = new List<WindowsQualityUpdatePolicy>();
-
-                // Add null check for result before creating iterator
-                if (result?.Value != null)
-                {
-                    var pageIterator = PageIterator<WindowsQualityUpdatePolicy, WindowsQualityUpdatePolicyCollectionResponse>.CreatePageIterator(graphServiceClient, result, (policy) =>
+                    if (exportedPolicy == null)
                     {
-                        policies.Add(policy);
-                        return true;
-                    });
-                    await pageIterator.IterateAsync();
+                        LogToFunctionFile(appFunction.Main, "Failed to deserialize Windows Quality Update policy data from JSON.", LogLevels.Error);
+                        return null;
+                    }
+
+                    var newPolicy = new WindowsQualityUpdatePolicy();
+                    GraphImportHelper.CopyProperties(exportedPolicy, newPolicy, new[] { "Assignments", "AdditionalData", "BackingStore" });
+                    newPolicy.OdataType = "#microsoft.graph.windowsQualityUpdatePolicy";
+
+                    var imported = await client.DeviceManagement.WindowsQualityUpdatePolicies.PostAsync(newPolicy);
+
+                    LogToFunctionFile(appFunction.Main, $"Imported Windows Quality Update policy: {imported?.DisplayName}");
+                    return imported?.DisplayName;
                 }
-                else
+                catch (Exception ex)
                 {
-                    LogToFunctionFile(appFunction.Main, "No Windows Quality Update policies found or result was null.", LogLevels.Warning);
+                    GraphErrorHandler.HandleException(ex, "importing from JSON", ResourceName);
+                    LogToFunctionFile(appFunction.Main, "This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", LogLevels.Warning);
+                    return null;
                 }
-
-                LogToFunctionFile(appFunction.Main, $"Found {policies.Count} Windows Quality Update policies.");
-
-                return policies;
             }
-            catch (Exception ex)
+
+            public override async Task<bool?> HasAssignmentsAsync(GraphServiceClient client, string id)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while retrieving all Windows Quality Update policies: {ex.Message}", LogLevels.Error);
-                return new List<WindowsQualityUpdatePolicy>();
+                try
+                {
+                    var result = await client.DeviceManagement.WindowsQualityUpdatePolicies[id].Assignments.GetAsync(rc =>
+                    {
+                        rc.QueryParameters.Top = 1;
+                    });
+                    return result?.Value != null && result.Value.Count > 0;
+                }
+                catch
+                {
+                    return null;
+                }
             }
-        }
-        public static async Task ImportMultipleWindowsQualityUpdatePolicies(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> policyIDs, bool assignments, bool filter, List<string> groups)
-        {
-            try
+
+            public override async Task<List<AssignmentInfo>?> GetAssignmentDetailsAsync(GraphServiceClient client, string id)
             {
-                LogToFunctionFile(appFunction.Main, $"Importing {policyIDs.Count} Windows Quality Update policies.");
+                try
+                {
+                    var details = new List<AssignmentInfo>();
+                    var result = await client.DeviceManagement.WindowsQualityUpdatePolicies[id].Assignments.GetAsync();
 
-                string profileName = "";
+                    while (result?.Value != null)
+                    {
+                        foreach (var assignment in result.Value)
+                        {
+                            details.Add(AssignmentInfo.FromTarget(assignment.Id, assignment.Target));
+                        }
 
-                foreach (var policyId in policyIDs)
+                        if (string.IsNullOrEmpty(result.OdataNextLink)) break;
+
+                        result = await client.DeviceManagement.WindowsQualityUpdatePolicies[id]
+                            .Assignments.WithUrl(result.OdataNextLink).GetAsync();
+                    }
+
+                    return details;
+                }
+                catch (Exception ex)
+                {
+                    GraphErrorHandler.HandleException(ex, "getting assignment details for", $"Windows Quality Update Policy {id}");
+                    return null;
+                }
+            }
+
+            public override async Task RemoveAllAssignmentsAsync(GraphServiceClient client, string id)
+            {
+                var requestBody = new Microsoft.Graph.Beta.DeviceManagement.WindowsQualityUpdatePolicies.Item.Assign.AssignPostRequestBody
+                {
+                    Assignments = new List<WindowsQualityUpdatePolicyAssignment>()
+                };
+
+                await client.DeviceManagement.WindowsQualityUpdatePolicies[id].Assign.PostAsync(requestBody);
+                LogToFunctionFile(appFunction.Main, $"Removed all assignments from Windows Quality Update Policy {id}.");
+            }
+
+            public override async Task ImportMultipleAsync(
+                GraphServiceClient sourceClient,
+                GraphServiceClient destinationClient,
+                List<string> ids,
+                bool assignments,
+                bool filter,
+                List<string> groups)
+            {
+                await GraphImportHelper.ImportBatchAsync(ids, ResourceName, async id =>
                 {
                     try
                     {
-                        // Fetch the source policy
-                        var sourcePolicy = await sourceGraphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyId].GetAsync();
+                        var sourcePolicy = await sourceClient.DeviceManagement.WindowsQualityUpdatePolicies[id].GetAsync();
 
                         if (sourcePolicy == null)
                         {
-                            LogToFunctionFile(appFunction.Main, $"Skipping policy ID {policyId}: Not found in source tenant.");
-                            continue;
+                            LogToFunctionFile(appFunction.Main, $"Skipping policy ID {id}: Not found in source tenant.");
+                            return;
                         }
 
-                        profileName = sourcePolicy.DisplayName ?? "ERROR GETTING NAME";
-
-                        // Create the new policy object for the destination tenant
-                        var newPolicy = new WindowsQualityUpdatePolicy
-                        {
-                            // Initialize properties needed for creation. Copy relevant ones from sourcePolicy.
-                            // Be careful about read-only properties like Id, CreatedDateTime, LastModifiedDateTime.
-                        };
-
-                        // Dynamically copy properties (excluding specific ones)
-                        foreach (var property in sourcePolicy.GetType().GetProperties())
-                        {
-                            // Skip read-only or problematic properties
-                            if (property.Name.Equals("id", StringComparison.OrdinalIgnoreCase) ||
-                                property.Name.Equals("createdDateTime", StringComparison.OrdinalIgnoreCase) ||
-                                property.Name.Equals("lastModifiedDateTime", StringComparison.OrdinalIgnoreCase) ||
-                                property.Name.Equals("assignments", StringComparison.OrdinalIgnoreCase) || // Assignments are handled separately
-                                !property.CanWrite) // Skip properties without a setter
-                            {
-                                continue;
-                            }
-
-                            var value = property.GetValue(sourcePolicy);
-                            // Check if the property exists on the newPolicy object before setting
-                            var destProperty = newPolicy.GetType().GetProperty(property.Name);
-                            if (destProperty != null && destProperty.CanWrite)
-                            {
-                                destProperty.SetValue(newPolicy, value);
-                            }
-                        }
-
-                        // Ensure OdataType is set correctly
+                        var newPolicy = new WindowsQualityUpdatePolicy();
+                        GraphImportHelper.CopyProperties(sourcePolicy, newPolicy, new[] { "Assignments" });
                         newPolicy.OdataType = "#microsoft.graph.windowsQualityUpdatePolicy";
 
-                        // Create the policy in the destination tenant
-                        var importedPolicy = await destinationGraphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies.PostAsync(newPolicy);
+                        var importedPolicy = await destinationClient.DeviceManagement.WindowsQualityUpdatePolicies.PostAsync(newPolicy);
 
-                        // Add null check for importedPolicy and DisplayName
                         LogToFunctionFile(appFunction.Main, $"Imported policy: {importedPolicy?.DisplayName ?? "Unnamed Policy"} (ID: {importedPolicy?.Id ?? "Unknown ID"})");
 
-                        // Handle assignments if requested
                         if (assignments && groups != null && groups.Any() && importedPolicy?.Id != null)
                         {
-                            await AssignGroupsToSingleWindowsQualityUpdatePolicy(importedPolicy.Id, groups, destinationGraphServiceClient);
+                            await AssignGroupsToSingleWindowsQualityUpdatePolicy(importedPolicy.Id, groups, destinationClient);
                         }
                     }
                     catch (Exception ex)
                     {
-                        //rtb.AppendText($"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active\n");
-                        LogToFunctionFile(appFunction.Main, $"Failed to import Windows Quality Update policy {profileName}: {ex.Message}", LogLevels.Error);
-                        LogToFunctionFile(appFunction.Main, $"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", LogLevels.Warning);
+                        LogToFunctionFile(appFunction.Main, $"Failed to import Windows Quality Update policy: {ex.Message}", LogLevels.Error);
+                        LogToFunctionFile(appFunction.Main, "This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", LogLevels.Warning);
                     }
-                }
-                LogToFunctionFile(appFunction.Main, "Windows Quality Update policy import process finished.");
+                });
             }
-            catch (Exception ex)
+
+            public override async Task AssignGroupsAsync(string id, List<string> groupIds, GraphServiceClient client)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred during the import process: {ex.Message}", LogLevels.Error);
-            }
-        }
-
-        /// <summary>
-        /// Assigns groups to a single Windows Quality Update Policy.
-        /// Windows Quality Update policies can ONLY be assigned to device groups - not All Users or All Devices.
-        /// </summary>
-        /// <param name="policyID">The ID of the policy to assign groups to.</param>
-        /// <param name="groupIDs">List of group IDs to assign.</param>
-        /// <param name="destinationGraphServiceClient">GraphServiceClient for the destination tenant.</param>
-        /// <param name="applyFilter">Whether to apply assignment filters.</param>
-        /// <returns>A Task representing the asynchronous assignment operation.</returns>
-        public static async Task AssignGroupsToSingleWindowsQualityUpdatePolicy(string policyID, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(policyID))
+                try
                 {
-                    throw new ArgumentNullException(nameof(policyID));
-                }
+                    ArgumentNullException.ThrowIfNull(id);
+                    ArgumentNullException.ThrowIfNull(groupIds);
+                    ArgumentNullException.ThrowIfNull(client);
 
-                if (groupIDs == null)
-                {
-                    throw new ArgumentNullException(nameof(groupIDs));
-                }
+                    var assignments = new List<WindowsQualityUpdatePolicyAssignment>();
+                    var seenGroupIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-                if (destinationGraphServiceClient == null)
-                {
-                    throw new ArgumentNullException(nameof(destinationGraphServiceClient));
-                }
-
-                var assignments = new List<WindowsQualityUpdatePolicyAssignment>();
-                var seenGroupIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-                LogToFunctionFile(appFunction.Main, $"Assigning {groupIDs.Count} groups to Windows Quality Update policy {policyID}.");
-
-                // Step 1: Add new assignments to request body
-                foreach (var groupId in groupIDs)
-                {
-                    if (string.IsNullOrWhiteSpace(groupId) || !seenGroupIds.Add(groupId))
+                    foreach (var groupId in groupIds)
                     {
-                        continue;
-                    }
+                        if (string.IsNullOrWhiteSpace(groupId) || !seenGroupIds.Add(groupId))
+                            continue;
 
-                    // Check if this is All Users - Quality Update policies cannot be assigned to All Users
-                    if (groupId.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
-                    {
-                        LogToFunctionFile(appFunction.Main, "Warning: Windows Quality Update policies cannot be assigned to 'All Users'. Only device groups are supported. Skipping this assignment.", LogLevels.Warning);
-                        continue;
-                    }
-
-                    // Check if this is All Devices - Quality Update policies cannot be assigned to All Devices
-                    if (groupId.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
-                    {
-                        LogToFunctionFile(appFunction.Main, "Warning: Windows Quality Update policies cannot be assigned to 'All Devices'. Only device groups are supported. Skipping this assignment.", LogLevels.Warning);
-                        continue;
-                    }
-
-                    // Regular group assignment (device groups only)
-                    var assignmentTarget = new GroupAssignmentTarget
-                    {
-                        OdataType = "#microsoft.graph.groupAssignmentTarget",
-                        GroupId = groupId,
-                        DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
-                        DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
-                    };
-
-                    var assignment = new WindowsQualityUpdatePolicyAssignment
-                    {
-                        OdataType = "#microsoft.graph.windowsQualityUpdatePolicyAssignment",
-                        Target = assignmentTarget
-                    };
-
-                    assignments.Add(assignment);
-                }
-
-                // Step 2: Check for existing assignments and add only if not already present
-                var existingAssignments = await destinationGraphServiceClient
-                    .DeviceManagement
-                    .WindowsQualityUpdatePolicies[policyID]
-                    .Assignments
-                    .GetAsync();
-
-                if (existingAssignments?.Value != null)
-                {
-                    foreach (var existing in existingAssignments.Value)
-                    {
-                        // Check the type of assignment target
-                        if (existing.Target is AllLicensedUsersAssignmentTarget)
+                        if (groupId.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
                         {
-                            // Skip All Users assignments - they shouldn't exist but handle gracefully
-                            LogToFunctionFile(appFunction.Main, $"Warning: Found existing 'All Users' assignment on Quality Update policy {policyID}. This should not exist and will be skipped.", LogLevels.Warning);
+                            LogToFunctionFile(appFunction.Main, "Warning: Windows Quality Update policies cannot be assigned to 'All Users'. Only device groups are supported. Skipping this assignment.", LogLevels.Warning);
                             continue;
                         }
-                        else if (existing.Target is AllDevicesAssignmentTarget)
+
+                        if (groupId.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
                         {
-                            // Skip All Devices assignments - they shouldn't exist but handle gracefully
-                            LogToFunctionFile(appFunction.Main, $"Warning: Found existing 'All Devices' assignment on Quality Update policy {policyID}. This should not exist and will be skipped.", LogLevels.Warning);
+                            LogToFunctionFile(appFunction.Main, "Warning: Windows Quality Update policies cannot be assigned to 'All Devices'. Only device groups are supported. Skipping this assignment.", LogLevels.Warning);
                             continue;
                         }
-                        else if (existing.Target is GroupAssignmentTarget groupTarget)
-                        {
-                            var existingGroupId = groupTarget.GroupId;
 
-                            // Only add if not already in the new assignments
-                            if (!string.IsNullOrWhiteSpace(existingGroupId) && seenGroupIds.Add(existingGroupId))
+                        var target = new GroupAssignmentTarget
+                        {
+                            OdataType = "#microsoft.graph.groupAssignmentTarget",
+                            GroupId = groupId
+                        };
+                        GraphAssignmentHelper.ApplySelectedFilter(target);
+
+                        assignments.Add(new WindowsQualityUpdatePolicyAssignment
+                        {
+                            OdataType = "#microsoft.graph.windowsQualityUpdatePolicyAssignment",
+                            Target = target
+                        });
+                    }
+
+                    // Merge existing assignments
+                    var existingAssignments = await client
+                        .DeviceManagement
+                        .WindowsQualityUpdatePolicies[id]
+                        .Assignments
+                        .GetAsync();
+
+                    if (existingAssignments?.Value != null)
+                    {
+                        foreach (var existing in existingAssignments.Value)
+                        {
+                            if (existing.Target is AllLicensedUsersAssignmentTarget)
+                            {
+                                LogToFunctionFile(appFunction.Main, $"Warning: Found existing 'All Users' assignment on Quality Update policy {id}. This should not exist and will be skipped.", LogLevels.Warning);
+                                continue;
+                            }
+                            else if (existing.Target is AllDevicesAssignmentTarget)
+                            {
+                                LogToFunctionFile(appFunction.Main, $"Warning: Found existing 'All Devices' assignment on Quality Update policy {id}. This should not exist and will be skipped.", LogLevels.Warning);
+                                continue;
+                            }
+                            else if (existing.Target is GroupAssignmentTarget groupTarget)
+                            {
+                                var existingGroupId = groupTarget.GroupId;
+                                if (!string.IsNullOrWhiteSpace(existingGroupId) && seenGroupIds.Add(existingGroupId))
+                                {
+                                    assignments.Add(existing);
+                                }
+                            }
+                            else
                             {
                                 assignments.Add(existing);
                             }
                         }
-                        else
-                        {
-                            // Include any other assignment types (e.g., exclusions, etc.)
-                            assignments.Add(existing);
-                        }
                     }
-                }
 
-                // Step 3: Update the policy with the assignments
-                var requestBody = new Microsoft.Graph.Beta.DeviceManagement.WindowsQualityUpdatePolicies.Item.Assign.AssignPostRequestBody
-                {
-                    Assignments = assignments
-                };
+                    var requestBody = new Microsoft.Graph.Beta.DeviceManagement.WindowsQualityUpdatePolicies.Item.Assign.AssignPostRequestBody
+                    {
+                        Assignments = assignments
+                    };
 
-                try
-                {
-                    await destinationGraphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].Assign.PostAsync(requestBody);
-                    LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to Quality Update policy {policyID}.");
-                    UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
+                    try
+                    {
+                        await client.DeviceManagement.WindowsQualityUpdatePolicies[id].Assign.PostAsync(requestBody);
+                        LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to Quality Update policy {id}.");
+                        UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
+                    }
+                    catch (Exception ex)
+                    {
+                        LogToFunctionFile(appFunction.Main, $"Error assigning groups to policy {id}: {ex.Message}", LogLevels.Error);
+                    }
                 }
                 catch (Exception ex)
                 {
-                    LogToFunctionFile(appFunction.Main, $"Error assigning groups to policy {policyID}: {ex.Message}", LogLevels.Error);
+                    LogToFunctionFile(appFunction.Main, $"An error occurred while preparing assignment for policy {id}: {ex.Message}", LogLevels.Warning);
                 }
             }
-            catch (ArgumentNullException argEx)
-            {
-                LogToFunctionFile(appFunction.Main, $"Argument null exception during group assignment setup: {argEx.Message}", LogLevels.Error);
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while preparing assignment for policy {policyID}: {ex.Message}", LogLevels.Warning);
-            }
         }
-        public static async Task DeleteWindowsQualityUpdatePolicy(GraphServiceClient graphServiceClient, string policyID)
+
+        private static readonly Helper _helper = new();
+
+        // ── Public static methods (signatures preserved for existing consumers) ──
+
+        public static async Task<List<WindowsQualityUpdatePolicy>> SearchForWindowsQualityUpdatePolicies(GraphServiceClient graphServiceClient, string searchQuery)
         {
-            try
-            {
-                if (graphServiceClient == null)
-                {
-                    throw new ArgumentNullException(nameof(graphServiceClient));
-                }
-
-                if (policyID == null)
-                {
-                    throw new InvalidOperationException("Policy ID cannot be null.");
-                }
-
-                await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].DeleteAsync();
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while deleting a Windows Quality Update policy: {ex.Message}", LogLevels.Error);
-            }
+            var all = await _helper.GetAllAsync(graphServiceClient);
+            return all.Where(p => p?.DisplayName != null && p.DisplayName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)).ToList();
         }
 
-        public static async Task RenameWindowsQualityUpdatePolicy(GraphServiceClient graphServiceClient, string policyID, string newName)
-        {
-            try
-            {
-                if (graphServiceClient == null)
-                {
-                    throw new ArgumentNullException(nameof(graphServiceClient));
-                }
+        public static Task<List<WindowsQualityUpdatePolicy>> GetAllWindowsQualityUpdatePolicies(GraphServiceClient graphServiceClient)
+            => _helper.GetAllAsync(graphServiceClient);
 
-                if (policyID == null)
-                {
-                    throw new InvalidOperationException("Policy ID cannot be null.");
-                }
+        public static Task ImportMultipleWindowsQualityUpdatePolicies(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> policyIDs, bool assignments, bool filter, List<string> groups)
+            => _helper.ImportMultipleAsync(sourceGraphServiceClient, destinationGraphServiceClient, policyIDs, assignments, filter, groups);
 
-                if (string.IsNullOrWhiteSpace(newName))
-                {
-                    throw new InvalidOperationException("New name cannot be null or empty.");
-                }
+        public static Task AssignGroupsToSingleWindowsQualityUpdatePolicy(string policyID, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
+            => _helper.AssignGroupsAsync(policyID, groupIDs, destinationGraphServiceClient);
 
-                if (selectedRenameMode == "Prefix")
-                {
-                    // Look up the existing policy
-                    var existingPolicy = await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].GetAsync();
+        public static Task DeleteWindowsQualityUpdatePolicy(GraphServiceClient graphServiceClient, string policyID)
+            => _helper.DeleteAsync(graphServiceClient, policyID);
 
-                    if (existingPolicy == null)
-                    {
-                        throw new InvalidOperationException($"Policy with ID '{policyID}' not found.");
-                    }
+        public static Task RenameWindowsQualityUpdatePolicy(GraphServiceClient graphServiceClient, string policyID, string newName)
+            => _helper.RenameAsync(graphServiceClient, policyID, newName);
 
-                    var name = FindPreFixInPolicyName(existingPolicy.DisplayName ?? string.Empty, newName);
-
-                    var policy = new WindowsQualityUpdatePolicy
-                    {
-                        DisplayName = name,
-                    };
-
-                    await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].PatchAsync(policy);
-                    LogToFunctionFile(appFunction.Main, $"Successfully renamed Windows Quality Update policy {policyID} to '{name}'");
-                }
-                else if (selectedRenameMode == "Suffix")
-                {
-
-                }
-                else if (selectedRenameMode == "Description")
-                {
-                    // Look up the existing policy
-                    var existingPolicy = await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].GetAsync();
-
-                    if (existingPolicy == null)
-                    {
-                        throw new InvalidOperationException($"Policy with ID '{policyID}' not found.");
-                    }
-
-                    var policy = new WindowsQualityUpdatePolicy
-                    {
-                        Description = newName,
-                    };
-
-                    await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].PatchAsync(policy);
-                    LogToFunctionFile(appFunction.Main, $"Updated description for Windows Quality Update policy {policyID} to '{newName}'");
-                }
-                else if (selectedRenameMode == "RemovePrefix")
-                {
-                    var existingPolicy = await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].GetAsync();
-
-                    if (existingPolicy == null)
-                    {
-                        throw new InvalidOperationException($"Policy with ID '{policyID}' not found.");
-                    }
-
-                    var name = RemovePrefixFromPolicyName(existingPolicy.DisplayName);
-
-                    var policy = new WindowsQualityUpdatePolicy
-                    {
-                        DisplayName = name
-                    };
-
-                    await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].PatchAsync(policy);
-                    LogToFunctionFile(appFunction.Main, $"Removed prefix from Windows Quality Update policy {policyID}, new name: '{name}'");
-                }
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while renaming Windows Quality Update policy: {ex.Message}", LogLevels.Warning);
-            }
-        }
-
-        public static async Task<List<CustomContentInfo>> GetAllWindowsQualityUpdatePolicyContentAsync(GraphServiceClient graphServiceClient)
-        {
-            var policies = await GetAllWindowsQualityUpdatePolicies(graphServiceClient);
-            var content = new List<CustomContentInfo>();
-
-            foreach (var policy in policies)
-            {
-                content.Add(new CustomContentInfo
-                {
-                    ContentName = policy.DisplayName,
-                    ContentType = "Windows Quality Update Policy",
-                    ContentPlatform = "Windows",
-                    ContentId = policy.Id,
-                    ContentDescription = policy.Description
-                });
-            }
-
-            return content;
-        }
+        public static Task<List<CustomContentInfo>> GetAllWindowsQualityUpdatePolicyContentAsync(GraphServiceClient graphServiceClient)
+            => _helper.GetAllContentAsync(graphServiceClient);
 
         public static async Task<List<CustomContentInfo>> SearchWindowsQualityUpdatePolicyContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
             var policies = await SearchForWindowsQualityUpdatePolicies(graphServiceClient, searchQuery);
             var content = new List<CustomContentInfo>();
-
             foreach (var policy in policies)
             {
                 content.Add(new CustomContentInfo
@@ -443,155 +315,22 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     ContentDescription = policy.Description
                 });
             }
-
             return content;
         }
 
-        /// <summary>
-        /// Exports a Windows Quality Update policy's full data as a JsonElement for JSON file export.
-        /// </summary>
-        public static async Task<JsonElement?> ExportWindowsQualityUpdatePolicyDataAsync(GraphServiceClient graphServiceClient, string policyId)
-        {
-            try
-            {
-                var result = await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyId].GetAsync();
+        public static Task<JsonElement?> ExportWindowsQualityUpdatePolicyDataAsync(GraphServiceClient graphServiceClient, string policyId)
+            => _helper.ExportDataAsync(graphServiceClient, policyId);
 
-                if (result == null)
-                {
-                    LogToFunctionFile(appFunction.Main, $"Windows Quality Update policy {policyId} not found for export.", LogLevels.Warning);
-                    return null;
-                }
+        public static Task<string?> ImportWindowsQualityUpdatePolicyFromJsonDataAsync(GraphServiceClient graphServiceClient, JsonElement policyData)
+            => _helper.ImportFromJsonDataAsync(graphServiceClient, policyData);
 
-                using var writer = new JsonSerializationWriter();
-                writer.WriteObjectValue(null, result);
-                using var stream = writer.GetSerializedContent();
-                var doc = await JsonDocument.ParseAsync(stream);
-                return doc.RootElement.Clone();
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"Error exporting Windows Quality Update policy {policyId}: {ex.Message}", LogLevels.Error);
-                return null;
-            }
-        }
+        public static Task<bool?> HasWindowsQualityUpdatePolicyAssignmentsAsync(GraphServiceClient graphServiceClient, string policyId)
+            => _helper.HasAssignmentsAsync(graphServiceClient, policyId);
 
-        /// <summary>
-        /// Imports a Windows Quality Update policy from previously exported JSON data into the destination tenant.
-        /// </summary>
-        public static async Task<string?> ImportWindowsQualityUpdatePolicyFromJsonDataAsync(GraphServiceClient graphServiceClient, JsonElement policyData)
-        {
-            try
-            {
-                var json = policyData.GetRawText();
-                using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
-                var parseNode = new JsonParseNode(JsonDocument.Parse(stream).RootElement);
-                var exportedPolicy = parseNode.GetObjectValue(WindowsQualityUpdatePolicy.CreateFromDiscriminatorValue);
+        public static Task<List<AssignmentInfo>?> GetWindowsQualityUpdatePolicyAssignmentDetailsAsync(GraphServiceClient graphServiceClient, string policyId)
+            => _helper.GetAssignmentDetailsAsync(graphServiceClient, policyId);
 
-                if (exportedPolicy == null)
-                {
-                    LogToFunctionFile(appFunction.Main, "Failed to deserialize Windows Quality Update policy data from JSON.", LogLevels.Error);
-                    return null;
-                }
-
-                var type = exportedPolicy.GetType();
-                var newPolicy = new WindowsQualityUpdatePolicy();
-
-                foreach (var property in type.GetProperties())
-                {
-                    if (property.CanWrite
-                        && property.Name != "Id"
-                        && property.Name != "CreatedDateTime"
-                        && property.Name != "LastModifiedDateTime"
-                        && property.Name != "Assignments"
-                        && property.Name != "AdditionalData"
-                        && property.Name != "BackingStore")
-                    {
-                        var value = property.GetValue(exportedPolicy);
-                        if (value != null)
-                        {
-                            property.SetValue(newPolicy, value);
-                        }
-                    }
-                }
-
-                newPolicy.OdataType = "#microsoft.graph.windowsQualityUpdatePolicy";
-
-                var imported = await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies.PostAsync(newPolicy);
-
-                LogToFunctionFile(appFunction.Main, $"Imported Windows Quality Update policy: {imported?.DisplayName}");
-                return imported?.DisplayName;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"Error importing Windows Quality Update policy from JSON: {ex.Message}", LogLevels.Error);
-                LogToFunctionFile(appFunction.Main, $"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", LogLevels.Warning);
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Checks if a Windows quality update policy has any group assignments.
-        /// </summary>
-        public static async Task<bool?> HasWindowsQualityUpdatePolicyAssignmentsAsync(GraphServiceClient graphServiceClient, string policyId)
-        {
-            try
-            {
-                var result = await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyId].Assignments.GetAsync(rc =>
-                {
-                    rc.QueryParameters.Top = 1;
-                });
-                return result?.Value != null && result.Value.Count > 0;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Gets detailed assignment information for a Windows Quality Update policy.
-        /// </summary>
-        public static async Task<List<AssignmentInfo>?> GetWindowsQualityUpdatePolicyAssignmentDetailsAsync(GraphServiceClient graphServiceClient, string policyId)
-        {
-            try
-            {
-                var details = new List<AssignmentInfo>();
-                var result = await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyId].Assignments.GetAsync();
-
-                while (result?.Value != null)
-                {
-                    foreach (var assignment in result.Value)
-                    {
-                        details.Add(AssignmentInfo.FromTarget(assignment.Id, assignment.Target));
-                    }
-
-                    if (string.IsNullOrEmpty(result.OdataNextLink)) break;
-
-                    result = await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyId]
-                        .Assignments.WithUrl(result.OdataNextLink).GetAsync();
-                }
-
-                return details;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"Error getting assignment details for Windows Quality Update Policy {policyId}: {ex.Message}", LogLevels.Error);
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Removes all assignments from a Windows Quality Update policy.
-        /// </summary>
-        public static async Task RemoveAllWindowsQualityUpdatePolicyAssignmentsAsync(GraphServiceClient graphServiceClient, string policyId)
-        {
-            var requestBody = new Microsoft.Graph.Beta.DeviceManagement.WindowsQualityUpdatePolicies.Item.Assign.AssignPostRequestBody
-            {
-                Assignments = new List<WindowsQualityUpdatePolicyAssignment>()
-            };
-
-            await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyId].Assign.PostAsync(requestBody);
-            LogToFunctionFile(appFunction.Main, $"Removed all assignments from Windows Quality Update Policy {policyId}.");
-        }
+        public static Task RemoveAllWindowsQualityUpdatePolicyAssignmentsAsync(GraphServiceClient graphServiceClient, string policyId)
+            => _helper.RemoveAllAssignmentsAsync(graphServiceClient, policyId);
     }
 }
