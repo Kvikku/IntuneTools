@@ -38,6 +38,7 @@
     <None Remove="Pages\JsonPage.xaml" />
     <None Remove="Pages\ManageAssignmentsPage.xaml" />
     <None Remove="Pages\RenamingPage.xaml" />
+    <None Remove="Pages\AuditLogPage.xaml" />
   </ItemGroup>
   <!--<ItemGroup>
     <Page Remove="Pages\ImportPage.xaml" />
@@ -115,6 +116,9 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
 	<Page Update="Pages\ImportPage.xaml">
+		<Generator>MSBuild:Compile</Generator>
+	</Page>
+	<Page Update="Pages\AuditLogPage.xaml">
 		<Generator>MSBuild:Compile</Generator>
 	</Page>
   </ItemGroup>

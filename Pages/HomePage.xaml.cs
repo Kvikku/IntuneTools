@@ -195,6 +195,11 @@ namespace IntuneTools.Pages
             NavigateToPage(typeof(ManageAssignmentsPage), "ManageAssignments");
         }
 
+        private void QuickAction_AuditLog_Click(object sender, RoutedEventArgs e)
+        {
+            NavigateToPage(typeof(AuditLogPage), "AuditLog");
+        }
+
         private void NavigateToPage(Type pageType, string navTag)
         {
             this.Frame.Navigate(pageType);

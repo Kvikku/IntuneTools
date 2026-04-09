@@ -111,6 +111,9 @@ namespace IntuneTools
                 case "ManageAssignments":
                     ContentFrame.Navigate(typeof(ManageAssignmentsPage));
                     break;
+                case "AuditLog":
+                    ContentFrame.Navigate(typeof(AuditLogPage));
+                    break;
                 default:
                     break;
             }
