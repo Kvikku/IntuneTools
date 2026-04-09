@@ -54,7 +54,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 var result = await graphServiceClient.DeviceManagement.DeviceConfigurations
                     .GetAsync(requestConfiguration =>
                     {
-                        requestConfiguration.QueryParameters.Top = 1000;
+                        requestConfiguration.QueryParameters.Top = GraphConstants.DefaultPageSize;
                     });
 
                 List<Microsoft.Graph.Beta.Models.DeviceConfiguration> deviceConfigurations = new();

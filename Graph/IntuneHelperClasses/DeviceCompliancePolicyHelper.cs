@@ -22,7 +22,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 var result = await graphServiceClient.DeviceManagement.DeviceCompliancePolicies.GetAsync((requestConfiguration) =>
                 {
-                    requestConfiguration.QueryParameters.Top = 1000;
+                    requestConfiguration.QueryParameters.Top = GraphConstants.DefaultPageSize;
                 });
 
                 if (result == null)

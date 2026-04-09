@@ -89,7 +89,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                             continue;
                         }
 
-                        profileName = sourceProfile.DisplayName ?? "ERROR GETTING NAME";
+                        profileName = sourceProfile.DisplayName ?? GraphConstants.FallbackDisplayName;
 
                         var newPolicy = new WindowsQualityUpdateProfile
                         {

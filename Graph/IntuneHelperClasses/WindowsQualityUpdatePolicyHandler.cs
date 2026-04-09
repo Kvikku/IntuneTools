@@ -45,7 +45,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 var result = await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies.GetAsync((requestConfiguration) =>
                 {
-                    //requestConfiguration.QueryParameters.Top = 1000; // Adjust as needed
                 });
 
                 List<WindowsQualityUpdatePolicy> policies = new List<WindowsQualityUpdatePolicy>();
@@ -96,7 +95,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                             continue;
                         }
 
-                        profileName = sourcePolicy.DisplayName ?? "ERROR GETTING NAME";
+                        profileName = sourcePolicy.DisplayName ?? GraphConstants.FallbackDisplayName;
 
                         // Create the new policy object for the destination tenant
                         var newPolicy = new WindowsQualityUpdatePolicy

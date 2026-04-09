@@ -45,7 +45,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 var result = await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles.GetAsync((requestConfiguration) =>
                 {
-                    //requestConfiguration.QueryParameters.Top = 1000; // Adjust as needed
                 });
 
                 List<WindowsFeatureUpdateProfile> profiles = new List<WindowsFeatureUpdateProfile>();

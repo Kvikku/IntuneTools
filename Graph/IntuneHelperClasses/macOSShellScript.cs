@@ -26,7 +26,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 {
                     // Filter for macOS platform and name contains search query
                     requestConfiguration.QueryParameters.Filter = $"contains(displayName,'{searchQuery}')";
-                    requestConfiguration.QueryParameters.Top = 1000; // Adjust as needed
+                    requestConfiguration.QueryParameters.Top = GraphConstants.DefaultPageSize;
                 });
 
                 List<DeviceShellScript> shellScripts = new List<DeviceShellScript>();
@@ -56,7 +56,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 var result = await graphServiceClient.DeviceManagement.DeviceShellScripts.GetAsync((requestConfiguration) =>
                 {
-                    requestConfiguration.QueryParameters.Top = 1000; // Adjust as needed
+                    requestConfiguration.QueryParameters.Top = GraphConstants.DefaultPageSize;
                 });
 
                 List<DeviceShellScript> shellScripts = new List<DeviceShellScript>();

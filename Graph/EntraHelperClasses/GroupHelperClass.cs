@@ -144,11 +144,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
 
             try
             {
-                Console.WriteLine($"{DateTime.Now.ToString()} - Importing {groupIds.Count} Security groups.\n");
-                LogToFunctionFile(appFunction.Main, " ");
-                LogToFunctionFile(appFunction.Main, $"{DateTime.Now.ToString()} - Importing {groupIds.Count} Security groups.");
-                LogToFunctionFile(appFunction.Main, " ");
-                LogToFunctionFile(appFunction.Main, $"{DateTime.Now.ToString()} - Importing {groupIds.Count} Security groups.");
+                LogToFunctionFile(appFunction.Main, $"Importing {groupIds.Count} Security groups.");
 
 
                 foreach (var groupId in groupIds)

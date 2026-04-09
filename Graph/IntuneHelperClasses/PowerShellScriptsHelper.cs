@@ -50,7 +50,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 var result = await graphServiceClient.DeviceManagement.DeviceManagementScripts.GetAsync((requestConfiguration) =>
                 {
-                    requestConfiguration.QueryParameters.Top = 1000;
+                    requestConfiguration.QueryParameters.Top = GraphConstants.DefaultPageSize;
                 });
 
                 List<DeviceManagementScript> scripts = new List<DeviceManagementScript>();

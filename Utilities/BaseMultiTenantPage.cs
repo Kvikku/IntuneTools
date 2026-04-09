@@ -32,7 +32,7 @@ namespace IntuneTools.Utilities
     /// Expected XAML control names:
     /// - LogConsole (ListView) - for log output; binds to LogEntries observable collection
     /// - LogScrollViewer (ScrollViewer) - legacy fallback for pages not yet using ListView-based logging
-    /// - LoadingOverlay (Grid) - overlay shown during loading
+    /// - LoadingOverlay (Border/FrameworkElement) - overlay shown during loading
     /// - LoadingProgressRing (ProgressRing) - progress indicator
     /// - LoadingStatusText (TextBlock) - loading status message
     /// - TenantInfoBar (InfoBar) - displays authentication status

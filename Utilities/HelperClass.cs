@@ -49,7 +49,7 @@ namespace IntuneTools.Utilities
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error writing to {function} log file: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error writing to {function} log file: {ex.Message}");
             }
         }
 

@@ -38,7 +38,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while searching for Windows AutoPilot profiles", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for Windows AutoPilot profiles: {ex.Message}", LogLevels.Error);
                 return new List<WindowsAutopilotDeploymentProfile>();
             }
         }
@@ -51,7 +51,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 var result = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles.GetAsync((requestConfiguration) =>
                 {
-                    requestConfiguration.QueryParameters.Top = 1000;
+                    requestConfiguration.QueryParameters.Top = GraphConstants.DefaultPageSize;
                 });
 
                 List<WindowsAutopilotDeploymentProfile> profiles = new List<WindowsAutopilotDeploymentProfile>();
@@ -68,7 +68,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while retrieving all Windows AutoPilot profiles", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while retrieving all Windows AutoPilot profiles: {ex.Message}", LogLevels.Error);
                 return new List<WindowsAutopilotDeploymentProfile>();
             }
         }
@@ -90,32 +90,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         if (result.OdataType.Contains("ActiveDirectory", StringComparison.OrdinalIgnoreCase))
                         {
                             LogToFunctionFile(appFunction.Main, "Hybrid Autopilot profiles are currently bugged in Graph API/C# SDK. Please handle manually for now.", LogLevels.Warning);
-
-                            //var requestBody = new ActiveDirectoryWindowsAutopilotDeploymentProfile()
-                            //{
-
-                            //};
-
-                            //foreach (var property in result.GetType().GetProperties())
-                            //{
-                            //    var value = property.GetValue(result);
-                            //    if (value != null && property.CanWrite)
-                            //    {
-                            //        property.SetValue(requestBody, value);
-                            //    }
-                            //}
-
-                            //requestBody.Id = "";
-
-                            //await destinationGraphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles.PostAsync(requestBody);
-                            //rtb.AppendText($"Imported profile: {requestBody.DisplayName}\n");
-                            //WriteToImportStatusFile($"Imported profile: {requestBody.DisplayName}");
-
-                            //if (assignments)
-                            //{
-                            //    await AssignGroupsToSingleWindowsAutoPilotProfile(requestBody.Id, groups, destinationGraphServiceClient);
-                            //}
-
                         }
 
                         else if (result.OdataType.Contains("azureAD"))
@@ -142,13 +116,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     }
                     catch (Exception ex)
                     {
-                        LogToFunctionFile(appFunction.Main, $"Error importing profile {profile}", LogLevels.Error);
+                        LogToFunctionFile(appFunction.Main, $"Error importing profile {profile}: {ex.Message}", LogLevels.Error);
                     }
                 }
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred during the import process", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred during the import process: {ex.Message}", LogLevels.Error);
             }
         }
 
@@ -332,7 +306,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 var result = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].Assignments.GetAsync((requestConfiguration) =>
                 {
-                    requestConfiguration.QueryParameters.Top = 1000;
+                    requestConfiguration.QueryParameters.Top = GraphConstants.DefaultPageSize;
                 });
 
                 // If the result is not null and has assignments, delete them
@@ -348,11 +322,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (ODataError error)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while attempting to delete Autopilot profile assignments", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while attempting to delete Autopilot profile assignments: {error.Message}", LogLevels.Error);
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while attempting to delete Autopilot profile assignments", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while attempting to delete Autopilot profile assignments: {ex.Message}", LogLevels.Error);
             }
         }
 
@@ -374,7 +348,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 // Get the assignments for the profile
                 var result = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].Assignments.GetAsync((requestConfiguration) =>
                 {
-                    requestConfiguration.QueryParameters.Top = 1000;
+                    requestConfiguration.QueryParameters.Top = GraphConstants.DefaultPageSize;
                 });
 
                 // If the result is not null and has assignments, return true
@@ -389,12 +363,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (ODataError error)
             {
-
+                LogToFunctionFile(appFunction.Main, $"Error checking assignments for AutoPilot profile {profileID}: {error.Message}", LogLevels.Warning);
                 return null;
             }
             catch (Exception ex)
             {
-
+                LogToFunctionFile(appFunction.Main, $"Error checking assignments for AutoPilot profile {profileID}: {ex.Message}", LogLevels.Warning);
                 return null;
             }
         }
@@ -418,7 +392,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while deleting Windows Autopilot profiles", LogLevels.Error);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while deleting Windows Autopilot profiles: {ex.Message}", LogLevels.Error);
             }
         }
 
@@ -667,7 +641,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 var details = new List<AssignmentInfo>();
                 var result = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileId].Assignments.GetAsync(rc =>
                 {
-                    rc.QueryParameters.Top = 1000;
+                    rc.QueryParameters.Top = GraphConstants.DefaultPageSize;
                 });
 
                 while (result?.Value != null)
@@ -700,7 +674,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             var result = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileId].Assignments.GetAsync(rc =>
             {
-                rc.QueryParameters.Top = 1000;
+                rc.QueryParameters.Top = GraphConstants.DefaultPageSize;
             });
 
             while (result?.Value != null && result.Value.Count > 0)
