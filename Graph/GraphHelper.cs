@@ -102,7 +102,7 @@ namespace IntuneTools.Graph
         /// <summary>
         /// Searches for items using a server-side filter with PageIterator pagination.
         /// </summary>
-        public async Task<List<TPolicy>> SearchAsync(GraphServiceClient client, string searchQuery)
+        public virtual async Task<List<TPolicy>> SearchAsync(GraphServiceClient client, string searchQuery)
         {
             try
             {
