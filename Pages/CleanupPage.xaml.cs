@@ -34,10 +34,7 @@ namespace IntuneTools.Pages
         #region Fields & Types
 
         // Progress tracking for delete operations
-        private int _deleteTotal;
-        private int _deleteCurrent;
-        private int _deleteSuccessCount;
-        private int _deleteErrorCount;
+        private readonly OperationProgressTracker _deleteProgress = new();
 
         /// <summary>
         /// Defines a delete operation for a specific content type.
@@ -122,18 +119,15 @@ namespace IntuneTools.Pages
         /// </summary>
         private async Task DeleteContent()
         {
-            _deleteTotal = ContentList.Count;
-            _deleteCurrent = 0;
-            _deleteSuccessCount = 0;
-            _deleteErrorCount = 0;
+            _deleteProgress.Reset(ContentList.Count);
 
-            if (_deleteTotal == 0)
+            if (_deleteProgress.Total == 0)
             {
                 AppendToDetailsRichTextBlock("No content to delete.");
                 return;
             }
 
-            ShowOperationProgress("Preparing to delete items...", 0, _deleteTotal);
+            ShowOperationProgress("Preparing to delete items...", 0, _deleteProgress.Total);
 
             foreach (var definition in GetDeleteTypeRegistry())
             {
@@ -145,13 +139,13 @@ namespace IntuneTools.Pages
             }
 
             // Show final status
-            if (_deleteErrorCount == 0)
+            if (_deleteProgress.ErrorCount == 0)
             {
-                ShowOperationSuccess($"Successfully deleted {_deleteSuccessCount} items");
+                ShowOperationSuccess($"Successfully deleted {_deleteProgress.SuccessCount} items");
             }
             else
             {
-                ShowOperationError($"Completed with {_deleteErrorCount} error(s). {_deleteSuccessCount} items deleted successfully.");
+                ShowOperationError($"Completed with {_deleteProgress.ErrorCount} error(s). {_deleteProgress.SuccessCount} items deleted successfully.");
             }
 
             AppendToDetailsRichTextBlock("Content deletion completed.");
@@ -214,8 +208,8 @@ namespace IntuneTools.Pages
         {
             foreach (var id in ids)
             {
-                _deleteCurrent++;
-                ShowOperationProgress($"Deleting {definition.DisplayName}", _deleteCurrent, _deleteTotal);
+                _deleteProgress.Advance();
+                ShowOperationProgress($"Deleting {definition.DisplayName}", _deleteProgress.Current, _deleteProgress.Total);
                 try
                 {
                     var deleted = await definition.DeleteAsync(id);
@@ -223,13 +217,13 @@ namespace IntuneTools.Pages
                     {
                         LogToFunctionFile(appFunction.Main, $"Deleted {definition.DisplayName} with ID: {id}");
                         UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
-                        _deleteSuccessCount++;
+                        _deleteProgress.RecordSuccess();
                     }
                     // If not deleted (skipped), don't count as success or error
                 }
                 catch (Exception ex)
                 {
-                    _deleteErrorCount++;
+                    _deleteProgress.RecordError();
                     LogToFunctionFile(appFunction.Main, $"Error deleting {definition.DisplayName} {id}: {ex.Message}", LogLevels.Error);
                 }
             }
@@ -488,25 +482,11 @@ namespace IntuneTools.Pages
         {
             var numberOfItems = ContentList.Count;
 
-            // Bulk operation safeguard: warn when deleting 10 or more items
-            if (numberOfItems >= 10)
+            // Bulk operation safeguard: warn when deleting many items
+            if (!await ShowBulkOperationWarningAsync(numberOfItems, "Delete"))
             {
-                var bulkWarning = new ContentDialog
-                {
-                    Title = "\u26A0 Large Bulk Delete",
-                    Content = $"You are about to delete {numberOfItems} items. This is a large operation and cannot be undone. Are you sure you want to continue?",
-                    PrimaryButtonText = "Continue",
-                    CloseButtonText = "Cancel",
-                    DefaultButton = ContentDialogButton.Close,
-                    XamlRoot = this.XamlRoot
-                };
-
-                var bulkResult = await bulkWarning.ShowAsync().AsTask();
-                if (bulkResult != ContentDialogResult.Primary)
-                {
-                    AppendToDetailsRichTextBlock("Bulk delete cancelled by user.");
-                    return;
-                }
+                AppendToDetailsRichTextBlock("Bulk delete cancelled by user.");
+                return;
             }
 
             var dialog = new ContentDialog

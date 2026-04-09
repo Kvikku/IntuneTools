@@ -43,10 +43,7 @@ namespace IntuneTools.Pages
         private ObservableCollection<CustomContentInfo> CustomContentList => ContentList;
 
         // Progress tracking for rename operations
-        private int _renameTotal;
-        private int _renameCurrent;
-        private int _renameSuccessCount;
-        private int _renameErrorCount;
+        private readonly OperationProgressTracker _renameProgress = new();
 
         /// <summary>
         /// Defines a rename operation for a specific content type.
@@ -166,7 +163,7 @@ namespace IntuneTools.Pages
             try
             {
                 InitializeProgressTracking(totalItems);
-                ShowOperationProgress("Preparing to rename items...", 0, _renameTotal);
+                ShowOperationProgress("Preparing to rename items...", 0, _renameProgress.Total);
 
                 foreach (var definition in GetRenameTypeRegistry())
                 {
@@ -203,8 +200,8 @@ namespace IntuneTools.Pages
         {
             foreach (var id in ids)
             {
-                _renameCurrent++;
-                ShowOperationProgress($"Renaming {contentTypeName}", _renameCurrent, _renameTotal);
+                _renameProgress.Advance();
+                ShowOperationProgress($"Renaming {contentTypeName}", _renameProgress.Current, _renameProgress.Total);
                 try
                 {
                     string? displayName = getDisplayName != null ? await getDisplayName(id) : null;
@@ -213,11 +210,11 @@ namespace IntuneTools.Pages
                     var logName = displayName ?? $"ID '{id}'";
                     LogSuccess($"Updated {contentTypeName} '{logName}' with '{prefix}'.");
                     UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
-                    _renameSuccessCount++;
+                    _renameProgress.RecordSuccess();
                 }
                 catch (Exception ex)
                 {
-                    _renameErrorCount++;
+                    _renameProgress.RecordError();
                     LogError($"Error renaming {contentTypeName} with ID {id}: {ex.Message}");
                 }
             }
@@ -284,7 +281,7 @@ namespace IntuneTools.Pages
                 return null;
             }
 
-            var confirmed = await ShowConfirmationDialog(
+            var confirmed = await ShowConfirmationDialogAsync(
                 "Confirm Renaming",
                 $"The new policy names will look like this. Proceed?\n\n{string.Join("\n", contentNames)}",
                 "Rename");
@@ -317,13 +314,13 @@ namespace IntuneTools.Pages
                 return null;
             }
 
-            var previewText = string.Join("\n", itemsWithPrefixes.Take(10).Select(p => $"{p.Original}  →  {p.NewName}"));
-            if (itemsWithPrefixes.Count > 10)
+            var previewText = string.Join("\n", itemsWithPrefixes.Take(UIConstants.BulkOperationWarningThreshold).Select(p => $"{p.Original}  →  {p.NewName}"));
+            if (itemsWithPrefixes.Count > UIConstants.BulkOperationWarningThreshold)
             {
-                previewText += $"\n... and {itemsWithPrefixes.Count - 10} more items";
+                previewText += $"\n... and {itemsWithPrefixes.Count - UIConstants.BulkOperationWarningThreshold} more items";
             }
 
-            var confirmed = await ShowConfirmationDialog(
+            var confirmed = await ShowConfirmationDialogAsync(
                 "Confirm Removing Prefixes",
                 $"The following {itemsWithPrefixes.Count} item(s) will have their prefixes removed:\n\n{previewText}",
                 "Remove Prefixes");
@@ -333,7 +330,7 @@ namespace IntuneTools.Pages
 
         private async Task<string?> PrepareDescriptionUpdate(string newDescription)
         {
-            var confirmed = await ShowConfirmationDialog(
+            var confirmed = await ShowConfirmationDialogAsync(
                 "Confirm updating description",
                 $"The new policy descriptions will look like this. Proceed?\n\n{newDescription}",
                 "Update");
@@ -425,29 +422,6 @@ namespace IntuneTools.Pages
         #region UI Helpers
 
         /// <summary>
-        /// Shows a confirmation dialog and returns true if user confirmed.
-        /// </summary>
-        private async Task<bool> ShowConfirmationDialog(string title, string content, string confirmButtonText)
-        {
-            var dialog = new ContentDialog
-            {
-                Title = title,
-                Content = content,
-                PrimaryButtonText = confirmButtonText,
-                CloseButtonText = "Cancel",
-                XamlRoot = this.XamlRoot
-            };
-
-            var result = await dialog.ShowAsync();
-            if (result != ContentDialogResult.Primary)
-            {
-                LogInfo("Renaming operation cancelled.");
-                return false;
-            }
-            return true;
-        }
-
-        /// <summary>
         /// Returns the value of the selected radio button in the OptionsExpander.
         /// </summary>
         public string? GetSelectedPrefixOption()
@@ -467,23 +441,20 @@ namespace IntuneTools.Pages
 
         private void InitializeProgressTracking(int totalItems)
         {
-            _renameTotal = totalItems;
-            _renameCurrent = 0;
-            _renameSuccessCount = 0;
-            _renameErrorCount = 0;
+            _renameProgress.Reset(totalItems);
         }
 
         private void ReportRenameResults(string operationText)
         {
-            if (_renameErrorCount == 0)
+            if (_renameProgress.ErrorCount == 0)
             {
-                ShowOperationSuccess($"Successfully renamed {_renameSuccessCount} items");
+                ShowOperationSuccess($"Successfully renamed {_renameProgress.SuccessCount} items");
             }
             else
             {
-                ShowOperationError($"Completed with {_renameErrorCount} error(s). {_renameSuccessCount} items renamed successfully.");
+                ShowOperationError($"Completed with {_renameProgress.ErrorCount} error(s). {_renameProgress.SuccessCount} items renamed successfully.");
             }
-            LogSuccess($"Renamed {_renameSuccessCount} items with '{operationText}'.");
+            LogSuccess($"Renamed {_renameProgress.SuccessCount} items with '{operationText}'.");
         }
 
         #endregion
@@ -549,25 +520,11 @@ namespace IntuneTools.Pages
 
             selectedRenameMode = renameMode.ToString();
 
-            // Bulk operation safeguard: warn when renaming 10 or more items
-            if (itemsToRename.Count >= 10)
+            // Bulk operation safeguard: warn when renaming many items
+            if (!await ShowBulkOperationWarningAsync(itemsToRename.Count, "Update"))
             {
-                var bulkWarning = new ContentDialog
-                {
-                    Title = "\u26A0 Large Bulk Update",
-                    Content = $"You are about to update {itemsToRename.Count} items. Are you sure you want to continue?",
-                    PrimaryButtonText = "Continue",
-                    CloseButtonText = "Cancel",
-                    DefaultButton = ContentDialogButton.Close,
-                    XamlRoot = this.XamlRoot
-                };
-
-                var bulkResult = await bulkWarning.ShowAsync();
-                if (bulkResult != ContentDialogResult.Primary)
-                {
-                    LogInfo("Bulk rename cancelled by user.");
-                    return;
-                }
+                LogInfo("Bulk rename cancelled by user.");
+                return;
             }
 
             await RenameContent(itemsToRename.Select(i => i.ContentId).Where(id => !string.IsNullOrEmpty(id)).ToList(), newName);

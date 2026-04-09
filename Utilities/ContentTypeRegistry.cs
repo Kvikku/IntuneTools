@@ -125,5 +125,28 @@ namespace IntuneTools.Utilities
                     yield return op;
             }
         }
+
+        /// <summary>
+        /// Maps checkbox control names (used in XAML) to ContentTypes constants.
+        /// Centralizes the mapping so each page doesn't need its own copy.
+        /// </summary>
+        public static readonly IReadOnlyDictionary<string, string> CheckboxToContentType = new Dictionary<string, string>
+        {
+            ["SettingsCatalog"] = ContentTypes.SettingsCatalog,
+            ["DeviceCompliance"] = ContentTypes.DeviceCompliancePolicy,
+            ["DeviceConfiguration"] = ContentTypes.DeviceConfigurationPolicy,
+            ["AppleBYODEnrollmentProfile"] = ContentTypes.AppleBYODEnrollmentProfile,
+            ["PowerShellScript"] = ContentTypes.PowerShellScript,
+            ["ProactiveRemediation"] = ContentTypes.ProactiveRemediation,
+            ["macOSShellScript"] = ContentTypes.MacOSShellScript,
+            ["WindowsAutopilot"] = ContentTypes.WindowsAutoPilotProfile,
+            ["WindowsDriverUpdate"] = ContentTypes.WindowsDriverUpdate,
+            ["WindowsFeatureUpdate"] = ContentTypes.WindowsFeatureUpdate,
+            ["WindowsQualityUpdatePolicy"] = ContentTypes.WindowsQualityUpdatePolicy,
+            ["WindowsQualityUpdateProfile"] = ContentTypes.WindowsQualityUpdateProfile,
+            ["Filters"] = ContentTypes.AssignmentFilter,
+            ["EntraGroups"] = ContentTypes.EntraGroup,
+            ["Application"] = ContentTypes.Application,
+        };
     }
 }

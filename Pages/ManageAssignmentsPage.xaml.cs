@@ -37,10 +37,7 @@ namespace IntuneTools.Pages
             Func<GraphServiceClient, string, Task> RemoveAsync);
 
         // Progress tracking for remove operations
-        private int _removeTotal;
-        private int _removeCurrent;
-        private int _removeSuccessCount;
-        private int _removeErrorCount;
+        private readonly OperationProgressTracker _removeProgress = new();
 
         /// <summary>
         /// Content types that support group assignments.
@@ -280,12 +277,9 @@ namespace IntuneTools.Pages
         /// </summary>
         private async Task RemoveAssignmentsOrchestrator(GraphServiceClient graphServiceClient, List<CustomContentInfo> selectedItems)
         {
-            _removeTotal = selectedItems.Count;
-            _removeCurrent = 0;
-            _removeSuccessCount = 0;
-            _removeErrorCount = 0;
+            _removeProgress.Reset(selectedItems.Count);
 
-            ShowOperationProgress("Removing assignments...", 0, _removeTotal);
+            ShowOperationProgress("Removing assignments...", 0, _removeProgress.Total);
 
             foreach (var definition in GetRemoveAssignmentRegistry())
             {
@@ -295,8 +289,8 @@ namespace IntuneTools.Pages
 
                 foreach (var item in itemsOfType)
                 {
-                    _removeCurrent++;
-                    ShowOperationProgress($"Removing assignments from {definition.DisplayName}", _removeCurrent, _removeTotal);
+                    _removeProgress.Advance();
+                    ShowOperationProgress($"Removing assignments from {definition.DisplayName}", _removeProgress.Current, _removeProgress.Total);
 
                     if (string.IsNullOrEmpty(item.ContentId))
                     {
@@ -307,24 +301,24 @@ namespace IntuneTools.Pages
                     try
                     {
                         await definition.RemoveAsync(graphServiceClient, item.ContentId);
-                        _removeSuccessCount++;
+                        _removeProgress.RecordSuccess();
                         LogSuccess($"Removed assignments from '{item.ContentName}'.");
                     }
                     catch (Exception ex)
                     {
-                        _removeErrorCount++;
+                        _removeProgress.RecordError();
                         LogError($"Error removing assignments from '{item.ContentName}': {ex.Message}");
                     }
                 }
             }
 
-            if (_removeErrorCount == 0)
+            if (_removeProgress.ErrorCount == 0)
             {
-                ShowOperationSuccess($"Successfully removed assignments from {_removeSuccessCount} item(s)");
+                ShowOperationSuccess($"Successfully removed assignments from {_removeProgress.SuccessCount} item(s)");
             }
             else
             {
-                ShowOperationError($"Completed with {_removeErrorCount} error(s). {_removeSuccessCount} item(s) processed successfully.");
+                ShowOperationError($"Completed with {_removeProgress.ErrorCount} error(s). {_removeProgress.SuccessCount} item(s) processed successfully.");
             }
         }
 
@@ -401,25 +395,11 @@ namespace IntuneTools.Pages
 
             var numberOfItems = selectedItems.Count;
 
-            // Bulk operation safeguard: warn when removing assignments from 10 or more items
-            if (numberOfItems >= 10)
+            // Bulk operation safeguard: warn when removing assignments from many items
+            if (!await ShowBulkOperationWarningAsync(numberOfItems, "Operation"))
             {
-                var bulkWarning = new ContentDialog
-                {
-                    Title = "\u26A0 Large Bulk Operation",
-                    Content = $"You are about to remove assignments from {numberOfItems} items. This is a large operation. Are you sure you want to continue?",
-                    PrimaryButtonText = "Continue",
-                    CloseButtonText = "Cancel",
-                    DefaultButton = ContentDialogButton.Close,
-                    XamlRoot = this.XamlRoot
-                };
-
-                var bulkResult = await bulkWarning.ShowAsync().AsTask();
-                if (bulkResult != ContentDialogResult.Primary)
-                {
-                    AppendToLog("Bulk assignment removal cancelled by user.");
-                    return;
-                }
+                AppendToLog("Bulk assignment removal cancelled by user.");
+                return;
             }
 
             var dialog = new ContentDialog

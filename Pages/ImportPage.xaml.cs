@@ -1,4 +1,5 @@
 using CommunityToolkit.WinUI.UI.Controls;
+using IntuneTools.Models;
 using IntuneTools.Utilities;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -29,20 +30,6 @@ using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHe
 
 namespace IntuneTools.Pages
 {
-    #region Helper Types
-
-    public class GroupInfo
-    {
-        public string? GroupName { get; set; }
-    }
-
-    public class FilterInfo
-    {
-        public string? FilterName { get; set; }
-    }
-
-    #endregion
-
     public sealed partial class ImportPage : BaseDataOperationPage
     {
         #region Fields & Types
@@ -58,39 +45,21 @@ namespace IntuneTools.Pages
             string DisplayName,
             Func<List<string>, List<string>, Task> ImportAsync);
 
-        public ObservableCollection<GroupInfo> GroupList { get; set; } = new ObservableCollection<GroupInfo>();
-        public ObservableCollection<FilterInfo> FilterList { get; set; } = new ObservableCollection<FilterInfo>();
+        public ObservableCollection<GroupSelectionInfo> GroupList { get; set; } = new ObservableCollection<GroupSelectionInfo>();
+        public ObservableCollection<FilterSelectionInfo> FilterList { get; set; } = new ObservableCollection<FilterSelectionInfo>();
         public ObservableCollection<string> FilterOptions { get; set; } = new ObservableCollection<string>();
 
         private bool _suppressOptionEvents = false;
         private bool _suppressSelectAllEvents = false;
 
         // Progress tracking for import operations
-        private int _importTotal;
-        private int _importCurrent;
-        private int _importSuccessCount;
-        private int _importErrorCount;
+        private readonly OperationProgressTracker _importProgress = new();
 
         /// <summary>
         /// Maps checkbox names to ContentTypes constants.
+        /// Delegates to the centralized registry.
         /// </summary>
-        private static readonly Dictionary<string, string> CheckboxToContentType = new()
-        {
-            ["SettingsCatalog"] = ContentTypes.SettingsCatalog,
-            ["DeviceCompliance"] = ContentTypes.DeviceCompliancePolicy,
-            ["DeviceConfiguration"] = ContentTypes.DeviceConfigurationPolicy,
-            ["AppleBYODEnrollmentProfile"] = ContentTypes.AppleBYODEnrollmentProfile,
-            ["PowerShellScript"] = ContentTypes.PowerShellScript,
-            ["ProactiveRemediation"] = ContentTypes.ProactiveRemediation,
-            ["macOSShellScript"] = ContentTypes.MacOSShellScript,
-            ["WindowsAutopilot"] = ContentTypes.WindowsAutoPilotProfile,
-            ["WindowsDriverUpdate"] = ContentTypes.WindowsDriverUpdate,
-            ["WindowsFeatureUpdate"] = ContentTypes.WindowsFeatureUpdate,
-            ["WindowsQualityUpdatePolicy"] = ContentTypes.WindowsQualityUpdatePolicy,
-            ["WindowsQualityUpdateProfile"] = ContentTypes.WindowsQualityUpdateProfile,
-            ["Filters"] = ContentTypes.AssignmentFilter,
-            ["EntraGroups"] = ContentTypes.EntraGroup,
-        };
+        private static IReadOnlyDictionary<string, string> CheckboxToContentType => ContentTypeRegistry.CheckboxToContentType;
 
         #endregion
 
@@ -244,7 +213,7 @@ namespace IntuneTools.Pages
                 // Update GroupList for DataGrid
                 foreach (var group in groups)
                 {
-                    GroupList.Add(new GroupInfo
+                    GroupList.Add(new GroupSelectionInfo
                     {
                         GroupName = group.DisplayName
                     });
@@ -271,7 +240,7 @@ namespace IntuneTools.Pages
                 // Update ContentList for DataGrid
                 foreach (var group in groups)
                 {
-                    GroupList.Add(new GroupInfo
+                    GroupList.Add(new GroupSelectionInfo
                     {
                         GroupName = group.DisplayName
                     });
@@ -442,7 +411,7 @@ namespace IntuneTools.Pages
             AppendToLog("Assigning to the following groups:\n");
             if (GroupDataGrid.SelectedItems != null && GroupDataGrid.SelectedItems.Count > 0)
             {
-                foreach (GroupInfo selectedGroup in GroupDataGrid.SelectedItems)
+                foreach (GroupSelectionInfo selectedGroup in GroupDataGrid.SelectedItems)
                 {
                     if (selectedGroup != null && !string.IsNullOrEmpty(selectedGroup.GroupName))
                     {
@@ -505,31 +474,12 @@ namespace IntuneTools.Pages
                 return;
             }
 
-            // Bulk operation safeguard: warn when importing 10 or more items
-            if (ContentList.Count >= 10)
+            // Bulk operation safeguard: warn when importing many items
+            if (!await ShowBulkOperationWarningAsync(ContentList.Count, "Import"))
             {
-                var bulkWarning = new ContentDialog
-                {
-                    Title = "\u26A0 Large Bulk Import",
-                    Content = $"You are about to import {ContentList.Count} items. Are you sure you want to continue?",
-                    PrimaryButtonText = "Continue",
-                    CloseButtonText = "Cancel",
-                    DefaultButton = ContentDialogButton.Close,
-                    XamlRoot = this.XamlRoot
-                };
-
-                var bulkResult = await bulkWarning.ShowAsync();
-                if (bulkResult != ContentDialogResult.Primary)
-                {
-                    AppendToLog("Bulk import cancelled by user.");
-                    return;
-                }
+                AppendToLog("Bulk import cancelled by user.");
+                return;
             }
-
-            // Initialize progress tracking
-            _importCurrent = 0;
-            _importSuccessCount = 0;
-            _importErrorCount = 0;
 
             // Extract group IDs into a list for later use
             List<string> groupIds = selectedGroupNameAndID
@@ -537,13 +487,12 @@ namespace IntuneTools.Pages
                 .Select(g => g.Value)
                 .ToList();
 
-            // Get import registry with current group/filter selection state
+            // Initialize progress tracking
             var importRegistry = GetImportTypeRegistry(IsGroupSelected, IsFilterSelected, groupIds).ToList();
+            int importTotal = importRegistry.Count(def => HasContentType(def.TypeKey));
+            _importProgress.Reset(importTotal);
 
-            // Count total content types to import
-            _importTotal = importRegistry.Count(def => HasContentType(def.TypeKey));
-
-            ShowOperationProgress("Starting import...", 0, _importTotal);
+            ShowOperationProgress("Starting import...", 0, importTotal);
 
             // Log the start of the import process
             LogToFunctionFile(appFunction.Main, "Starting import process...", LogLevels.Info);
@@ -567,8 +516,8 @@ namespace IntuneTools.Pages
                 if (!HasContentType(definition.TypeKey))
                     continue;
 
-                _importCurrent++;
-                ShowOperationProgress($"Importing {definition.DisplayName}...", _importCurrent, _importTotal);
+                _importProgress.Advance();
+                ShowOperationProgress($"Importing {definition.DisplayName}...", _importProgress.Current, _importProgress.Total);
 
                 try
                 {
@@ -579,24 +528,24 @@ namespace IntuneTools.Pages
                     await definition.ImportAsync(contentIds, groupIds);
 
                     AppendToLog($"{definition.DisplayName} imported successfully.\n");
-                    _importSuccessCount++;
+                    _importProgress.RecordSuccess();
                 }
                 catch (Exception ex)
                 {
                     AppendToLog($"Error importing {definition.DisplayName}: {ex.Message}\n");
                     LogToFunctionFile(appFunction.Main, $"Error importing {definition.DisplayName}: {ex.Message}", LogLevels.Error);
-                    _importErrorCount++;
+                    _importProgress.RecordError();
                 }
             }
 
             // Show final status
-            if (_importErrorCount == 0)
+            if (_importProgress.ErrorCount == 0)
             {
-                ShowOperationSuccess($"Import completed: {_importSuccessCount} content type(s) imported successfully");
+                ShowOperationSuccess($"Import completed: {_importProgress.SuccessCount} content type(s) imported successfully");
             }
             else
             {
-                ShowOperationError($"Import completed with errors: {_importSuccessCount} succeeded, {_importErrorCount} failed");
+                ShowOperationError($"Import completed with errors: {_importProgress.SuccessCount} succeeded, {_importProgress.ErrorCount} failed");
             }
 
             AppendToLog("Import process finished.\n");
@@ -665,10 +614,10 @@ namespace IntuneTools.Pages
                 return;
             }
 
-            var propInfo = typeof(GroupInfo).GetProperty(sortProperty);
+            var propInfo = typeof(GroupSelectionInfo).GetProperty(sortProperty);
             if (propInfo == null)
             {
-                AppendToLog($"Sorting error: Property '{sortProperty}' not found on GroupInfo.");
+                AppendToLog($"Sorting error: Property '{sortProperty}' not found on GroupSelectionInfo.");
                 return;
             }
 
@@ -679,7 +628,7 @@ namespace IntuneTools.Pages
             else
                 direction = ListSortDirection.Ascending;
 
-            List<GroupInfo> sorted;
+            List<GroupSelectionInfo> sorted;
             try
             {
                 if (direction == ListSortDirection.Ascending)

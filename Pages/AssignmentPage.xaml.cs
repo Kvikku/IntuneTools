@@ -1,5 +1,6 @@
 using CommunityToolkit.WinUI.UI.Controls;
 using IntuneTools.Graph.IntuneHelperClasses;
+using IntuneTools.Models;
 using IntuneTools.Utilities;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -28,21 +29,6 @@ using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHe
 
 namespace IntuneTools.Pages
 {
-    #region Helper Types
-
-    public class AssignmentGroupInfo
-    {
-        public string? GroupName { get; set; }
-        public string? GroupId { get; set; }
-    }
-
-    public class AssignmentFilterInfo
-    {
-        public string? FilterName { get; set; }
-    }
-
-    #endregion
-
     public sealed partial class AssignmentPage : BaseMultiTenantPage
     {
         #region Fields & Types
@@ -57,7 +43,7 @@ namespace IntuneTools.Pages
             Func<string, List<string>, GraphServiceClient, Task> AssignAsync);
 
         public static ObservableCollection<CustomContentInfo> AssignmentList { get; } = new();
-        public ObservableCollection<AssignmentGroupInfo> GroupList { get; } = new();
+        public ObservableCollection<GroupSelectionInfo> GroupList { get; } = new();
         public ObservableCollection<DeviceAndAppManagementAssignmentFilter> FilterOptions { get; } = new();
 
         private List<CustomContentInfo> _allAssignments = new();
@@ -66,23 +52,9 @@ namespace IntuneTools.Pages
 
         /// <summary>
         /// Maps checkbox names to ContentTypes constants for registry lookup.
+        /// Delegates to the centralized registry.
         /// </summary>
-        private static readonly Dictionary<string, string> CheckboxToContentType = new()
-        {
-            ["SettingsCatalog"] = ContentTypes.SettingsCatalog,
-            ["DeviceCompliance"] = ContentTypes.DeviceCompliancePolicy,
-            ["DeviceConfiguration"] = ContentTypes.DeviceConfigurationPolicy,
-            ["macOSShellScript"] = ContentTypes.MacOSShellScript,
-            ["PowerShellScript"] = ContentTypes.PowerShellScript,
-            ["ProactiveRemediation"] = ContentTypes.ProactiveRemediation,
-            ["WindowsAutopilot"] = ContentTypes.WindowsAutoPilotProfile,
-            ["WindowsDriverUpdate"] = ContentTypes.WindowsDriverUpdate,
-            ["WindowsFeatureUpdate"] = ContentTypes.WindowsFeatureUpdate,
-            ["WindowsQualityUpdatePolicy"] = ContentTypes.WindowsQualityUpdatePolicy,
-            ["WindowsQualityUpdateProfile"] = ContentTypes.WindowsQualityUpdateProfile,
-            ["AppleBYODEnrollmentProfile"] = ContentTypes.AppleBYODEnrollmentProfile,
-            ["Application"] = ContentTypes.Application,
-        };
+        private static IReadOnlyDictionary<string, string> CheckboxToContentType => ContentTypeRegistry.CheckboxToContentType;
 
         /// <summary>
         /// Gets the selected ContentTypes based on checked checkboxes.
@@ -107,10 +79,7 @@ namespace IntuneTools.Pages
         private string _selectedFilterMode = "Include";
 
         // Progress tracking for assignment operations
-        private int _assignTotal;
-        private int _assignCurrent;
-        private int _assignSuccessCount;
-        private int _assignErrorCount;
+        private readonly OperationProgressTracker _assignProgress = new();
 
         // UI initialization flag to prevent early event handlers from using null controls (e.g., LogConsole)
         private bool _uiInitialized = false;
@@ -252,29 +221,15 @@ namespace IntuneTools.Pages
             // Get all content
             var content = GetAllContentFromDatagrid();
 
-            // Bulk operation safeguard: warn when assigning 10 or more items
-            if (content.Count >= 10)
+            // Bulk operation safeguard: warn when assigning many items
+            if (!await ShowBulkOperationWarningAsync(content.Count, "Assignment"))
             {
-                var bulkWarning = new ContentDialog
-                {
-                    Title = "\u26A0 Large Bulk Assignment",
-                    Content = $"You are about to assign {content.Count} items. Are you sure you want to continue?",
-                    PrimaryButtonText = "Continue",
-                    CloseButtonText = "Cancel",
-                    DefaultButton = ContentDialogButton.Close,
-                    XamlRoot = this.XamlRoot
-                };
-
-                var bulkResult = await bulkWarning.ShowAsync();
-                if (bulkResult != ContentDialogResult.Primary)
-                {
-                    AppendToLog("Bulk assignment cancelled by user.");
-                    return;
-                }
+                AppendToLog("Bulk assignment cancelled by user.");
+                return;
             }
 
             // Get groups
-            var selectedGroups = GroupDataGrid.SelectedItems?.Cast<AssignmentGroupInfo>().ToList();
+            var selectedGroups = GroupDataGrid.SelectedItems?.Cast<GroupSelectionInfo>().ToList();
             if (selectedGroups == null || selectedGroups.Count == 0)
             {
                 AppendToLog("No groups selected for assignment.");
@@ -345,26 +300,23 @@ namespace IntuneTools.Pages
                 AppendToLog($"Starting assignment of {content.Count} item(s) to {selectedGroups.Count} group(s)...");
 
                 // Initialize progress tracking
-                _assignTotal = content.Count;
-                _assignCurrent = 0;
-                _assignSuccessCount = 0;
-                _assignErrorCount = 0;
+                _assignProgress.Reset(content.Count);
 
-                ShowOperationProgress("Starting assignment...", 0, _assignTotal);
+                ShowOperationProgress("Starting assignment...", 0, _assignProgress.Total);
 
                 int successCount = 0;
                 int failureCount = 0;
 
                 foreach (var item in content)
                 {
-                    _assignCurrent++;
-                    ShowOperationProgress($"Assigning '{item.Value.ContentName}'...", _assignCurrent, _assignTotal);
+                    _assignProgress.Advance();
+                    ShowOperationProgress($"Assigning '{item.Value.ContentName}'...", _assignProgress.Current, _assignProgress.Total);
 
                     try
                     {
                         await AssignContentItemAsync(item.Value, groupList, sourceGraphServiceClient);
 
-                        _assignSuccessCount++;
+                        _assignProgress.RecordSuccess();
                         foreach (var group in selectedGroups)
                         {
                             AppendToLog($"Assigning '{item.Value.ContentName}' to group '{group.GroupName}'.");
@@ -373,7 +325,7 @@ namespace IntuneTools.Pages
                     }
                     catch (Exception ex)
                     {
-                        _assignErrorCount++;
+                        _assignProgress.RecordError();
                         AppendToLog($"Failed to assign '{item.Value.ContentName}' (ID: {item.Key}): {ex.Message}");
                         failureCount++;
                     }
@@ -383,13 +335,13 @@ namespace IntuneTools.Pages
                 AppendToLog($"Assignment completed: {successCount} successful, {failureCount} failed.");
 
                 // Show final status
-                if (_assignErrorCount == 0)
+                if (_assignProgress.ErrorCount == 0)
                 {
-                    ShowOperationSuccess($"Assignment completed: {_assignSuccessCount} item(s) assigned successfully");
+                    ShowOperationSuccess($"Assignment completed: {_assignProgress.SuccessCount} item(s) assigned successfully");
                 }
                 else
                 {
-                    ShowOperationError($"Assignment completed with errors: {_assignSuccessCount} succeeded, {_assignErrorCount} failed");
+                    ShowOperationError($"Assignment completed with errors: {_assignProgress.SuccessCount} succeeded, {_assignProgress.ErrorCount} failed");
                 }
 
                 // Show completion dialog
@@ -519,7 +471,7 @@ namespace IntuneTools.Pages
                 var groups = await GetAllGroups(sourceGraphServiceClient);
                 foreach (var group in groups)
                 {
-                    GroupList.Add(new AssignmentGroupInfo
+                    GroupList.Add(new GroupSelectionInfo
                     {
                         GroupName = group.DisplayName,
                         GroupId = group.Id
@@ -545,7 +497,7 @@ namespace IntuneTools.Pages
                 var groups = await SearchForGroups(sourceGraphServiceClient, searchQuery);
                 foreach (var group in groups)
                 {
-                    GroupList.Add(new AssignmentGroupInfo
+                    GroupList.Add(new GroupSelectionInfo
                     {
                         GroupName = group.DisplayName,
                         GroupId = group.Id
@@ -1047,11 +999,11 @@ namespace IntuneTools.Pages
                 return;
             }
 
-            // Check if property exists on AssignmentGroupInfo
-            var propInfo = typeof(AssignmentGroupInfo).GetProperty(sortProperty);
+            // Check if property exists on GroupSelectionInfo
+            var propInfo = typeof(GroupSelectionInfo).GetProperty(sortProperty);
             if (propInfo == null)
             {
-                AppendToLog($"Sorting error: Property '{sortProperty}' not found on AssignmentGroupInfo.");
+                AppendToLog($"Sorting error: Property '{sortProperty}' not found on GroupSelectionInfo.");
                 return;
             }
 
@@ -1064,7 +1016,7 @@ namespace IntuneTools.Pages
                 direction = ListSortDirection.Ascending;
 
             // Sort the GroupList in place
-            List<AssignmentGroupInfo> sorted;
+            List<GroupSelectionInfo> sorted;
             try
             {
                 if (direction == ListSortDirection.Ascending)

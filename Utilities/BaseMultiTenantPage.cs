@@ -389,6 +389,26 @@ namespace IntuneTools.Utilities
         }
 
         /// <summary>
+        /// Shows a bulk operation warning dialog when the item count reaches or exceeds the threshold.
+        /// Returns true if the user confirms, false if cancelled or under threshold (proceeds without warning).
+        /// </summary>
+        /// <param name="itemCount">Number of items in the operation.</param>
+        /// <param name="operationName">Human-readable operation name (e.g., "import", "delete").</param>
+        /// <param name="threshold">Minimum count to trigger the warning. Defaults to <see cref="UIConstants.BulkOperationWarningThreshold"/>.</param>
+        /// <returns>True if the operation should proceed, false if cancelled by user.</returns>
+        protected async Task<bool> ShowBulkOperationWarningAsync(int itemCount, string operationName, int threshold = UIConstants.BulkOperationWarningThreshold)
+        {
+            if (itemCount < threshold)
+                return true; // Under threshold, proceed without warning
+
+            return await ShowConfirmationDialogAsync(
+                $"\u26A0 Large Bulk {operationName}",
+                $"You are about to {operationName.ToLowerInvariant()} {itemCount} items. Are you sure you want to continue?",
+                "Continue",
+                "Cancel");
+        }
+
+        /// <summary>
         /// Handler for clear log button - shows confirmation then clears.
         /// </summary>
         protected async void ClearLogButton_Click(object sender, RoutedEventArgs e)
