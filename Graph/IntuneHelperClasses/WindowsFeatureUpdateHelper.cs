@@ -1,11 +1,8 @@
-﻿using IntuneTools.Utilities;
+using IntuneTools.Utilities;
 using Microsoft.Graph;
-using Microsoft.Kiota.Serialization.Json;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -13,572 +10,340 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 {
     public class WindowsFeatureUpdateHelper
     {
-        public static async Task<List<WindowsFeatureUpdateProfile>> SearchForWindowsFeatureUpdateProfiles(GraphServiceClient graphServiceClient, string searchQuery)
+        private class Helper : GraphHelper<WindowsFeatureUpdateProfile, WindowsFeatureUpdateProfileCollectionResponse>
         {
-            try
+            protected override string ResourceName => "Windows Feature Update profiles";
+            protected override string ContentTypeName => "Windows Feature Update";
+            protected override string? FixedPlatform => "Windows";
+
+            protected override string? GetPolicyName(WindowsFeatureUpdateProfile policy) => policy.DisplayName;
+            protected override string? GetPolicyId(WindowsFeatureUpdateProfile policy) => policy.Id;
+            protected override string? GetPolicyDescription(WindowsFeatureUpdateProfile policy) => policy.Description;
+
+            protected override Task<WindowsFeatureUpdateProfileCollectionResponse?> GetCollectionAsync(GraphServiceClient client)
+                => client.DeviceManagement.WindowsFeatureUpdateProfiles.GetAsync();
+
+            // No server-side filter support; client-side filtering is applied in the public static method
+            protected override Task<WindowsFeatureUpdateProfileCollectionResponse?> SearchCollectionAsync(GraphServiceClient client, string searchQuery)
+                => client.DeviceManagement.WindowsFeatureUpdateProfiles.GetAsync();
+
+            protected override Task<WindowsFeatureUpdateProfile?> GetByIdAsync(GraphServiceClient client, string id)
+                => client.DeviceManagement.WindowsFeatureUpdateProfiles[id].GetAsync();
+
+            protected override Task DeleteByIdAsync(GraphServiceClient client, string id)
+                => client.DeviceManagement.WindowsFeatureUpdateProfiles[id].DeleteAsync();
+
+            protected override async Task PatchNameAsync(GraphServiceClient client, string id, string newName)
             {
-                LogToFunctionFile(appFunction.Main, "Searching for Windows Feature Update profiles. Search query: " + searchQuery);
-
-                // Note: The Graph API for WindowsFeatureUpdateProfile might not support filtering by name directly in the same way.
-                // Adjust the query or filter locally if needed. This example assumes direct filtering is possible or fetches all and filters locally.
-                // Let's fetch all first and then filter locally as a safer approach.
-                var allProfiles = await GetAllWindowsFeatureUpdateProfiles(graphServiceClient);
-                // Add null checks for profile and DisplayName
-                var filteredProfiles = allProfiles.Where(p => p?.DisplayName != null && p.DisplayName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)).ToList();
-
-                LogToFunctionFile(appFunction.Main, $"Found {filteredProfiles.Count} Windows Feature Update profiles matching the search query.");
-
-                return filteredProfiles;
+                var profile = new WindowsFeatureUpdateProfile { DisplayName = newName };
+                await client.DeviceManagement.WindowsFeatureUpdateProfiles[id].PatchAsync(profile);
             }
-            catch (Exception ex)
+
+            protected override async Task PatchDescriptionAsync(GraphServiceClient client, string id, string description)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for Windows Feature Update profiles: {ex.Message}", LogLevels.Error);
-                return new List<WindowsFeatureUpdateProfile>();
+                var profile = new WindowsFeatureUpdateProfile { Description = description };
+                await client.DeviceManagement.WindowsFeatureUpdateProfiles[id].PatchAsync(profile);
             }
-        }
 
-        public static async Task<List<WindowsFeatureUpdateProfile>> GetAllWindowsFeatureUpdateProfiles(GraphServiceClient graphServiceClient)
-        {
-            try
+            public override async Task<string?> ImportFromJsonDataAsync(GraphServiceClient client, JsonElement policyData)
             {
-                LogToFunctionFile(appFunction.Main, "Retrieving all Windows Feature Update profiles.");
-
-                var result = await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles.GetAsync((requestConfiguration) =>
+                try
                 {
-                    //requestConfiguration.QueryParameters.Top = 1000; // Adjust as needed
-                });
+                    var exportedProfile = GraphImportHelper.DeserializeFromJson(policyData, WindowsFeatureUpdateProfile.CreateFromDiscriminatorValue);
 
-                List<WindowsFeatureUpdateProfile> profiles = new List<WindowsFeatureUpdateProfile>();
-
-                // Add null check for result before creating iterator
-                if (result?.Value != null)
-                {
-                    var pageIterator = PageIterator<WindowsFeatureUpdateProfile, WindowsFeatureUpdateProfileCollectionResponse>.CreatePageIterator(graphServiceClient, result, (profile) =>
+                    if (exportedProfile == null)
                     {
-                        profiles.Add(profile);
-                        return true;
+                        LogToFunctionFile(appFunction.Main, "Failed to deserialize Windows Feature Update profile data from JSON.", LogLevels.Error);
+                        return null;
+                    }
+
+                    var newProfile = new WindowsFeatureUpdateProfile
+                    {
+                        OdataType = "#microsoft.graph.windowsFeatureUpdateProfile",
+                        DisplayName = exportedProfile.DisplayName,
+                        Description = exportedProfile.Description,
+                        FeatureUpdateVersion = exportedProfile.FeatureUpdateVersion,
+                        RoleScopeTagIds = exportedProfile.RoleScopeTagIds,
+                        RolloutSettings = exportedProfile.RolloutSettings,
+                    };
+
+                    var imported = await client.DeviceManagement.WindowsFeatureUpdateProfiles.PostAsync(newProfile);
+
+                    LogToFunctionFile(appFunction.Main, $"Imported Windows Feature Update profile: {imported?.DisplayName}");
+                    return imported?.DisplayName;
+                }
+                catch (Exception ex)
+                {
+                    GraphErrorHandler.HandleException(ex, "importing from JSON", ResourceName);
+                    LogToFunctionFile(appFunction.Main, "This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", LogLevels.Warning);
+                    return null;
+                }
+            }
+
+            public override async Task<bool?> HasAssignmentsAsync(GraphServiceClient client, string id)
+            {
+                try
+                {
+                    var result = await client.DeviceManagement.WindowsFeatureUpdateProfiles[id].Assignments.GetAsync(rc =>
+                    {
+                        rc.QueryParameters.Top = 1;
                     });
-                    await pageIterator.IterateAsync();
+                    return result?.Value != null && result.Value.Count > 0;
                 }
-                else
+                catch
                 {
-                    LogToFunctionFile(appFunction.Main, "No Windows Feature Update profiles found or result was null.", LogLevels.Warning);
+                    return null;
                 }
-
-                LogToFunctionFile(appFunction.Main, $"Found {profiles.Count} Windows Feature Update profiles.");
-
-                return profiles;
             }
-            catch (Exception ex)
+
+            public override async Task<List<AssignmentInfo>?> GetAssignmentDetailsAsync(GraphServiceClient client, string id)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while retrieving all Windows Feature Update profiles: {ex.Message}", LogLevels.Error);
-                return new List<WindowsFeatureUpdateProfile>();
-            }
-        }
-        public static async Task ImportMultipleWindowsFeatureUpdateProfiles(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> profileIDs, bool assignments, bool filter, List<string> groups)
-        {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, $"Importing {profileIDs.Count} Windows Feature Update profiles.");
-
-
-                // Note: Filters are not supported for feature updates yet
-                //if (filter)
-                //{
-                //    rtb.AppendText("Filters will be added (if applicable).\n");
-                //    WriteToImportStatusFile("Filters will be added (if applicable).");
-                //}
-
-                string profileName = "";
-
-                foreach (var profileId in profileIDs)
+                try
                 {
-                    try
+                    var details = new List<AssignmentInfo>();
+                    var result = await client.DeviceManagement.WindowsFeatureUpdateProfiles[id].Assignments.GetAsync();
+
+                    while (result?.Value != null)
                     {
-                        // Fetch the source profile
-                        var sourceProfile = await sourceGraphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileId].GetAsync();
-
-                        if (sourceProfile == null)
+                        foreach (var assignment in result.Value)
                         {
-                            LogToFunctionFile(appFunction.Main, $"Skipping profile ID {profileId}: Not found in source tenant.");
+                            details.Add(AssignmentInfo.FromTarget(assignment.Id, assignment.Target));
+                        }
+
+                        if (string.IsNullOrEmpty(result.OdataNextLink)) break;
+
+                        result = await client.DeviceManagement.WindowsFeatureUpdateProfiles[id]
+                            .Assignments.WithUrl(result.OdataNextLink).GetAsync();
+                    }
+
+                    return details;
+                }
+                catch (Exception ex)
+                {
+                    GraphErrorHandler.HandleException(ex, "getting assignment details for", $"Windows Feature Update {id}");
+                    return null;
+                }
+            }
+
+            public override async Task RemoveAllAssignmentsAsync(GraphServiceClient client, string id)
+            {
+                var requestBody = new Microsoft.Graph.Beta.DeviceManagement.WindowsFeatureUpdateProfiles.Item.Assign.AssignPostRequestBody
+                {
+                    Assignments = new List<WindowsFeatureUpdateProfileAssignment>()
+                };
+
+                await client.DeviceManagement.WindowsFeatureUpdateProfiles[id].Assign.PostAsync(requestBody);
+                LogToFunctionFile(appFunction.Main, $"Removed all assignments from Windows Feature Update profile {id}.");
+            }
+
+            public override async Task ImportMultipleAsync(
+                GraphServiceClient sourceClient,
+                GraphServiceClient destinationClient,
+                List<string> ids,
+                bool assignments,
+                bool filter,
+                List<string> groups)
+            {
+                try
+                {
+                    LogToFunctionFile(appFunction.Main, $"Importing {ids.Count} {ResourceName}.");
+
+                    foreach (var id in ids)
+                    {
+                        var profileName = "";
+                        try
+                        {
+                            var sourceProfile = await sourceClient.DeviceManagement.WindowsFeatureUpdateProfiles[id].GetAsync();
+
+                            if (sourceProfile == null)
+                            {
+                                LogToFunctionFile(appFunction.Main, $"Skipping profile ID {id}: Not found in source tenant.");
+                                continue;
+                            }
+
+                            profileName = sourceProfile.DisplayName ?? "Unnamed Profile";
+
+                            var newProfile = new WindowsFeatureUpdateProfile();
+                            GraphImportHelper.CopyProperties(sourceProfile, newProfile);
+                            newProfile.OdataType = "#microsoft.graph.windowsFeatureUpdateProfile";
+
+                            var importedProfile = await destinationClient.DeviceManagement.WindowsFeatureUpdateProfiles.PostAsync(newProfile);
+                            LogToFunctionFile(appFunction.Main, $"Imported profile: {importedProfile?.DisplayName ?? "Unnamed Profile"} (ID: {importedProfile?.Id ?? "Unknown ID"})");
+
+                            if (assignments && groups != null && groups.Any() && importedProfile?.Id != null)
+                            {
+                                await AssignGroupsToSingleWindowsFeatureUpdateProfile(importedProfile.Id, groups, destinationClient);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            LogToFunctionFile(appFunction.Main, $"Failed to import Windows Feature Update profile {profileName}: {ex.Message}", LogLevels.Error);
+                            LogToFunctionFile(appFunction.Main, "This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", LogLevels.Warning);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    GraphErrorHandler.HandleException(ex, "during import process for", ResourceName);
+                }
+            }
+
+            // Feature Update profiles can ONLY be assigned to device groups - not All Users or All Devices
+            public override async Task AssignGroupsAsync(string id, List<string> groupIds, GraphServiceClient client)
+            {
+                try
+                {
+                    ArgumentNullException.ThrowIfNull(id);
+                    ArgumentNullException.ThrowIfNull(groupIds);
+                    ArgumentNullException.ThrowIfNull(client);
+
+                    var assignments = new List<WindowsFeatureUpdateProfileAssignment>();
+                    var seenGroupIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                    foreach (var groupId in groupIds)
+                    {
+                        if (string.IsNullOrWhiteSpace(groupId) || !seenGroupIds.Add(groupId))
+                            continue;
+
+                        if (groupId.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                        {
+                            LogToFunctionFile(appFunction.Main, "Warning: Windows Feature Update profiles cannot be assigned to 'All Users'. Only device groups are supported. Skipping this assignment.", LogLevels.Warning);
                             continue;
                         }
 
-                        profileName = sourceProfile.DisplayName ?? "Unnamed Profile";
-
-                        // Create the new profile object for the destination tenant
-                        var newProfile = new WindowsFeatureUpdateProfile
+                        if (groupId.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
                         {
+                            LogToFunctionFile(appFunction.Main, "Warning: Windows Feature Update profiles cannot be assigned to 'All Devices'. Only device groups are supported. Skipping this assignment.", LogLevels.Warning);
+                            continue;
+                        }
+
+                        var target = new GroupAssignmentTarget
+                        {
+                            OdataType = "#microsoft.graph.groupAssignmentTarget",
+                            GroupId = groupId
                         };
+                        GraphAssignmentHelper.ApplySelectedFilter(target);
 
-
-                        foreach (var property in sourceProfile.GetType().GetProperties())
+                        assignments.Add(new WindowsFeatureUpdateProfileAssignment
                         {
-                            if (property.Name.Equals("createdDateTime", StringComparison.OrdinalIgnoreCase) ||
-                                property.Name.Equals("lastModifiedDateTime", StringComparison.OrdinalIgnoreCase))
+                            OdataType = "#microsoft.graph.windowsFeatureUpdateProfileAssignment",
+                            Target = target
+                        });
+                    }
+
+                    // Merge existing assignments
+                    var existingAssignments = await client
+                        .DeviceManagement
+                        .WindowsFeatureUpdateProfiles[id]
+                        .Assignments
+                        .GetAsync();
+
+                    if (existingAssignments?.Value != null)
+                    {
+                        foreach (var existing in existingAssignments.Value)
+                        {
+                            if (existing.Target is AllLicensedUsersAssignmentTarget)
                             {
-                                continue; // Skip these properties
+                                LogToFunctionFile(appFunction.Main, $"Warning: Found existing 'All Users' assignment on Feature Update profile {id}. This should not exist and will be skipped.", LogLevels.Warning);
+                                continue;
                             }
-
-                            var value = property.GetValue(sourceProfile);
-                            if (value != null && property.CanWrite)
+                            else if (existing.Target is AllDevicesAssignmentTarget)
                             {
-                                property.SetValue(newProfile, value);
+                                LogToFunctionFile(appFunction.Main, $"Warning: Found existing 'All Devices' assignment on Feature Update profile {id}. This should not exist and will be skipped.", LogLevels.Warning);
+                                continue;
                             }
-                        }
-
-
-                        newProfile.Id = "";
-                        newProfile.OdataType = "#microsoft.graph.windowsFeatureUpdateProfile";
-
-                        // Create the profile in the destination tenant
-
-                        var importedProfile = await destinationGraphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles.PostAsync(newProfile);
-
-                        // Add null check for importedProfile and DisplayName
-                        LogToFunctionFile(appFunction.Main, $"Imported profile: {importedProfile?.DisplayName ?? "Unnamed Profile"} (ID: {importedProfile?.Id ?? "Unknown ID"})");
-
-                        // Handle assignments if requested
-                        if (assignments && groups != null && groups.Any() && importedProfile?.Id != null)
-                        {
-                            await AssignGroupsToSingleWindowsFeatureUpdateProfile(importedProfile.Id, groups, destinationGraphServiceClient); // Pass filter flag if needed for assignment logic
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        LogToFunctionFile(appFunction.Main, $"Failed to import Windows Feature Update profile {profileName}: {ex.Message}", LogLevels.Error);
-                        LogToFunctionFile(appFunction.Main, $"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", LogLevels.Warning);
-                    }
-                }
-                LogToFunctionFile(appFunction.Main, "Windows Feature Update profile import process finished.");
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred during the import process: {ex.Message}", LogLevels.Error);
-            }
-        }
-
-        /// <summary>
-        /// Assigns groups to a single Windows Feature Update Profile.
-        /// Windows Feature Update profiles can ONLY be assigned to device groups - not All Users or All Devices.
-        /// </summary>
-        /// <param name="profileID">The ID of the profile to assign groups to.</param>
-        /// <param name="groupIDs">List of group IDs to assign.</param>
-        /// <param name="destinationGraphServiceClient">GraphServiceClient for the destination tenant.</param>
-        /// <param name="applyFilter">Whether to apply assignment filters.</param>
-        /// <returns>A Task representing the asynchronous assignment operation.</returns>
-        public static async Task AssignGroupsToSingleWindowsFeatureUpdateProfile(string profileID, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(profileID))
-                {
-                    throw new ArgumentNullException(nameof(profileID));
-                }
-
-                if (groupIDs == null)
-                {
-                    throw new ArgumentNullException(nameof(groupIDs));
-                }
-
-                if (destinationGraphServiceClient == null)
-                {
-                    throw new ArgumentNullException(nameof(destinationGraphServiceClient));
-                }
-
-                var assignments = new List<WindowsFeatureUpdateProfileAssignment>();
-                var seenGroupIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-                LogToFunctionFile(appFunction.Main, $"Assigning {groupIDs.Count} groups to Windows Feature Update profile {profileID}.");
-
-                // Step 1: Add new assignments to request body
-                foreach (var groupId in groupIDs)
-                {
-                    if (string.IsNullOrWhiteSpace(groupId) || !seenGroupIds.Add(groupId))
-                    {
-                        continue;
-                    }
-
-                    // Check if this is All Users - Feature Update profiles cannot be assigned to All Users
-                    if (groupId.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
-                    {
-                        LogToFunctionFile(appFunction.Main, "Warning: Windows Feature Update profiles cannot be assigned to 'All Users'. Only device groups are supported. Skipping this assignment.", LogLevels.Warning);
-                        continue;
-                    }
-
-                    // Check if this is All Devices - Feature Update profiles cannot be assigned to All Devices
-                    if (groupId.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
-                    {
-                        LogToFunctionFile(appFunction.Main, "Warning: Windows Feature Update profiles cannot be assigned to 'All Devices'. Only device groups are supported. Skipping this assignment.", LogLevels.Warning);
-                        continue;
-                    }
-
-                    // Regular group assignment (device groups only)
-                    var assignmentTarget = new GroupAssignmentTarget
-                    {
-                        OdataType = "#microsoft.graph.groupAssignmentTarget",
-                        GroupId = groupId,
-                        DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
-                        DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
-                    };
-
-                    var assignment = new WindowsFeatureUpdateProfileAssignment
-                    {
-                        OdataType = "#microsoft.graph.windowsFeatureUpdateProfileAssignment",
-                        Target = assignmentTarget
-                    };
-
-                    assignments.Add(assignment);
-                }
-
-                // Step 2: Check for existing assignments and add only if not already present
-                var existingAssignments = await destinationGraphServiceClient
-                    .DeviceManagement
-                    .WindowsFeatureUpdateProfiles[profileID]
-                    .Assignments
-                    .GetAsync();
-
-                if (existingAssignments?.Value != null)
-                {
-                    foreach (var existing in existingAssignments.Value)
-                    {
-                        // Check the type of assignment target
-                        if (existing.Target is AllLicensedUsersAssignmentTarget)
-                        {
-                            // Skip All Users assignments - they shouldn't exist but handle gracefully
-                            LogToFunctionFile(appFunction.Main, $"Warning: Found existing 'All Users' assignment on Feature Update profile {profileID}. This should not exist and will be skipped.", LogLevels.Warning);
-                            continue;
-                        }
-                        else if (existing.Target is AllDevicesAssignmentTarget)
-                        {
-                            // Skip All Devices assignments - they shouldn't exist but handle gracefully
-                            LogToFunctionFile(appFunction.Main, $"Warning: Found existing 'All Devices' assignment on Feature Update profile {profileID}. This should not exist and will be skipped.", LogLevels.Warning);
-                            continue;
-                        }
-                        else if (existing.Target is GroupAssignmentTarget groupTarget)
-                        {
-                            var existingGroupId = groupTarget.GroupId;
-
-                            // Only add if not already in the new assignments
-                            if (!string.IsNullOrWhiteSpace(existingGroupId) && seenGroupIds.Add(existingGroupId))
+                            else if (existing.Target is GroupAssignmentTarget groupTarget)
+                            {
+                                var existingGroupId = groupTarget.GroupId;
+                                if (!string.IsNullOrWhiteSpace(existingGroupId) && seenGroupIds.Add(existingGroupId))
+                                {
+                                    assignments.Add(existing);
+                                }
+                            }
+                            else
                             {
                                 assignments.Add(existing);
                             }
                         }
-                        else
-                        {
-                            // Include any other assignment types (e.g., exclusions, etc.)
-                            assignments.Add(existing);
-                        }
                     }
-                }
 
-                // Step 3: Update the profile with the assignments
-                var requestBody = new Microsoft.Graph.Beta.DeviceManagement.WindowsFeatureUpdateProfiles.Item.Assign.AssignPostRequestBody
-                {
-                    Assignments = assignments
-                };
+                    var requestBody = new Microsoft.Graph.Beta.DeviceManagement.WindowsFeatureUpdateProfiles.Item.Assign.AssignPostRequestBody
+                    {
+                        Assignments = assignments
+                    };
 
-                try
-                {
-                    await destinationGraphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileID].Assign.PostAsync(requestBody);
-                    LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to Feature Update profile {profileID}");
-                    UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
+                    try
+                    {
+                        await client.DeviceManagement.WindowsFeatureUpdateProfiles[id].Assign.PostAsync(requestBody);
+                        LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to Feature Update profile {id}");
+                        UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
+                    }
+                    catch (Exception ex)
+                    {
+                        LogToFunctionFile(appFunction.Main, $"Error assigning groups to profile {id}: {ex.Message}", LogLevels.Error);
+                    }
                 }
                 catch (Exception ex)
                 {
-                    LogToFunctionFile(appFunction.Main, $"Error assigning groups to profile {profileID}: {ex.Message}", LogLevels.Error);
+                    LogToFunctionFile(appFunction.Main, $"An error occurred while preparing assignment for profile {id}: {ex.Message}", LogLevels.Warning);
                 }
             }
-            catch (ArgumentNullException argEx)
-            {
-                LogToFunctionFile(appFunction.Main, $"Argument null exception during group assignment setup: {argEx.Message}", LogLevels.Error);
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while preparing assignment for profile {profileID}: {ex.Message}", LogLevels.Warning);
-            }
         }
-        public static async Task DeleteWindowsFeatureUpdateProfile(GraphServiceClient graphServiceClient, string profileID)
+
+        private static readonly Helper _helper = new();
+
+        // ── Public static methods (signatures preserved for existing consumers) ──
+
+        public static async Task<List<WindowsFeatureUpdateProfile>> SearchForWindowsFeatureUpdateProfiles(GraphServiceClient graphServiceClient, string searchQuery)
         {
-            try
-            {
-                if (graphServiceClient == null)
-                {
-                    throw new ArgumentNullException(nameof(graphServiceClient));
-                }
-
-                if (profileID == null)
-                {
-                    throw new InvalidOperationException("Profile ID cannot be null.");
-                }
-
-                await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileID].DeleteAsync();
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while deleting a Windows Feature Update profile: {ex.Message}", LogLevels.Error);
-            }
-        }
-        public static async Task RenameWindowsFeatureUpdateProfile(GraphServiceClient graphServiceClient, string profileID, string newName)
-        {
-            try
-            {
-                if (graphServiceClient == null)
-                {
-                    throw new ArgumentNullException(nameof(graphServiceClient));
-                }
-
-                if (profileID == null)
-                {
-                    throw new InvalidOperationException("Profile ID cannot be null.");
-                }
-
-                if (string.IsNullOrWhiteSpace(newName))
-                {
-                    throw new InvalidOperationException("New name cannot be null or empty.");
-                }
-
-                if (selectedRenameMode == "Prefix")
-                {
-                    // Look up the existing profile
-                    var existingProfile = await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileID].GetAsync();
-
-                    if (existingProfile == null)
-                    {
-                        throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
-                    }
-
-                    var name = FindPreFixInPolicyName(existingProfile.DisplayName ?? string.Empty, newName);
-
-                    var profile = new WindowsFeatureUpdateProfile
-                    {
-                        DisplayName = name,
-                    };
-
-                    await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileID].PatchAsync(profile);
-                    LogToFunctionFile(appFunction.Main, $"Renamed Windows Feature Update profile '{existingProfile.DisplayName}' to '{name}' (ID: {profileID})");
-                }
-                else if (selectedRenameMode == "Suffix")
-                {
-
-                }
-                else if (selectedRenameMode == "Description")
-                {
-                    // Look up the existing profile
-                    var existingProfile = await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileID].GetAsync();
-
-                    if (existingProfile == null)
-                    {
-                        throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
-                    }
-
-                    var profile = new WindowsFeatureUpdateProfile
-                    {
-                        Description = newName,
-                    };
-
-                    await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileID].PatchAsync(profile);
-                    LogToFunctionFile(appFunction.Main, $"Updated description for Windows Feature Update profile {profileID} to '{newName}'");
-                }
-                else if (selectedRenameMode == "RemovePrefix")
-                {
-                    var existingProfile = await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileID].GetAsync();
-
-                    if (existingProfile == null)
-                    {
-                        throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
-                    }
-
-                    var name = RemovePrefixFromPolicyName(existingProfile.DisplayName);
-
-                    var profile = new WindowsFeatureUpdateProfile
-                    {
-                        DisplayName = name
-                    };
-
-                    await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileID].PatchAsync(profile);
-                    LogToFunctionFile(appFunction.Main, $"Removed prefix from Windows Feature Update profile {profileID}, new name: '{name}'");
-                }
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while renaming Windows Feature Update profile: {ex.Message}", LogLevels.Warning);
-            }
+            var all = await _helper.SearchAsync(graphServiceClient, searchQuery);
+            return all.Where(p => p?.DisplayName != null && p.DisplayName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)).ToList();
         }
 
-        public static async Task<List<CustomContentInfo>> GetAllWindowsFeatureUpdateContentAsync(GraphServiceClient graphServiceClient)
-        {
-            var profiles = await GetAllWindowsFeatureUpdateProfiles(graphServiceClient);
-            var content = new List<CustomContentInfo>();
+        public static Task<List<WindowsFeatureUpdateProfile>> GetAllWindowsFeatureUpdateProfiles(GraphServiceClient graphServiceClient)
+            => _helper.GetAllAsync(graphServiceClient);
 
-            foreach (var profile in profiles)
-            {
-                content.Add(new CustomContentInfo
-                {
-                    ContentName = profile.DisplayName,
-                    ContentType = "Windows Feature Update",
-                    ContentPlatform = "Windows",
-                    ContentId = profile.Id,
-                    ContentDescription = profile.Description
-                });
-            }
+        public static Task ImportMultipleWindowsFeatureUpdateProfiles(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> profileIDs, bool assignments, bool filter, List<string> groups)
+            => _helper.ImportMultipleAsync(sourceGraphServiceClient, destinationGraphServiceClient, profileIDs, assignments, filter, groups);
 
-            return content;
-        }
+        public static Task AssignGroupsToSingleWindowsFeatureUpdateProfile(string profileID, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
+            => _helper.AssignGroupsAsync(profileID, groupIDs, destinationGraphServiceClient);
+
+        public static Task DeleteWindowsFeatureUpdateProfile(GraphServiceClient graphServiceClient, string profileID)
+            => _helper.DeleteAsync(graphServiceClient, profileID);
+
+        public static Task RenameWindowsFeatureUpdateProfile(GraphServiceClient graphServiceClient, string profileID, string newName)
+            => _helper.RenameAsync(graphServiceClient, profileID, newName);
+
+        public static Task<List<CustomContentInfo>> GetAllWindowsFeatureUpdateContentAsync(GraphServiceClient graphServiceClient)
+            => _helper.GetAllContentAsync(graphServiceClient);
 
         public static async Task<List<CustomContentInfo>> SearchWindowsFeatureUpdateContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
             var profiles = await SearchForWindowsFeatureUpdateProfiles(graphServiceClient, searchQuery);
-            var content = new List<CustomContentInfo>();
-
-            foreach (var profile in profiles)
+            return profiles.Select(p => new CustomContentInfo
             {
-                content.Add(new CustomContentInfo
-                {
-                    ContentName = profile.DisplayName,
-                    ContentType = "Windows Feature Update",
-                    ContentPlatform = "Windows",
-                    ContentId = profile.Id,
-                    ContentDescription = profile.Description
-                });
-            }
-
-            return content;
+                ContentName = p.DisplayName,
+                ContentType = "Windows Feature Update",
+                ContentPlatform = "Windows",
+                ContentId = p.Id,
+                ContentDescription = p.Description
+            }).ToList();
         }
 
-        /// <summary>
-        /// Exports a Windows Feature Update profile's full data as a JsonElement for JSON file export.
-        /// </summary>
-        public static async Task<JsonElement?> ExportWindowsFeatureUpdatePolicyDataAsync(GraphServiceClient graphServiceClient, string profileId)
-        {
-            try
-            {
-                var result = await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileId].GetAsync();
+        public static Task<JsonElement?> ExportWindowsFeatureUpdatePolicyDataAsync(GraphServiceClient graphServiceClient, string profileId)
+            => _helper.ExportDataAsync(graphServiceClient, profileId);
 
-                if (result == null)
-                {
-                    LogToFunctionFile(appFunction.Main, $"Windows Feature Update profile {profileId} not found for export.", LogLevels.Warning);
-                    return null;
-                }
+        public static Task<string?> ImportWindowsFeatureUpdateFromJsonDataAsync(GraphServiceClient graphServiceClient, JsonElement policyData)
+            => _helper.ImportFromJsonDataAsync(graphServiceClient, policyData);
 
-                using var writer = new JsonSerializationWriter();
-                writer.WriteObjectValue(null, result);
-                using var stream = writer.GetSerializedContent();
-                var doc = await JsonDocument.ParseAsync(stream);
-                return doc.RootElement.Clone();
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"Error exporting Windows Feature Update profile {profileId}: {ex.Message}", LogLevels.Error);
-                return null;
-            }
-        }
+        public static Task<bool?> HasWindowsFeatureUpdateAssignmentsAsync(GraphServiceClient graphServiceClient, string profileId)
+            => _helper.HasAssignmentsAsync(graphServiceClient, profileId);
 
-        /// <summary>
-        /// Imports a Windows Feature Update profile from previously exported JSON data into the destination tenant.
-        /// </summary>
-        public static async Task<string?> ImportWindowsFeatureUpdateFromJsonDataAsync(GraphServiceClient graphServiceClient, JsonElement policyData)
-        {
-            try
-            {
-                var json = policyData.GetRawText();
-                using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
-                var parseNode = new JsonParseNode(JsonDocument.Parse(stream).RootElement);
-                var exportedProfile = parseNode.GetObjectValue(WindowsFeatureUpdateProfile.CreateFromDiscriminatorValue);
+        public static Task<List<AssignmentInfo>?> GetWindowsFeatureUpdateAssignmentDetailsAsync(GraphServiceClient graphServiceClient, string profileId)
+            => _helper.GetAssignmentDetailsAsync(graphServiceClient, profileId);
 
-                if (exportedProfile == null)
-                {
-                    LogToFunctionFile(appFunction.Main, "Failed to deserialize Windows Feature Update profile data from JSON.", LogLevels.Error);
-                    return null;
-                }
-
-                var newProfile = new WindowsFeatureUpdateProfile
-                {
-                    OdataType = "#microsoft.graph.windowsFeatureUpdateProfile",
-                    DisplayName = exportedProfile.DisplayName,
-                    Description = exportedProfile.Description,
-                    FeatureUpdateVersion = exportedProfile.FeatureUpdateVersion,
-                    RoleScopeTagIds = exportedProfile.RoleScopeTagIds,
-                    RolloutSettings = exportedProfile.RolloutSettings,
-                };
-
-                var imported = await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles.PostAsync(newProfile);
-
-                LogToFunctionFile(appFunction.Main, $"Imported Windows Feature Update profile: {imported?.DisplayName}");
-                return imported?.DisplayName;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"Error importing Windows Feature Update profile from JSON: {ex.Message}", LogLevels.Error);
-                LogToFunctionFile(appFunction.Main, $"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", LogLevels.Warning);
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Checks if a Windows feature update profile has any group assignments.
-        /// </summary>
-        public static async Task<bool?> HasWindowsFeatureUpdateAssignmentsAsync(GraphServiceClient graphServiceClient, string profileId)
-        {
-            try
-            {
-                var result = await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileId].Assignments.GetAsync(rc =>
-                {
-                    rc.QueryParameters.Top = 1;
-                });
-                return result?.Value != null && result.Value.Count > 0;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Gets detailed assignment information for a Windows Feature Update profile.
-        /// </summary>
-        public static async Task<List<AssignmentInfo>?> GetWindowsFeatureUpdateAssignmentDetailsAsync(GraphServiceClient graphServiceClient, string profileId)
-        {
-            try
-            {
-                var details = new List<AssignmentInfo>();
-                var result = await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileId].Assignments.GetAsync();
-
-                while (result?.Value != null)
-                {
-                    foreach (var assignment in result.Value)
-                    {
-                        details.Add(AssignmentInfo.FromTarget(assignment.Id, assignment.Target));
-                    }
-
-                    if (string.IsNullOrEmpty(result.OdataNextLink)) break;
-
-                    result = await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileId]
-                        .Assignments.WithUrl(result.OdataNextLink).GetAsync();
-                }
-
-                return details;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"Error getting assignment details for Windows Feature Update {profileId}: {ex.Message}", LogLevels.Error);
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Removes all assignments from a Windows Feature Update profile.
-        /// </summary>
-        public static async Task RemoveAllWindowsFeatureUpdateAssignmentsAsync(GraphServiceClient graphServiceClient, string profileId)
-        {
-            var requestBody = new Microsoft.Graph.Beta.DeviceManagement.WindowsFeatureUpdateProfiles.Item.Assign.AssignPostRequestBody
-            {
-                Assignments = new List<WindowsFeatureUpdateProfileAssignment>()
-            };
-
-            await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileId].Assign.PostAsync(requestBody);
-            LogToFunctionFile(appFunction.Main, $"Removed all assignments from Windows Feature Update profile {profileId}.");
-        }
+        public static Task RemoveAllWindowsFeatureUpdateAssignmentsAsync(GraphServiceClient graphServiceClient, string profileId)
+            => _helper.RemoveAllAssignmentsAsync(graphServiceClient, profileId);
     }
 }
