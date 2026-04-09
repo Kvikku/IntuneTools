@@ -132,7 +132,7 @@ namespace IntuneTools.Utilities
             if (FindName("LoadingStatusText") is TextBlock loadingStatusText)
                 loadingStatusText.Text = message;
 
-            if (FindName("LoadingOverlay") is Grid loadingOverlay)
+            if (FindName("LoadingOverlay") is FrameworkElement loadingOverlay)
                 loadingOverlay.Visibility = Visibility.Visible;
 
             if (FindName("LoadingProgressRing") is ProgressRing loadingProgressRing)
@@ -144,7 +144,7 @@ namespace IntuneTools.Utilities
         /// </summary>
         protected virtual void HideLoading()
         {
-            if (FindName("LoadingOverlay") is Grid loadingOverlay)
+            if (FindName("LoadingOverlay") is FrameworkElement loadingOverlay)
                 loadingOverlay.Visibility = Visibility.Collapsed;
 
             if (FindName("LoadingProgressRing") is ProgressRing loadingProgressRing)

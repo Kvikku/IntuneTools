@@ -656,5 +656,67 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 return null;
             }
         }
+
+        /// <summary>
+        /// Gets detailed assignment information for a Windows AutoPilot Deployment Profile.
+        /// </summary>
+        public static async Task<List<AssignmentInfo>?> GetWindowsAutoPilotAssignmentDetailsAsync(GraphServiceClient graphServiceClient, string profileId)
+        {
+            try
+            {
+                var details = new List<AssignmentInfo>();
+                var result = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileId].Assignments.GetAsync(rc =>
+                {
+                    rc.QueryParameters.Top = 1000;
+                });
+
+                while (result?.Value != null)
+                {
+                    foreach (var assignment in result.Value)
+                    {
+                        details.Add(AssignmentInfo.FromTarget(assignment.Id, assignment.Target));
+                    }
+
+                    if (string.IsNullOrEmpty(result.OdataNextLink)) break;
+
+                    result = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileId]
+                        .Assignments.WithUrl(result.OdataNextLink).GetAsync();
+                }
+
+                return details;
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error getting assignment details for Windows AutoPilot Profile {profileId}: {ex.Message}", LogLevels.Error);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Removes all assignments from a Windows AutoPilot Deployment Profile.
+        /// Uses individual DELETE calls since AutoPilot does not support batch assignment removal.
+        /// </summary>
+        public static async Task RemoveAllWindowsAutoPilotAssignmentsAsync(GraphServiceClient graphServiceClient, string profileId)
+        {
+            var result = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileId].Assignments.GetAsync(rc =>
+            {
+                rc.QueryParameters.Top = 1000;
+            });
+
+            while (result?.Value != null && result.Value.Count > 0)
+            {
+                foreach (var assignment in result.Value)
+                {
+                    await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileId].Assignments[assignment.Id].DeleteAsync();
+                }
+
+                if (string.IsNullOrEmpty(result.OdataNextLink)) break;
+
+                result = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileId]
+                    .Assignments.WithUrl(result.OdataNextLink).GetAsync();
+            }
+
+            LogToFunctionFile(appFunction.Main, $"Removed all assignments from Windows AutoPilot Profile {profileId}.");
+        }
     }
 }

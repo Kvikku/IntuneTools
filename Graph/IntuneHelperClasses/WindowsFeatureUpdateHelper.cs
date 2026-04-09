@@ -535,5 +535,51 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 return null;
             }
         }
+
+        /// <summary>
+        /// Gets detailed assignment information for a Windows Feature Update profile.
+        /// </summary>
+        public static async Task<List<AssignmentInfo>?> GetWindowsFeatureUpdateAssignmentDetailsAsync(GraphServiceClient graphServiceClient, string profileId)
+        {
+            try
+            {
+                var details = new List<AssignmentInfo>();
+                var result = await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileId].Assignments.GetAsync();
+
+                while (result?.Value != null)
+                {
+                    foreach (var assignment in result.Value)
+                    {
+                        details.Add(AssignmentInfo.FromTarget(assignment.Id, assignment.Target));
+                    }
+
+                    if (string.IsNullOrEmpty(result.OdataNextLink)) break;
+
+                    result = await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileId]
+                        .Assignments.WithUrl(result.OdataNextLink).GetAsync();
+                }
+
+                return details;
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error getting assignment details for Windows Feature Update {profileId}: {ex.Message}", LogLevels.Error);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Removes all assignments from a Windows Feature Update profile.
+        /// </summary>
+        public static async Task RemoveAllWindowsFeatureUpdateAssignmentsAsync(GraphServiceClient graphServiceClient, string profileId)
+        {
+            var requestBody = new Microsoft.Graph.Beta.DeviceManagement.WindowsFeatureUpdateProfiles.Item.Assign.AssignPostRequestBody
+            {
+                Assignments = new List<WindowsFeatureUpdateProfileAssignment>()
+            };
+
+            await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileId].Assign.PostAsync(requestBody);
+            LogToFunctionFile(appFunction.Main, $"Removed all assignments from Windows Feature Update profile {profileId}.");
+        }
     }
 }

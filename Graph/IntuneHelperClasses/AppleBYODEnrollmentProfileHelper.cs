@@ -610,5 +610,61 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 return null;
             }
         }
+
+        /// <summary>
+        /// Gets detailed assignment information for an Apple BYOD Enrollment Profile.
+        /// </summary>
+        public static async Task<List<AssignmentInfo>?> GetAppleBYODAssignmentDetailsAsync(GraphServiceClient graphServiceClient, string profileId)
+        {
+            try
+            {
+                var details = new List<AssignmentInfo>();
+                var result = await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileId].Assignments.GetAsync();
+
+                while (result?.Value != null)
+                {
+                    foreach (var assignment in result.Value)
+                    {
+                        details.Add(AssignmentInfo.FromTarget(assignment.Id, assignment.Target));
+                    }
+
+                    if (string.IsNullOrEmpty(result.OdataNextLink)) break;
+
+                    result = await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileId]
+                        .Assignments.WithUrl(result.OdataNextLink).GetAsync();
+                }
+
+                return details;
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error getting assignment details for Apple BYOD Profile {profileId}: {ex.Message}", LogLevels.Error);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Removes all assignments from an Apple BYOD Enrollment Profile.
+        /// Uses individual DELETE calls since Apple enrollment profiles don't support batch assignment removal.
+        /// </summary>
+        public static async Task RemoveAllAppleBYODAssignmentsAsync(GraphServiceClient graphServiceClient, string profileId)
+        {
+            var result = await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileId].Assignments.GetAsync();
+
+            while (result?.Value != null && result.Value.Count > 0)
+            {
+                foreach (var assignment in result.Value)
+                {
+                    await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileId].Assignments[assignment.Id].DeleteAsync();
+                }
+
+                if (string.IsNullOrEmpty(result.OdataNextLink)) break;
+
+                result = await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileId]
+                    .Assignments.WithUrl(result.OdataNextLink).GetAsync();
+            }
+
+            LogToFunctionFile(appFunction.Main, $"Removed all assignments from Apple BYOD Enrollment Profile {profileId}.");
+        }
     }
 }
