@@ -84,7 +84,7 @@ public static class DestinationUserAuthentication
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[DestinationAuth] Failed to parse ID token for tenant ID: {ex.GetType().Name} - {ex.Message}");
+                LogToFunctionFile(appFunction.Main, $"[DestinationAuth] Failed to parse ID token for tenant ID: {ex.GetType().Name} - {ex.Message}", LogLevels.Warning);
             }
 
             _tokenProvider = new MsalAccessTokenProvider(_pca, scopes);
