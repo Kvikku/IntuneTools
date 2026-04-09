@@ -22,7 +22,13 @@ jobs:
           dotnet-version: 8.0.x
 
       - name: Restore dependencies
-        run: dotnet restore IntuneTools.csproj -p:Platform=x64
+        run: dotnet restore IntuneTools.sln -p:Platform=x64
 
       - name: Build
         run: dotnet build IntuneTools.csproj --no-restore --configuration Release -p:Platform=x64
+
+      - name: Build tests
+        run: dotnet build IntuneTools.Tests/IntuneTools.Tests.csproj --no-restore --configuration Release -p:Platform=x64
+
+      - name: Run tests
+        run: dotnet test IntuneTools.Tests/IntuneTools.Tests.csproj --no-build --configuration Release -p:Platform=x64 --verbosity normal
