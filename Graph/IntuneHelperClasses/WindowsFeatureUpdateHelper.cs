@@ -15,64 +15,19 @@ namespace IntuneTools.Graph.IntuneHelperClasses
     {
         public static async Task<List<WindowsFeatureUpdateProfile>> SearchForWindowsFeatureUpdateProfiles(GraphServiceClient graphServiceClient, string searchQuery)
         {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, "Searching for Windows Feature Update profiles. Search query: " + searchQuery);
-
-                // Note: The Graph API for WindowsFeatureUpdateProfile might not support filtering by name directly in the same way.
-                // Adjust the query or filter locally if needed. This example assumes direct filtering is possible or fetches all and filters locally.
-                // Let's fetch all first and then filter locally as a safer approach.
-                var allProfiles = await GetAllWindowsFeatureUpdateProfiles(graphServiceClient);
-                // Add null checks for profile and DisplayName
-                var filteredProfiles = allProfiles.Where(p => p?.DisplayName != null && p.DisplayName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)).ToList();
-
-                LogToFunctionFile(appFunction.Main, $"Found {filteredProfiles.Count} Windows Feature Update profiles matching the search query.");
-
-                return filteredProfiles;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, "An error occurred while searching for Windows Feature Update profiles", LogLevels.Error);
-                return new List<WindowsFeatureUpdateProfile>();
-            }
+            return await GraphPageIteratorHelper.SearchAsync<WindowsFeatureUpdateProfile, WindowsFeatureUpdateProfileCollectionResponse>(
+                graphServiceClient,
+                () => graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles.GetAsync(),
+                profile => profile.DisplayName != null && profile.DisplayName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase),
+                "Windows Feature Update profiles");
         }
 
         public static async Task<List<WindowsFeatureUpdateProfile>> GetAllWindowsFeatureUpdateProfiles(GraphServiceClient graphServiceClient)
         {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, "Retrieving all Windows Feature Update profiles.");
-
-                var result = await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles.GetAsync((requestConfiguration) =>
-                {
-                });
-
-                List<WindowsFeatureUpdateProfile> profiles = new List<WindowsFeatureUpdateProfile>();
-
-                // Add null check for result before creating iterator
-                if (result?.Value != null)
-                {
-                    var pageIterator = PageIterator<WindowsFeatureUpdateProfile, WindowsFeatureUpdateProfileCollectionResponse>.CreatePageIterator(graphServiceClient, result, (profile) =>
-                    {
-                        profiles.Add(profile);
-                        return true;
-                    });
-                    await pageIterator.IterateAsync();
-                }
-                else
-                {
-                    LogToFunctionFile(appFunction.Main, "No Windows Feature Update profiles found or result was null.", LogLevels.Warning);
-                }
-
-                LogToFunctionFile(appFunction.Main, $"Found {profiles.Count} Windows Feature Update profiles.");
-
-                return profiles;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, "An error occurred while retrieving all Windows Feature Update profiles", LogLevels.Error);
-                return new List<WindowsFeatureUpdateProfile>();
-            }
+            return await GraphPageIteratorHelper.GetAllAsync<WindowsFeatureUpdateProfile, WindowsFeatureUpdateProfileCollectionResponse>(
+                graphServiceClient,
+                () => graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles.GetAsync(),
+                "Windows Feature Update profiles");
         }
         public static async Task ImportMultipleWindowsFeatureUpdateProfiles(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> profileIDs, bool assignments, bool filter, List<string> groups)
         {

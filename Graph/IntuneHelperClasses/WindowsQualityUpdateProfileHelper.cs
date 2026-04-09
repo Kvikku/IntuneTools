@@ -16,59 +16,19 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         // Expedite policies (not regular quality update policies)
         public static async Task<List<WindowsQualityUpdateProfile>> SearchForWindowsQualityUpdateProfiles(GraphServiceClient graphServiceClient, string searchQuery)
         {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, "Searching for Windows Quality Update profiles. Search query: " + searchQuery);
-
-                var allProfiles = await GetAllWindowsQualityUpdateProfiles(graphServiceClient);
-                var filteredProfiles = allProfiles.Where(p => p?.DisplayName != null && p.DisplayName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)).ToList();
-
-                LogToFunctionFile(appFunction.Main, $"Found {filteredProfiles.Count} Windows Quality Update profiles matching the search query.");
-
-                return filteredProfiles;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, "An error occurred while searching for Windows Quality Update profiles", LogLevels.Error);
-                return new List<WindowsQualityUpdateProfile>();
-            }
+            return await GraphPageIteratorHelper.SearchAsync<WindowsQualityUpdateProfile, WindowsQualityUpdateProfileCollectionResponse>(
+                graphServiceClient,
+                () => graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles.GetAsync(),
+                profile => profile.DisplayName != null && profile.DisplayName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase),
+                "Windows Quality Update profiles");
         }
 
         public static async Task<List<WindowsQualityUpdateProfile>> GetAllWindowsQualityUpdateProfiles(GraphServiceClient graphServiceClient)
         {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, "Retrieving all Windows Quality Update profiles.");
-
-                var result = await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles.GetAsync((requestConfiguration) =>
-                {
-                });
-
-                List<WindowsQualityUpdateProfile> profiles = new List<WindowsQualityUpdateProfile>();
-
-                if (result?.Value != null)
-                {
-                    var pageIterator = PageIterator<WindowsQualityUpdateProfile, WindowsQualityUpdateProfileCollectionResponse>.CreatePageIterator(graphServiceClient, result, (profile) =>
-                    {
-                        profiles.Add(profile);
-                        return true;
-                    });
-                    await pageIterator.IterateAsync();
-                }
-                else
-                {
-                    LogToFunctionFile(appFunction.Main, "No Windows Quality Update profiles found or result was null.");
-                }
-
-                LogToFunctionFile(appFunction.Main, $"Found {profiles.Count} Windows Quality Update profiles.");
-
-                return profiles;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, "An error occurred while retrieving all Windows Quality Update profiles", LogLevels.Error);
-                return new List<WindowsQualityUpdateProfile>();
-            }
+            return await GraphPageIteratorHelper.GetAllAsync<WindowsQualityUpdateProfile, WindowsQualityUpdateProfileCollectionResponse>(
+                graphServiceClient,
+                () => graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles.GetAsync(),
+                "Windows Quality Update profiles");
         }
         public static async Task ImportMultipleWindowsQualityUpdateProfiles(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> profileIDs, bool assignments, bool filter, List<string> groups)
         {

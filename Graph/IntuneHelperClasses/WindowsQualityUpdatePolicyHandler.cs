@@ -17,62 +17,19 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         public static async Task<List<WindowsQualityUpdatePolicy>> SearchForWindowsQualityUpdatePolicies(GraphServiceClient graphServiceClient, string searchQuery)
         {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, "Searching for Windows Quality Update policies. Search query: " + searchQuery);
-
-                // Fetch all first and then filter locally as a safer approach.
-                var allPolicies = await GetAllWindowsQualityUpdatePolicies(graphServiceClient);
-                // Add null checks for policy and DisplayName
-                var filteredPolicies = allPolicies.Where(p => p?.DisplayName != null && p.DisplayName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)).ToList();
-
-                LogToFunctionFile(appFunction.Main, $"Found {filteredPolicies.Count} Windows Quality Update policies matching the search query.");
-
-                return filteredPolicies;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, "An error occurred while searching for Windows Quality Update policies", LogLevels.Error);
-                return new List<WindowsQualityUpdatePolicy>();
-            }
+            return await GraphPageIteratorHelper.SearchAsync<WindowsQualityUpdatePolicy, WindowsQualityUpdatePolicyCollectionResponse>(
+                graphServiceClient,
+                () => graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies.GetAsync(),
+                policy => policy.DisplayName != null && policy.DisplayName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase),
+                "Windows Quality Update policies");
         }
 
         public static async Task<List<WindowsQualityUpdatePolicy>> GetAllWindowsQualityUpdatePolicies(GraphServiceClient graphServiceClient)
         {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, "Retrieving all Windows Quality Update policies.");
-
-                var result = await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies.GetAsync((requestConfiguration) =>
-                {
-                });
-
-                List<WindowsQualityUpdatePolicy> policies = new List<WindowsQualityUpdatePolicy>();
-
-                // Add null check for result before creating iterator
-                if (result?.Value != null)
-                {
-                    var pageIterator = PageIterator<WindowsQualityUpdatePolicy, WindowsQualityUpdatePolicyCollectionResponse>.CreatePageIterator(graphServiceClient, result, (policy) =>
-                    {
-                        policies.Add(policy);
-                        return true;
-                    });
-                    await pageIterator.IterateAsync();
-                }
-                else
-                {
-                    LogToFunctionFile(appFunction.Main, "No Windows Quality Update policies found or result was null.", LogLevels.Warning);
-                }
-
-                LogToFunctionFile(appFunction.Main, $"Found {policies.Count} Windows Quality Update policies.");
-
-                return policies;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, "An error occurred while retrieving all Windows Quality Update policies", LogLevels.Error);
-                return new List<WindowsQualityUpdatePolicy>();
-            }
+            return await GraphPageIteratorHelper.GetAllAsync<WindowsQualityUpdatePolicy, WindowsQualityUpdatePolicyCollectionResponse>(
+                graphServiceClient,
+                () => graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies.GetAsync(),
+                "Windows Quality Update policies");
         }
         public static async Task ImportMultipleWindowsQualityUpdatePolicies(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> policyIDs, bool assignments, bool filter, List<string> groups)
         {

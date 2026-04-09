@@ -14,67 +14,24 @@ namespace IntuneTools.Graph.IntuneHelperClasses
     {
         public static async Task<List<Microsoft.Graph.Beta.Models.DeviceConfiguration>> SearchForDeviceConfigurations(GraphServiceClient graphServiceClient, string searchQuery)
         {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, "Searching for device configuration policies. Search query: " + searchQuery);
-
-                var result = await graphServiceClient.DeviceManagement.DeviceConfigurations
-                    .GetAsync(requestConfiguration =>
-                    {
-                        // Filter by device configuration displayName
-                        requestConfiguration.QueryParameters.Filter = $"contains(displayName,'{searchQuery}')";
-                    });
-
-                List<Microsoft.Graph.Beta.Models.DeviceConfiguration> deviceConfigurations = new();
-                var pageIterator = PageIterator<Microsoft.Graph.Beta.Models.DeviceConfiguration, DeviceConfigurationCollectionResponse>
-                    .CreatePageIterator(graphServiceClient, result, (config) =>
-                    {
-                        deviceConfigurations.Add(config);
-                        return true;
-                    });
-
-                await pageIterator.IterateAsync();
-
-                LogToFunctionFile(appFunction.Main, $"Found {deviceConfigurations.Count} device configuration policies.");
-                return deviceConfigurations;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, "An error occurred while searching for device configuration policies", LogLevels.Error);
-                return new List<Microsoft.Graph.Beta.Models.DeviceConfiguration>();
-            }
+            return await GraphPageIteratorHelper.GetAllAsync<Microsoft.Graph.Beta.Models.DeviceConfiguration, DeviceConfigurationCollectionResponse>(
+                graphServiceClient,
+                () => graphServiceClient.DeviceManagement.DeviceConfigurations.GetAsync(rc =>
+                {
+                    rc.QueryParameters.Filter = $"contains(displayName,'{searchQuery}')";
+                }),
+                "device configuration policies");
         }
 
         public static async Task<List<Microsoft.Graph.Beta.Models.DeviceConfiguration>> GetAllDeviceConfigurations(GraphServiceClient graphServiceClient)
         {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, "Retrieving all device configuration policies.");
-
-                var result = await graphServiceClient.DeviceManagement.DeviceConfigurations
-                    .GetAsync(requestConfiguration =>
-                    {
-                        requestConfiguration.QueryParameters.Top = GraphConstants.DefaultPageSize;
-                    });
-
-                List<Microsoft.Graph.Beta.Models.DeviceConfiguration> deviceConfigurations = new();
-                var pageIterator = PageIterator<Microsoft.Graph.Beta.Models.DeviceConfiguration, DeviceConfigurationCollectionResponse>
-                    .CreatePageIterator(graphServiceClient, result, (config) =>
-                    {
-                        deviceConfigurations.Add(config);
-                        return true;
-                    });
-
-                await pageIterator.IterateAsync();
-
-                LogToFunctionFile(appFunction.Main, $"Found {deviceConfigurations.Count} device configuration policies.");
-                return deviceConfigurations;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, "An error occurred while retrieving all device configuration policies", LogLevels.Error);
-                return new List<Microsoft.Graph.Beta.Models.DeviceConfiguration>();
-            }
+            return await GraphPageIteratorHelper.GetAllAsync<Microsoft.Graph.Beta.Models.DeviceConfiguration, DeviceConfigurationCollectionResponse>(
+                graphServiceClient,
+                () => graphServiceClient.DeviceManagement.DeviceConfigurations.GetAsync(rc =>
+                {
+                    rc.QueryParameters.Top = GraphConstants.DefaultPageSize;
+                }),
+                "device configuration policies");
         }
 
         public static async Task ImportMultipleDeviceConfigurations(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> configurationIds, bool assignments, bool filter, List<string> groups)

@@ -14,62 +14,24 @@ namespace IntuneTools.Graph.IntuneHelperClasses
     {
         public static async Task<List<DeviceManagementScript>> SearchForPowerShellScripts(GraphServiceClient graphServiceClient, string searchQuery)
         {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, "Searching for PowerShell scripts. Search query: " + searchQuery);
-
-                var result = await graphServiceClient.DeviceManagement.DeviceManagementScripts.GetAsync((requestConfiguration) =>
+            return await GraphPageIteratorHelper.GetAllAsync<DeviceManagementScript, DeviceManagementScriptCollectionResponse>(
+                graphServiceClient,
+                () => graphServiceClient.DeviceManagement.DeviceManagementScripts.GetAsync(rc =>
                 {
-                    requestConfiguration.QueryParameters.Filter = $"contains(displayName,'{searchQuery}')";
-                });
-
-                List<DeviceManagementScript> scripts = new List<DeviceManagementScript>();
-                var pageIterator = PageIterator<DeviceManagementScript, DeviceManagementScriptCollectionResponse>.CreatePageIterator(graphServiceClient, result, (script) =>
-                {
-                    scripts.Add(script);
-                    return true;
-                });
-                await pageIterator.IterateAsync();
-
-                LogToFunctionFile(appFunction.Main, $"Found {scripts.Count} PowerShell scripts.");
-
-                return scripts;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, "An error occurred while searching for PowerShell scripts", LogLevels.Error);
-                return new List<DeviceManagementScript>();
-            }
+                    rc.QueryParameters.Filter = $"contains(displayName,'{searchQuery}')";
+                }),
+                "PowerShell scripts");
         }
 
         public static async Task<List<DeviceManagementScript>> GetAllPowerShellScripts(GraphServiceClient graphServiceClient)
         {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, "Retrieving all PowerShell scripts.");
-
-                var result = await graphServiceClient.DeviceManagement.DeviceManagementScripts.GetAsync((requestConfiguration) =>
+            return await GraphPageIteratorHelper.GetAllAsync<DeviceManagementScript, DeviceManagementScriptCollectionResponse>(
+                graphServiceClient,
+                () => graphServiceClient.DeviceManagement.DeviceManagementScripts.GetAsync(rc =>
                 {
-                    requestConfiguration.QueryParameters.Top = GraphConstants.DefaultPageSize;
-                });
-
-                List<DeviceManagementScript> scripts = new List<DeviceManagementScript>();
-                var pageIterator = PageIterator<DeviceManagementScript, DeviceManagementScriptCollectionResponse>.CreatePageIterator(graphServiceClient, result, (script) =>
-                {
-                    scripts.Add(script);
-                    return true;
-                });
-                await pageIterator.IterateAsync();
-
-                LogToFunctionFile(appFunction.Main, $"Found {scripts.Count} PowerShell scripts.");
-
-                return scripts;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, "An error occurred while retrieving all PowerShell scripts", LogLevels.Error);
-                return new List<DeviceManagementScript>();
-            }
+                    rc.QueryParameters.Top = GraphConstants.DefaultPageSize;
+                }),
+                "PowerShell scripts");
         }
 
         public static async Task ImportMultiplePowerShellScripts(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> scripts, bool assignments, bool filter, List<string> groups)

@@ -16,73 +16,24 @@ namespace IntuneTools.Graph.IntuneHelperClasses
     {
         public static async Task<List<AppleUserInitiatedEnrollmentProfile>> SearchForAppleBYODEnrollmentProfiles(GraphServiceClient graphServiceClient, string searchQuery)
         {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, $"Searching for Apple BYOD enrollment profile. Search query: {searchQuery}");
-
-                var result = await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles.GetAsync((requestConfiguration) =>
+            return await GraphPageIteratorHelper.GetAllAsync<AppleUserInitiatedEnrollmentProfile, AppleUserInitiatedEnrollmentProfileCollectionResponse>(
+                graphServiceClient,
+                () => graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles.GetAsync(rc =>
                 {
-                    requestConfiguration.QueryParameters.Filter = $"contains(DisplayName,'{searchQuery}')";
-                });
-
-                if (result == null || result.Value == null)
-                {
-                    LogToFunctionFile(appFunction.Main, $"Search returned null or empty result.", LogLevels.Warning);
-                    return new List<AppleUserInitiatedEnrollmentProfile>();
-                }
-
-                List<AppleUserInitiatedEnrollmentProfile> enrollmentProfiles = new List<AppleUserInitiatedEnrollmentProfile>();
-                var pageIterator = PageIterator<AppleUserInitiatedEnrollmentProfile, AppleUserInitiatedEnrollmentProfileCollectionResponse>.CreatePageIterator(graphServiceClient, result, (profile) =>
-                {
-                    enrollmentProfiles.Add(profile);
-                    return true;
-                });
-                await pageIterator.IterateAsync();
-
-                LogToFunctionFile(appFunction.Main, $"Found {enrollmentProfiles.Count} policies.");
-
-                return enrollmentProfiles;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"Search returned null or empty result.", LogLevels.Error);
-                return new List<AppleUserInitiatedEnrollmentProfile>();
-            }
+                    rc.QueryParameters.Filter = $"contains(DisplayName,'{searchQuery}')";
+                }),
+                "Apple BYOD enrollment profiles");
         }
 
         public static async Task<List<AppleUserInitiatedEnrollmentProfile>> GetAllAppleBYODEnrollmentProfiles(GraphServiceClient graphServiceClient)
         {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, $"Retrieving all Apple BYOD enrollment prfoiles.");
-
-                var result = await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles.GetAsync((requestConfiguration) =>
+            return await GraphPageIteratorHelper.GetAllAsync<AppleUserInitiatedEnrollmentProfile, AppleUserInitiatedEnrollmentProfileCollectionResponse>(
+                graphServiceClient,
+                () => graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles.GetAsync(rc =>
                 {
-                    requestConfiguration.QueryParameters.Top = 999;
-                });
-
-                if (result == null || result.Value == null)
-                {
-                    LogToFunctionFile(appFunction.Main, $"Get all returned null or empty result for policies.", LogLevels.Warning);
-                    return new List<AppleUserInitiatedEnrollmentProfile>();
-                }
-
-                List<AppleUserInitiatedEnrollmentProfile> enrollmentProfiles = new List<AppleUserInitiatedEnrollmentProfile>();
-                var pageIterator = PageIterator<AppleUserInitiatedEnrollmentProfile, AppleUserInitiatedEnrollmentProfileCollectionResponse>.CreatePageIterator(graphServiceClient, result, (profile) =>
-                {
-                    enrollmentProfiles.Add(profile);
-                    return true;
-                });
-                await pageIterator.IterateAsync();
-
-                LogToFunctionFile(appFunction.Main, $"Found {enrollmentProfiles.Count} policies.");
-
-                return enrollmentProfiles;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"Search returned null or empty result.", LogLevels.Error);
-                return new List<AppleUserInitiatedEnrollmentProfile>();
+                    rc.QueryParameters.Top = 999;
+                }),
+                "Apple BYOD enrollment profiles");
             }
         }
 

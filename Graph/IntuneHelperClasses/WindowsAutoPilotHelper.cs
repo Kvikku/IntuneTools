@@ -15,62 +15,24 @@ namespace IntuneTools.Graph.IntuneHelperClasses
     {
         public static async Task<List<WindowsAutopilotDeploymentProfile>> SearchForWindowsAutoPilotProfiles(GraphServiceClient graphServiceClient, string searchQuery)
         {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, "Searching for Windows AutoPilot profiles. Search query: " + searchQuery);
-
-                var result = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles.GetAsync((requestConfiguration) =>
+            return await GraphPageIteratorHelper.GetAllAsync<WindowsAutopilotDeploymentProfile, WindowsAutopilotDeploymentProfileCollectionResponse>(
+                graphServiceClient,
+                () => graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles.GetAsync(rc =>
                 {
-                    requestConfiguration.QueryParameters.Filter = $"contains(displayName,'{searchQuery}')";
-                });
-
-                List<WindowsAutopilotDeploymentProfile> profiles = new List<WindowsAutopilotDeploymentProfile>();
-                var pageIterator = PageIterator<WindowsAutopilotDeploymentProfile, WindowsAutopilotDeploymentProfileCollectionResponse>.CreatePageIterator(graphServiceClient, result, (profile) =>
-                {
-                    profiles.Add(profile);
-                    return true;
-                });
-                await pageIterator.IterateAsync();
-
-                LogToFunctionFile(appFunction.Main, $"Found {profiles.Count} Windows AutoPilot profiles.");
-
-                return profiles;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for Windows AutoPilot profiles: {ex.Message}", LogLevels.Error);
-                return new List<WindowsAutopilotDeploymentProfile>();
-            }
+                    rc.QueryParameters.Filter = $"contains(displayName,'{searchQuery}')";
+                }),
+                "Windows AutoPilot profiles");
         }
 
         public static async Task<List<WindowsAutopilotDeploymentProfile>> GetAllWindowsAutoPilotProfiles(GraphServiceClient graphServiceClient)
         {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, "Retrieving all Windows AutoPilot profiles.");
-
-                var result = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles.GetAsync((requestConfiguration) =>
+            return await GraphPageIteratorHelper.GetAllAsync<WindowsAutopilotDeploymentProfile, WindowsAutopilotDeploymentProfileCollectionResponse>(
+                graphServiceClient,
+                () => graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles.GetAsync(rc =>
                 {
-                    requestConfiguration.QueryParameters.Top = GraphConstants.DefaultPageSize;
-                });
-
-                List<WindowsAutopilotDeploymentProfile> profiles = new List<WindowsAutopilotDeploymentProfile>();
-                var pageIterator = PageIterator<WindowsAutopilotDeploymentProfile, WindowsAutopilotDeploymentProfileCollectionResponse>.CreatePageIterator(graphServiceClient, result, (profile) =>
-                {
-                    profiles.Add(profile);
-                    return true;
-                });
-                await pageIterator.IterateAsync();
-
-                LogToFunctionFile(appFunction.Main, $"Found {profiles.Count} Windows AutoPilot profiles.");
-
-                return profiles;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while retrieving all Windows AutoPilot profiles: {ex.Message}", LogLevels.Error);
-                return new List<WindowsAutopilotDeploymentProfile>();
-            }
+                    rc.QueryParameters.Top = GraphConstants.DefaultPageSize;
+                }),
+                "Windows AutoPilot profiles");
         }
         public static async Task ImportMultipleWindowsAutoPilotProfiles(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> profiles, bool assignments, bool filter, List<string> groups)
         {

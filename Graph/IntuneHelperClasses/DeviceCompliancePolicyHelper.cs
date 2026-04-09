@@ -15,98 +15,22 @@ namespace IntuneTools.Graph.IntuneHelperClasses
     {
         public static async Task<List<DeviceCompliancePolicy>> GetAllDeviceCompliancePolicies(GraphServiceClient graphServiceClient)
         {
-            // This method retrieves all the device compliance policies from Intune and returns them as a list of DeviceManagementCompliancePolicy objects
-            try
-            {
-                LogToFunctionFile(appFunction.Main, "Retrieving all device compliance policies.");
-
-                var result = await graphServiceClient.DeviceManagement.DeviceCompliancePolicies.GetAsync((requestConfiguration) =>
+            return await GraphPageIteratorHelper.GetAllAsync<DeviceCompliancePolicy, DeviceCompliancePolicyCollectionResponse>(
+                graphServiceClient,
+                () => graphServiceClient.DeviceManagement.DeviceCompliancePolicies.GetAsync(rc =>
                 {
-                    requestConfiguration.QueryParameters.Top = GraphConstants.DefaultPageSize;
-                });
-
-                if (result == null)
-                {
-                    throw new InvalidOperationException("The result from the Graph API is null.");
-                }
-
-                List<DeviceCompliancePolicy> compliancePolicies = new List<DeviceCompliancePolicy>();
-                // Iterate through the pages of results
-                var pageIterator = PageIterator<DeviceCompliancePolicy, DeviceCompliancePolicyCollectionResponse>.CreatePageIterator(graphServiceClient, result, (policy) =>
-                {
-                    compliancePolicies.Add(policy);
-                    return true;
-                });
-                // start the iteration
-                await pageIterator.IterateAsync();
-
-                LogToFunctionFile(appFunction.Main, $"Found {compliancePolicies.Count} device compliance policies.");
-
-                // return the list of policies
-                return compliancePolicies;
-            }
-            catch (Microsoft.Graph.Beta.Models.ODataErrors.ODataError me)
-            {
-                LogToFunctionFile(appFunction.Main, "ODataError occurred", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, me.Message, LogLevels.Warning);
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, "An unexpected error occurred", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Warning);
-            }
-
-            // Return an empty list if an exception occurs
-            return new List<DeviceCompliancePolicy>();
+                    rc.QueryParameters.Top = GraphConstants.DefaultPageSize;
+                }),
+                "device compliance policies");
         }
 
         public static async Task<List<DeviceCompliancePolicy>> SearchForDeviceCompliancePolicies(GraphServiceClient graphServiceClient, string searchQuery)
         {
-            // This method searches the Intune device compliance policies for a specific query and returns the results as a list of DeviceManagementCompliancePolicy objects
-            try
-            {
-                LogToFunctionFile(appFunction.Main, "Searching for device compliance policies. Search query: " + searchQuery);
-
-                var result = await graphServiceClient.DeviceManagement.DeviceCompliancePolicies.GetAsync();
-
-
-                List<DeviceCompliancePolicy> compliancePolicies = new List<DeviceCompliancePolicy>();
-                // Iterate through the pages of results
-                var pageIterator = PageIterator<DeviceCompliancePolicy, DeviceCompliancePolicyCollectionResponse>.CreatePageIterator(graphServiceClient, result, (policy) =>
-                {
-                    compliancePolicies.Add(policy);
-                    return true;
-                });
-                // start the iteration
-                await pageIterator.IterateAsync();
-
-
-                LogToFunctionFile(appFunction.Main, $"Found {compliancePolicies.Count} device compliance policies.");
-
-                // Filter the collected policies based on the searchQuery - Graph API does not allow for server side filtering 
-                var filteredPolicies = compliancePolicies
-                    .Where(policy => policy.DisplayName != null && policy.DisplayName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
-                    .ToList();
-
-                LogToFunctionFile(appFunction.Main, $"Filtered policies count: {filteredPolicies.Count}");
-
-
-                // return the list of policies
-                return filteredPolicies;
-            }
-            catch (Microsoft.Graph.Beta.Models.ODataErrors.ODataError me)
-            {
-                LogToFunctionFile(appFunction.Main, "ODataError occurred", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, me.Message, LogLevels.Warning);
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, "An unexpected error occurred", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Warning);
-            }
-
-            // Return an empty list if an exception occurs
-            return new List<DeviceCompliancePolicy>();
+            return await GraphPageIteratorHelper.SearchAsync<DeviceCompliancePolicy, DeviceCompliancePolicyCollectionResponse>(
+                graphServiceClient,
+                () => graphServiceClient.DeviceManagement.DeviceCompliancePolicies.GetAsync(),
+                policy => policy.DisplayName != null && policy.DisplayName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase),
+                "device compliance policies");
         }
 
         public static async Task ImportMultipleDeviceCompliancePolicies(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> policies, bool assignments, bool filter, List<string> groups)

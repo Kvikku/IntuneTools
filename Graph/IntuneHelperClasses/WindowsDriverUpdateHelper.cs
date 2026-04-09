@@ -20,42 +20,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         /// <returns>A list of WindowsDriverUpdateProfile objects that match the search criteria.</returns>
         public static async Task<List<WindowsDriverUpdateProfile>> SearchForDriverProfiles(GraphServiceClient graphServiceClient, string searchQuery)
         {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, "Searching for Windows Driver Update Profiles. Search query: " + searchQuery);
-
-                var result = await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles.GetAsync();
-
-                List<WindowsDriverUpdateProfile> driverProfiles = new List<WindowsDriverUpdateProfile>();
-
-                if (result?.Value != null) // Check if result and Value are not null
-                {
-                    // Use PageIterator to handle paginated results
-                    var pageIterator = PageIterator<WindowsDriverUpdateProfile, WindowsDriverUpdateProfileCollectionResponse>.CreatePageIterator(graphServiceClient, result, (profile) =>
-                    {
-                        if (!string.IsNullOrEmpty(profile.DisplayName) && profile.DisplayName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
-                        {
-                            driverProfiles.Add(profile);
-                        }
-                        return true;
-                    });
-                    await pageIterator.IterateAsync();
-
-                    LogToFunctionFile(appFunction.Main, $"Found {driverProfiles.Count} Windows Driver Update Profiles matching the search query.");
-                }
-                else
-                {
-                    LogToFunctionFile(appFunction.Main, "No Windows Driver Update Profiles found matching the search query or the result was null.", LogLevels.Error);
-                }
-
-
-                return driverProfiles;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, "An error occurred while searching for Windows Driver Update Profiles", LogLevels.Error);
-                return new List<WindowsDriverUpdateProfile>();
-            }
+            return await GraphPageIteratorHelper.SearchAsync<WindowsDriverUpdateProfile, WindowsDriverUpdateProfileCollectionResponse>(
+                graphServiceClient,
+                () => graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles.GetAsync(),
+                profile => !string.IsNullOrEmpty(profile.DisplayName) && profile.DisplayName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase),
+                "Windows Driver Update Profiles");
         }
 
         /// <summary>
@@ -65,36 +34,10 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         /// <returns>A list of all WindowsDriverUpdateProfile objects.</returns>
         public static async Task<List<WindowsDriverUpdateProfile>> GetAllDriverProfiles(GraphServiceClient graphServiceClient)
         {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, "Retrieving all Windows Driver Update Profiles.");
-
-                var result = await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles.GetAsync();
-
-                List<WindowsDriverUpdateProfile> driverProfiles = new List<WindowsDriverUpdateProfile>();
-
-                if (result?.Value != null) // Check if result and Value are not null
-                {
-                    var pageIterator = PageIterator<WindowsDriverUpdateProfile, WindowsDriverUpdateProfileCollectionResponse>.CreatePageIterator(graphServiceClient, result, (profile) =>
-                    {
-                        driverProfiles.Add(profile);
-                        return true;
-                    });
-                    await pageIterator.IterateAsync();
-                    LogToFunctionFile(appFunction.Main, $"Found {driverProfiles.Count} Windows Driver Update Profiles.");
-                }
-                else
-                {
-                    LogToFunctionFile(appFunction.Main, "No Windows Driver Update Profiles found or the result was null.");
-                }
-
-                return driverProfiles;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, "An error occurred while retrieving all Windows Driver Update Profiles", LogLevels.Error);
-                return new List<WindowsDriverUpdateProfile>();
-            }
+            return await GraphPageIteratorHelper.GetAllAsync<WindowsDriverUpdateProfile, WindowsDriverUpdateProfileCollectionResponse>(
+                graphServiceClient,
+                () => graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles.GetAsync(),
+                "Windows Driver Update Profiles");
         }
 
         /// <summary>

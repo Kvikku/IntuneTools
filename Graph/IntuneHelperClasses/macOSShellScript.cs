@@ -15,67 +15,25 @@ namespace IntuneTools.Graph.IntuneHelperClasses
     {
         public static async Task<List<DeviceShellScript>> SearchForShellScriptmacOS(GraphServiceClient graphServiceClient, string searchQuery)
         {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, "Searching for macOS shell scripts. Search query: " + searchQuery);
-
-                // Note: The Graph API for DeviceShellScript might not support filtering by name directly in the same way.
-                // This might require fetching all and filtering locally, or adjusting the query if supported.
-                // For now, let's assume a similar filter structure, but this might need adjustment.
-                var result = await graphServiceClient.DeviceManagement.DeviceShellScripts.GetAsync((requestConfiguration) =>
+            return await GraphPageIteratorHelper.GetAllAsync<DeviceShellScript, DeviceShellScriptCollectionResponse>(
+                graphServiceClient,
+                () => graphServiceClient.DeviceManagement.DeviceShellScripts.GetAsync(rc =>
                 {
-                    // Filter for macOS platform and name contains search query
-                    requestConfiguration.QueryParameters.Filter = $"contains(displayName,'{searchQuery}')";
-                    requestConfiguration.QueryParameters.Top = GraphConstants.DefaultPageSize;
-                });
-
-                List<DeviceShellScript> shellScripts = new List<DeviceShellScript>();
-                var pageIterator = PageIterator<DeviceShellScript, DeviceShellScriptCollectionResponse>.CreatePageIterator(graphServiceClient, result, (script) =>
-                {
-                    shellScripts.Add(script);
-                    return true;
-                });
-                await pageIterator.IterateAsync();
-
-                LogToFunctionFile(appFunction.Main, $"Found {shellScripts.Count} macOS shell scripts matching the search.");
-
-                return shellScripts;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, "An error occurred while searching for macOS shell scripts", LogLevels.Error);
-                return new List<DeviceShellScript>();
-            }
+                    rc.QueryParameters.Filter = $"contains(displayName,'{searchQuery}')";
+                    rc.QueryParameters.Top = GraphConstants.DefaultPageSize;
+                }),
+                "macOS shell scripts");
         }
 
         public static async Task<List<DeviceShellScript>> GetAllmacOSShellScripts(GraphServiceClient graphServiceClient)
         {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, "Retrieving all macOS shell scripts.");
-
-                var result = await graphServiceClient.DeviceManagement.DeviceShellScripts.GetAsync((requestConfiguration) =>
+            return await GraphPageIteratorHelper.GetAllAsync<DeviceShellScript, DeviceShellScriptCollectionResponse>(
+                graphServiceClient,
+                () => graphServiceClient.DeviceManagement.DeviceShellScripts.GetAsync(rc =>
                 {
-                    requestConfiguration.QueryParameters.Top = GraphConstants.DefaultPageSize;
-                });
-
-                List<DeviceShellScript> shellScripts = new List<DeviceShellScript>();
-                var pageIterator = PageIterator<DeviceShellScript, DeviceShellScriptCollectionResponse>.CreatePageIterator(graphServiceClient, result, (script) =>
-                {
-                    shellScripts.Add(script);
-                    return true;
-                });
-                await pageIterator.IterateAsync();
-
-                LogToFunctionFile(appFunction.Main, $"Found {shellScripts.Count} macOS shell scripts.");
-
-                return shellScripts;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, "An error occurred while retrieving all macOS shell scripts", LogLevels.Error);
-                return new List<DeviceShellScript>();
-            }
+                    rc.QueryParameters.Top = GraphConstants.DefaultPageSize;
+                }),
+                "macOS shell scripts");
         }
         public static async Task ImportMultiplemacOSShellScripts(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> scriptIDs, bool assignments, bool filter, List<string> groups)
         {

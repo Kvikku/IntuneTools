@@ -14,68 +14,28 @@ namespace IntuneTools.Graph.IntuneHelperClasses
     {
         public static async Task<List<DeviceHealthScript>> SearchForProactiveRemediations(GraphServiceClient graphServiceClient, string searchQuery)
         {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, "Searching for proactive remediation scripts. Search query: " + searchQuery);
-
-                var result = await graphServiceClient.DeviceManagement.DeviceHealthScripts.GetAsync((requestConfiguration) =>
+            var all = await GraphPageIteratorHelper.GetAllAsync<DeviceHealthScript, DeviceHealthScriptCollectionResponse>(
+                graphServiceClient,
+                () => graphServiceClient.DeviceManagement.DeviceHealthScripts.GetAsync(rc =>
                 {
-                    requestConfiguration.QueryParameters.Filter = $"contains(displayName,'{searchQuery}')";
-                });
+                    rc.QueryParameters.Filter = $"contains(displayName,'{searchQuery}')";
+                }),
+                "proactive remediation scripts");
 
-                List<DeviceHealthScript> healthScripts = new List<DeviceHealthScript>();
-                var pageIterator = PageIterator<DeviceHealthScript, DeviceHealthScriptCollectionResponse>.CreatePageIterator(graphServiceClient, result, (script) =>
-                {
-                    if (!script.Publisher.Equals("Microsoft", StringComparison.OrdinalIgnoreCase))
-                    {
-                        healthScripts.Add(script);
-                    }
-                    return true;
-                });
-                await pageIterator.IterateAsync();
-
-                LogToFunctionFile(appFunction.Main, $"Found {healthScripts.Count} proactive remediation scripts.");
-
-                return healthScripts;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, "An error occurred while searching for proactive remediation scripts", LogLevels.Error);
-                return new List<DeviceHealthScript>();
-            }
+            return all.FindAll(script => !script.Publisher.Equals("Microsoft", StringComparison.OrdinalIgnoreCase));
         }
 
         public static async Task<List<DeviceHealthScript>> GetAllProactiveRemediations(GraphServiceClient graphServiceClient)
         {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, "Retrieving all proactive remediation scripts.");
-
-                var result = await graphServiceClient.DeviceManagement.DeviceHealthScripts.GetAsync((requestConfiguration) =>
+            var all = await GraphPageIteratorHelper.GetAllAsync<DeviceHealthScript, DeviceHealthScriptCollectionResponse>(
+                graphServiceClient,
+                () => graphServiceClient.DeviceManagement.DeviceHealthScripts.GetAsync(rc =>
                 {
-                    requestConfiguration.QueryParameters.Top = GraphConstants.DefaultPageSize;
-                });
+                    rc.QueryParameters.Top = GraphConstants.DefaultPageSize;
+                }),
+                "proactive remediation scripts");
 
-                List<DeviceHealthScript> healthScripts = new List<DeviceHealthScript>();
-                var pageIterator = PageIterator<DeviceHealthScript, DeviceHealthScriptCollectionResponse>.CreatePageIterator(graphServiceClient, result, (script) =>
-                {
-                    if (!script.Publisher.Equals("Microsoft", StringComparison.OrdinalIgnoreCase))
-                    {
-                        healthScripts.Add(script);
-                    }
-                    return true;
-                });
-                await pageIterator.IterateAsync();
-
-                LogToFunctionFile(appFunction.Main, $"Found {healthScripts.Count} proactive remediation scripts.");
-
-                return healthScripts;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, "An error occurred while retrieving all proactive remediation scripts", LogLevels.Error);
-                return new List<DeviceHealthScript>();
-            }
+            return all.FindAll(script => !script.Publisher.Equals("Microsoft", StringComparison.OrdinalIgnoreCase));
         }
 
         public static async Task ImportMultipleProactiveRemediations(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> scripts, bool assignments, bool filter, List<string> groups)
