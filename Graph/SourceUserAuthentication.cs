@@ -33,7 +33,7 @@ public static class SourceUserAuthentication
             "DeviceManagementRBAC.Read.All",
             "DeviceManagementScripts.Read.All",
             "DeviceManagementServiceConfig.Read.All",
-            "Group.ReadWrite.All"
+            "Group.Read.All"
         };
 
     private const string PublicClientId = "14d82eec-204b-4c2f-b7e8-296a70dab67e";
@@ -82,7 +82,10 @@ public static class SourceUserAuthentication
                 var idToken = handler.ReadJwtToken(result.IdToken);
                 TenantId = idToken.Claims.FirstOrDefault(c => c.Type == "tid")?.Value;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"[SourceAuth] Failed to parse ID token for tenant ID: {ex.GetType().Name} - {ex.Message}", LogLevels.Warning);
+            }
 
             _tokenProvider = new MsalAccessTokenProvider(_pca, scopes);
             _authProvider = new BaseBearerTokenAuthenticationProvider(_tokenProvider);
@@ -160,7 +163,7 @@ public static class SourceUserAuthentication
         {
             _pca = pca;
             _scopes = scopes;
-            AllowedHostsValidator = new AllowedHostsValidator();
+            AllowedHostsValidator = new AllowedHostsValidator(new[] { "graph.microsoft.com" });
         }
 
         public AllowedHostsValidator AllowedHostsValidator { get; }
