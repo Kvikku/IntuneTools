@@ -75,7 +75,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
             catch (Microsoft.Graph.Beta.Models.ODataErrors.ODataError me)
             {
                 // Log the error message
-                LogToFunctionFile(appFunction.Main, $"ODataError: {me.Message}");
+                LogToFunctionFile(appFunction.Main, $"ODataError retrieving all groups: {me.Message}", LogLevels.Warning);
                 return null;
             }
         }
@@ -124,7 +124,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
             catch (Microsoft.Graph.Beta.Models.ODataErrors.ODataError me)
             {
                 // Log the error message
-                LogToFunctionFile(appFunction.Main, $"ODataError: {me.Message}");
+                LogToFunctionFile(appFunction.Main, $"ODataError searching for groups: {me.Message}", LogLevels.Warning);
                 return null;
             }
         }

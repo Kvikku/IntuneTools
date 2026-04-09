@@ -47,13 +47,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Microsoft.Graph.Beta.Models.ODataErrors.ODataError me)
             {
-                LogToFunctionFile(appFunction.Main, "ODataError occurred", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, me.Message, LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, $"ODataError retrieving device compliance policies: {me.Message}", LogLevels.Warning);
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An unexpected error occurred", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, $"An unexpected error occurred while retrieving device compliance policies: {ex.Message}", LogLevels.Warning);
             }
 
             // Return an empty list if an exception occurs
@@ -96,13 +94,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Microsoft.Graph.Beta.Models.ODataErrors.ODataError me)
             {
-                LogToFunctionFile(appFunction.Main, "ODataError occurred", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, me.Message, LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, $"ODataError searching for device compliance policies: {me.Message}", LogLevels.Warning);
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An unexpected error occurred", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, $"An unexpected error occurred while searching for device compliance policies: {ex.Message}", LogLevels.Warning);
             }
 
             // Return an empty list if an exception occurs
@@ -228,7 +224,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             catch (Exception ex)
             {
                 LogToFunctionFile(appFunction.Main, $"An unexpected error occurred during the import process: {ex.Message}", LogLevels.Error);
-                LogToFunctionFile(appFunction.Main, "An unexpected error occurred during the import process. Please check the log file for more information.", LogLevels.Error);
             }
             finally
             {
