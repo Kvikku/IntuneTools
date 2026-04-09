@@ -34,16 +34,31 @@ public class VersionCheckTests
     }
 
     [Theory]
+    [InlineData("not-a-version", "1.3.0.0")]
+    [InlineData("1.3.0.0", "garbage")]
+    public void IsLatestNewer_WithUnparseableInput_ReturnsFalse(string latest, string current)
+    {
+        Assert.False(VersionCheck.IsLatestNewer(latest, current));
+    }
+
+    [Theory]
     [InlineData("", "1.3.0.0")]
     [InlineData(null, "1.3.0.0")]
     [InlineData("   ", "1.3.0.0")]
+    public void IsLatestNewer_EmptyOrNullLatest_ReturnsFalse(string? latest, string current)
+    {
+        // Empty/null latest normalizes to "0.0.0" which is not newer than any real version
+        Assert.False(VersionCheck.IsLatestNewer(latest!, current));
+    }
+
+    [Theory]
     [InlineData("1.3.0.0", "")]
     [InlineData("1.3.0.0", null)]
-    [InlineData("not-a-version", "1.3.0.0")]
-    [InlineData("1.3.0.0", "garbage")]
-    public void IsLatestNewer_WithUnparseableInput_ReturnsFalse(string? latest, string? current)
+    [InlineData("1.3.0.0", "   ")]
+    public void IsLatestNewer_EmptyOrNullCurrent_ReturnsTrue(string latest, string? current)
     {
-        Assert.False(VersionCheck.IsLatestNewer(latest!, current!));
+        // Empty/null current normalizes to "0.0.0", so any real latest version is newer
+        Assert.True(VersionCheck.IsLatestNewer(latest, current!));
     }
 
     [Theory]
