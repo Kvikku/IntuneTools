@@ -59,11 +59,7 @@ namespace IntuneTools.Utilities
             // Log the application start time
             LogToFunctionFile(appFunction.Summary, "Application started", LogLevels.Info);
 
-            // Log the machine name
-            LogToFunctionFile(appFunction.Summary, $"Machine Name: {Environment.MachineName}", LogLevels.Info);
-
-            // Log the user name
-            LogToFunctionFile(appFunction.Summary, $"User Name: {Environment.UserName}", LogLevels.Info);
+            // Note: Machine name and user name are intentionally omitted to avoid logging PII.
 
             // Log the OS version
             LogToFunctionFile(appFunction.Summary, $"OS Version: {Environment.OSVersion}", LogLevels.Info);

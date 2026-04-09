@@ -64,6 +64,8 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
                     <Button Grid.Column="0"
@@ -152,6 +154,42 @@
                             <FontIcon Glyph="&#xE8AB;" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" HorizontalAlignment="Left"/>
                             <TextBlock Text="JSON" FontSize="16" FontWeight="SemiBold"/>
                             <TextBlock Text="Import from and export to JSON files."
+                                       FontSize="13" Opacity="0.65" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Grid.Column="5"
+                            Click="QuickAction_ManageAssignments_Click"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Stretch"
+                            VerticalAlignment="Stretch"
+                            Padding="20"
+                            CornerRadius="8"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1">
+                        <StackPanel Spacing="8">
+                            <FontIcon Glyph="&#xE71D;" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" HorizontalAlignment="Left"/>
+                            <TextBlock Text="Manage Assignments" FontSize="16" FontWeight="SemiBold"/>
+                            <TextBlock Text="View and remove group assignments from content."
+                                       FontSize="13" Opacity="0.65" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Grid.Column="6"
+                            Click="QuickAction_AuditLog_Click"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Stretch"
+                            VerticalAlignment="Stretch"
+                            Padding="20"
+                            CornerRadius="8"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1">
+                        <StackPanel Spacing="8">
+                            <FontIcon Glyph="&#xE7BA;" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" HorizontalAlignment="Left"/>
+                            <TextBlock Text="Audit Log" FontSize="16" FontWeight="SemiBold"/>
+                            <TextBlock Text="Review recent changes and who made them."
                                        FontSize="13" Opacity="0.65" TextWrapping="Wrap"/>
                         </StackPanel>
                     </Button>

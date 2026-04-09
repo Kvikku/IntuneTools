@@ -513,5 +513,51 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 return null;
             }
         }
+
+        /// <summary>
+        /// Gets detailed assignment information for a Proactive Remediation script.
+        /// </summary>
+        public static async Task<List<AssignmentInfo>?> GetProactiveRemediationAssignmentDetailsAsync(GraphServiceClient graphServiceClient, string scriptId)
+        {
+            try
+            {
+                var details = new List<AssignmentInfo>();
+                var result = await graphServiceClient.DeviceManagement.DeviceHealthScripts[scriptId].Assignments.GetAsync();
+
+                while (result?.Value != null)
+                {
+                    foreach (var assignment in result.Value)
+                    {
+                        details.Add(AssignmentInfo.FromTarget(assignment.Id, assignment.Target));
+                    }
+
+                    if (string.IsNullOrEmpty(result.OdataNextLink)) break;
+
+                    result = await graphServiceClient.DeviceManagement.DeviceHealthScripts[scriptId]
+                        .Assignments.WithUrl(result.OdataNextLink).GetAsync();
+                }
+
+                return details;
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error getting assignment details for Proactive Remediation {scriptId}: {ex.Message}", LogLevels.Error);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Removes all assignments from a Proactive Remediation script.
+        /// </summary>
+        public static async Task RemoveAllProactiveRemediationAssignmentsAsync(GraphServiceClient graphServiceClient, string scriptId)
+        {
+            var requestBody = new Microsoft.Graph.Beta.DeviceManagement.DeviceHealthScripts.Item.Assign.AssignPostRequestBody
+            {
+                DeviceHealthScriptAssignments = new List<DeviceHealthScriptAssignment>()
+            };
+
+            await graphServiceClient.DeviceManagement.DeviceHealthScripts[scriptId].Assign.PostAsync(requestBody);
+            LogToFunctionFile(appFunction.Main, $"Removed all assignments from Proactive Remediation script {scriptId}.");
+        }
     }
 }

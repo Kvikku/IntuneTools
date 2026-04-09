@@ -108,6 +108,12 @@ namespace IntuneTools
                 case "Json":
                     ContentFrame.Navigate(typeof(JsonPage));
                     break;
+                case "ManageAssignments":
+                    ContentFrame.Navigate(typeof(ManageAssignmentsPage));
+                    break;
+                case "AuditLog":
+                    ContentFrame.Navigate(typeof(AuditLogPage));
+                    break;
                 default:
                     break;
             }

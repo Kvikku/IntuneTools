@@ -623,5 +623,51 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 return null;
             }
         }
+
+        /// <summary>
+        /// Gets detailed assignment information for a Device Configuration policy.
+        /// </summary>
+        public static async Task<List<AssignmentInfo>?> GetDeviceConfigurationAssignmentDetailsAsync(GraphServiceClient graphServiceClient, string configId)
+        {
+            try
+            {
+                var details = new List<AssignmentInfo>();
+                var result = await graphServiceClient.DeviceManagement.DeviceConfigurations[configId].Assignments.GetAsync();
+
+                while (result?.Value != null)
+                {
+                    foreach (var assignment in result.Value)
+                    {
+                        details.Add(AssignmentInfo.FromTarget(assignment.Id, assignment.Target));
+                    }
+
+                    if (string.IsNullOrEmpty(result.OdataNextLink)) break;
+
+                    result = await graphServiceClient.DeviceManagement.DeviceConfigurations[configId]
+                        .Assignments.WithUrl(result.OdataNextLink).GetAsync();
+                }
+
+                return details;
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error getting assignment details for Device Configuration {configId}: {ex.Message}", LogLevels.Error);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Removes all assignments from a Device Configuration policy.
+        /// </summary>
+        public static async Task RemoveAllDeviceConfigurationAssignmentsAsync(GraphServiceClient graphServiceClient, string configId)
+        {
+            var requestBody = new Microsoft.Graph.Beta.DeviceManagement.DeviceConfigurations.Item.Assign.AssignPostRequestBody
+            {
+                Assignments = new List<DeviceConfigurationAssignment>()
+            };
+
+            await graphServiceClient.DeviceManagement.DeviceConfigurations[configId].Assign.PostAsAssignPostResponseAsync(requestBody);
+            LogToFunctionFile(appFunction.Main, $"Removed all assignments from Device Configuration policy {configId}.");
+        }
     }
 }

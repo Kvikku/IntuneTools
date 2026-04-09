@@ -540,5 +540,51 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 return null;
             }
         }
+
+        /// <summary>
+        /// Gets detailed assignment information for a macOS Shell Script.
+        /// </summary>
+        public static async Task<List<AssignmentInfo>?> GetMacOSShellScriptAssignmentDetailsAsync(GraphServiceClient graphServiceClient, string scriptId)
+        {
+            try
+            {
+                var details = new List<AssignmentInfo>();
+                var result = await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptId].Assignments.GetAsync();
+
+                while (result?.Value != null)
+                {
+                    foreach (var assignment in result.Value)
+                    {
+                        details.Add(AssignmentInfo.FromTarget(assignment.Id, assignment.Target));
+                    }
+
+                    if (string.IsNullOrEmpty(result.OdataNextLink)) break;
+
+                    result = await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptId]
+                        .Assignments.WithUrl(result.OdataNextLink).GetAsync();
+                }
+
+                return details;
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"Error getting assignment details for macOS Shell Script {scriptId}: {ex.Message}", LogLevels.Error);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Removes all assignments from a macOS Shell Script.
+        /// </summary>
+        public static async Task RemoveAllMacOSShellScriptAssignmentsAsync(GraphServiceClient graphServiceClient, string scriptId)
+        {
+            var requestBody = new Microsoft.Graph.Beta.DeviceManagement.DeviceShellScripts.Item.Assign.AssignPostRequestBody
+            {
+                DeviceManagementScriptGroupAssignments = new List<DeviceManagementScriptGroupAssignment>()
+            };
+
+            await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptId].Assign.PostAsync(requestBody);
+            LogToFunctionFile(appFunction.Main, $"Removed all assignments from macOS Shell Script {scriptId}.");
+        }
     }
 }
