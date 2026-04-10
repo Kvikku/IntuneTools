@@ -150,7 +150,7 @@ internal sealed class UserAuthenticationBase
             _pca = pca;
             _scopes = scopes;
             AllowedHostsValidator = new AllowedHostsValidator();
-            AllowedHostsValidator.SetAllowedHosts(new List<string> { "graph.microsoft.com" });
+            AllowedHostsValidator.AllowedHosts = new List<string> { "graph.microsoft.com" };
         }
 
         public AllowedHostsValidator AllowedHostsValidator { get; }

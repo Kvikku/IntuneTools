@@ -2,6 +2,8 @@ using CommunityToolkit.WinUI.UI.Controls;
 using IntuneTools.Utilities;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Text;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,6 +37,15 @@ namespace IntuneTools.Pages
             string TypeKey,
             string DisplayName,
             Func<GraphServiceClient, string, Task> RemoveAsync);
+
+        /// <summary>
+        /// Holds assignment retrieval results for a single content item.
+        /// </summary>
+        private record AssignmentResult(
+            string ContentName,
+            string ContentType,
+            List<AssignmentInfo>? Assignments,
+            string? ErrorMessage);
 
         // Progress tracking for remove operations
         private int _removeTotal;
@@ -215,13 +226,14 @@ namespace IntuneTools.Pages
         }
 
         /// <summary>
-        /// Views assignment details for selected content items.
+        /// Views assignment details for selected content items and displays them in a dialog.
         /// </summary>
         private async Task ViewAssignmentsOrchestrator(GraphServiceClient graphServiceClient, List<CustomContentInfo> selectedItems)
         {
             var viewRegistry = GetViewAssignmentRegistry();
             var checkedCount = 0;
             var totalItems = selectedItems.Count;
+            var results = new List<AssignmentResult>();
 
             ShowOperationProgress("Retrieving assignment details...", 0, totalItems);
 
@@ -245,34 +257,47 @@ namespace IntuneTools.Pages
                 try
                 {
                     var details = await getDetailsFunc(graphServiceClient, item.ContentId);
-
-                    if (details == null)
-                    {
-                        LogError($"Failed to retrieve assignments for '{item.ContentName}'.");
-                        continue;
-                    }
-
-                    if (details.Count == 0)
-                    {
-                        LogInfo($"'{item.ContentName}' ({item.ContentType}) — No assignments.");
-                    }
-                    else
-                    {
-                        LogInfo($"'{item.ContentName}' ({item.ContentType}) — {details.Count} assignment(s):");
-                        foreach (var assignment in details)
-                        {
-                            LogInfo($"  • {assignment}");
-                        }
-                    }
+                    results.Add(new AssignmentResult(
+                        item.ContentName ?? "Unknown",
+                        item.ContentType ?? "Unknown",
+                        details,
+                        details == null ? "Failed to retrieve assignments." : null));
                 }
                 catch (Exception ex)
                 {
-                    LogError($"Error retrieving assignments for '{item.ContentName}' ({item.ContentType}): {ex.Message}");
-                    continue;
+                    results.Add(new AssignmentResult(
+                        item.ContentName ?? "Unknown",
+                        item.ContentType ?? "Unknown",
+                        null,
+                        ex.Message));
                 }
             }
 
-            ShowOperationSuccess($"Checked assignments for {totalItems} item(s)");
+            int totalAssignments = results.Where(r => r.Assignments != null).Sum(r => r.Assignments!.Count);
+
+            // Resolve group IDs to display names
+            var groupIds = results
+                .Where(r => r.Assignments != null)
+                .SelectMany(r => r.Assignments!)
+                .Where(a => !string.IsNullOrEmpty(a.GroupId))
+                .Select(a => a.GroupId!)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            Dictionary<string, string> groupNames = new();
+            if (groupIds.Count > 0)
+            {
+                ShowOperationProgress("Resolving group names...");
+                groupNames = await ResolveGroupNamesAsync(graphServiceClient, groupIds);
+            }
+
+            ShowOperationSuccess($"Checked assignments for {totalItems} item(s) — {totalAssignments} assignment(s) found");
+            LogInfo($"Retrieved assignments for {totalItems} item(s): {totalAssignments} total assignment(s).");
+
+            if (results.Count > 0)
+            {
+                await ShowAssignmentsDialogAsync(results, groupNames);
+            }
         }
 
         /// <summary>
@@ -326,6 +351,265 @@ namespace IntuneTools.Pages
             {
                 ShowOperationError($"Completed with {_removeErrorCount} error(s). {_removeSuccessCount} item(s) processed successfully.");
             }
+        }
+
+        #endregion
+
+        #region Assignment Details Dialog
+
+        /// <summary>
+        /// Resolves a list of group IDs to their display names via Microsoft Graph.
+        /// Returns a dictionary mapping group ID to display name.
+        /// </summary>
+        private static async Task<Dictionary<string, string>> ResolveGroupNamesAsync(GraphServiceClient graphServiceClient, List<string> groupIds)
+        {
+            var names = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var groupId in groupIds)
+            {
+                try
+                {
+                    var group = await graphServiceClient.Groups[groupId].GetAsync(config =>
+                    {
+                        config.QueryParameters.Select = new[] { "displayName" };
+                    });
+
+                    if (group?.DisplayName != null)
+                    {
+                        names[groupId] = group.DisplayName;
+                    }
+                }
+                catch
+                {
+                    // If we can't resolve a group name, we'll fall back to the ID in the UI
+                }
+            }
+
+            return names;
+        }
+
+        /// <summary>
+        /// Displays assignment details in a structured dialog with summary stats and expandable items.
+        /// </summary>
+        private async Task ShowAssignmentsDialogAsync(List<AssignmentResult> results, Dictionary<string, string> groupNames)
+        {
+            var rootPanel = new StackPanel { Spacing = 16 };
+
+            // Summary statistics
+            int totalAssignments = results.Where(r => r.Assignments != null).Sum(r => r.Assignments!.Count);
+            int withAssignments = results.Count(r => r.Assignments is { Count: > 0 });
+            int withoutAssignments = results.Count(r => r.Assignments != null && r.Assignments.Count == 0);
+            int withErrors = results.Count(r => r.ErrorMessage != null);
+
+            var summaryPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
+            summaryPanel.Children.Add(BuildStatBadge(results.Count.ToString(), "Checked", 0x00, 0x78, 0xD4));
+            summaryPanel.Children.Add(BuildStatBadge(totalAssignments.ToString(), "Assignments", 0x10, 0x7C, 0x10));
+            summaryPanel.Children.Add(BuildStatBadge(withoutAssignments.ToString(), "Unassigned", 0xCA, 0x50, 0x10));
+            if (withErrors > 0)
+                summaryPanel.Children.Add(BuildStatBadge(withErrors.ToString(), "Errors", 0xC4, 0x2B, 0x1C));
+            rootPanel.Children.Add(summaryPanel);
+
+            // Item expanders
+            foreach (var result in results)
+            {
+                rootPanel.Children.Add(BuildItemExpander(result, results.Count <= 5, groupNames));
+            }
+
+            var dialog = new ContentDialog
+            {
+                Title = "Assignment Details",
+                Content = new ScrollViewer
+                {
+                    Content = rootPanel,
+                    MaxHeight = 500,
+                    HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
+                },
+                CloseButtonText = "Close",
+                XamlRoot = this.XamlRoot,
+                DefaultButton = ContentDialogButton.Close
+            };
+
+            await dialog.ShowAsync();
+        }
+
+        /// <summary>
+        /// Builds a colored stat badge for the summary row.
+        /// </summary>
+        private static Border BuildStatBadge(string value, string label, byte r, byte g, byte b)
+        {
+            var color = Windows.UI.Color.FromArgb(255, r, g, b);
+            var panel = new StackPanel { Spacing = 2 };
+            panel.Children.Add(new TextBlock
+            {
+                Text = value,
+                FontSize = 18,
+                FontWeight = FontWeights.Bold,
+                HorizontalAlignment = HorizontalAlignment.Center
+            });
+            panel.Children.Add(new TextBlock
+            {
+                Text = label,
+                FontSize = 11,
+                HorizontalAlignment = HorizontalAlignment.Center
+            });
+
+            return new Border
+            {
+                Background = new SolidColorBrush(color) { Opacity = 0.1 },
+                BorderBrush = new SolidColorBrush(color) { Opacity = 0.3 },
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(6),
+                Padding = new Thickness(12, 6, 12, 6),
+                Child = panel
+            };
+        }
+
+        /// <summary>
+        /// Builds an expander for a single content item showing its assignments.
+        /// </summary>
+        private static Expander BuildItemExpander(AssignmentResult result, bool autoExpand, Dictionary<string, string> groupNames)
+        {
+            var expander = new Expander
+            {
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                HorizontalContentAlignment = HorizontalAlignment.Stretch,
+                IsExpanded = autoExpand
+            };
+
+            // Header: name + type badge + assignment count
+            var headerPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+            headerPanel.Children.Add(new TextBlock
+            {
+                Text = result.ContentName,
+                FontWeight = FontWeights.SemiBold,
+                VerticalAlignment = VerticalAlignment.Center,
+                MaxWidth = 300,
+                TextTrimming = TextTrimming.CharacterEllipsis
+            });
+            headerPanel.Children.Add(new Border
+            {
+                Background = new SolidColorBrush(Windows.UI.Color.FromArgb(20, 128, 128, 128)),
+                CornerRadius = new CornerRadius(4),
+                Padding = new Thickness(6, 2, 6, 2),
+                Child = new TextBlock
+                {
+                    Text = result.ContentType,
+                    FontSize = 11,
+                    VerticalAlignment = VerticalAlignment.Center
+                }
+            });
+
+            var countText = result.ErrorMessage != null
+                ? "Error"
+                : $"{result.Assignments?.Count ?? 0} assignment(s)";
+            headerPanel.Children.Add(new TextBlock
+            {
+                Text = countText,
+                FontSize = 12,
+                VerticalAlignment = VerticalAlignment.Center,
+                Opacity = 0.6
+            });
+            expander.Header = headerPanel;
+
+            // Content: assignments list, empty state, or error
+            if (result.ErrorMessage != null)
+            {
+                expander.Content = new InfoBar
+                {
+                    Severity = InfoBarSeverity.Error,
+                    Message = result.ErrorMessage,
+                    IsOpen = true,
+                    IsClosable = false
+                };
+            }
+            else if (result.Assignments == null || result.Assignments.Count == 0)
+            {
+                expander.Content = new TextBlock
+                {
+                    Text = "No assignments found.",
+                    Opacity = 0.6,
+                    Margin = new Thickness(0, 4, 0, 4)
+                };
+            }
+            else
+            {
+                var listPanel = new StackPanel { Spacing = 4 };
+                foreach (var assignment in result.Assignments)
+                {
+                    listPanel.Children.Add(BuildAssignmentRow(assignment, groupNames));
+                }
+                expander.Content = listPanel;
+            }
+
+            return expander;
+        }
+
+        /// <summary>
+        /// Builds a single assignment row with a colored indicator dot and details.
+        /// </summary>
+        private static UIElement BuildAssignmentRow(AssignmentInfo assignment, Dictionary<string, string> groupNames)
+        {
+            var (r, g, b) = assignment.TargetType switch
+            {
+                "All Users" => ((byte)0x00, (byte)0x78, (byte)0xD4),
+                "All Devices" => ((byte)0x00, (byte)0x78, (byte)0xD4),
+                "Group" => ((byte)0x10, (byte)0x7C, (byte)0x10),
+                "Exclusion Group" => ((byte)0xC4, (byte)0x2B, (byte)0x1C),
+                _ => ((byte)0x88, (byte)0x88, (byte)0x88)
+            };
+
+            var row = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 8,
+                Margin = new Thickness(0, 2, 0, 2)
+            };
+
+            // Color indicator dot
+            row.Children.Add(new Border
+            {
+                Width = 8,
+                Height = 8,
+                CornerRadius = new CornerRadius(4),
+                Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, r, g, b)),
+                VerticalAlignment = VerticalAlignment.Center
+            });
+
+            // Target type label
+            row.Children.Add(new TextBlock
+            {
+                Text = assignment.TargetType ?? "Unknown",
+                FontWeight = FontWeights.SemiBold,
+                FontSize = 13,
+                Width = 120,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+
+            // Details: Group name (with ID fallback), Filter info
+            var details = new List<string>();
+            if (!string.IsNullOrEmpty(assignment.GroupId))
+            {
+                var groupLabel = groupNames.TryGetValue(assignment.GroupId, out var name)
+                    ? $"{name} ({assignment.GroupId})"
+                    : assignment.GroupId;
+                details.Add(groupLabel);
+            }
+            if (!string.IsNullOrEmpty(assignment.FilterId))
+                details.Add($"Filter: {assignment.FilterId} ({assignment.FilterType})");
+
+            if (details.Count > 0)
+            {
+                row.Children.Add(new TextBlock
+                {
+                    Text = string.Join(" \u00B7 ", details),
+                    FontSize = 13,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    IsTextSelectionEnabled = true,
+                    Opacity = 0.8
+                });
+            }
+
+            return row;
         }
 
         #endregion
