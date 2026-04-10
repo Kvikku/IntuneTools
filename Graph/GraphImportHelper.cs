@@ -91,7 +91,8 @@ namespace IntuneTools.Graph
         {
             var json = policyData.GetRawText();
             using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
-            var parseNode = new JsonParseNode(JsonDocument.Parse(stream).RootElement);
+            using var document = JsonDocument.Parse(stream);
+            var parseNode = new JsonParseNode(document.RootElement);
             return parseNode.GetObjectValue(factory);
         }
 

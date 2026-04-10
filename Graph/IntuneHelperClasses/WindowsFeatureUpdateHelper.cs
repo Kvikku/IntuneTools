@@ -296,7 +296,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         public static async Task<List<WindowsFeatureUpdateProfile>> SearchForWindowsFeatureUpdateProfiles(GraphServiceClient graphServiceClient, string searchQuery)
         {
-            var all = await _helper.SearchAsync(graphServiceClient, searchQuery);
+            var all = await _helper.GetAllAsync(graphServiceClient);
             return all.Where(p => p?.DisplayName != null && p.DisplayName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)).ToList();
         }
 

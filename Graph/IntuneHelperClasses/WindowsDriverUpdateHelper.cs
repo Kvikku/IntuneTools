@@ -302,7 +302,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
         public static async Task<List<WindowsDriverUpdateProfile>> SearchForDriverProfiles(GraphServiceClient graphServiceClient, string searchQuery)
         {
-            var all = await _helper.SearchAsync(graphServiceClient, searchQuery);
+            var all = await _helper.GetAllAsync(graphServiceClient);
             return all.Where(p => !string.IsNullOrEmpty(p.DisplayName) && p.DisplayName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)).ToList();
         }
 
