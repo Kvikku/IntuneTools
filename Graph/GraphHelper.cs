@@ -20,7 +20,7 @@ namespace IntuneTools.Graph
     /// <typeparam name="TCollectionResponse">The collection response type from the Graph SDK.</typeparam>
     public abstract class GraphHelper<TPolicy, TCollectionResponse>
         where TPolicy : class, IParsable
-        where TCollectionResponse : class, IParsable
+        where TCollectionResponse : class, IParsable, IAdditionalDataHolder, new()
     {
         /// <summary>Human-readable resource name for logging (e.g., "settings catalog policies").</summary>
         protected abstract string ResourceName { get; }
