@@ -444,6 +444,7 @@ namespace IntuneTools.Pages
                         await definition.RemoveAsync(graphServiceClient, item.ContentId);
                         _removeSuccessCount++;
                         LogSuccess($"Removed assignments from '{item.ContentName}'.");
+                        UpdateTotalTimeSaved(secondsSavedOnManagingAssignments, appFunction.ManageAssignment);
                     }
                     catch (Exception ex)
                     {

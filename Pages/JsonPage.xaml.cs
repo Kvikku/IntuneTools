@@ -392,6 +392,11 @@ namespace IntuneTools.Pages
                 ShowOperationSuccess($"Exported {totalItems} items ({totalWithData} with full data) across {filesWritten} file(s) to '{folder.Name}'");
                 LogToFunctionFile(appFunction.Main, $"JSON Export: Completed. {totalItems} items ({totalWithData} with full data) across {filesWritten} file(s) to '{folder.Path}'.");
                 AppendToDetailsRichTextBlock($"Export complete. {filesWritten} file(s) written to '{folder.Path}'.");
+
+                for (int i = 0; i < totalItems; i++)
+                {
+                    UpdateTotalTimeSaved(secondsSavedOnJsonExport, appFunction.JsonExport);
+                }
             }
             catch (Exception ex)
             {

@@ -119,6 +119,8 @@ namespace IntuneTools.Pages
                 UpdateActorSummary();
                 ExportCsvButton.IsEnabled = _auditEvents.Count > 0;
 
+                UpdateTotalTimeSaved(secondsSavedOnAuditLog, appFunction.AuditLog);
+
                 LogInfo("Audit log summary generated successfully.");
             },
             "Loading audit events from Microsoft Graph...",
