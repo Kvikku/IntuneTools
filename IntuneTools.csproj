@@ -29,6 +29,13 @@
 </PropertyGroup>
 
 		
+  <!-- Exclude nested test project from main compilation (SDK default glob picks up **/*.cs) -->
+  <ItemGroup>
+    <Compile Remove="IntuneTools.Tests\**" />
+    <None Remove="IntuneTools.Tests\**" />
+    <Content Remove="IntuneTools.Tests\**" />
+  </ItemGroup>
+
   <ItemGroup>
     <Content Remove="Assets\GreenCheck.png" />
     <Content Remove="Assets\RedCross.png" />
