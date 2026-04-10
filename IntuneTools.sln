@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.0.11217.181 d18.0
+VisualStudioVersion = 18.0.11217.181
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IntuneTools", "IntuneTools.csproj", "{02C93EA9-C478-4299-847B-F1910EC0B571}"
 EndProject
 Project("{C7167F0D-BC9F-4E6E-AFE1-012C56B48DB5}") = "IntuneToolsPackaged", "..\IntuneToolsPackaged\IntuneToolsPackaged.wapproj", "{362685B8-A82A-4468-BCE7-0376880A2945}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IntuneTools.Tests", "IntuneTools.Tests\IntuneTools.Tests.csproj", "{3F5A4E50-4F91-450D-96F7-1AA7D05996A3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -79,6 +81,26 @@ Global
 		{362685B8-A82A-4468-BCE7-0376880A2945}.Release|x86.ActiveCfg = Release|x86
 		{362685B8-A82A-4468-BCE7-0376880A2945}.Release|x86.Build.0 = Release|x86
 		{362685B8-A82A-4468-BCE7-0376880A2945}.Release|x86.Deploy.0 = Release|x86
+		{3F5A4E50-4F91-450D-96F7-1AA7D05996A3}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{3F5A4E50-4F91-450D-96F7-1AA7D05996A3}.Debug|Any CPU.Build.0 = Debug|x64
+		{3F5A4E50-4F91-450D-96F7-1AA7D05996A3}.Debug|ARM.ActiveCfg = Debug|x64
+		{3F5A4E50-4F91-450D-96F7-1AA7D05996A3}.Debug|ARM.Build.0 = Debug|x64
+		{3F5A4E50-4F91-450D-96F7-1AA7D05996A3}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{3F5A4E50-4F91-450D-96F7-1AA7D05996A3}.Debug|ARM64.Build.0 = Debug|ARM64
+		{3F5A4E50-4F91-450D-96F7-1AA7D05996A3}.Debug|x64.ActiveCfg = Debug|x64
+		{3F5A4E50-4F91-450D-96F7-1AA7D05996A3}.Debug|x64.Build.0 = Debug|x64
+		{3F5A4E50-4F91-450D-96F7-1AA7D05996A3}.Debug|x86.ActiveCfg = Debug|x86
+		{3F5A4E50-4F91-450D-96F7-1AA7D05996A3}.Debug|x86.Build.0 = Debug|x86
+		{3F5A4E50-4F91-450D-96F7-1AA7D05996A3}.Release|Any CPU.ActiveCfg = Release|x64
+		{3F5A4E50-4F91-450D-96F7-1AA7D05996A3}.Release|Any CPU.Build.0 = Release|x64
+		{3F5A4E50-4F91-450D-96F7-1AA7D05996A3}.Release|ARM.ActiveCfg = Release|x64
+		{3F5A4E50-4F91-450D-96F7-1AA7D05996A3}.Release|ARM.Build.0 = Release|x64
+		{3F5A4E50-4F91-450D-96F7-1AA7D05996A3}.Release|ARM64.ActiveCfg = Release|ARM64
+		{3F5A4E50-4F91-450D-96F7-1AA7D05996A3}.Release|ARM64.Build.0 = Release|ARM64
+		{3F5A4E50-4F91-450D-96F7-1AA7D05996A3}.Release|x64.ActiveCfg = Release|x64
+		{3F5A4E50-4F91-450D-96F7-1AA7D05996A3}.Release|x64.Build.0 = Release|x64
+		{3F5A4E50-4F91-450D-96F7-1AA7D05996A3}.Release|x86.ActiveCfg = Release|x86
+		{3F5A4E50-4F91-450D-96F7-1AA7D05996A3}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
