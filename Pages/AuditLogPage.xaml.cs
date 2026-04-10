@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -394,6 +395,9 @@ namespace IntuneTools.Pages
 
                 await File.WriteAllTextAsync(file.Path, html, Encoding.UTF8);
                 LogSuccess($"Exported audit report to {file.Path}");
+
+                System.Diagnostics.Process.Start(new ProcessStartInfo(file.Path) { UseShellExecute = true });
+                LogInfo("Opened report in default browser.");
             }
             catch (Exception ex)
             {
