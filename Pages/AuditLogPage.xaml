@@ -92,6 +92,14 @@
                         <FontIcon Glyph="&#xEDE1;"/>
                     </AppBarButton.Icon>
                 </AppBarButton>
+                <AppBarButton x:Name="ExportReportButton"
+                              Label="Export Report"
+                              Click="ExportReportButton_Click"
+                              IsEnabled="False">
+                    <AppBarButton.Icon>
+                        <FontIcon Glyph="&#xE9D9;"/>
+                    </AppBarButton.Icon>
+                </AppBarButton>
                 <AppBarButton x:Name="ClearLogButton"
                               Icon="Delete"
                               Label="Clear Log"
@@ -280,6 +288,10 @@
                 <ProgressRing x:Name="LoadingProgressRing" IsActive="False" Width="48" Height="48"/>
                 <TextBlock x:Name="LoadingStatusText" Text="Loading..." FontSize="16"
                            Foreground="White" HorizontalAlignment="Center"/>
+                <TextBlock x:Name="LoadingProgressDetail" Text="" FontSize="13"
+                           Foreground="#CCCCCC" HorizontalAlignment="Center"/>
+                <Button x:Name="CancelLoadButton" Content="Cancel" Click="CancelLoadButton_Click"
+                        HorizontalAlignment="Center" Visibility="Collapsed"/>
             </StackPanel>
         </Grid>
     </Grid>
