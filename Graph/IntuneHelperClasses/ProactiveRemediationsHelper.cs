@@ -1,10 +1,8 @@
-﻿using IntuneTools.Utilities;
+using IntuneTools.Utilities;
 using Microsoft.Graph;
-using Microsoft.Kiota.Serialization.Json;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
+using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -12,552 +10,282 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 {
     public class ProactiveRemediationsHelper
     {
-        public static async Task<List<DeviceHealthScript>> SearchForProactiveRemediations(GraphServiceClient graphServiceClient, string searchQuery)
+        private class Helper : GraphHelper<DeviceHealthScript, DeviceHealthScriptCollectionResponse>
         {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, "Searching for proactive remediation scripts. Search query: " + searchQuery);
+            protected override string ResourceName => "proactive remediation scripts";
+            protected override string ContentTypeName => "Proactive Remediation";
+            protected override string? FixedPlatform => "Windows";
 
-                var result = await graphServiceClient.DeviceManagement.DeviceHealthScripts.GetAsync((requestConfiguration) =>
+            protected override string? GetPolicyName(DeviceHealthScript policy) => policy.DisplayName;
+            protected override string? GetPolicyId(DeviceHealthScript policy) => policy.Id;
+            protected override string? GetPolicyDescription(DeviceHealthScript policy) => policy.Description;
+
+            protected override Task<DeviceHealthScriptCollectionResponse?> GetCollectionAsync(GraphServiceClient client)
+                => client.DeviceManagement.DeviceHealthScripts.GetAsync(rc =>
                 {
-                    requestConfiguration.QueryParameters.Filter = $"contains(displayName,'{searchQuery}')";
+                    rc.QueryParameters.Top = 1000;
                 });
 
-                List<DeviceHealthScript> healthScripts = new List<DeviceHealthScript>();
-                var pageIterator = PageIterator<DeviceHealthScript, DeviceHealthScriptCollectionResponse>.CreatePageIterator(graphServiceClient, result, (script) =>
+            protected override Task<DeviceHealthScriptCollectionResponse?> SearchCollectionAsync(GraphServiceClient client, string searchQuery)
+                => client.DeviceManagement.DeviceHealthScripts.GetAsync(rc =>
                 {
-                    if (!script.Publisher.Equals("Microsoft", StringComparison.OrdinalIgnoreCase))
+                    rc.QueryParameters.Filter = $"contains(displayName,'{searchQuery}')";
+                });
+
+            protected override Task<DeviceHealthScript?> GetByIdAsync(GraphServiceClient client, string id)
+                => client.DeviceManagement.DeviceHealthScripts[id].GetAsync();
+
+            protected override Task DeleteByIdAsync(GraphServiceClient client, string id)
+                => client.DeviceManagement.DeviceHealthScripts[id].DeleteAsync();
+
+            protected override async Task PatchNameAsync(GraphServiceClient client, string id, string newName)
+            {
+                var script = new DeviceHealthScript { DisplayName = newName };
+                await client.DeviceManagement.DeviceHealthScripts[id].PatchAsync(script);
+            }
+
+            protected override async Task PatchDescriptionAsync(GraphServiceClient client, string id, string description)
+            {
+                var script = new DeviceHealthScript { Description = description };
+                await client.DeviceManagement.DeviceHealthScripts[id].PatchAsync(script);
+            }
+
+            public override async Task<string?> ImportFromJsonDataAsync(GraphServiceClient client, JsonElement policyData)
+            {
+                try
+                {
+                    var exported = GraphImportHelper.DeserializeFromJson(policyData, DeviceHealthScript.CreateFromDiscriminatorValue);
+
+                    if (exported == null)
                     {
-                        healthScripts.Add(script);
+                        LogToFunctionFile(appFunction.Main, "Failed to deserialize proactive remediation data from JSON.", LogLevels.Error);
+                        return null;
                     }
-                    return true;
-                });
-                await pageIterator.IterateAsync();
 
-                LogToFunctionFile(appFunction.Main, $"Found {healthScripts.Count} proactive remediation scripts.");
+                    var newScript = GraphImportHelper.CloneForImport(exported);
 
-                return healthScripts;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for proactive remediation scripts: {ex.Message}", LogLevels.Error);
-                return new List<DeviceHealthScript>();
-            }
-        }
+                    var imported = await client.DeviceManagement.DeviceHealthScripts.PostAsync(newScript);
 
-        public static async Task<List<DeviceHealthScript>> GetAllProactiveRemediations(GraphServiceClient graphServiceClient)
-        {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, "Retrieving all proactive remediation scripts.");
-
-                var result = await graphServiceClient.DeviceManagement.DeviceHealthScripts.GetAsync((requestConfiguration) =>
+                    LogToFunctionFile(appFunction.Main, $"Imported proactive remediation: {imported?.DisplayName}");
+                    return imported?.DisplayName;
+                }
+                catch (Exception ex)
                 {
-                    requestConfiguration.QueryParameters.Top = 1000;
-                });
+                    GraphErrorHandler.HandleException(ex, "importing from JSON", ResourceName);
+                    return null;
+                }
+            }
 
-                List<DeviceHealthScript> healthScripts = new List<DeviceHealthScript>();
-                var pageIterator = PageIterator<DeviceHealthScript, DeviceHealthScriptCollectionResponse>.CreatePageIterator(graphServiceClient, result, (script) =>
+            public override async Task<bool?> HasAssignmentsAsync(GraphServiceClient client, string id)
+            {
+                try
                 {
-                    if (!script.Publisher.Equals("Microsoft", StringComparison.OrdinalIgnoreCase))
+                    var result = await client.DeviceManagement.DeviceHealthScripts[id].Assignments.GetAsync(rc =>
                     {
-                        healthScripts.Add(script);
-                    }
-                    return true;
-                });
-                await pageIterator.IterateAsync();
-
-                LogToFunctionFile(appFunction.Main, $"Found {healthScripts.Count} proactive remediation scripts.");
-
-                return healthScripts;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while retrieving all proactive remediation scripts: {ex.Message}", LogLevels.Error);
-                return new List<DeviceHealthScript>();
-            }
-        }
-
-        public static async Task ImportMultipleProactiveRemediations(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> scripts, bool assignments, bool filter, List<string> groups)
-        {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, $"Importing {scripts.Count} proactive remediation scripts.");
-
-                foreach (var script in scripts)
+                        rc.QueryParameters.Top = 1;
+                    });
+                    return result?.Value != null && result.Value.Count > 0;
+                }
+                catch
                 {
+                    return null;
+                }
+            }
+
+            public override async Task<List<AssignmentInfo>?> GetAssignmentDetailsAsync(GraphServiceClient client, string id)
+            {
+                try
+                {
+                    var details = new List<AssignmentInfo>();
+                    var result = await client.DeviceManagement.DeviceHealthScripts[id].Assignments.GetAsync();
+
+                    while (result?.Value != null)
+                    {
+                        foreach (var assignment in result.Value)
+                        {
+                            details.Add(AssignmentInfo.FromTarget(assignment.Id, assignment.Target));
+                        }
+
+                        if (string.IsNullOrEmpty(result.OdataNextLink)) break;
+
+                        result = await client.DeviceManagement.DeviceHealthScripts[id]
+                            .Assignments.WithUrl(result.OdataNextLink).GetAsync();
+                    }
+
+                    return details;
+                }
+                catch (Exception ex)
+                {
+                    GraphErrorHandler.HandleException(ex, "getting assignment details for", $"Proactive Remediation {id}");
+                    return null;
+                }
+            }
+
+            public override async Task RemoveAllAssignmentsAsync(GraphServiceClient client, string id)
+            {
+                var requestBody = new Microsoft.Graph.Beta.DeviceManagement.DeviceHealthScripts.Item.Assign.AssignPostRequestBody
+                {
+                    DeviceHealthScriptAssignments = new List<DeviceHealthScriptAssignment>()
+                };
+
+                await client.DeviceManagement.DeviceHealthScripts[id].Assign.PostAsync(requestBody);
+                LogToFunctionFile(appFunction.Main, $"Removed all assignments from Proactive Remediation script {id}.");
+            }
+
+            public override async Task ImportMultipleAsync(
+                GraphServiceClient sourceClient,
+                GraphServiceClient destinationClient,
+                List<string> ids,
+                bool assignments,
+                bool filter,
+                List<string> groups)
+            {
+                await GraphImportHelper.ImportBatchAsync(ids, ResourceName, async id =>
+                {
+                    var result = await sourceClient.DeviceManagement.DeviceHealthScripts[id].GetAsync();
+
+                    var requestBody = GraphImportHelper.CloneForImport(result);
+
+                    var import = await destinationClient.DeviceManagement.DeviceHealthScripts.PostAsync(requestBody);
+                    LogToFunctionFile(appFunction.Main, $"Imported script: {import.DisplayName}");
+
+                    if (assignments)
+                    {
+                        await AssignGroupsToSingleProactiveRemediation(import.Id, groups, destinationClient);
+                    }
+                });
+            }
+
+            public override async Task AssignGroupsAsync(string id, List<string> groupIds, GraphServiceClient client)
+            {
+                try
+                {
+                    ArgumentNullException.ThrowIfNull(id);
+                    ArgumentNullException.ThrowIfNull(groupIds);
+                    ArgumentNullException.ThrowIfNull(client);
+
+                    var assignments = new List<DeviceHealthScriptAssignment>();
+
+                    var buildResult = GraphAssignmentHelper.BuildAssignments<DeviceHealthScriptAssignment>(
+                        groupIds,
+                        (target, groupId) =>
+                        {
+                            return new DeviceHealthScriptAssignment
+                            {
+                                OdataType = "#microsoft.graph.deviceHealthScriptAssignment",
+                                Target = target
+                            };
+                        },
+                        assignments);
+
+                    // Merge existing assignments
+                    var existingAssignments = await client
+                        .DeviceManagement
+                        .DeviceHealthScripts[id]
+                        .Assignments
+                        .GetAsync();
+
+                    GraphAssignmentHelper.MergeExistingAssignments(
+                        existingAssignments?.Value,
+                        assignments,
+                        buildResult,
+                        a => a.Target);
+
+                    var requestBody = new Microsoft.Graph.Beta.DeviceManagement.DeviceHealthScripts.Item.Assign.AssignPostRequestBody
+                    {
+                        DeviceHealthScriptAssignments = assignments
+                    };
+
                     try
                     {
-                        var result = await sourceGraphServiceClient.DeviceManagement.DeviceHealthScripts[script].GetAsync();
-
-                        var requestBody = new DeviceHealthScript
-                        {
-                        };
-
-                        foreach (var property in result.GetType().GetProperties())
-                        {
-                            var value = property.GetValue(result);
-                            if (value != null && property.CanWrite)
-                            {
-                                property.SetValue(requestBody, value);
-                            }
-                        }
-
-                        requestBody.Id = "";
-
-
-                        var import = await destinationGraphServiceClient.DeviceManagement.DeviceHealthScripts.PostAsync(requestBody);
-                        LogToFunctionFile(appFunction.Main, $"Imported script: {import.DisplayName}");
-
-                        if (assignments)
-                        {
-                            await AssignGroupsToSingleProactiveRemediation(import.Id, groups, destinationGraphServiceClient);
-                        }
+                        await client.DeviceManagement.DeviceHealthScripts[id].Assign.PostAsync(requestBody);
+                        LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to proactive remediation script {id} with filter type {deviceAndAppManagementAssignmentFilterType}.");
+                        UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
                     }
                     catch (Exception ex)
                     {
-                        LogToFunctionFile(appFunction.Main, $"Error importing script {script}: {ex.Message}", LogLevels.Error);
+                        LogToFunctionFile(appFunction.Main, $"An error occurred while assigning groups to proactive remediation script: {ex.Message}", LogLevels.Warning);
                     }
-                }
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred during the import process: {ex.Message}", LogLevels.Error);
-            }
-        }
-
-        public static async Task AssignGroupsToSingleProactiveRemediation(string scriptID, List<string> groupID, GraphServiceClient destinationGraphServiceClient)
-        {
-            try
-            {
-                if (scriptID == null)
-                {
-                    throw new ArgumentNullException(nameof(scriptID));
-                }
-
-                if (groupID == null)
-                {
-                    throw new ArgumentNullException(nameof(groupID));
-                }
-
-                if (destinationGraphServiceClient == null)
-                {
-                    throw new ArgumentNullException(nameof(destinationGraphServiceClient));
-                }
-
-                var assignments = new List<DeviceHealthScriptAssignment>();
-                var seenGroupIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                var hasAllUsers = false;
-                var hasAllDevices = false;
-
-                // Step 1: Add new assignments to request body
-                foreach (var group in groupID)
-                {
-                    if (string.IsNullOrWhiteSpace(group) || !seenGroupIds.Add(group))
-                    {
-                        continue;
-                    }
-
-                    DeviceHealthScriptAssignment assignment;
-
-                    // Check if this is a virtual group (All Users or All Devices)
-                    if (group.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
-                    {
-                        hasAllUsers = true;
-                        assignment = new DeviceHealthScriptAssignment
-                        {
-                            OdataType = "#microsoft.graph.deviceHealthScriptAssignment",
-                            Target = new AllLicensedUsersAssignmentTarget
-                            {
-                                OdataType = "#microsoft.graph.allLicensedUsersAssignmentTarget",
-                                DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
-                                DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
-                            }
-                        };
-                    }
-                    else if (group.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
-                    {
-                        hasAllDevices = true;
-                        assignment = new DeviceHealthScriptAssignment
-                        {
-                            OdataType = "#microsoft.graph.deviceHealthScriptAssignment",
-                            Target = new AllDevicesAssignmentTarget
-                            {
-                                OdataType = "#microsoft.graph.allDevicesAssignmentTarget",
-                                DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
-                                DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
-                            }
-                        };
-                    }
-                    else
-                    {
-                        // Regular group assignment
-                        assignment = new DeviceHealthScriptAssignment
-                        {
-                            OdataType = "#microsoft.graph.deviceHealthScriptAssignment",
-                            Target = new GroupAssignmentTarget
-                            {
-                                OdataType = "#microsoft.graph.groupAssignmentTarget",
-                                DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
-                                DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType,
-                                GroupId = group
-                            }
-                        };
-                    }
-
-                    assignments.Add(assignment);
-                }
-
-                // Step 2: Check for existing assignments and add only if not already present
-                var existingAssignments = await destinationGraphServiceClient
-                    .DeviceManagement
-                    .DeviceHealthScripts[scriptID]
-                    .Assignments
-                    .GetAsync();
-
-                if (existingAssignments?.Value != null)
-                {
-                    foreach (var existing in existingAssignments.Value)
-                    {
-                        // Check the type of assignment target
-                        if (existing.Target is AllLicensedUsersAssignmentTarget)
-                        {
-                            // Skip if we're already adding All Users
-                            if (!hasAllUsers)
-                            {
-                                assignments.Add(existing);
-                            }
-                        }
-                        else if (existing.Target is AllDevicesAssignmentTarget)
-                        {
-                            // Skip if we're already adding All Devices
-                            if (!hasAllDevices)
-                            {
-                                assignments.Add(existing);
-                            }
-                        }
-                        else if (existing.Target is GroupAssignmentTarget groupTarget)
-                        {
-                            var existingGroupId = groupTarget.GroupId;
-
-                            // Only add if not already in the new assignments
-                            if (!string.IsNullOrWhiteSpace(existingGroupId) && seenGroupIds.Add(existingGroupId))
-                            {
-                                assignments.Add(existing);
-                            }
-                        }
-                        else
-                        {
-                            // Include any other assignment types (e.g., exclusions, all users with exclusions, etc.)
-                            assignments.Add(existing);
-                        }
-                    }
-                }
-
-                // Step 3: Update the script with the assignments
-                var requestBody = new Microsoft.Graph.Beta.DeviceManagement.DeviceHealthScripts.Item.Assign.AssignPostRequestBody
-                {
-                    DeviceHealthScriptAssignments = assignments
-                };
-
-                try
-                {
-                    await destinationGraphServiceClient.DeviceManagement.DeviceHealthScripts[scriptID].Assign.PostAsync(requestBody);
-                    LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to proactive remediation script {scriptID} with filter type {deviceAndAppManagementAssignmentFilterType}.");
-                    UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
                 }
                 catch (Exception ex)
                 {
                     LogToFunctionFile(appFunction.Main, $"An error occurred while assigning groups to proactive remediation script: {ex.Message}", LogLevels.Warning);
                 }
             }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while assigning groups to a single proactive remediation script: {ex.Message}", LogLevels.Warning);
-            }
         }
-        public static async Task DeleteProactiveRemediationScript(GraphServiceClient graphServiceClient, string policyID)
+
+        private static readonly Helper _helper = new();
+
+        // ── Filtering helper: exclude Microsoft-published scripts ──
+
+        private static List<DeviceHealthScript> FilterOutMicrosoftPublished(List<DeviceHealthScript> scripts)
+            => scripts.Where(s => !s.Publisher.Equals("Microsoft", StringComparison.OrdinalIgnoreCase)).ToList();
+
+        // ── Public static methods (signatures preserved for existing consumers) ──
+
+        public static async Task<List<DeviceHealthScript>> SearchForProactiveRemediations(GraphServiceClient graphServiceClient, string searchQuery)
         {
-            try
-            {
-                if (graphServiceClient == null)
-                {
-                    throw new ArgumentNullException(nameof(graphServiceClient));
-                }
-
-                if (policyID == null)
-                {
-                    throw new InvalidOperationException("Policy ID cannot be null.");
-                }
-                await graphServiceClient.DeviceManagement.DeviceHealthScripts[policyID].DeleteAsync();
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while deleting proactive remediation scripts: {ex.Message}", LogLevels.Error);
-            }
+            var results = await _helper.SearchAsync(graphServiceClient, searchQuery);
+            return FilterOutMicrosoftPublished(results);
         }
 
-        public static async Task RenameProactiveRemediation(GraphServiceClient graphServiceClient, string scriptID, string newName)
+        public static async Task<List<DeviceHealthScript>> GetAllProactiveRemediations(GraphServiceClient graphServiceClient)
         {
-            try
-            {
-                if (graphServiceClient == null)
-                {
-                    throw new ArgumentNullException(nameof(graphServiceClient));
-                }
-
-                if (scriptID == null)
-                {
-                    throw new InvalidOperationException("Script ID cannot be null.");
-                }
-
-                if (string.IsNullOrWhiteSpace(newName))
-                {
-                    throw new InvalidOperationException("New name cannot be null or empty.");
-                }
-
-                if (selectedRenameMode == "Prefix")
-                {
-                    // Look up the existing script
-                    var existingScript = await graphServiceClient.DeviceManagement.DeviceHealthScripts[scriptID].GetAsync();
-
-                    if (existingScript == null)
-                    {
-                        throw new InvalidOperationException($"Script with ID '{scriptID}' not found.");
-                    }
-
-                    var name = FindPreFixInPolicyName(existingScript.DisplayName ?? string.Empty, newName);
-
-                    var script = new DeviceHealthScript
-                    {
-                        DisplayName = name,
-                    };
-
-                    await graphServiceClient.DeviceManagement.DeviceHealthScripts[scriptID].PatchAsync(script);
-                    LogToFunctionFile(appFunction.Main, $"Renamed Proactive remediation script {scriptID} to {name}");
-                }
-                else if (selectedRenameMode == "Suffix")
-                {
-
-                }
-                else if (selectedRenameMode == "Description")
-                {
-                    // Look up the existing script
-                    var existingScript = await graphServiceClient.DeviceManagement.DeviceHealthScripts[scriptID].GetAsync();
-
-                    if (existingScript == null)
-                    {
-                        throw new InvalidOperationException($"Script with ID '{scriptID}' not found.");
-                    }
-
-                    var script = new DeviceHealthScript
-                    {
-                        Description = newName,
-                    };
-
-                    await graphServiceClient.DeviceManagement.DeviceHealthScripts[scriptID].PatchAsync(script);
-                    LogToFunctionFile(appFunction.Main, $"Updated description for Proactive remediation script {scriptID} to {newName}");
-                }
-                else if (selectedRenameMode == "RemovePrefix")
-                {
-                    var existingScript = await graphServiceClient.DeviceManagement.DeviceHealthScripts[scriptID].GetAsync();
-
-                    if (existingScript == null)
-                    {
-                        throw new InvalidOperationException($"Script with ID '{scriptID}' not found.");
-                    }
-
-                    var name = RemovePrefixFromPolicyName(existingScript.DisplayName);
-
-                    var script = new DeviceHealthScript
-                    {
-                        DisplayName = name
-                    };
-
-                    await graphServiceClient.DeviceManagement.DeviceHealthScripts[scriptID].PatchAsync(script);
-                    LogToFunctionFile(appFunction.Main, $"Removed prefix from Proactive remediation script {scriptID}, new name: '{name}'");
-                }
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while renaming proactive remediation scripts: {ex.Message}", LogLevels.Warning);
-            }
+            var all = await _helper.GetAllAsync(graphServiceClient);
+            return FilterOutMicrosoftPublished(all);
         }
+
+        public static Task ImportMultipleProactiveRemediations(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> scripts, bool assignments, bool filter, List<string> groups)
+            => _helper.ImportMultipleAsync(sourceGraphServiceClient, destinationGraphServiceClient, scripts, assignments, filter, groups);
+
+        public static Task AssignGroupsToSingleProactiveRemediation(string scriptID, List<string> groupID, GraphServiceClient destinationGraphServiceClient)
+            => _helper.AssignGroupsAsync(scriptID, groupID, destinationGraphServiceClient);
+
+        public static Task DeleteProactiveRemediationScript(GraphServiceClient graphServiceClient, string policyID)
+            => _helper.DeleteAsync(graphServiceClient, policyID);
+
+        public static Task RenameProactiveRemediation(GraphServiceClient graphServiceClient, string scriptID, string newName)
+            => _helper.RenameAsync(graphServiceClient, scriptID, newName);
 
         public static async Task<List<CustomContentInfo>> GetAllProactiveRemediationContentAsync(GraphServiceClient graphServiceClient)
         {
             var scripts = await GetAllProactiveRemediations(graphServiceClient);
-            var content = new List<CustomContentInfo>();
-
-            foreach (var script in scripts)
+            return scripts.Select(s => new CustomContentInfo
             {
-                content.Add(new CustomContentInfo
-                {
-                    ContentName = script.DisplayName,
-                    ContentType = "Proactive Remediation",
-                    ContentPlatform = "Windows",
-                    ContentId = script.Id,
-                    ContentDescription = script.Description
-                });
-            }
-
-            return content;
+                ContentName = s.DisplayName,
+                ContentType = "Proactive Remediation",
+                ContentPlatform = "Windows",
+                ContentId = s.Id,
+                ContentDescription = s.Description
+            }).ToList();
         }
 
         public static async Task<List<CustomContentInfo>> SearchProactiveRemediationContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
             var scripts = await SearchForProactiveRemediations(graphServiceClient, searchQuery);
-            var content = new List<CustomContentInfo>();
-
-            foreach (var script in scripts)
+            return scripts.Select(s => new CustomContentInfo
             {
-                content.Add(new CustomContentInfo
-                {
-                    ContentName = script.DisplayName,
-                    ContentType = "Proactive Remediation",
-                    ContentPlatform = "Windows",
-                    ContentId = script.Id,
-                    ContentDescription = script.Description
-                });
-            }
-
-            return content;
+                ContentName = s.DisplayName,
+                ContentType = "Proactive Remediation",
+                ContentPlatform = "Windows",
+                ContentId = s.Id,
+                ContentDescription = s.Description
+            }).ToList();
         }
 
-        /// <summary>
-        /// Exports a proactive remediation script's full data as a JsonElement for JSON file export.
-        /// </summary>
-        public static async Task<JsonElement?> ExportProactiveRemediationDataAsync(GraphServiceClient graphServiceClient, string scriptId)
-        {
-            try
-            {
-                var result = await graphServiceClient.DeviceManagement.DeviceHealthScripts[scriptId].GetAsync();
+        public static Task<JsonElement?> ExportProactiveRemediationDataAsync(GraphServiceClient graphServiceClient, string scriptId)
+            => _helper.ExportDataAsync(graphServiceClient, scriptId);
 
-                if (result == null)
-                {
-                    LogToFunctionFile(appFunction.Main, $"Proactive remediation {scriptId} not found for export.", LogLevels.Warning);
-                    return null;
-                }
+        public static Task<string?> ImportProactiveRemediationFromJsonDataAsync(GraphServiceClient graphServiceClient, JsonElement policyData)
+            => _helper.ImportFromJsonDataAsync(graphServiceClient, policyData);
 
-                using var writer = new JsonSerializationWriter();
-                writer.WriteObjectValue(null, result);
-                using var stream = writer.GetSerializedContent();
-                var doc = await JsonDocument.ParseAsync(stream);
-                return doc.RootElement.Clone();
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"Error exporting proactive remediation {scriptId}: {ex.Message}", LogLevels.Error);
-                return null;
-            }
-        }
+        public static Task<bool?> HasProactiveRemediationAssignmentsAsync(GraphServiceClient graphServiceClient, string scriptId)
+            => _helper.HasAssignmentsAsync(graphServiceClient, scriptId);
 
-        /// <summary>
-        /// Imports a proactive remediation script from previously exported JSON data into the destination tenant.
-        /// </summary>
-        public static async Task<string?> ImportProactiveRemediationFromJsonDataAsync(GraphServiceClient graphServiceClient, JsonElement policyData)
-        {
-            try
-            {
-                var json = policyData.GetRawText();
-                using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
-                var parseNode = new JsonParseNode(JsonDocument.Parse(stream).RootElement);
-                var exported = parseNode.GetObjectValue(DeviceHealthScript.CreateFromDiscriminatorValue);
+        public static Task<List<AssignmentInfo>?> GetProactiveRemediationAssignmentDetailsAsync(GraphServiceClient graphServiceClient, string scriptId)
+            => _helper.GetAssignmentDetailsAsync(graphServiceClient, scriptId);
 
-                if (exported == null)
-                {
-                    LogToFunctionFile(appFunction.Main, "Failed to deserialize proactive remediation data from JSON.", LogLevels.Error);
-                    return null;
-                }
-
-                var newScript = new DeviceHealthScript();
-
-                foreach (var property in exported.GetType().GetProperties())
-                {
-                    var value = property.GetValue(exported);
-                    if (value != null && property.CanWrite)
-                    {
-                        property.SetValue(newScript, value);
-                    }
-                }
-
-                newScript.Id = "";
-
-                var imported = await graphServiceClient.DeviceManagement.DeviceHealthScripts.PostAsync(newScript);
-
-                LogToFunctionFile(appFunction.Main, $"Imported proactive remediation: {imported?.DisplayName}");
-                return imported?.DisplayName;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"Error importing proactive remediation from JSON: {ex.Message}", LogLevels.Error);
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Checks if a proactive remediation script has any group assignments.
-        /// </summary>
-        public static async Task<bool?> HasProactiveRemediationAssignmentsAsync(GraphServiceClient graphServiceClient, string scriptId)
-        {
-            try
-            {
-                var result = await graphServiceClient.DeviceManagement.DeviceHealthScripts[scriptId].Assignments.GetAsync(rc =>
-                {
-                    rc.QueryParameters.Top = 1;
-                });
-                return result?.Value != null && result.Value.Count > 0;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Gets detailed assignment information for a Proactive Remediation script.
-        /// </summary>
-        public static async Task<List<AssignmentInfo>?> GetProactiveRemediationAssignmentDetailsAsync(GraphServiceClient graphServiceClient, string scriptId)
-        {
-            try
-            {
-                var details = new List<AssignmentInfo>();
-                var result = await graphServiceClient.DeviceManagement.DeviceHealthScripts[scriptId].Assignments.GetAsync();
-
-                while (result?.Value != null)
-                {
-                    foreach (var assignment in result.Value)
-                    {
-                        details.Add(AssignmentInfo.FromTarget(assignment.Id, assignment.Target));
-                    }
-
-                    if (string.IsNullOrEmpty(result.OdataNextLink)) break;
-
-                    result = await graphServiceClient.DeviceManagement.DeviceHealthScripts[scriptId]
-                        .Assignments.WithUrl(result.OdataNextLink).GetAsync();
-                }
-
-                return details;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"Error getting assignment details for Proactive Remediation {scriptId}: {ex.Message}", LogLevels.Error);
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Removes all assignments from a Proactive Remediation script.
-        /// </summary>
-        public static async Task RemoveAllProactiveRemediationAssignmentsAsync(GraphServiceClient graphServiceClient, string scriptId)
-        {
-            var requestBody = new Microsoft.Graph.Beta.DeviceManagement.DeviceHealthScripts.Item.Assign.AssignPostRequestBody
-            {
-                DeviceHealthScriptAssignments = new List<DeviceHealthScriptAssignment>()
-            };
-
-            await graphServiceClient.DeviceManagement.DeviceHealthScripts[scriptId].Assign.PostAsync(requestBody);
-            LogToFunctionFile(appFunction.Main, $"Removed all assignments from Proactive Remediation script {scriptId}.");
-        }
+        public static Task RemoveAllProactiveRemediationAssignmentsAsync(GraphServiceClient graphServiceClient, string scriptId)
+            => _helper.RemoveAllAssignmentsAsync(graphServiceClient, scriptId);
     }
 }
