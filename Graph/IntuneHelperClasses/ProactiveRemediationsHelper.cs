@@ -219,7 +219,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         // ── Filtering helper: exclude Microsoft-published scripts ──
 
         private static List<DeviceHealthScript> FilterOutMicrosoftPublished(List<DeviceHealthScript> scripts)
-            => scripts.Where(s => !s.Publisher.Equals("Microsoft", StringComparison.OrdinalIgnoreCase)).ToList();
+            => scripts.Where(s => !string.Equals(s.Publisher, "Microsoft", StringComparison.OrdinalIgnoreCase)).ToList();
 
         // ── Public static methods (signatures preserved for existing consumers) ──
 

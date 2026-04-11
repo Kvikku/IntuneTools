@@ -78,6 +78,12 @@ namespace IntuneTools.Graph
 
                 var result = await GetCollectionAsync(client);
 
+                if (result == null)
+                {
+                    LogToFunctionFile(appFunction.Main, $"No {ResourceName} found (response was null).", LogLevels.Warning);
+                    return new List<TPolicy>();
+                }
+
                 var items = new List<TPolicy>();
                 var pageIterator = PageIterator<TPolicy, TCollectionResponse>
                     .CreatePageIterator(client, result, item =>
@@ -109,6 +115,12 @@ namespace IntuneTools.Graph
                 LogToFunctionFile(appFunction.Main, $"Searching for {ResourceName}. Search query: {searchQuery}");
 
                 var result = await SearchCollectionAsync(client, searchQuery);
+
+                if (result == null)
+                {
+                    LogToFunctionFile(appFunction.Main, $"Search returned no results for {ResourceName} (response was null).", LogLevels.Warning);
+                    return new List<TPolicy>();
+                }
 
                 var items = new List<TPolicy>();
                 var pageIterator = PageIterator<TPolicy, TCollectionResponse>

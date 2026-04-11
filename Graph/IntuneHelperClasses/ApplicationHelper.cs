@@ -74,12 +74,10 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
             protected override async Task PatchNameAsync(GraphServiceClient client, string id, string newName)
             {
-                var existing = await GetByIdAsync(client, id);
-                if (existing == null) return;
-
+                // Called from RenameAppAsync with correct OdataType already resolved
                 var app = new MobileApp
                 {
-                    OdataType = existing.OdataType,
+                    OdataType = _cachedOdataType,
                     DisplayName = newName,
                 };
                 await client.DeviceAppManagement.MobileApps[id].PatchAsync(app);
@@ -87,16 +85,18 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
             protected override async Task PatchDescriptionAsync(GraphServiceClient client, string id, string description)
             {
-                var existing = await GetByIdAsync(client, id);
-                if (existing == null) return;
-
+                // Called from RenameAppAsync with correct OdataType already resolved
                 var app = new MobileApp
                 {
-                    OdataType = existing.OdataType,
+                    OdataType = _cachedOdataType,
                     Description = description,
                 };
                 await client.DeviceAppManagement.MobileApps[id].PatchAsync(app);
             }
+
+            // Thread-local cache for OdataType set during rename flow to avoid extra GETs
+            [ThreadStatic]
+            private static string? _cachedOdataType;
 
             public override async Task<string?> ImportFromJsonDataAsync(GraphServiceClient client, JsonElement policyData)
             {
@@ -129,6 +129,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
             /// <summary>
             /// Renames an application with type checking for supported rename types.
+            /// Handles all rename modes directly using a single GET to avoid duplicate fetches.
             /// </summary>
             public async Task RenameAppAsync(GraphServiceClient client, string id, string newName)
             {
@@ -144,7 +145,8 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                     if (existingApp == null)
                     {
-                        throw new InvalidOperationException($"Application with ID '{id}' not found.");
+                        LogToFunctionFile(appFunction.Main, $"Unable to rename: {ResourceName} with ID {id} was not found.", LogLevels.Warning);
+                        return;
                     }
 
                     var supportedRenameTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -161,8 +163,40 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         return;
                     }
 
-                    // Delegate to base RenameAsync which handles all rename modes
-                    await RenameAsync(client, id, newName);
+                    // Cache the OdataType so PatchNameAsync/PatchDescriptionAsync don't need to re-fetch
+                    _cachedOdataType = existingApp.OdataType;
+
+                    try
+                    {
+                        if (selectedRenameMode == "Prefix")
+                        {
+                            var currentName = GetPolicyName(existingApp) ?? string.Empty;
+                            var name = FindPreFixInPolicyName(currentName, newName);
+                            await PatchNameAsync(client, id, name);
+                            LogToFunctionFile(appFunction.Main, $"Renamed {ResourceName} {id} to {name}");
+                        }
+                        else if (selectedRenameMode == "Description")
+                        {
+                            await PatchDescriptionAsync(client, id, newName);
+                            LogToFunctionFile(appFunction.Main, $"Updated description for {ResourceName} {id} to {newName}");
+                        }
+                        else if (selectedRenameMode == "RemovePrefix")
+                        {
+                            var currentName = GetPolicyName(existingApp);
+                            if (string.IsNullOrWhiteSpace(currentName))
+                            {
+                                LogToFunctionFile(appFunction.Main, $"Unable to remove prefix from {ResourceName} {id}: name is null or empty.", LogLevels.Warning);
+                                return;
+                            }
+                            var name = RemovePrefixFromPolicyName(currentName);
+                            await PatchNameAsync(client, id, name);
+                            LogToFunctionFile(appFunction.Main, $"Removed prefix from {ResourceName} {id}, new name: {name}");
+                        }
+                    }
+                    finally
+                    {
+                        _cachedOdataType = null;
+                    }
                 }
                 catch (Exception ex)
                 {
