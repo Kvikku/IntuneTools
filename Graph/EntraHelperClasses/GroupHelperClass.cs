@@ -1,41 +1,74 @@
-﻿using IntuneTools.Utilities;
+using IntuneTools.Utilities;
 using Microsoft.Graph;
+using Microsoft.Graph.Beta.Models.ODataErrors;
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace IntuneTools.Graph.EntraHelperClasses
 {
     public class GroupHelperClass
     {
-        public static async Task<List<Group>> GetAllGroups(GraphServiceClient graphServiceClient)
+        private class Helper : GraphHelper<Group, GroupCollectionResponse>
         {
-            // This method gets all the groups in the tenant and returns them as a list of Group objects
+            protected override string ResourceName => "security groups";
+            protected override string ContentTypeName => "Entra Group";
+            protected override string? FixedPlatform => "Entra group";
 
-            // clear the dictionary
-            groupNameAndID.Clear();
+            protected override string? GetPolicyName(Group policy) => policy.DisplayName;
+            protected override string? GetPolicyId(Group policy) => policy.Id;
+            protected override string? GetPolicyDescription(Group policy) => policy.Description;
 
-            try
+            protected override Task<GroupCollectionResponse?> GetCollectionAsync(GraphServiceClient client)
+                => client.Groups.GetAsync(rc =>
+                {
+                    rc.QueryParameters.Count = true;
+                    rc.QueryParameters.Filter = "not(groupTypes/any(g:g eq 'Unified'))";
+                    rc.Headers.Add("ConsistencyLevel", "eventual");
+                });
+
+            protected override Task<GroupCollectionResponse?> SearchCollectionAsync(GraphServiceClient client, string searchQuery)
+                => client.Groups.GetAsync(rc =>
+                {
+                    rc.QueryParameters.Search = "\"displayName:" + searchQuery + "\"";
+                    rc.QueryParameters.Filter = "not(groupTypes/any(g:g eq 'Unified'))";
+                    rc.Headers.Add("ConsistencyLevel", "eventual");
+                });
+
+            protected override Task<Group?> GetByIdAsync(GraphServiceClient client, string id)
+                => client.Groups[id].GetAsync();
+
+            protected override Task DeleteByIdAsync(GraphServiceClient client, string id)
+                => client.Groups[id].DeleteAsync();
+
+            protected override async Task PatchNameAsync(GraphServiceClient client, string id, string newName)
             {
-                LogToFunctionFile(appFunction.Main, "Getting all groups in the tenant");
-                var result = await graphServiceClient.Groups.GetAsync((requestConfiguration) =>
-                {
-                    requestConfiguration.QueryParameters.Count = true;
-                    requestConfiguration.QueryParameters.Filter = "not(groupTypes/any(g:g eq 'Unified'))";
-                    requestConfiguration.Headers.Add("ConsistencyLevel", "eventual");
-                });
+                var group = new Group { DisplayName = newName };
+                await client.Groups[id].PatchAsync(group);
+            }
 
-                List<Group> groups = new List<Group>();
+            protected override async Task PatchDescriptionAsync(GraphServiceClient client, string id, string description)
+            {
+                var group = new Group { Description = description };
+                await client.Groups[id].PatchAsync(group);
+            }
 
-                // Iterate through the pages of results
-                var pageIterator = PageIterator<Group, GroupCollectionResponse>.CreatePageIterator(graphServiceClient, result, (group) =>
-                {
-                    groups.Add(group);
-                    return true;
-                });
-                // start the iteration
-                await pageIterator.IterateAsync();
-                LogToFunctionFile(appFunction.Main, $"Found {groups.Count} groups in the tenant");
+            public override async Task<string?> ImportFromJsonDataAsync(GraphServiceClient client, JsonElement policyData)
+            {
+                // Groups are imported via ImportMultipleAsync; JSON import is not used for groups
+                return null;
+            }
+
+            /// <summary>
+            /// Gets all groups and injects virtual groups (All Users, All Devices) at the beginning.
+            /// Populates the groupNameAndID dictionary.
+            /// </summary>
+            public async Task<List<Group>> GetAllWithVirtualGroupsAsync(GraphServiceClient client)
+            {
+                groupNameAndID.Clear();
+
+                var groups = await GetAllAsync(client);
 
                 // Add virtual groups for All Users and All Devices
                 var allUsersGroup = new Group
@@ -54,13 +87,12 @@ namespace IntuneTools.Graph.EntraHelperClasses
                     OdataType = "#microsoft.graph.allDevicesAssignmentTarget"
                 };
 
-                // Insert virtual groups at the beginning of the list for easier access
                 groups.Insert(0, allUsersGroup);
                 groups.Insert(1, allDevicesGroup);
 
                 LogToFunctionFile(appFunction.Main, $"Added virtual groups. Total groups: {groups.Count}");
 
-                // Populate the groupNameAndID dictionary with group names and IDs
+                // Populate the groupNameAndID dictionary
                 foreach (var group in groups)
                 {
                     if (!string.IsNullOrEmpty(group.DisplayName) && !string.IsNullOrEmpty(group.Id))
@@ -69,47 +101,18 @@ namespace IntuneTools.Graph.EntraHelperClasses
                     }
                 }
 
-                // return the list of groups
                 return groups;
             }
-            catch (Microsoft.Graph.Beta.Models.ODataErrors.ODataError me)
+
+            /// <summary>
+            /// Searches for groups and populates the groupNameAndID dictionary.
+            /// </summary>
+            public async Task<List<Group>> SearchWithDictionaryAsync(GraphServiceClient client, string searchQuery)
             {
-                // Log the error message
-                LogToFunctionFile(appFunction.Main, $"ODataError retrieving all groups: {me.Message}", LogLevels.Warning);
-                return null;
-            }
-        }
+                groupNameAndID.Clear();
 
-        public static async Task<List<Group>> SearchForGroups(GraphServiceClient graphServiceClient, string searchQuery)
-        {
-            // This method searches for groups in the tenant based on a search query and returns the results as a list of Group objects
+                var groups = await SearchAsync(client, searchQuery);
 
-            // clear the dictionary
-            groupNameAndID.Clear();
-
-            try
-            {
-                LogToFunctionFile(appFunction.Main, "Searching for groups. Search query: " + searchQuery);
-
-                var result = await graphServiceClient.Groups.GetAsync((requestConfiguration) =>
-                {
-                    requestConfiguration.QueryParameters.Search = "\"displayName:" + searchQuery + "\"";
-                    requestConfiguration.QueryParameters.Filter = "not(groupTypes/any(g:g eq 'Unified'))";
-                    requestConfiguration.Headers.Add("ConsistencyLevel", "eventual");
-                });
-                List<Group> groups = new List<Group>();
-
-                // Iterate through the pages of results
-                var pageIterator = PageIterator<Group, GroupCollectionResponse>.CreatePageIterator(graphServiceClient, result, (group) =>
-                {
-                    groups.Add(group);
-                    return true;
-                });
-                // start the iteration
-                await pageIterator.IterateAsync();
-                LogToFunctionFile(appFunction.Main, $"Found {groups.Count} groups in the tenant");
-
-                // Populate the groupNameAndID dictionary with group names and IDs
                 foreach (var group in groups)
                 {
                     if (!string.IsNullOrEmpty(group.DisplayName) && !string.IsNullOrEmpty(group.Id))
@@ -118,85 +121,40 @@ namespace IntuneTools.Graph.EntraHelperClasses
                     }
                 }
 
-                // return the list of groups
                 return groups;
             }
-            catch (Microsoft.Graph.Beta.Models.ODataErrors.ODataError me)
+
+            public override async Task ImportMultipleAsync(
+                GraphServiceClient sourceClient,
+                GraphServiceClient destinationClient,
+                List<string> ids,
+                bool assignments,
+                bool filter,
+                List<string> groups)
             {
-                // Log the error message
-                LogToFunctionFile(appFunction.Main, $"ODataError searching for groups: {me.Message}", LogLevels.Warning);
-                return null;
-            }
-        }
-
-        public static async Task ImportMultipleGroups(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> groupIds)
-        {
-            // This method imports multiple groups from the source tenant to the destination tenant
-            const string ItemType = "Group"; // Define item type for logging/messages
-
-            // Basic null checks for arguments
-            if (sourceGraphServiceClient == null || destinationGraphServiceClient == null || groupIds == null)
-            {
-                LogToFunctionFile(appFunction.Main, "ImportMultipleGroups called with null arguments.");
-                return;
-            }
-
-
-            try
-            {
-                LogToFunctionFile(appFunction.Main, " ");
-                LogToFunctionFile(appFunction.Main, $"{DateTime.Now.ToString()} - Importing {groupIds.Count} Security groups.");
-
-
-                foreach (var groupId in groupIds)
+                await GraphImportHelper.ImportBatchAsync(ids, ResourceName, async id =>
                 {
-                    Group? sourceGroup = null;
-                    var groupName = ""; // Initialize group name for logging
+                    var groupName = string.Empty;
                     try
                     {
-                        // Get the group from the source tenant
-                        // Select specific properties to potentially reduce payload size and avoid issues with read-only properties
-                        sourceGroup = await sourceGraphServiceClient.Groups[groupId].GetAsync();
-
-                        groupName = sourceGroup.DisplayName ?? "Unnamed Group"; // Use DisplayName or default to "Unnamed Group"
+                        var sourceGroup = await sourceClient.Groups[id].GetAsync();
 
                         if (sourceGroup == null)
                         {
-                            LogToFunctionFile(appFunction.Main, $"Skipping {ItemType} ID {groupId}: Not found in source tenant.");
-                            continue;
+                            LogToFunctionFile(appFunction.Main, $"Skipping group ID {id}: Not found in source tenant.");
+                            return;
                         }
 
+                        groupName = sourceGroup.DisplayName ?? "Unnamed Group";
 
-
-                        // Optional: Check if a group with the same name already exists in the destination tenant
-                        // Uncomment the following code if you want to check for existing groups by name
-                        //var existingGroups = await destinationGraphServiceClient.Groups.GetAsync(q =>
-                        //{
-                        //    q.QueryParameters.Filter = $"displayName eq '{sourceGroup.DisplayName?.Replace("'", "''")}'"; // Handle potential apostrophes in name
-                        //    q.QueryParameters.Select = new string[] { "id", "displayName" }; // Only need ID and name for check
-                        //    q.Headers.Add("ConsistencyLevel", "eventual"); // Required for advanced filters like displayName
-                        //    q.QueryParameters.Count = true; // Request count
-                        //});
-
-                        //if (existingGroups?.Value?.Count > 0)
-                        //{
-                        //    LogToImportStatusFile($"Skipping {ItemType} '{sourceGroup.DisplayName}' (ID: {groupId}): Name conflict in destination.");
-                        //    continue;
-                        //}
-
-
-                        // Create the new group object based on the source
                         var newGroup = new Group
                         {
                             DisplayName = sourceGroup.DisplayName,
-                            //Description = sourceGroup.Description ?? $"Imported from source group {sourceGroup.DisplayName}", // Provide default if null
-                            MailEnabled = sourceGroup.MailEnabled ?? false, // Default to false if null
-                            SecurityEnabled = sourceGroup.SecurityEnabled ?? true, // Default to true if null
-                            MailNickname = $"group_{Guid.NewGuid().ToString().Substring(0, 8)}", // Needs a unique mail nickname
-                            // Visibility = sourceGroup.Visibility, // Copy visibility if needed (e.g., for M365 groups, though we filtered them out earlier)
+                            MailEnabled = sourceGroup.MailEnabled ?? false,
+                            SecurityEnabled = sourceGroup.SecurityEnabled ?? true,
+                            MailNickname = $"group_{Guid.NewGuid().ToString().Substring(0, 8)}",
                             OdataType = "#microsoft.graph.group",
-                            MembershipRuleProcessingState = sourceGroup.MembershipRuleProcessingState, // Copy if applicable
-
+                            MembershipRuleProcessingState = sourceGroup.MembershipRuleProcessingState,
                         };
 
                         // Handle dynamic group properties
@@ -204,59 +162,48 @@ namespace IntuneTools.Graph.EntraHelperClasses
                         {
                             if (string.IsNullOrWhiteSpace(sourceGroup.MembershipRule))
                             {
-                                LogToFunctionFile(appFunction.Main, $"Skipping Dynamic {ItemType} '{sourceGroup.DisplayName}' (ID: {groupId}): Missing membership rule.");
-                                continue; // Cannot create dynamic group without a rule
+                                LogToFunctionFile(appFunction.Main, $"Skipping Dynamic group '{sourceGroup.DisplayName}' (ID: {id}): Missing membership rule.");
+                                return;
                             }
                             newGroup.GroupTypes = new List<string> { "DynamicMembership" };
                             newGroup.MembershipRule = sourceGroup.MembershipRule;
-                            // MembershipRuleProcessingState is read-only and set by the system
                         }
                         else
                         {
-                            // Ensure assigned groups are explicitly marked if needed, though usually default
-                            newGroup.GroupTypes = new List<string>(); // Ensure it's not dynamic if source wasn't
+                            newGroup.GroupTypes = new List<string>();
                         }
 
-
-                        // Create the group in the destination tenant
-                        var importedGroup = await destinationGraphServiceClient.Groups.PostAsync(newGroup);
+                        await destinationClient.Groups.PostAsync(newGroup);
                         LogToFunctionFile(appFunction.Main, $"Successfully imported {groupName}");
-
                     }
                     catch (Exception ex)
                     {
                         LogToFunctionFile(appFunction.Main, $"Failed to import {groupName}: {ex.Message}", LogLevels.Error);
                     }
-                }
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An unexpected error occurred during the import process: {ex.Message}", LogLevels.Error);
-            }
-            finally
-            {
-                LogToFunctionFile(appFunction.Main, $"{DateTime.Now.ToString()} - Finished importing Security groups.");
+                });
             }
         }
+
+        private static readonly Helper _helper = new();
+
+        // ── Public static methods (signatures preserved for existing consumers) ──
+
+        public static Task<List<Group>> GetAllGroups(GraphServiceClient graphServiceClient)
+            => _helper.GetAllWithVirtualGroupsAsync(graphServiceClient);
+
+        public static Task<List<Group>> SearchForGroups(GraphServiceClient graphServiceClient, string searchQuery)
+            => _helper.SearchWithDictionaryAsync(graphServiceClient, searchQuery);
+
+        public static Task ImportMultipleGroups(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> groupIds)
+            => _helper.ImportMultipleAsync(sourceGraphServiceClient, destinationGraphServiceClient, groupIds, false, false, new List<string>());
+
         public static async Task DeleteSecurityGroup(GraphServiceClient graphServiceClient, string groupId)
         {
             try
             {
-                if (graphServiceClient == null)
-                {
-                    throw new ArgumentNullException(nameof(graphServiceClient));
-                }
-
-                if (groupId == null)
-                {
-                    throw new InvalidOperationException("Group ID cannot be null.");
-                }
-
-
-
-                await graphServiceClient.Groups[groupId].DeleteAsync();
+                await _helper.DeleteAsync(graphServiceClient, groupId);
             }
-            catch (Microsoft.Graph.Beta.Models.ODataErrors.ODataError odataError)
+            catch (ODataError odataError)
             {
                 if (string.Equals(odataError?.Error?.Message, "Insufficient privileges to complete the operation.", StringComparison.OrdinalIgnoreCase))
                 {
@@ -273,143 +220,14 @@ namespace IntuneTools.Graph.EntraHelperClasses
                 LogToFunctionFile(appFunction.Main, $"An error occurred while deleting a security group: {ex.Message}", LogLevels.Error);
             }
         }
-        public static async Task RenameGroup(GraphServiceClient graphServiceClient, string groupID, string newName)
-        {
-            try
-            {
-                if (graphServiceClient == null)
-                {
-                    throw new ArgumentNullException(nameof(graphServiceClient));
-                }
 
-                if (groupID == null)
-                {
-                    throw new InvalidOperationException("Group ID cannot be null.");
-                }
+        public static Task RenameGroup(GraphServiceClient graphServiceClient, string groupID, string newName)
+            => _helper.RenameAsync(graphServiceClient, groupID, newName);
 
-                if (string.IsNullOrWhiteSpace(newName))
-                {
-                    throw new InvalidOperationException("New name cannot be null or empty.");
-                }
+        public static Task<List<CustomContentInfo>> GetAllGroupContentAsync(GraphServiceClient graphServiceClient)
+            => _helper.GetAllContentAsync(graphServiceClient);
 
-                if (selectedRenameMode == "Prefix")
-                {
-                    // Look up the existing group
-                    var existingGroup = await graphServiceClient.Groups[groupID].GetAsync();
-
-                    if (existingGroup == null)
-                    {
-                        throw new InvalidOperationException($"Group with ID '{groupID}' not found.");
-                    }
-
-                    var name = FindPreFixInPolicyName(existingGroup.DisplayName ?? string.Empty, newName);
-
-                    var group = new Group
-                    {
-                        DisplayName = name,
-                    };
-
-                    await graphServiceClient.Groups[groupID].PatchAsync(group);
-                    LogToFunctionFile(appFunction.Main, $"Successfully renamed group {groupID} to '{name}'");
-                }
-                else if (selectedRenameMode == "Suffix")
-                {
-
-                }
-                else if (selectedRenameMode == "Description")
-                {
-                    // Look up the existing group
-                    var existingGroup = await graphServiceClient.Groups[groupID].GetAsync();
-
-                    if (existingGroup == null)
-                    {
-                        throw new InvalidOperationException($"Group with ID '{groupID}' not found.");
-                    }
-
-                    var group = new Group
-                    {
-                        Description = newName,
-                    };
-
-                    await graphServiceClient.Groups[groupID].PatchAsync(group);
-                    LogToFunctionFile(appFunction.Main, $"Updated description for group {groupID} to '{newName}'");
-                }
-                else if (selectedRenameMode == "RemovePrefix")
-                {
-                    var existingGroup = await graphServiceClient.Groups[groupID].GetAsync();
-
-                    if (existingGroup == null)
-                    {
-                        throw new InvalidOperationException($"Group with ID '{groupID}' not found.");
-                    }
-
-                    var name = RemovePrefixFromPolicyName(existingGroup.DisplayName);
-
-                    var group = new Group
-                    {
-                        DisplayName = name
-                    };
-
-                    await graphServiceClient.Groups[groupID].PatchAsync(group);
-                    LogToFunctionFile(appFunction.Main, $"Removed prefix from group {groupID}, new name: '{name}'");
-                }
-            }
-            catch (Microsoft.Graph.Beta.Models.ODataErrors.ODataError odataError)
-            {
-                if (string.Equals(odataError?.Error?.Message, "Insufficient privileges to complete the operation.", StringComparison.OrdinalIgnoreCase))
-                {
-                    LogToFunctionFile(appFunction.Main, "Insufficient privileges to rename the group.", LogLevels.Error);
-                    LogToFunctionFile(appFunction.Main, "Please double check that the Microsoft Graph command line tools app has permissions to rename groups.", LogLevels.Warning);
-                }
-                else
-                {
-                    LogToFunctionFile(appFunction.Main, "An OData error occurred while renaming the group. Check the permissions and try again.", LogLevels.Error);
-                }
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while renaming group: {ex.Message}", LogLevels.Warning);
-            }
-        }
-
-        public static async Task<List<CustomContentInfo>> GetAllGroupContentAsync(GraphServiceClient graphServiceClient)
-        {
-            var groups = await GetAllGroups(graphServiceClient) ?? new List<Group>();
-            var content = new List<CustomContentInfo>();
-
-            foreach (var group in groups)
-            {
-                content.Add(new CustomContentInfo
-                {
-                    ContentName = group.DisplayName,
-                    ContentType = "Entra Group",
-                    ContentPlatform = "Entra group",
-                    ContentId = group.Id,
-                    ContentDescription = group.Description
-                });
-            }
-
-            return content;
-        }
-
-        public static async Task<List<CustomContentInfo>> SearchGroupContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
-        {
-            var groups = await SearchForGroups(graphServiceClient, searchQuery) ?? new List<Group>();
-            var content = new List<CustomContentInfo>();
-
-            foreach (var group in groups)
-            {
-                content.Add(new CustomContentInfo
-                {
-                    ContentName = group.DisplayName,
-                    ContentType = "Entra Group",
-                    ContentPlatform = "Entra group",
-                    ContentId = group.Id,
-                    ContentDescription = group.Description
-                });
-            }
-
-            return content;
-        }
+        public static Task<List<CustomContentInfo>> SearchGroupContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
+            => _helper.SearchContentAsync(graphServiceClient, searchQuery);
     }
 }
