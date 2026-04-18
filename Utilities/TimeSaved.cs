@@ -23,6 +23,15 @@
                 case appFunction.FindUnassigned:
                     Variables.numberOfItemsCheckedForAssignments++;
                     break;
+                case appFunction.JsonExport:
+                    Variables.numberOfItemsJsonExported++;
+                    break;
+                case appFunction.AuditLog:
+                    Variables.numberOfAuditLogsRetrieved++;
+                    break;
+                case appFunction.ManageAssignment:
+                    Variables.numberOfAssignmentsManaged++;
+                    break;
             }
 
             return totalTimeSavedInSeconds;

@@ -8,7 +8,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
     xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
     mc:Ignorable="d"
-    Title="IntuneTools">
+    Title="InToolz">
 
     <Grid>
         <!-- Define two rows: one for the custom title bar, one for the NavigationView -->
@@ -39,7 +39,7 @@
                 <muxc:NavigationViewItem Content="Assignment" Tag="Application" Icon="AllApps"/>
                 <muxc:NavigationViewItem Content="Manage Assignments" Tag="ManageAssignments">
                     <muxc:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE71D;"/>
+                        <FontIcon Glyph="&#xE77B;"/>
                     </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
                 <muxc:NavigationViewItem Content="Import" Tag="Import" Icon="Import"/>

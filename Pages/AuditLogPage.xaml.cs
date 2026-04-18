@@ -8,6 +8,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.Storage.Pickers;
 
@@ -47,6 +48,7 @@ namespace IntuneTools.Pages
         private readonly ObservableCollection<AuditEventViewModel> _auditEvents = new();
         private readonly ObservableCollection<ActorSummaryItem> _actorSummary = new();
         private List<AuditEvent> _rawAuditEvents = new();
+        private CancellationTokenSource? _loadCts;
 
         public AuditLogPage()
         {
@@ -74,6 +76,11 @@ namespace IntuneTools.Pages
             await ExportToCsvAsync();
         }
 
+        private async void ExportReportButton_Click(object sender, RoutedEventArgs e)
+        {
+            await ExportReportAsync();
+        }
+
         private void AuditDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (AuditDataGrid.SelectedItem is AuditEventViewModel selectedEvent)
@@ -87,15 +94,45 @@ namespace IntuneTools.Pages
             }
         }
 
+        private void CancelLoadButton_Click(object sender, RoutedEventArgs e)
+        {
+            _loadCts?.Cancel();
+            if (sender is Button btn)
+            {
+                btn.IsEnabled = false;
+                btn.Content = "Cancelling\u2026";
+            }
+            LogWarning("Cancellation requested \u2014 waiting for current page to finish...");
+        }
+
         #endregion
 
         #region Core Operations
 
         private async Task LoadAuditEventsAsync(int days)
         {
+            // Cancel any already-running load
+            _loadCts?.Cancel();
+            _loadCts?.Dispose();
+            _loadCts = new CancellationTokenSource();
+            var ct = _loadCts.Token;
+
+            // Show cancel button and reset its state
+            var cancelBtn = FindName("CancelLoadButton") as Button;
+            var progressDetail = FindName("LoadingProgressDetail") as TextBlock;
+            if (cancelBtn != null)
+            {
+                cancelBtn.Content = "Cancel";
+                cancelBtn.IsEnabled = true;
+                cancelBtn.Visibility = Visibility.Visible;
+            }
+            if (progressDetail != null)
+                progressDetail.Text = "";
+
             await ExecuteWithLoadingAsync(async () =>
             {
                 LogInfo($"Loading audit events for the last {days} day(s)...");
+                LogInfo("This may take several minutes for large tenants. You can cancel at any time.");
 
                 if (sourceGraphServiceClient == null)
                 {
@@ -103,7 +140,39 @@ namespace IntuneTools.Pages
                     return;
                 }
 
-                _rawAuditEvents = await AuditLogHelper.GetAuditEventsAsync(sourceGraphServiceClient, days);
+                var lastLoggedCount = 0;
+                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+                try
+                {
+                    _rawAuditEvents = await AuditLogHelper.GetAuditEventsAsync(
+                        sourceGraphServiceClient,
+                        days,
+                        ct,
+                        onProgress: count =>
+                        {
+                            // Update the UI periodically (every 100 events) to avoid excessive dispatches
+                            if (count - lastLoggedCount >= 100)
+                            {
+                                lastLoggedCount = count;
+                                DispatcherQueue.TryEnqueue(() =>
+                                {
+                                    if (progressDetail != null)
+                                        progressDetail.Text = $"{count:N0} events retrieved \u2014 {stopwatch.Elapsed.Minutes}m {stopwatch.Elapsed.Seconds}s elapsed";
+                                });
+                            }
+                        });
+                }
+                catch (OperationCanceledException)
+                {
+                    LogWarning($"Load cancelled after retrieving {lastLoggedCount:N0} event(s) in {stopwatch.Elapsed.Minutes}m {stopwatch.Elapsed.Seconds}s.");
+                    ClearSummary();
+                    return;
+                }
+                finally
+                {
+                    stopwatch.Stop();
+                }
 
                 if (_rawAuditEvents.Count == 0)
                 {
@@ -112,17 +181,28 @@ namespace IntuneTools.Pages
                     return;
                 }
 
-                LogSuccess($"Retrieved {_rawAuditEvents.Count} audit event(s).");
+                LogSuccess($"Retrieved {_rawAuditEvents.Count:N0} audit event(s) in {stopwatch.Elapsed.Minutes}m {stopwatch.Elapsed.Seconds}s.");
 
+                if (progressDetail != null)
+                    progressDetail.Text = "Processing events\u2026";
                 PopulateDataGrid();
                 UpdateSummaryCards();
                 UpdateActorSummary();
                 ExportCsvButton.IsEnabled = _auditEvents.Count > 0;
+                ExportReportButton.IsEnabled = _auditEvents.Count > 0;
+
+                UpdateTotalTimeSaved(secondsSavedOnAuditLog, appFunction.AuditLog);
 
                 LogInfo("Audit log summary generated successfully.");
             },
             "Loading audit events from Microsoft Graph...",
             errorMessagePrefix: "Failed to load audit events");
+
+            // Hide cancel button when done regardless of outcome
+            if (cancelBtn != null)
+                cancelBtn.Visibility = Visibility.Collapsed;
+            if (progressDetail != null)
+                progressDetail.Text = "";
         }
 
         private void PopulateDataGrid()
@@ -217,6 +297,7 @@ namespace IntuneTools.Pages
             SummaryCardsPanel.Visibility = Visibility.Collapsed;
             ActorSummaryPanel.Visibility = Visibility.Collapsed;
             ExportCsvButton.IsEnabled = false;
+            ExportReportButton.IsEnabled = false;
 
             TotalEventsText.Text = "0";
             UniqueActorsText.Text = "0";
@@ -278,6 +359,46 @@ namespace IntuneTools.Pages
             {
                 LogError($"Export failed: {ex.Message}");
                 LogToFunctionFile(appFunction.Main, $"CSV export failed: {ex.Message}", LogLevels.Error);
+            }
+        }
+
+        private async Task ExportReportAsync()
+        {
+            if (_auditEvents.Count == 0)
+            {
+                LogWarning("No audit events to export.");
+                return;
+            }
+
+            try
+            {
+                var savePicker = new FileSavePicker();
+                savePicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+                savePicker.FileTypeChoices.Add("HTML Files", new List<string> { ".html" });
+                savePicker.SuggestedFileName = $"IntuneAuditReport_{DateTime.Now:yyyyMMdd_HHmmss}";
+
+                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindowInstance);
+                WinRT.Interop.InitializeWithWindow.Initialize(savePicker, hwnd);
+
+                var file = await savePicker.PickSaveFileAsync();
+                if (file == null)
+                {
+                    LogInfo("Report export cancelled by user.");
+                    return;
+                }
+
+                LogInfo("Generating audit log report...");
+
+                int days = GetSelectedDays();
+                var html = AuditLogReportGenerator.Generate(_auditEvents, days);
+
+                await File.WriteAllTextAsync(file.Path, html, Encoding.UTF8);
+                LogSuccess($"Exported audit report to {file.Path}");
+            }
+            catch (Exception ex)
+            {
+                LogError($"Report export failed: {ex.Message}");
+                LogToFunctionFile(appFunction.Main, $"Report export failed: {ex.Message}", LogLevels.Error);
             }
         }
 

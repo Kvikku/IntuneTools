@@ -278,6 +278,18 @@
                                     <TextBlock x:Name="CheckedAssignmentsCountText" Text="0" FontWeight="SemiBold" FontSize="13"/>
                                     <TextBlock Text="items checked for assignments" FontSize="13" Opacity="0.7"/>
                                 </StackPanel>
+                                <StackPanel x:Name="JsonExportedItemsPanel" Orientation="Horizontal" Spacing="6" Visibility="Collapsed">
+                                    <TextBlock x:Name="JsonExportedItemsCountText" Text="0" FontWeight="SemiBold" FontSize="13"/>
+                                    <TextBlock Text="items exported to JSON" FontSize="13" Opacity="0.7"/>
+                                </StackPanel>
+                                <StackPanel x:Name="AuditLogsPanel" Orientation="Horizontal" Spacing="6" Visibility="Collapsed">
+                                    <TextBlock x:Name="AuditLogsCountText" Text="0" FontWeight="SemiBold" FontSize="13"/>
+                                    <TextBlock Text="audit logs retrieved" FontSize="13" Opacity="0.7"/>
+                                </StackPanel>
+                                <StackPanel x:Name="ManagedAssignmentsPanel" Orientation="Horizontal" Spacing="6" Visibility="Collapsed">
+                                    <TextBlock x:Name="ManagedAssignmentsCountText" Text="0" FontWeight="SemiBold" FontSize="13"/>
+                                    <TextBlock Text="assignments managed" FontSize="13" Opacity="0.7"/>
+                                </StackPanel>
                             </StackPanel>
                         </StackPanel>
                     </Border>

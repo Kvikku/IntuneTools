@@ -5,6 +5,9 @@
     },
     "IntuneTools (Debug)": {
       "commandName": "Project"
+    },
+    "IntuneTools (Package)": {
+      "commandName": "MsixPackage"
     }
   }
 }
