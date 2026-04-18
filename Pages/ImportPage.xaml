@@ -72,11 +72,12 @@
                     <TextBlock Text="Search &amp; Staging" FontSize="12" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                     <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                         <TextBox x:Name="SearchQueryTextBox"
-                                 PlaceholderText="Enter search query..."
+                                 AutomationProperties.Name="Import search query"
+                                  PlaceholderText="Enter search query..."
                                  Width="250"
                                  VerticalAlignment="Center"/>
-                        <AppBarButton x:Name="Search" Icon="Find" Label="Search" Click="SearchButton_Click" ToolTipService.ToolTip="Search for specific items."/>
-                        <AppBarButton x:Name="ListAll" Icon="ViewAll" Label="List All" Click="ListAllButton_Click" ToolTipService.ToolTip="List all items."/>
+                        <AppBarButton x:Name="Search" AutomationProperties.Name="Search import content" Icon="Find" Label="Search" Click="SearchButton_Click" ToolTipService.ToolTip="Search for specific items."/>
+                        <AppBarButton x:Name="ListAll" AutomationProperties.Name="List all import content" Icon="ViewAll" Label="List All" Click="ListAllButton_Click" ToolTipService.ToolTip="List all items."/>
                         <AppBarSeparator/>
                         <AppBarButton x:Name="ContentTypesButton" Label="Content Types">
                             <AppBarButton.Icon>
@@ -153,7 +154,8 @@
                 <!-- DataGrid -->
                 <controls:DataGrid Grid.Row="1"
                    x:Name="ContentDataGrid" 
-                   AutoGenerateColumns="False"
+                   AutomationProperties.Name="Import staging content grid"
+                    AutoGenerateColumns="False"
                    SelectionMode="Extended"
                    Margin="0,0,12,0"
                    IsReadOnly="True"
@@ -204,6 +206,7 @@
 
                 <!-- IMPORT BUTTON - Primary action -->
                 <Button x:Name="Import"
+                        AutomationProperties.Name="Start import"
                         Click="ImportButton_Click"
                         HorizontalAlignment="Stretch"
                         Style="{StaticResource AccentButtonStyle}"
@@ -218,6 +221,7 @@
 
                 <!-- Include Groups toggle + groups panel -->
                 <CheckBox x:Name="GroupsCheckBox"
+                          AutomationProperties.Name="Include groups in import"
                           Content="Include Groups"
                           Checked="GroupsCheckBox_Checked"
                           Unchecked="GroupsCheckBox_Unchecked"
@@ -226,6 +230,7 @@
 
                 <!-- Include Filters toggle + filter selection -->
                 <CheckBox x:Name="FiltersCheckBox"
+                          AutomationProperties.Name="Include filters in import"
                           Content="Include Filters"
                           Checked="FiltersCheckBox_Checked"
                           Unchecked="FiltersCheckBox_Unchecked"
@@ -264,6 +269,7 @@
                             Margin="0,0,0,8"/>
 
                     <controls:DataGrid x:Name="GroupDataGrid"
+                                       AutomationProperties.Name="Destination groups grid"
                                        AutoGenerateColumns="False"
                                        HeadersVisibility="Column"
                                        SelectionMode="Extended"

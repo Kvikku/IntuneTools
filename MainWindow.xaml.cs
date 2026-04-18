@@ -66,9 +66,9 @@ namespace IntuneTools
 
             // Set theme-aware title bar button colors and update when theme changes
             UpdateTitleBarButtonColors();
-            if (NavView is FrameworkElement themeSource)
+            if (Content is FrameworkElement rootElement)
             {
-                themeSource.ActualThemeChanged += (_, _) => UpdateTitleBarButtonColors();
+                rootElement.ActualThemeChanged += (_, _) => UpdateTitleBarButtonColors();
             }
 
             // Minimize/close the NavigationView pane by default
@@ -224,4 +224,3 @@ namespace IntuneTools
 
     }
 }
-

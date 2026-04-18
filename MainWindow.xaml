@@ -32,7 +32,7 @@
         </Grid>
 
         <!-- NavigationView -->
-        <muxc:NavigationView x:Name="NavView" ItemInvoked="NavView_ItemInvoked" Grid.Row="1">
+        <muxc:NavigationView x:Name="NavView" ItemInvoked="NavView_ItemInvoked" Grid.Row="1" AutomationProperties.Name="Main navigation">
             <muxc:NavigationView.MenuItems>
                 <muxc:NavigationViewItem Content="Home" Tag="Home" Icon="Home">
                     <muxc:NavigationViewItem.KeyboardAccelerators>
