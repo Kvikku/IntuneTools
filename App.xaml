@@ -16,7 +16,53 @@
                 <Setter Property="Background" Value="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"/>  
                 <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundChromeHighBrush}"/>  
                 <Setter Property="BorderThickness" Value="1"/>  
-            </Style>  
+            </Style>
+
+            <!-- ===== Shared UX design tokens ===== -->
+            <!-- Used by version status indicators, tenant pill dots, etc. so dark/light themes both work. -->
+            <SolidColorBrush x:Key="StatusSuccessBrush" Color="#107C10"/>
+            <SolidColorBrush x:Key="StatusWarningBrush" Color="#C29200"/>
+            <SolidColorBrush x:Key="StatusDangerBrush"  Color="#C42B1C"/>
+            <SolidColorBrush x:Key="StatusNeutralBrush" Color="#808080"/>
+
+            <!-- Primary action button: consistent height + weight across data-operation pages. -->
+            <Style x:Key="PrimaryActionButtonStyle" TargetType="Button" BasedOn="{StaticResource AccentButtonStyle}">
+                <Setter Property="Height" Value="40"/>
+                <Setter Property="Padding" Value="16,0"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            </Style>
+
+            <!-- Destructive action button: same shape as primary but uses the danger brush. -->
+            <Style x:Key="DestructiveActionButtonStyle" TargetType="Button">
+                <Setter Property="Height" Value="40"/>
+                <Setter Property="Padding" Value="16,0"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Foreground" Value="{ThemeResource TextOnAccentFillColorPrimaryBrush}"/>
+                <Setter Property="Background" Value="{ThemeResource StatusDangerBrush}"/>
+                <Setter Property="BorderBrush" Value="{ThemeResource StatusDangerBrush}"/>
+            </Style>
+
+            <!-- Page heading typography. -->
+            <Style x:Key="PageTitleTextBlockStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="38"/>
+                <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="HorizontalAlignment" Value="Left"/>
+            </Style>
+            <Style x:Key="PageSubtitleTextBlockStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="14"/>
+                <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}"/>
+                <Setter Property="Margin" Value="0,4,0,0"/>
+            </Style>
+
+            <!-- Tenant status pill: shared shape used by Settings + MainWindow. The Background is
+                 set per-instance to the appropriate status brush (success / warning / danger). -->
+            <Style x:Key="TenantStatusPillStyle" TargetType="Border">
+                <Setter Property="CornerRadius" Value="12"/>
+                <Setter Property="Padding" Value="10,4"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}"/>
+            </Style>
 
         </ResourceDictionary>  
     </Application.Resources>  

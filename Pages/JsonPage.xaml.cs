@@ -2,6 +2,7 @@ using CommunityToolkit.WinUI.UI.Controls;
 using IntuneTools.Utilities;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -124,13 +125,15 @@ namespace IntuneTools.Pages
             InitializeComponent();
             RightClickMenu.AttachDataGridContextMenu(JsonDataGrid);
             LogConsole.ItemsSource = LogEntries;
+            ContentList.CollectionChanged += (_, _) => UpdateStagingEmptyState();
+            this.Loaded += (_, _) => UpdateStagingEmptyState();
         }
 
         protected override string UnauthenticatedMessage => "Authenticate with a tenant to load items, or use 'Import from JSON' to load from a file.";
 
         protected override IEnumerable<string> GetManagedControlNames() => new[]
         {
-            "InputTextBox", "SearchButton", "ListAllButton",
+            "InputTextBox", "ListAllButton",
             "ClearSelectedButton", "ClearAllButton", "ClearLogButton"
         };
 
@@ -179,14 +182,14 @@ namespace IntuneTools.Pages
         {
             base.ShowLoading(message);
             ListAllButton.IsEnabled = false;
-            SearchButton.IsEnabled = false;
+            InputTextBox.IsEnabled = false;
         }
 
         protected override void HideLoading()
         {
             base.HideLoading();
             ListAllButton.IsEnabled = true;
-            SearchButton.IsEnabled = true;
+            InputTextBox.IsEnabled = true;
         }
 
         private void AppendToDetailsRichTextBlock(string text) => AppendToLog(text);
@@ -397,6 +400,9 @@ namespace IntuneTools.Pages
                 {
                     UpdateTotalTimeSaved(secondsSavedOnJsonExport, appFunction.JsonExport);
                 }
+
+                // Offer to open the export folder so the user can immediately verify the output.
+                await ShowExportSuccessDialogAsync(folder.Path, filesWritten, totalItems);
             }
             catch (Exception ex)
             {
@@ -718,15 +724,18 @@ namespace IntuneTools.Pages
             await ListAllOrchestrator(sourceGraphServiceClient);
         }
 
-        private async void SearchButton_Click(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// AutoSuggestBox QuerySubmitted handler — fires on Enter or when the search icon is clicked.
+        /// </summary>
+        private async void InputTextBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
         {
-            var searchQuery = InputTextBox.Text.Trim();
-            if (string.IsNullOrWhiteSpace(searchQuery))
+            var query = (args.QueryText ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(query))
             {
                 AppendToDetailsRichTextBlock("Please enter a search query.");
                 return;
             }
-            await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
+            await SearchOrchestrator(sourceGraphServiceClient, query);
         }
 
         private void JsonDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -744,6 +753,97 @@ namespace IntuneTools.Pages
         private void DeselectAllButton_Click(object sender, RoutedEventArgs e)
         {
             JsonDataGrid.SelectedItems.Clear();
+        }
+
+        private void FocusSearch_Accelerator(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            args.Handled = true;
+            InputTextBox?.Focus(FocusState.Programmatic);
+        }
+
+        private void ListAll_Accelerator(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            args.Handled = true;
+            ListAllButton_Click(this, new RoutedEventArgs());
+        }
+
+        private void SelectAll_Accelerator(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            args.Handled = true;
+            SelectAllButton_Click(this, new RoutedEventArgs());
+        }
+
+        private void DeselectAll_Accelerator(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            args.Handled = true;
+            DeselectAllButton_Click(this, new RoutedEventArgs());
+        }
+
+        private void PrimaryAction_Accelerator(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            args.Handled = true;
+            // The JSON page has multiple primary actions; "Export to Folder" is the most common
+            // intent after staging items, so wire Ctrl+Enter to it.
+            ExportToFolderButton_Click(this, new RoutedEventArgs());
+        }
+
+        /// <summary>
+        /// Toggles the empty-state placeholder over the staging grid.
+        /// </summary>
+        private void UpdateStagingEmptyState()
+        {
+            if (StagingEmptyState == null) return;
+            StagingEmptyState.Visibility = ContentList.Count == 0
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+        }
+
+        /// <summary>
+        /// Shows a success summary after a folder export, with an "Open folder" affordance
+        /// so the user can immediately verify the output.
+        /// </summary>
+        private async Task ShowExportSuccessDialogAsync(string folderPath, int filesWritten, int totalItems)
+        {
+            var stack = new StackPanel { Spacing = 12 };
+            stack.Children.Add(new InfoBar
+            {
+                IsOpen = true,
+                IsClosable = false,
+                Severity = InfoBarSeverity.Success,
+                Title = "Export complete",
+                Message = $"{totalItems} item(s) written to {filesWritten} file(s)."
+            });
+            stack.Children.Add(new TextBlock
+            {
+                Text = folderPath,
+                TextWrapping = TextWrapping.Wrap,
+                FontSize = 12,
+                Opacity = 0.85
+            });
+
+            var dialog = new ContentDialog
+            {
+                Title = "JSON export",
+                Content = stack,
+                PrimaryButtonText = "Open folder",
+                CloseButtonText = "Close",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+            if (result == ContentDialogResult.Primary)
+            {
+                try
+                {
+                    var folder = await Windows.Storage.StorageFolder.GetFolderFromPathAsync(folderPath);
+                    await Windows.System.Launcher.LaunchFolderAsync(folder);
+                }
+                catch (Exception ex)
+                {
+                    AppendToDetailsRichTextBlock($"Could not open folder: {ex.Message}");
+                }
+            }
         }
 
         #endregion

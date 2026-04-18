@@ -13,6 +13,11 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
     <Grid Margin="20">
+        <Grid.KeyboardAccelerators>
+            <KeyboardAccelerator Modifiers="Control" Key="F"      Invoked="FocusSearch_Accelerator"/>
+            <KeyboardAccelerator Modifiers="Control" Key="L"      Invoked="ListAll_Accelerator"/>
+            <KeyboardAccelerator Modifiers="Control" Key="Enter"  Invoked="PrimaryAction_Accelerator"/>
+        </Grid.KeyboardAccelerators>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <!-- Header -->
@@ -71,39 +76,29 @@
                 <StackPanel Spacing="6">
                     <TextBlock Text="Search &amp; Staging" FontSize="12" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                     <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                         <TextBox x:Name="InputTextBox"
-                                  AutomationProperties.Name="Manage assignments search query"
-                                  PlaceholderText="Enter search query..."
-                                 Width="250"
-                                 VerticalAlignment="Center"/>
-                         <AppBarButton x:Name="SearchButton" AutomationProperties.Name="Search assignable content" Icon="Find" Label="Search" Click="SearchButton_Click" ToolTipService.ToolTip="Search for specific items."/>
-                         <AppBarButton x:Name="ListAllButton" AutomationProperties.Name="List all assignable content" Icon="ViewAll" Label="List All" Click="ListAllButton_Click" ToolTipService.ToolTip="List all assignable items."/>
+                         <AutoSuggestBox x:Name="InputTextBox"
+                                         AutomationProperties.Name="Manage assignments search query"
+                                         PlaceholderText="Search by name..."
+                                         QueryIcon="Find"
+                                         Width="280"
+                                         VerticalAlignment="Center"
+                                         QuerySubmitted="InputTextBox_QuerySubmitted"/>
+                         <AppBarButton x:Name="ListAllButton" AutomationProperties.Name="List all assignable content" Icon="ViewAll" Label="List All" Click="ListAllButton_Click" ToolTipService.ToolTip="List all assignable items (Ctrl+L)."/>
                         <AppBarSeparator/>
-                        <AppBarButton x:Name="ClearSelectedButton" Icon="Remove" Label="Clear Selected" Click="ClearSelectedButton_Click" ToolTipService.ToolTip="Remove selected items from staging area."/>
-                        <AppBarButton x:Name="ClearAllButton" Icon="Clear" Label="Clear All" Click="ClearAllButton_Click" ToolTipService.ToolTip="Clear all items from staging area."/>
+                        <AppBarButton x:Name="ClearSelectedButton" AutomationProperties.Name="Clear selected items" Icon="Remove" Label="Clear Selected" Click="ClearSelectedButton_Click" ToolTipService.ToolTip="Remove selected items from staging area."/>
+                        <AppBarButton x:Name="ClearAllButton" AutomationProperties.Name="Clear all items" Icon="Clear" Label="Clear All" Click="ClearAllButton_Click" ToolTipService.ToolTip="Clear all items from staging area."/>
                         <AppBarSeparator/>
-                        <AppBarButton x:Name="ClearLogButton" Icon="Delete" Label="Clear Log" Click="ClearLogButton_Click" ToolTipService.ToolTip="Clear the log console."/>
-                    </StackPanel>
-                </StackPanel>
-            </Border>
-
-            <!-- Assignment Actions Card -->
-            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="8"
-                    Padding="12,8">
-                <StackPanel Spacing="6">
-                    <TextBlock Text="Assignment Actions" FontSize="12" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                        <AppBarButton x:Name="ViewAssignmentsButton" Label="Manage Assignments" Click="ViewAssignmentsButton_Click" ToolTipService.ToolTip="View, inspect, and remove assignments for selected items.">
+                        <AppBarButton x:Name="ViewAssignmentsButton" Label="Manage Assignments" Click="ViewAssignmentsButton_Click" ToolTipService.ToolTip="View, inspect, and remove assignments for selected items (Ctrl+Enter).">
                             <AppBarButton.Icon>
                                 <FontIcon Glyph="&#xE71D;"/>
                             </AppBarButton.Icon>
                         </AppBarButton>
+                        <AppBarSeparator/>
+                        <AppBarButton x:Name="ClearLogButton" AutomationProperties.Name="Clear log console" Icon="Delete" Label="Clear Log" Click="ClearLogButton_Click" ToolTipService.ToolTip="Clear the log console."/>
                     </StackPanel>
                 </StackPanel>
             </Border>
+
         </StackPanel>
 
         <!-- Main Content Row -->
@@ -152,6 +147,29 @@
                         <controls:DataGridTextColumn Header="Description" Binding="{Binding ContentDescription}" Width="3*"/>
                     </controls:DataGrid.Columns>
                 </controls:DataGrid>
+
+                <!-- Empty state shown when nothing has been loaded yet. -->
+                <StackPanel x:Name="StagingEmptyState"
+                            Grid.Row="1"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Spacing="6"
+                            IsHitTestVisible="False"
+                            Margin="0,0,12,0">
+                    <FontIcon Glyph="&#xE721;" FontSize="32" Opacity="0.5" HorizontalAlignment="Center"/>
+                    <TextBlock Text="No items loaded"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               HorizontalAlignment="Center"
+                               Opacity="0.75"/>
+                    <TextBlock Text="Use Search or List All to load assignable content (Ctrl+F to focus search, Ctrl+L to list all)."
+                               FontSize="12"
+                               HorizontalAlignment="Center"
+                               Opacity="0.6"
+                               TextWrapping="WrapWholeWords"
+                               MaxWidth="360"
+                               TextAlignment="Center"/>
+                </StackPanel>
 
                 <!-- Loading Overlay -->
                 <Border Grid.RowSpan="2"

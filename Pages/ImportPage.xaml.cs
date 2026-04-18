@@ -2,6 +2,7 @@ using CommunityToolkit.WinUI.UI.Controls;
 using IntuneTools.Utilities;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Data;
 using System;
 using System.Collections.Generic;
@@ -46,6 +47,10 @@ namespace IntuneTools.Pages
     public sealed partial class ImportPage : BaseDataOperationPage
     {
         private const string ContentGridStateKey = "ImportPage.ContentGrid";
+
+        // Threshold above which a confirmation dialog is shown before the user kicks off an import.
+        // Tuned to "non-trivial batch" — small one-off imports don't need the prompt.
+        private const int MinItemsForImportConfirmation = 5;
 
         #region Fields & Types
 
@@ -107,11 +112,14 @@ namespace IntuneTools.Pages
             LogInfo("Console output");
             RightClickMenu.AttachDataGridContextMenu(ContentDataGrid);
             InitializeDataGridPersistence(ContentDataGrid, ContentGridStateKey);
+            // Keep the empty-state placeholder in sync with the staging collection.
+            ContentList.CollectionChanged += (_, _) => UpdateStagingEmptyState();
+            this.Loaded += (_, _) => UpdateStagingEmptyState();
         }
 
         protected override string[] GetManagedControlNames() => new[]
         {
-            "SearchQueryTextBox", "Search", "ListAll", "ClearSelected", "ClearAll",
+            "SearchQueryTextBox", "ListAll", "ClearSelected", "ClearAll",
             "ContentTypesButton", "GroupsCheckBox", "FiltersCheckBox", "ContentDataGrid",
             "Import", "FilterSelectionComboBox", "GroupSearchTextBox", "NewButton1",
             "NewButton2", "GroupDataGrid", "ClearLogButton"
@@ -510,21 +518,34 @@ namespace IntuneTools.Pages
                 return;
             }
 
-            // Bulk operation safeguard: warn when importing 10 or more items
-            if (ContentList.Count >= 10)
+            // Pre-flight confirmation: always show the user what they're about to do,
+            // including the number of items AND the destination tenant. We surface this
+            // for any non-trivial import, not just the >=10 case, because copying to the
+            // wrong tenant is a costly mistake.
+            var destinationTenant = string.IsNullOrWhiteSpace(Variables.destinationTenantName)
+                ? "the destination tenant"
+                : Variables.destinationTenantName;
+            if (ContentList.Count >= MinItemsForImportConfirmation || IsGroupSelected || IsFilterSelected)
             {
-                var bulkWarning = new ContentDialog
-                {
-                    Title = "\u26A0 Large Bulk Import",
-                    Content = $"You are about to import {ContentList.Count} items. Are you sure you want to continue?",
-                    PrimaryButtonText = "Continue",
-                    CloseButtonText = "Cancel",
-                    DefaultButton = ContentDialogButton.Close,
-                    XamlRoot = this.XamlRoot
-                };
+                var extras = new System.Text.StringBuilder();
+                if (IsGroupSelected)
+                    extras.Append("Existing group assignments will be re-created on the destination. ");
+                if (IsFilterSelected)
+                    extras.Append("The selected filter will be applied to imported assignments. ");
+                if (extras.Length == 0)
+                    extras.Append("Imported items will be created in the destination tenant.");
 
-                var bulkResult = await bulkWarning.ShowAsync();
-                if (bulkResult != ContentDialogResult.Primary)
+                var confirmed = await ConfirmationDialogHelper.ConfirmAsync(
+                    this.XamlRoot,
+                    title: "Confirm import",
+                    action: "copy",
+                    itemCount: ContentList.Count,
+                    tenantName: destinationTenant,
+                    extraMessage: extras.ToString().Trim(),
+                    severity: InfoBarSeverity.Informational,
+                    confirmText: "Start import",
+                    tenantPreposition: "to");
+                if (!confirmed)
                 {
                     AppendToLog("Bulk import cancelled by user.");
                     return;
@@ -774,17 +795,47 @@ namespace IntuneTools.Pages
             UpdateSelectAllCheckBox();
         }
 
-        private async void SearchButton_Click(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// AutoSuggestBox QuerySubmitted handler — fires on Enter or when the search icon is clicked.
+        /// </summary>
+        private async void SearchQueryTextBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
         {
-            var searchQuery = SearchQueryTextBox.Text?.Trim();
-            if (!string.IsNullOrEmpty(searchQuery))
-            {
-                await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
-            }
-            else
+            var query = (args.QueryText ?? string.Empty).Trim();
+            if (string.IsNullOrEmpty(query))
             {
                 AppendToLog("Search query cannot be empty.");
+                return;
             }
+            await SearchOrchestrator(sourceGraphServiceClient, query);
+        }
+
+        private void FocusSearch_Accelerator(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            args.Handled = true;
+            SearchQueryTextBox?.Focus(FocusState.Programmatic);
+        }
+
+        private void ListAll_Accelerator(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            args.Handled = true;
+            ListAllButton_Click(this, new RoutedEventArgs());
+        }
+
+        private void PrimaryAction_Accelerator(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            args.Handled = true;
+            ImportButton_Click(this, new RoutedEventArgs());
+        }
+
+        /// <summary>
+        /// Toggles the empty-state placeholder over the staging grid based on the current ContentList count.
+        /// </summary>
+        private void UpdateStagingEmptyState()
+        {
+            if (StagingEmptyState == null) return;
+            StagingEmptyState.Visibility = ContentList.Count == 0
+                ? Visibility.Visible
+                : Visibility.Collapsed;
         }
 
         private void SelectAll_Checked(object sender, RoutedEventArgs e)

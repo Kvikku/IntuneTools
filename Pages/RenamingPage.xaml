@@ -12,6 +12,13 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
     <Grid Margin="20">
+        <Grid.KeyboardAccelerators>
+            <KeyboardAccelerator Modifiers="Control" Key="F"      Invoked="FocusSearch_Accelerator"/>
+            <KeyboardAccelerator Modifiers="Control" Key="L"      Invoked="ListAll_Accelerator"/>
+            <KeyboardAccelerator Modifiers="Control" Key="A"      Invoked="SelectAll_Accelerator"/>
+            <KeyboardAccelerator Modifiers="Control,Shift" Key="A" Invoked="DeselectAll_Accelerator"/>
+            <KeyboardAccelerator Modifiers="Control" Key="Enter"  Invoked="PrimaryAction_Accelerator"/>
+        </Grid.KeyboardAccelerators>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -73,12 +80,14 @@
                 <StackPanel Spacing="6">
                     <TextBlock Text="Search &amp; Staging" FontSize="12" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                     <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                    <TextBox x:Name="SearchQueryTextBox"
-                             PlaceholderText="Enter search query..."
-                             Width="250"
-                             VerticalAlignment="Center"/>
-                    <AppBarButton x:Name="SearchButton" Icon="Find" Label="Search" Click="SearchButton_Click" ToolTipService.ToolTip="Search for specific items."/>
-                    <AppBarButton x:Name="ListAllButton" Icon="ViewAll" Label="List All" Click="ListAllButton_Click" ToolTipService.ToolTip="List all items."/>
+                    <AutoSuggestBox x:Name="SearchQueryTextBox"
+                                    AutomationProperties.Name="Renaming search query"
+                                    PlaceholderText="Search by name..."
+                                    QueryIcon="Find"
+                                    Width="280"
+                                    VerticalAlignment="Center"
+                                    QuerySubmitted="SearchQueryTextBox_QuerySubmitted"/>
+                    <AppBarButton x:Name="ListAllButton" AutomationProperties.Name="List all content" Icon="ViewAll" Label="List All" Click="ListAllButton_Click" ToolTipService.ToolTip="List all items (Ctrl+L)."/>
                     <AppBarSeparator/>
                     <AppBarButton x:Name="ClearSelectedButton" Icon="Remove" Label="Clear Selected" Click="ClearSelectedButton_Click" ToolTipService.ToolTip="Remove selected items from staging area."/>
                     <AppBarButton x:Name="ClearAllButton" Icon="Clear" Label="Clear All" Click="ClearAllButton_Click" ToolTipService.ToolTip="Clear all items from staging area."/>
@@ -206,6 +215,29 @@
                         <controls:DataGridTextColumn Header="Description" Binding="{Binding ContentDescription}" Width="3*"/>
                     </controls:DataGrid.Columns>
                 </controls:DataGrid>
+
+                <!-- Empty state shown when the staging grid has no items. -->
+                <StackPanel x:Name="StagingEmptyState"
+                            Grid.Row="1"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Spacing="6"
+                            IsHitTestVisible="False"
+                            Margin="0,0,12,0">
+                    <FontIcon Glyph="&#xE8AC;" FontSize="32" Opacity="0.5" HorizontalAlignment="Center"/>
+                    <TextBlock Text="No items staged for renaming"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               HorizontalAlignment="Center"
+                               Opacity="0.75"/>
+                    <TextBlock Text="Use Search or List All to populate the grid (Ctrl+F to focus search, Ctrl+L to list all)."
+                               FontSize="12"
+                               HorizontalAlignment="Center"
+                               Opacity="0.6"
+                               TextWrapping="WrapWholeWords"
+                               MaxWidth="380"
+                               TextAlignment="Center"/>
+                </StackPanel>
 
                 <!-- Loading Overlay -->
                 <Border Grid.RowSpan="2"

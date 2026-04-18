@@ -13,6 +13,11 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
     <Grid Margin="20">
+        <Grid.KeyboardAccelerators>
+            <KeyboardAccelerator Modifiers="Control" Key="F"      Invoked="FocusSearch_Accelerator"/>
+            <KeyboardAccelerator Modifiers="Control" Key="L"      Invoked="ListAll_Accelerator"/>
+            <KeyboardAccelerator Modifiers="Control" Key="Enter"  Invoked="PrimaryAction_Accelerator"/>
+        </Grid.KeyboardAccelerators>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <!-- Header -->
@@ -71,13 +76,14 @@
                 <StackPanel Spacing="6">
                     <TextBlock Text="Search &amp; Staging" FontSize="12" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                     <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                        <TextBox x:Name="SearchQueryTextBox"
-                                 AutomationProperties.Name="Import search query"
-                                  PlaceholderText="Enter search query..."
-                                 Width="250"
-                                 VerticalAlignment="Center"/>
-                        <AppBarButton x:Name="Search" AutomationProperties.Name="Search import content" Icon="Find" Label="Search" Click="SearchButton_Click" ToolTipService.ToolTip="Search for specific items."/>
-                        <AppBarButton x:Name="ListAll" AutomationProperties.Name="List all import content" Icon="ViewAll" Label="List All" Click="ListAllButton_Click" ToolTipService.ToolTip="List all items."/>
+                        <AutoSuggestBox x:Name="SearchQueryTextBox"
+                                        AutomationProperties.Name="Import search query"
+                                        PlaceholderText="Search by name..."
+                                        QueryIcon="Find"
+                                        Width="280"
+                                        VerticalAlignment="Center"
+                                        QuerySubmitted="SearchQueryTextBox_QuerySubmitted"/>
+                        <AppBarButton x:Name="ListAll" AutomationProperties.Name="List all import content" Icon="ViewAll" Label="List All" Click="ListAllButton_Click" ToolTipService.ToolTip="List all items (Ctrl+L)."/>
                         <AppBarSeparator/>
                         <AppBarButton x:Name="ContentTypesButton" Label="Content Types">
                             <AppBarButton.Icon>
@@ -171,6 +177,29 @@
                     </controls:DataGrid.Columns>
                 </controls:DataGrid>
 
+                <!-- Empty state shown when nothing has been loaded yet. -->
+                <StackPanel x:Name="StagingEmptyState"
+                            Grid.Row="1"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Spacing="6"
+                            IsHitTestVisible="False"
+                            Margin="0,0,12,0">
+                    <FontIcon Glyph="&#xE8B5;" FontSize="32" Opacity="0.5" HorizontalAlignment="Center"/>
+                    <TextBlock Text="No items staged for import"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               HorizontalAlignment="Center"
+                               Opacity="0.75"/>
+                    <TextBlock Text="Use Search or List All against the source tenant (Ctrl+F to focus search, Ctrl+L to list all)."
+                               FontSize="12"
+                               HorizontalAlignment="Center"
+                               Opacity="0.6"
+                               TextWrapping="WrapWholeWords"
+                               MaxWidth="360"
+                               TextAlignment="Center"/>
+                </StackPanel>
+
                 <!-- Loading Overlay -->
                 <Border Grid.RowSpan="2"
                         x:Name="LoadingOverlay"
@@ -206,16 +235,17 @@
 
                 <!-- IMPORT BUTTON - Primary action -->
                 <Button x:Name="Import"
-                        AutomationProperties.Name="Start import"
+                        AutomationProperties.Name="Copy staged items to the destination tenant"
                         Click="ImportButton_Click"
                         HorizontalAlignment="Stretch"
                         Style="{StaticResource AccentButtonStyle}"
                         Height="40"
                         FontWeight="SemiBold"
-                        Margin="0,0,0,16">
+                        Margin="0,0,0,16"
+                        ToolTipService.ToolTip="Copy all staged items to the destination tenant (Ctrl+Enter).">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <FontIcon Glyph="&#xE8B5;" FontSize="16"/>
-                        <TextBlock Text="Import" VerticalAlignment="Center"/>
+                        <TextBlock Text="Copy to destination tenant" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
 
@@ -226,7 +256,8 @@
                           Checked="GroupsCheckBox_Checked"
                           Unchecked="GroupsCheckBox_Unchecked"
                           IsChecked="False"
-                          Margin="0,0,0,4"/>
+                          Margin="0,0,0,4"
+                          ToolTipService.ToolTip="When enabled, you can pick destination-tenant groups to assign every imported item to. Original group assignments are NOT carried over (the source tenant's groups don't exist in the destination)."/>
 
                 <!-- Include Filters toggle + filter selection -->
                 <CheckBox x:Name="FiltersCheckBox"
@@ -273,7 +304,8 @@
                                        AutoGenerateColumns="False"
                                        HeadersVisibility="Column"
                                        SelectionMode="Extended"
-                                       Height="200"
+                                       MinHeight="180"
+                                       MaxHeight="320"
                                        Margin="0,0,0,0"
                                        IsReadOnly="True"
                                        CanUserSortColumns="True"

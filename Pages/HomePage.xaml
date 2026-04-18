@@ -32,7 +32,11 @@
 
                         <!-- Version status indicator -->
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="8" Margin="0,4,0,0">
-                            <Ellipse x:Name="VersionStatusIndicator" Width="10" Height="10" VerticalAlignment="Center">
+                            <ProgressRing x:Name="VersionStatusProgressRing"
+                                          Width="14" Height="14"
+                                          IsActive="True"
+                                          VerticalAlignment="Center"/>
+                            <Ellipse x:Name="VersionStatusIndicator" Width="10" Height="10" VerticalAlignment="Center" Visibility="Collapsed">
                                 <Ellipse.Fill>
                                     <SolidColorBrush x:Name="VersionStatusBrush" Color="Gray"/>
                                 </Ellipse.Fill>
@@ -61,7 +65,11 @@
                          IsClosable="True"
                          Severity="Warning"
                          Title="Sign in first"
-                         Message="Go to Settings and sign in to a source tenant before using any features."/>
+                         Message="Go to Settings and sign in to a source tenant before using any features.">
+                    <InfoBar.ActionButton>
+                        <Button Content="Open Settings" Click="QuickAction_Settings_Click"/>
+                    </InfoBar.ActionButton>
+                </InfoBar>
                 <TextBlock Text="Get started" FontSize="20" FontWeight="SemiBold" Margin="0,4,0,-8"/>
                 <Grid x:Name="QuickActionsGrid" ColumnSpacing="16" RowSpacing="16">
                     <Grid.ColumnDefinitions>
@@ -246,7 +254,14 @@
                             CornerRadius="12"
                             Padding="20">
                         <StackPanel Spacing="10">
-                            <TextBlock Text="Time Saved" FontSize="20" FontWeight="SemiBold"/>
+                            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                <TextBlock Text="Time Saved" FontSize="20" FontWeight="SemiBold"/>
+                                <Button Padding="4" Background="Transparent" BorderThickness="0"
+                                        AutomationProperties.Name="About the time saved metric"
+                                        ToolTipService.ToolTip="Estimated from your recorded actions, using fixed seconds-saved values for each action type (e.g., rename ~20s, assign ~30s, delete ~10s, import ~90s).">
+                                    <FontIcon Glyph="&#xE9CE;" FontSize="14" Opacity="0.6"/>
+                                </Button>
+                            </StackPanel>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="12">
                                 <TextBlock x:Name="TimeSavedMinutesText"
                                            Text="0"
@@ -319,34 +334,56 @@
                         <TextBlock Text="Latest operation outcomes across pages."
                                    FontSize="13"
                                    Opacity="0.65"/>
-                        <ListView x:Name="RecentActivityListView"
-                                  AutomationProperties.Name="Recent activity list"
-                                  SelectionMode="None"
-                                  MinHeight="120"
-                                  MaxHeight="220">
-                            <ListView.ItemTemplate>
-                                <DataTemplate>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="110"/>
-                                            <ColumnDefinition Width="64"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="{Binding TimestampText}"
-                                                   Opacity="0.7"
-                                                   FontSize="12"/>
-                                        <TextBlock Grid.Column="1"
-                                                   Text="{Binding Status}"
-                                                   FontSize="12"
-                                                   FontWeight="SemiBold"/>
-                                        <TextBlock Grid.Column="2"
-                                                   Text="{Binding Message}"
-                                                   TextWrapping="WrapWholeWords"
-                                                   FontSize="13"/>
-                                    </Grid>
-                                </DataTemplate>
-                            </ListView.ItemTemplate>
-                        </ListView>
+                        <Grid MinHeight="120">
+                            <ListView x:Name="RecentActivityListView"
+                                      AutomationProperties.Name="Recent activity list"
+                                      SelectionMode="None"
+                                      MinHeight="120"
+                                      MaxHeight="220">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="110"/>
+                                                <ColumnDefinition Width="64"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding TimestampText}"
+                                                       Opacity="0.7"
+                                                       FontSize="12"/>
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding Status}"
+                                                       FontSize="12"
+                                                       FontWeight="SemiBold"/>
+                                            <TextBlock Grid.Column="2"
+                                                       Text="{Binding Message}"
+                                                       TextWrapping="WrapWholeWords"
+                                                       FontSize="13"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                            <!-- Empty state shown when there's no recorded activity yet. -->
+                            <StackPanel x:Name="RecentActivityEmptyState"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Spacing="6"
+                                        Visibility="Collapsed">
+                                <FontIcon Glyph="&#xE9D9;" FontSize="28" Opacity="0.5"/>
+                                <TextBlock Text="No recent activity yet"
+                                           FontSize="14"
+                                           FontWeight="SemiBold"
+                                           HorizontalAlignment="Center"
+                                           Opacity="0.75"/>
+                                <TextBlock Text="Run an action from one of the pages above and the result will appear here."
+                                           FontSize="12"
+                                           HorizontalAlignment="Center"
+                                           Opacity="0.6"
+                                           TextWrapping="WrapWholeWords"
+                                           MaxWidth="320"
+                                           TextAlignment="Center"/>
+                            </StackPanel>
+                        </Grid>
                     </StackPanel>
                 </Border>
 

@@ -12,6 +12,14 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
     <Grid Margin="20">
+        <Grid.KeyboardAccelerators>
+            <!-- Page-level shortcuts. Match the set used across data-operation pages. -->
+            <KeyboardAccelerator Modifiers="Control" Key="F"      Invoked="FocusSearch_Accelerator"/>
+            <KeyboardAccelerator Modifiers="Control" Key="L"      Invoked="ListAll_Accelerator"/>
+            <KeyboardAccelerator Modifiers="Control" Key="A"      Invoked="SelectAll_Accelerator"/>
+            <KeyboardAccelerator Modifiers="Control,Shift" Key="A" Invoked="DeselectAll_Accelerator"/>
+            <KeyboardAccelerator Modifiers="Control" Key="Enter"  Invoked="PrimaryAction_Accelerator"/>
+        </Grid.KeyboardAccelerators>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <!-- Header -->
@@ -186,6 +194,29 @@
                     </controls:DataGrid.Columns>
                 </controls:DataGrid>
 
+                <!-- Empty state shown when the staging grid has no items. -->
+                <StackPanel x:Name="StagingEmptyState"
+                            Grid.Row="1"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Spacing="6"
+                            IsHitTestVisible="False"
+                            Margin="0,0,12,0">
+                    <FontIcon Glyph="&#xE721;" FontSize="32" Opacity="0.5" HorizontalAlignment="Center"/>
+                    <TextBlock Text="No items staged"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               HorizontalAlignment="Center"
+                               Opacity="0.75"/>
+                    <TextBlock Text="Use Search or List All to populate the staging grid (Ctrl+F to focus search, Ctrl+L to list all)."
+                               FontSize="12"
+                               HorizontalAlignment="Center"
+                               Opacity="0.6"
+                               TextWrapping="WrapWholeWords"
+                               MaxWidth="360"
+                               TextAlignment="Center"/>
+                </StackPanel>
+
                 <Border Grid.RowSpan="2"
                         x:Name="LoadingOverlay"
                         Background="{ThemeResource SystemControlAcrylicWindowBrush}"
@@ -241,18 +272,27 @@
                     <controls:DataGrid x:Name="GroupDataGrid"
                                        AutoGenerateColumns="False"
                                        HeadersVisibility="Column"
-                                       Height="160"
+                                       MinHeight="160"
+                                       MaxHeight="320"
                                        SelectionMode="Extended"
-                                       Margin="0,0,0,16"
+                                       Margin="0,0,0,8"
                                        IsReadOnly="True"
                                        CanUserSortColumns="True"
                                        CanUserReorderColumns="False"
-                                       Sorting="GroupDataGrid_Sorting">
+                                       Sorting="GroupDataGrid_Sorting"
+                                       SelectionChanged="GroupDataGrid_SelectionChanged">
                         <controls:DataGrid.Columns>
                             <controls:DataGridTextColumn Header="Group Name" Binding="{Binding GroupName}" Width="2*"/>
                             <controls:DataGridTextColumn Header="ID" Binding="{Binding GroupId}" Width="*"/>
                         </controls:DataGrid.Columns>
                     </controls:DataGrid>
+
+                    <!-- Live count of selected groups, mirroring the staging-grid selection counter. -->
+                    <TextBlock x:Name="GroupSelectionCountText"
+                               Text="Groups selected: 0"
+                               FontSize="12"
+                               Margin="0,0,0,12"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
 
                     <!-- ASSIGN BUTTON - Primary action -->
                     <Button x:Name="AssignButton"
