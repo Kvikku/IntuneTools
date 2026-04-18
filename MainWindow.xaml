@@ -17,6 +17,11 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
+        <!-- Window-level keyboard accelerators -->
+        <Grid.KeyboardAccelerators>
+            <KeyboardAccelerator Modifiers="Control" Key="OemComma" Invoked="OpenSettings_Accelerator"/>
+        </Grid.KeyboardAccelerators>
+
         <!-- Custom Title Bar — transparent so Mica shows through -->
         <Grid x:Name="CustomTitleBar" Background="Transparent" Height="32" VerticalAlignment="Top" Grid.Row="0">
             <Grid.ColumnDefinitions>
@@ -32,7 +37,7 @@
         </Grid>
 
         <!-- NavigationView -->
-        <muxc:NavigationView x:Name="NavView" ItemInvoked="NavView_ItemInvoked" Grid.Row="1" AutomationProperties.Name="Main navigation">
+        <muxc:NavigationView x:Name="NavView" ItemInvoked="NavView_ItemInvoked" Grid.Row="1" AutomationProperties.Name="Main navigation" IsSettingsVisible="False">
             <muxc:NavigationView.MenuItems>
                 <muxc:NavigationViewItem Content="Home" Tag="Home" Icon="Home">
                     <muxc:NavigationViewItem.KeyboardAccelerators>
@@ -85,33 +90,57 @@
                 </muxc:NavigationViewItem>
             </muxc:NavigationView.MenuItems>
 
+            <!-- Settings lives in the footer so it's discoverable but separated from feature pages. Ctrl+, opens it. -->
+            <muxc:NavigationView.FooterMenuItems>
+                <muxc:NavigationViewItem Content="Settings" Tag="Settings" Icon="Setting"
+                                         ToolTipService.ToolTip="Settings (Ctrl+,)">
+                    <muxc:NavigationViewItem.KeyboardAccelerators>
+                        <KeyboardAccelerator Modifiers="Control" Key="OemComma"/>
+                    </muxc:NavigationViewItem.KeyboardAccelerators>
+                </muxc:NavigationViewItem>
+            </muxc:NavigationView.FooterMenuItems>
+
             <!-- Pane footer: tenant connection status pills -->
             <muxc:NavigationView.PaneFooter>
-                <StackPanel Margin="12,0,12,12" Spacing="4">
-                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                        <Ellipse x:Name="SourceTenantDot" Width="8" Height="8" VerticalAlignment="Center">
-                            <Ellipse.Fill>
-                                <SolidColorBrush x:Name="SourceTenantDotBrush" Color="Gray"/>
-                            </Ellipse.Fill>
-                        </Ellipse>
-                        <TextBlock x:Name="SourceTenantPill"
-                                   Text="Source: Not signed in"
-                                   FontSize="11"
-                                   Opacity="0.8"
-                                   TextTrimming="CharacterEllipsis"/>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                        <Ellipse x:Name="DestTenantDot" Width="8" Height="8" VerticalAlignment="Center">
-                            <Ellipse.Fill>
-                                <SolidColorBrush x:Name="DestTenantDotBrush" Color="Gray"/>
-                            </Ellipse.Fill>
-                        </Ellipse>
-                        <TextBlock x:Name="DestTenantPill"
-                                   Text="Destination: Not signed in"
-                                   FontSize="11"
-                                   Opacity="0.8"
-                                   TextTrimming="CharacterEllipsis"/>
-                    </StackPanel>
+                <StackPanel Margin="12,0,12,12" Spacing="6">
+                    <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                            CornerRadius="12"
+                            Padding="10,5"
+                            ToolTipService.ToolTip="Source tenant — used by Cleanup, Renaming, Assignment, JSON export and Audit Log.">
+                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <Ellipse x:Name="SourceTenantDot" Width="10" Height="10" VerticalAlignment="Center">
+                                <Ellipse.Fill>
+                                    <SolidColorBrush x:Name="SourceTenantDotBrush" Color="Gray"/>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                            <TextBlock x:Name="SourceTenantPill"
+                                       Text="Source: Not signed in"
+                                       FontSize="12"
+                                       TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                            CornerRadius="12"
+                            Padding="10,5"
+                            ToolTipService.ToolTip="Destination tenant — used only as the target for Import and JSON 'Create in tenant'.">
+                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <Ellipse x:Name="DestTenantDot" Width="10" Height="10" VerticalAlignment="Center">
+                                <Ellipse.Fill>
+                                    <SolidColorBrush x:Name="DestTenantDotBrush" Color="Gray"/>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                            <TextBlock x:Name="DestTenantPill"
+                                       Text="Destination: Not signed in"
+                                       FontSize="12"
+                                       TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+                    </Border>
+                    <HyperlinkButton x:Name="SignInHyperlink"
+                                     Content="Sign in to a tenant…"
+                                     Click="SignInHyperlink_Click"
+                                     Padding="2,0"
+                                     Visibility="Collapsed"
+                                     AutomationProperties.Name="Open Settings to sign in"/>
                 </StackPanel>
             </muxc:NavigationView.PaneFooter>
 

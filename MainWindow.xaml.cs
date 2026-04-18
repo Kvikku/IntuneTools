@@ -83,6 +83,34 @@ namespace IntuneTools
             this.Closed += (_, _) => AuthenticationEvents.AuthenticationLost -= OnAuthenticationLost;
         }
 
+        /// <summary>
+        /// Window-level Ctrl+, accelerator — opens the Settings page.
+        /// </summary>
+        private void OpenSettings_Accelerator(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            args.Handled = true;
+            SelectAndNavigateToSettings();
+        }
+
+        /// <summary>
+        /// Click handler for the "Sign in to a tenant…" hyperlink shown in the pane footer
+        /// when neither tenant is connected.
+        /// </summary>
+        private void SignInHyperlink_Click(object sender, RoutedEventArgs e)
+        {
+            SelectAndNavigateToSettings();
+        }
+
+        private void SelectAndNavigateToSettings()
+        {
+            var settingsItem = NavView.FooterMenuItems
+                .OfType<NavigationViewItem>()
+                .FirstOrDefault(x => string.Equals(x.Tag?.ToString(), "Settings", StringComparison.Ordinal));
+            if (settingsItem != null)
+                NavView.SelectedItem = settingsItem;
+            ContentFrame.Navigate(typeof(SettingsPage));
+        }
+
         private void OnAuthenticationLost(string reason)
         {
             // Event may be raised from a background thread in the auth pipeline — marshal to UI thread.
@@ -101,12 +129,7 @@ namespace IntuneTools
             // Send users to the Settings page where they can re-authenticate against
             // the source and destination tenants.
             ReauthInfoBar.IsOpen = false;
-            var settingsItem = NavView.MenuItems
-                .OfType<NavigationViewItem>()
-                .FirstOrDefault(x => string.Equals(x.Tag?.ToString(), "Settings", StringComparison.Ordinal));
-            if (settingsItem != null)
-                NavView.SelectedItem = settingsItem;
-            ContentFrame.Navigate(typeof(SettingsPage));
+            SelectAndNavigateToSettings();
         }
 
         /// <summary>
@@ -209,17 +232,39 @@ namespace IntuneTools
                 ? $"Source: {sourceTenantName}"
                 : "Source: Not signed in";
 
-            SourceTenantDotBrush.Color = sourceConnected
-                ? Windows.UI.Color.FromArgb(255, 46, 139, 87)   // SeaGreen
-                : Windows.UI.Color.FromArgb(255, 128, 128, 128); // Gray
+            SourceTenantDotBrush.Color = GetStatusColor(sourceConnected);
 
             DestTenantPill.Text = destConnected
                 ? $"Destination: {destinationTenantName}"
                 : "Destination: Not signed in";
 
-            DestTenantDotBrush.Color = destConnected
-                ? Windows.UI.Color.FromArgb(255, 46, 139, 87)
-                : Windows.UI.Color.FromArgb(255, 128, 128, 128);
+            DestTenantDotBrush.Color = GetStatusColor(destConnected);
+
+            // Surface a "Sign in" hyperlink in the pane footer when neither tenant is connected,
+            // so the action is one click away from anywhere in the app.
+            if (SignInHyperlink != null)
+            {
+                SignInHyperlink.Visibility = (!sourceConnected && !destConnected)
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+            }
+        }
+
+        /// <summary>
+        /// Resolves the indicator color from the shared theme brushes (so dark/light themes both work).
+        /// Falls back to a sensible literal color if the resource is not a SolidColorBrush.
+        /// </summary>
+        private Windows.UI.Color GetStatusColor(bool connected)
+        {
+            var key = connected ? "StatusSuccessBrush" : "StatusNeutralBrush";
+            if (Application.Current.Resources.TryGetValue(key, out var resource)
+                && resource is SolidColorBrush brush)
+            {
+                return brush.Color;
+            }
+            return connected
+                ? Windows.UI.Color.FromArgb(255, 0x10, 0x7C, 0x10)
+                : Windows.UI.Color.FromArgb(255, 0x80, 0x80, 0x80);
         }
 
     }
