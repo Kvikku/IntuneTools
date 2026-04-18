@@ -1,8 +1,5 @@
 {
   "profiles": {
-    "IntuneTools (Package)": {
-      "commandName": "MsixPackage"
-    },
     "IntuneTools (Unpackaged)": {
       "commandName": "Project"
     },
