@@ -45,6 +45,8 @@ namespace IntuneTools.Pages
 
     public sealed partial class ImportPage : BaseDataOperationPage
     {
+        private const string ContentGridStateKey = "ImportPage.ContentGrid";
+
         #region Fields & Types
 
         /// <summary>
@@ -104,6 +106,7 @@ namespace IntuneTools.Pages
             LogConsole.ItemsSource = LogEntries;
             LogInfo("Console output");
             RightClickMenu.AttachDataGridContextMenu(ContentDataGrid);
+            InitializeDataGridPersistence(ContentDataGrid, ContentGridStateKey);
         }
 
         protected override string[] GetManagedControlNames() => new[]
@@ -185,6 +188,7 @@ namespace IntuneTools.Pages
 
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
+                ApplyPersistedDataGridState(ContentDataGrid);
             }
             finally
             {
@@ -222,6 +226,7 @@ namespace IntuneTools.Pages
 
                 // Bind to DataGrid
                 ContentDataGrid.ItemsSource = ContentList;
+                ApplyPersistedDataGridState(ContentDataGrid);
             }
             finally
             {
@@ -540,8 +545,8 @@ namespace IntuneTools.Pages
             // Get import registry with current group/filter selection state
             var importRegistry = GetImportTypeRegistry(IsGroupSelected, IsFilterSelected, groupIds).ToList();
 
-            // Count total content types to import
-            _importTotal = importRegistry.Count(def => HasContentType(def.TypeKey));
+            var totalItemsToImport = importRegistry.Sum(def => GetContentIdsByType(def.TypeKey).Count);
+            _importTotal = totalItemsToImport;
 
             ShowOperationProgress("Starting import...", 0, _importTotal);
 
@@ -561,44 +566,52 @@ namespace IntuneTools.Pages
             // Log which filter(s) are being applied
             LogFiltersToBeApplied();
 
+            var importedItemCount = 0;
+            var failedItemCount = 0;
+
             // Perform the import process using the registry
             foreach (var definition in importRegistry)
             {
-                if (!HasContentType(definition.TypeKey))
+                var contentIds = GetContentIdsByType(definition.TypeKey);
+                var typeItemCount = contentIds.Count;
+                if (typeItemCount == 0)
                     continue;
 
-                _importCurrent++;
-                ShowOperationProgress($"Importing {definition.DisplayName}...", _importCurrent, _importTotal);
+                ShowOperationProgress($"Importing {definition.DisplayName} ({typeItemCount} item(s))...", _importCurrent, _importTotal);
 
                 try
                 {
                     AppendToLog($"Importing {definition.DisplayName}...\n");
                     LogToFunctionFile(appFunction.Main, $"Importing {definition.DisplayName}...", LogLevels.Info);
 
-                    var contentIds = GetContentIdsByType(definition.TypeKey);
                     await definition.ImportAsync(contentIds, groupIds);
 
                     AppendToLog($"{definition.DisplayName} imported successfully.\n");
                     _importSuccessCount++;
+                    _importCurrent += typeItemCount;
+                    importedItemCount += typeItemCount;
                 }
                 catch (Exception ex)
                 {
                     AppendToLog($"Error importing {definition.DisplayName}: {ex.Message}\n");
                     LogToFunctionFile(appFunction.Main, $"Error importing {definition.DisplayName}: {ex.Message}", LogLevels.Error);
                     _importErrorCount++;
+                    _importCurrent += typeItemCount;
+                    failedItemCount += typeItemCount;
                 }
             }
 
             // Show final status
             if (_importErrorCount == 0)
             {
-                ShowOperationSuccess($"Import completed: {_importSuccessCount} content type(s) imported successfully");
+                ShowOperationSuccess($"Import completed: {importedItemCount}/{_importTotal} item(s) imported across {_importSuccessCount} content type(s)");
             }
             else
             {
-                ShowOperationError($"Import completed with errors: {_importSuccessCount} succeeded, {_importErrorCount} failed");
+                ShowOperationError($"Import completed with errors: {importedItemCount} item(s) succeeded, {failedItemCount} failed across {_importSuccessCount + _importErrorCount} content type(s)");
             }
 
+            AppendToLog($"Import summary: total {_importTotal} item(s), imported {importedItemCount}, failed {failedItemCount}, content types succeeded {_importSuccessCount}, failed {_importErrorCount}.\n");
             AppendToLog("Import process finished.\n");
         }
 
@@ -702,6 +715,7 @@ namespace IntuneTools.Pages
             e.Column.SortDirection = direction == ListSortDirection.Ascending
                 ? DataGridSortDirection.Ascending
                 : DataGridSortDirection.Descending;
+
         }
 
         private async void GroupListAllButton_Click(object sender, RoutedEventArgs e)

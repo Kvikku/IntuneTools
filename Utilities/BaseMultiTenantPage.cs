@@ -182,6 +182,7 @@ namespace IntuneTools.Utilities
         protected void ShowOperationSuccess(string message)
         {
             UpdateOperationStatus(OperationState.Success, message, null, null, isIndeterminate: false);
+            RecentActivityStore.Add($"{GetType().Name.Replace("Page", string.Empty)}: {message}", "Success");
         }
 
         /// <summary>
@@ -191,6 +192,7 @@ namespace IntuneTools.Utilities
         protected void ShowOperationError(string message)
         {
             UpdateOperationStatus(OperationState.Error, message, null, null, isIndeterminate: false);
+            RecentActivityStore.Add($"{GetType().Name.Replace("Page", string.Empty)}: {message}", "Error");
         }
 
         /// <summary>

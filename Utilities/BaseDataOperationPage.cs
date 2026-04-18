@@ -15,6 +15,8 @@ namespace IntuneTools.Utilities
     /// </summary>
     public abstract class BaseDataOperationPage : BaseMultiTenantPage
     {
+        private readonly Dictionary<DataGrid, string> _trackedDataGrids = new();
+
         /// <summary>
         /// The collection of content items displayed in the DataGrid.
         /// </summary>
@@ -236,6 +238,30 @@ namespace IntuneTools.Utilities
             e.Column.SortDirection = direction == ListSortDirection.Ascending
                 ? DataGridSortDirection.Ascending
                 : DataGridSortDirection.Descending;
+
+            if (_trackedDataGrids.TryGetValue(dataGrid, out var stateKey))
+            {
+                DataGridStateStore.Save(dataGrid, stateKey);
+            }
+        }
+
+        protected void InitializeDataGridPersistence(DataGrid dataGrid, string stateKey)
+        {
+            _trackedDataGrids[dataGrid] = stateKey;
+
+            DataGridStateStore.RestoreLayout(dataGrid, stateKey);
+            dataGrid.SelectionChanged += (_, _) => DataGridStateStore.Save(dataGrid, stateKey);
+
+            Unloaded += (_, _) => DataGridStateStore.Save(dataGrid, stateKey);
+        }
+
+        protected void ApplyPersistedDataGridState(DataGrid dataGrid)
+        {
+            if (_trackedDataGrids.TryGetValue(dataGrid, out var stateKey))
+            {
+                DataGridStateStore.ApplySort(ContentList, dataGrid, stateKey);
+                DataGridStateStore.RestoreSelection(dataGrid, stateKey);
+            }
         }
     }
 

@@ -18,7 +18,7 @@
         </Grid.RowDefinitions>
 
         <!-- Custom Title Bar -->
-        <Grid x:Name="CustomTitleBar" Background="CornflowerBlue" Height="32" VerticalAlignment="Top" Grid.Row="0">
+        <Grid x:Name="CustomTitleBar" Background="{ThemeResource AccentFillColorDefaultBrush}" Height="32" VerticalAlignment="Top" Grid.Row="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
@@ -29,11 +29,16 @@
             <Image Source="Assets/Square44x44Logo.png" Width="16" Height="16" Margin="10,0,0,0" VerticalAlignment="Center" Grid.Column="0"/>
 
             <!-- Title -->
-            <TextBlock Text="InToolz" VerticalAlignment="Center" Margin="10,0,0,0" FontWeight="Bold" Foreground="White" Grid.Column="1"/>
+            <TextBlock Text="InToolz"
+                       VerticalAlignment="Center"
+                       Margin="10,0,0,0"
+                       FontWeight="Bold"
+                       Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
+                       Grid.Column="1"/>
         </Grid>
 
         <!-- NavigationView -->
-        <muxc:NavigationView x:Name="NavView" ItemInvoked="NavView_ItemInvoked" Grid.Row="1">
+        <muxc:NavigationView x:Name="NavView" ItemInvoked="NavView_ItemInvoked" Grid.Row="1" AutomationProperties.Name="Main navigation">
             <muxc:NavigationView.MenuItems>
                 <muxc:NavigationViewItem Content="Home" Tag="Home" Icon="Home"/>
                 <muxc:NavigationViewItem Content="Assignment" Tag="Application" Icon="AllApps"/>

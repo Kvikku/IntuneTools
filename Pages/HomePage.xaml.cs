@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using System;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using Windows.System;
@@ -12,16 +13,20 @@ namespace IntuneTools.Pages
 {
     public sealed partial class HomePage : Page
     {
+        private readonly ObservableCollection<RecentActivityEntry> _recentActivity = new();
+
         public HomePage()
         {
             InitializeComponent();
             Loaded += HomePage_Loaded;
+            RecentActivityListView.ItemsSource = _recentActivity;
         }
 
         private async void HomePage_Loaded(object sender, RoutedEventArgs e)
         {
             await UpdateVersionStatusAsync();
             UpdateTimeSavedCounter();
+            RefreshRecentActivity();
         }
 
         private async Task UpdateVersionStatusAsync()
@@ -68,6 +73,16 @@ namespace IntuneTools.Pages
         {
             base.OnNavigatedTo(e);
             UpdateLoginStatus();
+            RefreshRecentActivity();
+        }
+
+        private void RefreshRecentActivity()
+        {
+            _recentActivity.Clear();
+            foreach (var entry in RecentActivityStore.GetRecent())
+            {
+                _recentActivity.Add(entry);
+            }
         }
 
         private void UpdateLoginStatus()

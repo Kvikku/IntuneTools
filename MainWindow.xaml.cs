@@ -51,11 +51,12 @@ namespace IntuneTools
                 appWindow.TitleBar.ExtendsContentIntoTitleBar = true;
                 appWindow.TitleBar.ButtonBackgroundColor = Microsoft.UI.Colors.Transparent;
                 appWindow.TitleBar.ButtonInactiveBackgroundColor = Microsoft.UI.Colors.Transparent;
-                appWindow.TitleBar.ButtonForegroundColor = Microsoft.UI.Colors.White;
-                appWindow.TitleBar.ButtonHoverBackgroundColor = Microsoft.UI.Colors.DarkGray;
-                appWindow.TitleBar.ButtonHoverForegroundColor = Microsoft.UI.Colors.White;
-                appWindow.TitleBar.ButtonPressedBackgroundColor = Microsoft.UI.Colors.Gray;
-                appWindow.TitleBar.ButtonPressedForegroundColor = Microsoft.UI.Colors.White;
+                UpdateTitleBarButtonColors();
+            }
+
+            if (Content is FrameworkElement rootElement)
+            {
+                rootElement.ActualThemeChanged += (_, _) => UpdateTitleBarButtonColors();
             }
 
             // Minimize/close the NavigationView pane by default
@@ -63,6 +64,30 @@ namespace IntuneTools
             // Navigate to the Home page by default
             NavView.SelectedItem = NavView.MenuItems.OfType<NavigationViewItem>().FirstOrDefault(x => x.Tag.ToString() == "Home");
             ContentFrame.Navigate(typeof(IntuneTools.Pages.HomePage));
+        }
+
+        private void UpdateTitleBarButtonColors()
+        {
+            if (appWindow?.TitleBar == null)
+                return;
+
+            var isDark = (Content as FrameworkElement)?.ActualTheme == ElementTheme.Dark;
+            if (isDark)
+            {
+                appWindow.TitleBar.ButtonForegroundColor = Microsoft.UI.Colors.White;
+                appWindow.TitleBar.ButtonHoverBackgroundColor = Microsoft.UI.Colors.DimGray;
+                appWindow.TitleBar.ButtonHoverForegroundColor = Microsoft.UI.Colors.White;
+                appWindow.TitleBar.ButtonPressedBackgroundColor = Microsoft.UI.Colors.Gray;
+                appWindow.TitleBar.ButtonPressedForegroundColor = Microsoft.UI.Colors.White;
+            }
+            else
+            {
+                appWindow.TitleBar.ButtonForegroundColor = Microsoft.UI.Colors.Black;
+                appWindow.TitleBar.ButtonHoverBackgroundColor = Microsoft.UI.Colors.LightGray;
+                appWindow.TitleBar.ButtonHoverForegroundColor = Microsoft.UI.Colors.Black;
+                appWindow.TitleBar.ButtonPressedBackgroundColor = Microsoft.UI.Colors.DarkGray;
+                appWindow.TitleBar.ButtonPressedForegroundColor = Microsoft.UI.Colors.Black;
+            }
         }
 
         private void myButton_Click(object sender, RoutedEventArgs e)

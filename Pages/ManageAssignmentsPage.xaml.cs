@@ -28,6 +28,8 @@ namespace IntuneTools.Pages
     /// </summary>
     public sealed partial class ManageAssignmentsPage : BaseDataOperationPage
     {
+        private const string AssignmentsGridStateKey = "ManageAssignmentsPage.AssignmentsGrid";
+
         #region Fields & Types
 
         /// <summary>
@@ -82,6 +84,7 @@ namespace IntuneTools.Pages
             InitializeComponent();
             RightClickMenu.AttachDataGridContextMenu(AssignmentsDataGrid);
             LogConsole.ItemsSource = LogEntries;
+            InitializeDataGridPersistence(AssignmentsDataGrid, AssignmentsGridStateKey);
         }
 
         protected override string UnauthenticatedMessage => "You must authenticate with a tenant before managing assignments.";
@@ -275,6 +278,7 @@ namespace IntuneTools.Pages
                 ContentList.Clear();
                 await LoadContentTypesAsync(graphServiceClient, AssignableContentTypes, AppendToLog);
                 AssignmentsDataGrid.ItemsSource = ContentList;
+                ApplyPersistedDataGridState(AssignmentsDataGrid);
             }
             catch (Exception ex)
             {
@@ -298,6 +302,7 @@ namespace IntuneTools.Pages
                 ContentList.Clear();
                 await SearchContentTypesAsync(graphServiceClient, searchQuery, AssignableContentTypes, AppendToLog);
                 AssignmentsDataGrid.ItemsSource = ContentList;
+                ApplyPersistedDataGridState(AssignmentsDataGrid);
             }
             catch (Exception ex)
             {
@@ -886,6 +891,7 @@ namespace IntuneTools.Pages
             ContentList.Clear();
             AssignmentsDataGrid.ItemsSource = null;
             AssignmentsDataGrid.ItemsSource = ContentList;
+            ApplyPersistedDataGridState(AssignmentsDataGrid);
             AppendToLog("All items cleared from the list.");
         }
 
@@ -903,6 +909,7 @@ namespace IntuneTools.Pages
             }
             AssignmentsDataGrid.ItemsSource = null;
             AssignmentsDataGrid.ItemsSource = ContentList;
+            ApplyPersistedDataGridState(AssignmentsDataGrid);
             AppendToLog($"Cleared {selectedItems.Count} selected item(s) from the list.");
         }
 
