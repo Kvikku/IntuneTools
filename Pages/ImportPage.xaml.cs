@@ -2,6 +2,7 @@ using CommunityToolkit.WinUI.UI.Controls;
 using IntuneTools.Utilities;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Data;
 using System;
 using System.Collections.Generic;

@@ -2,6 +2,7 @@ using CommunityToolkit.WinUI.UI.Controls;
 using IntuneTools.Utilities;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Navigation;
 using System;
@@ -70,13 +71,15 @@ namespace IntuneTools.Pages
             this.InitializeComponent();
             RightClickMenu.AttachDataGridContextMenu(RenamingDataGrid);
             LogConsole.ItemsSource = LogEntries;
+            CustomContentList.CollectionChanged += (_, _) => UpdateStagingEmptyState();
+            this.Loaded += (_, _) => UpdateStagingEmptyState();
         }
 
         protected override string UnauthenticatedMessage => "You must authenticate with a tenant before using renaming features.";
 
         protected override IEnumerable<string> GetManagedControlNames() => new[]
         {
-            "SearchQueryTextBox", "SearchButton", "ListAllButton", "ClearSelectedButton",
+            "SearchQueryTextBox", "ListAllButton", "ClearSelectedButton",
             "ClearAllButton", "NewNameTextBox", "PrefixButton", "RenameButton",
             "RenamingDataGrid", "ClearLogButton", "RenameModeComboBox"
         };
@@ -89,14 +92,14 @@ namespace IntuneTools.Pages
         {
             base.ShowLoading(message);
             ListAllButton.IsEnabled = false;
-            SearchButton.IsEnabled = false;
+            SearchQueryTextBox.IsEnabled = false;
         }
 
         protected override void HideLoading()
         {
             base.HideLoading();
             ListAllButton.IsEnabled = true;
-            SearchButton.IsEnabled = true;
+            SearchQueryTextBox.IsEnabled = true;
         }
 
         #endregion
@@ -673,6 +676,61 @@ namespace IntuneTools.Pages
                 return;
             }
             await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
+        }
+
+        /// <summary>
+        /// AutoSuggestBox QuerySubmitted handler — fires on Enter or when the search icon is clicked.
+        /// </summary>
+        private async void SearchQueryTextBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
+        {
+            var query = (args.QueryText ?? string.Empty).Trim();
+            if (string.IsNullOrEmpty(query))
+            {
+                LogWarning("Please enter a search query.");
+                return;
+            }
+            await SearchOrchestrator(sourceGraphServiceClient, query);
+        }
+
+        private void FocusSearch_Accelerator(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            args.Handled = true;
+            SearchQueryTextBox?.Focus(FocusState.Programmatic);
+        }
+
+        private void ListAll_Accelerator(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            args.Handled = true;
+            ListAllButton_Click(this, new RoutedEventArgs());
+        }
+
+        private void SelectAll_Accelerator(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            args.Handled = true;
+            SelectAllButton_Click(this, new RoutedEventArgs());
+        }
+
+        private void DeselectAll_Accelerator(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            args.Handled = true;
+            DeselectAllButton_Click(this, new RoutedEventArgs());
+        }
+
+        private void PrimaryAction_Accelerator(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            args.Handled = true;
+            RenameButton_Click(this, new RoutedEventArgs());
+        }
+
+        /// <summary>
+        /// Toggles the empty-state placeholder over the staging grid based on the staging collection.
+        /// </summary>
+        private void UpdateStagingEmptyState()
+        {
+            if (StagingEmptyState == null) return;
+            StagingEmptyState.Visibility = CustomContentList.Count == 0
+                ? Visibility.Visible
+                : Visibility.Collapsed;
         }
 
         private void RenamingDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
