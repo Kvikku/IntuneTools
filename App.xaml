@@ -65,7 +65,7 @@
             </Style>
 
             <!-- Toolbar card: the Border container used for "Search & Staging", action cards, etc.
-                 See XAML_STYLE_GUIDE.md §1 / §4. Pages should prefer the ToolbarCard UserControl. -->
+                 See XAML_STYLE_GUIDE.md §1. Pages should prefer the ToolbarCard UserControl. -->
             <Style x:Key="ToolbarCardStyle" TargetType="Border">
                 <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}"/>
                 <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}"/>
