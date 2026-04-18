@@ -147,12 +147,12 @@ namespace IntuneTools.Pages
             ExportButton.IsEnabled = true;
 
             bool hasDestination = !string.IsNullOrEmpty(Variables.destinationTenantName);
-            ImportToTenantButton.IsEnabled = hasDestination;
+            CreateInTenantButton.IsEnabled = hasDestination;
 
-            // Update the Import to Tenant button to show the destination tenant name
-            ImportToTenantButtonText.Text = hasDestination
-                ? $"Import to {Variables.destinationTenantName}"
-                : "Import to Tenant (no destination)";
+            // Update the Create in Tenant button to show the destination tenant name
+            CreateInTenantButtonText.Text = hasDestination
+                ? $"Create in {Variables.destinationTenantName}"
+                : "Create in Tenant (no destination)";
 
             // Update the TenantInfoBar to show both source and destination tenants
             var tenantInfoBar = FindName("TenantInfoBar") as InfoBar;
@@ -570,9 +570,9 @@ namespace IntuneTools.Pages
             // Confirm with user
             var dialog = new ContentDialog
             {
-                Title = "Import to Tenant",
-                Content = $"You are about to import {importableItems.Count} item(s) to the destination tenant ({destinationTenantName}). Continue?",
-                PrimaryButtonText = "Import",
+                Title = "Create in Tenant",
+                Content = $"You are about to create {importableItems.Count} item(s) in the destination tenant ({destinationTenantName}). Continue?",
+                PrimaryButtonText = "Create",
                 CloseButtonText = "Cancel",
                 DefaultButton = ContentDialogButton.Close,
                 XamlRoot = this.XamlRoot
@@ -581,7 +581,7 @@ namespace IntuneTools.Pages
             var dialogResult = await dialog.ShowAsync();
             if (dialogResult != ContentDialogResult.Primary)
             {
-                AppendToDetailsRichTextBlock("Import to tenant cancelled.");
+                AppendToDetailsRichTextBlock("Create in tenant cancelled.");
                 return;
             }
 
@@ -708,7 +708,7 @@ namespace IntuneTools.Pages
             await ImportFromJsonAsync();
         }
 
-        private async void ImportToTenantButton_Click(object sender, RoutedEventArgs e)
+        private async void CreateInTenantButton_Click(object sender, RoutedEventArgs e)
         {
             await ImportToTenantAsync();
         }
@@ -727,6 +727,22 @@ namespace IntuneTools.Pages
                 return;
             }
             await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
+        }
+
+        private void JsonDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var count = JsonDataGrid.SelectedItems?.Count ?? 0;
+            SelectionCountText.Text = $"Selected: {count}";
+        }
+
+        private void SelectAllButton_Click(object sender, RoutedEventArgs e)
+        {
+            JsonDataGrid.SelectAll();
+        }
+
+        private void DeselectAllButton_Click(object sender, RoutedEventArgs e)
+        {
+            JsonDataGrid.SelectedItems.Clear();
         }
 
         #endregion

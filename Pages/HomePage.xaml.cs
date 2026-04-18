@@ -68,6 +68,14 @@ namespace IntuneTools.Pages
         {
             base.OnNavigatedTo(e);
             UpdateLoginStatus();
+            UpdateSignInGate();
+        }
+
+        private void UpdateSignInGate()
+        {
+            var signedIn = !string.IsNullOrWhiteSpace(sourceTenantName);
+            SignInFirstInfoBar.IsOpen = !signedIn;
+            QuickActionsGrid.IsEnabled = signedIn;
         }
 
         private void UpdateLoginStatus()

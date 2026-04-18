@@ -549,6 +549,22 @@ namespace IntuneTools.Pages
             await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
         }
 
+        private void CleanupDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var count = CleanupDataGrid.SelectedItems?.Count ?? 0;
+            SelectionCountText.Text = $"Selected: {count}";
+        }
+
+        private void SelectAllButton_Click(object sender, RoutedEventArgs e)
+        {
+            CleanupDataGrid.SelectAll();
+        }
+
+        private void DeselectAllButton_Click(object sender, RoutedEventArgs e)
+        {
+            CleanupDataGrid.SelectedItems.Clear();
+        }
+
         #endregion
     }
 }
