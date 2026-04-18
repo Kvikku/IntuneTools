@@ -545,7 +545,12 @@ namespace IntuneTools.Pages
             // Get import registry with current group/filter selection state
             var importRegistry = GetImportTypeRegistry(IsGroupSelected, IsFilterSelected, groupIds).ToList();
 
-            var totalItemsToImport = importRegistry.Sum(def => GetContentIdsByType(def.TypeKey).Count);
+            var contentIdsByType = importRegistry.ToDictionary(
+                def => def.TypeKey,
+                def => GetContentIdsByType(def.TypeKey),
+                StringComparer.OrdinalIgnoreCase);
+
+            var totalItemsToImport = contentIdsByType.Sum(entry => entry.Value.Count);
             _importTotal = totalItemsToImport;
 
             ShowOperationProgress("Starting import...", 0, _importTotal);
@@ -572,7 +577,7 @@ namespace IntuneTools.Pages
             // Perform the import process using the registry
             foreach (var definition in importRegistry)
             {
-                var contentIds = GetContentIdsByType(definition.TypeKey);
+                var contentIds = contentIdsByType[definition.TypeKey];
                 var typeItemCount = contentIds.Count;
                 if (typeItemCount == 0)
                     continue;

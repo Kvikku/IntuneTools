@@ -51,7 +51,7 @@ namespace IntuneTools.Utilities
                 .Select(i => i.ContentId)
                 .Where(id => !string.IsNullOrWhiteSpace(id))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
-                .Cast<string>()
+                .Select(id => id!)
                 .ToList();
 
             ApplicationData.Current.LocalSettings.Values[stateKey] = JsonSerializer.Serialize(state);
