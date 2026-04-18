@@ -56,8 +56,14 @@
                 </Border>
 
                 <!-- Quick Actions -->
+                <InfoBar x:Name="SignInFirstInfoBar"
+                         IsOpen="False"
+                         IsClosable="False"
+                         Severity="Warning"
+                         Title="Sign in first"
+                         Message="Go to Settings and sign in to a source tenant before using any features."/>
                 <TextBlock Text="Get started" FontSize="20" FontWeight="SemiBold" Margin="0,4,0,-8"/>
-                <Grid ColumnSpacing="16" RowSpacing="16">
+                <Grid x:Name="QuickActionsGrid" ColumnSpacing="16" RowSpacing="16">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>

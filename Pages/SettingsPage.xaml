@@ -61,7 +61,7 @@
                             Width="120"
                             Click="SourceLoginButton_Click"/>
                     <Button x:Name="SourceClearTokenButton"
-                            Content="Clear Token"
+                            Content="Sign out"
                             Width="120"
                             Click="SourceClearTokenButton_Click"/>
                     <Button x:Name="SourceViewPermissionsButton"
@@ -120,7 +120,7 @@
                             Width="120"
                             Click="DestinationLoginButton_Click"/>
                     <Button x:Name="DestinationClearTokenButton"
-                            Content="Clear Token"
+                            Content="Sign out"
                             Width="120"
                             Click="DestinationClearTokenButton_Click"/>
                     <Button x:Name="DestinationViewPermissionsButton"
