@@ -65,45 +65,72 @@
                 CornerRadius="8"
                 Padding="16"
                 Margin="0,0,0,16">
-            <StackPanel Orientation="Horizontal" Spacing="12">
-                <TextBlock Text="Time range:"
-                           VerticalAlignment="Center"
-                           FontWeight="SemiBold"/>
-                <ComboBox x:Name="DaysComboBox"
-                          Width="180"
-                          SelectedIndex="0">
-                    <ComboBoxItem Content="Last 1 day" Tag="1"/>
-                    <ComboBoxItem Content="Last 3 days" Tag="3"/>
-                    <ComboBoxItem Content="Last 7 days" Tag="7"/>
-                    <ComboBoxItem Content="Last 14 days" Tag="14"/>
-                    <ComboBoxItem Content="Last 30 days" Tag="30"/>
-                </ComboBox>
-                <AppBarButton x:Name="LoadButton"
-                              Icon="Refresh"
-                              Label="Load Audit Events"
-                              Click="LoadButton_Click"
-                              IsEnabled="False"/>
-                <AppBarSeparator/>
-                <AppBarButton x:Name="ExportCsvButton"
-                              Label="Export to CSV"
-                              Click="ExportCsvButton_Click"
-                              IsEnabled="False">
-                    <AppBarButton.Icon>
-                        <FontIcon Glyph="&#xEDE1;"/>
-                    </AppBarButton.Icon>
-                </AppBarButton>
-                <AppBarButton x:Name="ExportReportButton"
-                              Label="Export Report"
-                              Click="ExportReportButton_Click"
-                              IsEnabled="False">
-                    <AppBarButton.Icon>
-                        <FontIcon Glyph="&#xE9D9;"/>
-                    </AppBarButton.Icon>
-                </AppBarButton>
-                <AppBarButton x:Name="ClearLogButton"
-                              Icon="Delete"
-                              Label="Clear Log"
-                              Click="ClearLogButton_Click"/>
+            <StackPanel Spacing="8">
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <TextBlock Text="Time range:"
+                               VerticalAlignment="Center"
+                               FontWeight="SemiBold"/>
+                    <ComboBox x:Name="DaysComboBox"
+                              Width="180"
+                              SelectedIndex="0">
+                        <ComboBoxItem Content="Last 1 day" Tag="1"/>
+                        <ComboBoxItem Content="Last 3 days" Tag="3"/>
+                        <ComboBoxItem Content="Last 7 days" Tag="7"/>
+                        <ComboBoxItem Content="Last 14 days" Tag="14"/>
+                        <ComboBoxItem Content="Last 30 days" Tag="30"/>
+                    </ComboBox>
+                    <AppBarButton x:Name="LoadButton"
+                                  Icon="Refresh"
+                                  Label="Load Audit Events"
+                                  Click="LoadButton_Click"
+                                  IsEnabled="False"/>
+                    <AppBarSeparator/>
+                    <AppBarButton x:Name="ExportCsvButton"
+                                  Label="Export to CSV"
+                                  Click="ExportCsvButton_Click"
+                                  IsEnabled="False">
+                        <AppBarButton.Icon>
+                            <FontIcon Glyph="&#xEDE1;"/>
+                        </AppBarButton.Icon>
+                    </AppBarButton>
+                    <AppBarButton x:Name="ExportReportButton"
+                                  Label="Export Report"
+                                  Click="ExportReportButton_Click"
+                                  IsEnabled="False">
+                        <AppBarButton.Icon>
+                            <FontIcon Glyph="&#xE9D9;"/>
+                        </AppBarButton.Icon>
+                    </AppBarButton>
+                    <AppBarButton x:Name="ClearLogButton"
+                                  Icon="Delete"
+                                  Label="Clear Log"
+                                  Click="ClearLogButton_Click"/>
+                </StackPanel>
+                <!-- Filter row: search text + actor filter (client-side) -->
+                <StackPanel x:Name="FilterPanel"
+                            Orientation="Horizontal"
+                            Spacing="12"
+                            Visibility="Collapsed">
+                    <TextBlock Text="Filter:"
+                               VerticalAlignment="Center"
+                               FontWeight="SemiBold"/>
+                    <TextBox x:Name="SearchTextBox"
+                             PlaceholderText="Search activity, category, result, component, resource..."
+                             Width="360"
+                             TextChanged="SearchTextBox_TextChanged"/>
+                    <TextBlock Text="Actor:"
+                               VerticalAlignment="Center"
+                               FontWeight="SemiBold"/>
+                    <ComboBox x:Name="ActorFilterComboBox"
+                              Width="240"
+                              SelectionChanged="ActorFilterComboBox_SelectionChanged"/>
+                    <Button x:Name="ClearFiltersButton"
+                            Content="Clear filters"
+                            Click="ClearFiltersButton_Click"/>
+                    <TextBlock x:Name="FilterResultCountText"
+                               VerticalAlignment="Center"
+                               Opacity="0.7"/>
+                </StackPanel>
             </StackPanel>
         </Border>
 

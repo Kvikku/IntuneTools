@@ -1,4 +1,6 @@
+using IntuneTools.Graph;
 using IntuneTools.Pages;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -20,10 +22,13 @@ namespace IntuneTools
     public sealed partial class MainWindow : Window
     {
         private AppWindow appWindow;
+        private readonly DispatcherQueue _dispatcherQueue;
 
         public MainWindow()
         {
             this.InitializeComponent();
+
+            _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
 
             // Extend content into the title bar and set the custom title bar
             ExtendsContentIntoTitleBar = true;
@@ -63,6 +68,37 @@ namespace IntuneTools
             // Navigate to the Home page by default
             NavView.SelectedItem = NavView.MenuItems.OfType<NavigationViewItem>().FirstOrDefault(x => x.Tag.ToString() == "Home");
             ContentFrame.Navigate(typeof(IntuneTools.Pages.HomePage));
+
+            // Subscribe to global authentication-lost notifications so the app shell can
+            // show a prominent re-auth banner regardless of which page is active.
+            AuthenticationEvents.AuthenticationLost += OnAuthenticationLost;
+            this.Closed += (_, _) => AuthenticationEvents.AuthenticationLost -= OnAuthenticationLost;
+        }
+
+        private void OnAuthenticationLost(string reason)
+        {
+            // Event may be raised from a background thread in the auth pipeline — marshal to UI thread.
+            _dispatcherQueue?.TryEnqueue(() =>
+            {
+                if (ReauthInfoBar == null) return;
+                ReauthInfoBar.Message = string.IsNullOrWhiteSpace(reason)
+                    ? "Your tenant session has expired. Please sign in again to continue using InToolz."
+                    : $"Your tenant session has expired. Please sign in again. Details: {reason}";
+                ReauthInfoBar.IsOpen = true;
+            });
+        }
+
+        private void ReauthInfoBar_ReauthClicked(object sender, RoutedEventArgs e)
+        {
+            // Send users to the Settings page where they can re-authenticate against
+            // the source and destination tenants.
+            ReauthInfoBar.IsOpen = false;
+            var settingsItem = NavView.MenuItems
+                .OfType<NavigationViewItem>()
+                .FirstOrDefault(x => string.Equals(x.Tag?.ToString(), "Settings", StringComparison.Ordinal));
+            if (settingsItem != null)
+                NavView.SelectedItem = settingsItem;
+            ContentFrame.Navigate(typeof(SettingsPage));
         }
 
         private void myButton_Click(object sender, RoutedEventArgs e)

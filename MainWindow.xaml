@@ -57,7 +57,29 @@
                 </muxc:NavigationViewItem>
             </muxc:NavigationView.MenuItems>
 
-            <Frame x:Name="ContentFrame"/>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Global re-auth banner. Shown when the authentication pipeline reports
+                     that a token could not be refreshed and the user must sign in again. -->
+                <muxc:InfoBar x:Name="ReauthInfoBar"
+                              Grid.Row="0"
+                              Severity="Warning"
+                              Title="Authentication expired"
+                              Message="Your tenant session has expired. Please sign in again to continue using InToolz."
+                              IsOpen="False"
+                              IsClosable="True"
+                              Margin="12,8,12,0">
+                    <muxc:InfoBar.ActionButton>
+                        <Button Content="Re-authenticate" Click="ReauthInfoBar_ReauthClicked"/>
+                    </muxc:InfoBar.ActionButton>
+                </muxc:InfoBar>
+
+                <Frame x:Name="ContentFrame" Grid.Row="1"/>
+            </Grid>
         </muxc:NavigationView>
     </Grid>
 </Window>
