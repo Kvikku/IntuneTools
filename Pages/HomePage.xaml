@@ -70,6 +70,7 @@
 
                     <Button Grid.Column="0"
                             Click="QuickAction_Assignment_Click"
+                            AutomationProperties.Name="Open Assignment page"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Stretch"
                             VerticalAlignment="Stretch"
@@ -88,6 +89,7 @@
 
                     <Button Grid.Column="1"
                             Click="QuickAction_Import_Click"
+                            AutomationProperties.Name="Open Import page"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Stretch"
                             VerticalAlignment="Stretch"
@@ -106,6 +108,7 @@
 
                     <Button Grid.Column="2"
                             Click="QuickAction_Cleanup_Click"
+                            AutomationProperties.Name="Open Cleanup page"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Stretch"
                             VerticalAlignment="Stretch"
@@ -124,6 +127,7 @@
 
                     <Button Grid.Column="3"
                             Click="QuickAction_Renaming_Click"
+                            AutomationProperties.Name="Open Renaming page"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Stretch"
                             VerticalAlignment="Stretch"
@@ -142,6 +146,7 @@
 
                     <Button Grid.Column="4"
                             Click="QuickAction_Json_Click"
+                            AutomationProperties.Name="Open JSON page"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Stretch"
                             VerticalAlignment="Stretch"
@@ -160,6 +165,7 @@
 
                     <Button Grid.Column="5"
                             Click="QuickAction_ManageAssignments_Click"
+                            AutomationProperties.Name="Open Manage Assignments page"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Stretch"
                             VerticalAlignment="Stretch"
@@ -178,6 +184,7 @@
 
                     <Button Grid.Column="6"
                             Click="QuickAction_AuditLog_Click"
+                            AutomationProperties.Name="Open Audit Log page"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Stretch"
                             VerticalAlignment="Stretch"
@@ -294,6 +301,48 @@
                         </StackPanel>
                     </Border>
                 </Grid>
+
+                <!-- Recent Activity -->
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="20">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Recent Activity" FontSize="20" FontWeight="SemiBold"/>
+                        <TextBlock Text="Latest operation outcomes across pages."
+                                   FontSize="13"
+                                   Opacity="0.65"/>
+                        <ListView x:Name="RecentActivityListView"
+                                  AutomationProperties.Name="Recent activity list"
+                                  SelectionMode="None"
+                                  MinHeight="120"
+                                  MaxHeight="220">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="110"/>
+                                            <ColumnDefinition Width="64"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding TimestampText}"
+                                                   Opacity="0.7"
+                                                   FontSize="12"/>
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding Status}"
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold"/>
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding Message}"
+                                                   TextWrapping="WrapWholeWords"
+                                                   FontSize="13"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </StackPanel>
+                </Border>
 
                 <!-- Resources -->
                 <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"

@@ -57,14 +57,17 @@
 
                 <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
                     <Button x:Name="SourceLoginButton"
+                            AutomationProperties.Name="Sign in to source tenant"
                             Content="Login"
                             Width="120"
                             Click="SourceLoginButton_Click"/>
                     <Button x:Name="SourceClearTokenButton"
+                            AutomationProperties.Name="Clear source tenant token"
                             Content="Clear Token"
                             Width="120"
                             Click="SourceClearTokenButton_Click"/>
                     <Button x:Name="SourceViewPermissionsButton"
+                            AutomationProperties.Name="View source tenant permissions"
                             Content="View Permissions"
                             Width="140"
                             Click="SourceViewPermissionsButton_Click"/>
@@ -84,6 +87,7 @@
 
         <!-- Swap Tenants button (between cards) -->
         <Button x:Name="SwapTenantsButton"
+                AutomationProperties.Name="Swap source and destination tenants"
                 Grid.Row="2" Grid.Column="1"
                 Click="SwapTenantsButton_Click"
                 ToolTipService.ToolTip="Swap source and destination tenants"
@@ -116,14 +120,17 @@
 
                 <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
                     <Button x:Name="DestinationLoginButton"
+                            AutomationProperties.Name="Sign in to destination tenant"
                             Content="Login"
                             Width="120"
                             Click="DestinationLoginButton_Click"/>
                     <Button x:Name="DestinationClearTokenButton"
+                            AutomationProperties.Name="Clear destination tenant token"
                             Content="Clear Token"
                             Width="120"
                             Click="DestinationClearTokenButton_Click"/>
                     <Button x:Name="DestinationViewPermissionsButton"
+                            AutomationProperties.Name="View destination tenant permissions"
                             Content="View Permissions"
                             Width="140"
                             Click="DestinationViewPermissionsButton_Click"/>
