@@ -69,6 +69,9 @@ namespace IntuneTools.Pages
             AuditDataGrid.ItemsSource = _auditEvents;
             ActorSummaryList.ItemsSource = _actorSummary;
             LogConsole.ItemsSource = LogEntries;
+            // Initial empty-state visibility.
+            UpdateAuditEmptyState();
+            _auditEvents.CollectionChanged += (_, _) => UpdateAuditEmptyState();
         }
 
         protected override IEnumerable<string> GetManagedControlNames()
@@ -97,6 +100,23 @@ namespace IntuneTools.Pages
         {
             int days = GetSelectedDays();
             await LoadAuditEventsAsync(days);
+        }
+
+        /// <summary>
+        /// Toggles the custom date-range picker visibility based on the dropdown selection.
+        /// </summary>
+        private void DaysComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (CustomRangePanel == null) return;
+            var isCustom = DaysComboBox.SelectedItem is ComboBoxItem item
+                           && string.Equals(item.Tag?.ToString(), "custom", StringComparison.OrdinalIgnoreCase);
+            CustomRangePanel.Visibility = isCustom ? Visibility.Visible : Visibility.Collapsed;
+            // Default the custom range to the last 7 days so the user has a sensible starting point.
+            if (isCustom && CustomFromPicker != null && CustomFromPicker.Date == null)
+            {
+                CustomFromPicker.Date = DateTimeOffset.Now.AddDays(-7).Date;
+                CustomToPicker.Date = DateTimeOffset.Now.Date;
+            }
         }
 
         private async void ExportCsvButton_Click(object sender, RoutedEventArgs e)
@@ -133,7 +153,7 @@ namespace IntuneTools.Pages
             LogWarning("Cancellation requested \u2014 waiting for current page to finish...");
         }
 
-        private void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        private void SearchTextBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
         {
             if (_allViewModels.Count == 0) return;
             ApplyFilters();
@@ -321,8 +341,8 @@ namespace IntuneTools.Pages
                 ActorFilterComboBox.SelectedIndex = 0;
             }
 
-            if (FilterPanel != null)
-                FilterPanel.Visibility = _allViewModels.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            // FilterPanel is always visible now; we toggle individual input enablement
+            // in ApplyFilters() based on whether events are loaded.
         }
 
         /// <summary>
@@ -334,8 +354,19 @@ namespace IntuneTools.Pages
         {
             var search = SearchTextBox?.Text?.Trim() ?? string.Empty;
             var actor = ActorFilterComboBox?.SelectedItem as string;
+            var customRange = GetCustomDateRange();
 
             IEnumerable<AuditEventViewModel> filtered = _allViewModels;
+
+            // Custom date-range filter (when 'Custom range…' is selected).
+            if (customRange.HasValue)
+            {
+                var (from, to) = customRange.Value;
+                filtered = filtered.Where(v =>
+                    v.ActivityDateTime.HasValue
+                    && v.ActivityDateTime.Value.LocalDateTime >= from
+                    && v.ActivityDateTime.Value.LocalDateTime <= to);
+            }
 
             if (!string.IsNullOrEmpty(actor) && !string.Equals(actor, AllActorsOption, StringComparison.Ordinal))
             {
@@ -373,6 +404,13 @@ namespace IntuneTools.Pages
 
             ExportCsvButton.IsEnabled = _auditEvents.Count > 0;
             ExportReportButton.IsEnabled = _auditEvents.Count > 0;
+
+            // Filter inputs are only useful once events are loaded.
+            var hasLoaded = _allViewModels.Count > 0;
+            if (SearchTextBox != null) SearchTextBox.IsEnabled = hasLoaded;
+            if (ActorFilterComboBox != null) ActorFilterComboBox.IsEnabled = hasLoaded;
+            if (ClearFiltersButton != null) ClearFiltersButton.IsEnabled = hasLoaded;
+            UpdateAuditEmptyState();
         }
 
         private static bool ContainsCI(string? haystack, string needle)
@@ -438,11 +476,14 @@ namespace IntuneTools.Pages
             ExportReportButton.IsEnabled = false;
 
             if (FilterPanel != null)
-                FilterPanel.Visibility = Visibility.Collapsed;
+                FilterPanel.Visibility = Visibility.Visible;
+            if (SearchTextBox != null) SearchTextBox.IsEnabled = false;
             if (ActorFilterComboBox != null)
             {
                 ActorFilterComboBox.ItemsSource = null;
+                ActorFilterComboBox.IsEnabled = false;
             }
+            if (ClearFiltersButton != null) ClearFiltersButton.IsEnabled = false;
             if (FilterResultCountText != null)
                 FilterResultCountText.Text = string.Empty;
 
@@ -569,12 +610,67 @@ namespace IntuneTools.Pages
 
         private int GetSelectedDays()
         {
-            if (DaysComboBox.SelectedItem is ComboBoxItem selectedItem &&
-                int.TryParse(selectedItem.Tag?.ToString(), out int days))
+            if (DaysComboBox.SelectedItem is ComboBoxItem selectedItem)
             {
-                return days;
+                var tag = selectedItem.Tag?.ToString();
+                if (string.Equals(tag, "custom", StringComparison.OrdinalIgnoreCase))
+                {
+                    // For custom range, query enough days to cover the From date, then post-filter
+                    // to the [From, To] window in ApplyFilters().
+                    if (CustomFromPicker?.Date is DateTimeOffset from)
+                    {
+                        var span = (DateTime.Today - from.Date).Days + 1;
+                        return Math.Max(1, Math.Min(span, 90));
+                    }
+                    return 7;
+                }
+                if (int.TryParse(tag, out int days))
+                {
+                    return days;
+                }
             }
             return 7; // Default to 7 days
+        }
+
+        /// <summary>
+        /// Returns the explicit custom date window if 'Custom range…' is selected, otherwise null.
+        /// Used by ApplyFilters to restrict the visible events to that window.
+        /// </summary>
+        private (DateTime From, DateTime To)? GetCustomDateRange()
+        {
+            if (DaysComboBox.SelectedItem is ComboBoxItem item
+                && string.Equals(item.Tag?.ToString(), "custom", StringComparison.OrdinalIgnoreCase)
+                && CustomFromPicker?.Date is DateTimeOffset from
+                && CustomToPicker?.Date is DateTimeOffset to)
+            {
+                return (from.Date, to.Date.AddDays(1).AddTicks(-1));
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Toggles the empty-state placeholder over the audit grid based on the current event list,
+        /// and customizes the message to distinguish "nothing loaded" from "filters yield 0 results".
+        /// </summary>
+        private void UpdateAuditEmptyState()
+        {
+            if (AuditEmptyState == null) return;
+            if (_auditEvents.Count > 0)
+            {
+                AuditEmptyState.Visibility = Visibility.Collapsed;
+                return;
+            }
+            AuditEmptyState.Visibility = Visibility.Visible;
+            if (_allViewModels.Count == 0)
+            {
+                AuditEmptyStateTitle.Text = "No audit events loaded";
+                AuditEmptyStateBody.Text = "Pick a time range above and click 'Load Audit Events'.";
+            }
+            else
+            {
+                AuditEmptyStateTitle.Text = "No events match your filters";
+                AuditEmptyStateBody.Text = "Try a broader search or actor selection, or click 'Clear filters'.";
+            }
         }
 
         #endregion

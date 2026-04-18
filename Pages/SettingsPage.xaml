@@ -12,7 +12,7 @@
     <Grid Padding="24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="32"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
@@ -30,11 +30,19 @@
                    FontWeight="SemiBold"
                    Margin="0,0,0,8"/>
 
-        <!-- Optional subtitle -->
+        <!-- Intro paragraph: explains what 'source' vs 'destination' actually mean. -->
         <TextBlock Grid.Row="1" Grid.ColumnSpan="3"
-                   Text="Configure tenants and access"
                    HorizontalAlignment="Center"
-                   Opacity="0.8"/>
+                   TextAlignment="Center"
+                   TextWrapping="WrapWholeWords"
+                   MaxWidth="780"
+                   Opacity="0.85">
+            Configure the tenants this app talks to. The
+            <Run FontWeight="SemiBold">Source</Run> tenant is used by every page that reads or modifies a tenant
+            (Cleanup, Renaming, Assignment, Manage Assignments, Audit Log, JSON, and the source side of Import).
+            The <Run FontWeight="SemiBold">Destination</Run> tenant is only used when copying content from Import.
+            You can sign into one or both at any time, and swap them with a single click.
+        </TextBlock>
 
         <!-- Source Tenant card -->
         <Border Grid.Row="2" Grid.Column="0"
@@ -42,7 +50,8 @@
                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                 BorderThickness="1"
                 CornerRadius="8"
-                Padding="16">
+                Padding="16"
+                Margin="0,24,0,0">
             <StackPanel Spacing="12">
                 <TextBlock Text="Source Tenant"
                            FontSize="20"
@@ -55,32 +64,58 @@
                     Title="Usage"
                     Message="Used for Cleanup, Renaming, Assignment, and as the source when exporting content." />
 
+                <!-- Status pill: shows signed-in/signed-out state with theme-aware colors. -->
+                <Border x:Name="SourceStatusPill"
+                        Style="{StaticResource TenantStatusPillStyle}"
+                        Background="{ThemeResource SystemFillColorCriticalBackgroundBrush}"
+                        HorizontalAlignment="Left">
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <Image x:Name="SourceLoginStatusImage"
+                               Width="16"
+                               Height="16"
+                               Source="/Assets/RedCross.png"/>
+                        <TextBlock x:Name="SourceLoginStatusText"
+                                   Text="Not signed in"
+                                   VerticalAlignment="Center"
+                                   FontWeight="SemiBold"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Tenant detail (id / domain), only shown when signed in. -->
+                <StackPanel x:Name="SourceTenantDetailPanel" Visibility="Collapsed" Spacing="2">
+                    <TextBlock Text="Tenant ID" FontSize="11" Opacity="0.6"/>
+                    <TextBlock x:Name="SourceTenantIdText"
+                               FontFamily="Consolas"
+                               FontSize="12"
+                               IsTextSelectionEnabled="True"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+
                 <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
                     <Button x:Name="SourceLoginButton"
                             AutomationProperties.Name="Sign in to source tenant"
                             Content="Login"
                             Width="120"
-                            Click="SourceLoginButton_Click"/>
+                            Click="SourceLoginButton_Click"
+                            ToolTipService.ToolTip="Sign in to a tenant interactively (opens a browser window)."/>
                     <Button x:Name="SourceSignOutButton"
                             AutomationProperties.Name="Sign out from source tenant"
                             Content="Sign out"
                             Width="120"
-                            Click="SourceSignOutButton_Click"/>
+                            IsEnabled="False"
+                            Click="SourceSignOutButton_Click"
+                            ToolTipService.ToolTip="Clear cached source-tenant credentials. Disabled when not signed in."/>
                     <Button x:Name="SourceViewPermissionsButton"
                             AutomationProperties.Name="View source tenant permissions"
                             Content="View Permissions"
                             Width="140"
-                            Click="SourceViewPermissionsButton_Click"/>
-                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                        <Image x:Name="SourceLoginStatusImage"
-                               Width="20"
-                               Height="20"
-                               Source="/Assets/RedCross.png"/>
-                        <TextBlock x:Name="SourceLoginStatusText"
-                                   Text="Not signed in"
-                                   VerticalAlignment="Center"
-                                   Opacity="0.8"/>
-                    </StackPanel>
+                            Click="SourceViewPermissionsButton_Click"
+                            ToolTipService.ToolTip="See the granted Microsoft Graph permissions for the current source-tenant token."/>
+                    <ProgressRing x:Name="SourceLoginProgress"
+                                  Width="20"
+                                  Height="20"
+                                  IsActive="False"
+                                  Visibility="Collapsed"/>
                 </StackPanel>
             </StackPanel>
         </Border>
@@ -92,9 +127,9 @@
                 Click="SwapTenantsButton_Click"
                 ToolTipService.ToolTip="Swap source and destination tenants"
                 VerticalAlignment="Center"
-                Margin="16,0">
+                Margin="16,24,16,0">
             <StackPanel Orientation="Vertical" Spacing="4">
-                <FontIcon Glyph="&#xE8AB;" FontSize="20"/>
+                <FontIcon Glyph="&#xE895;" FontSize="20"/>
                 <TextBlock Text="Swap" FontSize="11"/>
             </StackPanel>
         </Button>
@@ -105,7 +140,8 @@
                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                 BorderThickness="1"
                 CornerRadius="8"
-                Padding="16">
+                Padding="16"
+                Margin="0,24,0,0">
             <StackPanel Spacing="12">
                 <TextBlock Text="Destination Tenant"
                            FontSize="20"
@@ -118,32 +154,56 @@
                     Title="Usage"
                     Message="Used only as the destination when importing content." />
 
+                <Border x:Name="DestinationStatusPill"
+                        Style="{StaticResource TenantStatusPillStyle}"
+                        Background="{ThemeResource SystemFillColorCriticalBackgroundBrush}"
+                        HorizontalAlignment="Left">
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <Image x:Name="DestinationLoginStatusImage"
+                               Width="16"
+                               Height="16"
+                               Source="/Assets/RedCross.png"/>
+                        <TextBlock x:Name="DestinationLoginStatusText"
+                                   Text="Not signed in"
+                                   VerticalAlignment="Center"
+                                   FontWeight="SemiBold"/>
+                    </StackPanel>
+                </Border>
+
+                <StackPanel x:Name="DestinationTenantDetailPanel" Visibility="Collapsed" Spacing="2">
+                    <TextBlock Text="Tenant ID" FontSize="11" Opacity="0.6"/>
+                    <TextBlock x:Name="DestinationTenantIdText"
+                               FontFamily="Consolas"
+                               FontSize="12"
+                               IsTextSelectionEnabled="True"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+
                 <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
                     <Button x:Name="DestinationLoginButton"
                             AutomationProperties.Name="Sign in to destination tenant"
                             Content="Login"
                             Width="120"
-                            Click="DestinationLoginButton_Click"/>
+                            Click="DestinationLoginButton_Click"
+                            ToolTipService.ToolTip="Sign in to a tenant interactively (opens a browser window)."/>
                     <Button x:Name="DestinationSignOutButton"
                             AutomationProperties.Name="Sign out from destination tenant"
                             Content="Sign out"
                             Width="120"
-                            Click="DestinationSignOutButton_Click"/>
+                            IsEnabled="False"
+                            Click="DestinationSignOutButton_Click"
+                            ToolTipService.ToolTip="Clear cached destination-tenant credentials. Disabled when not signed in."/>
                     <Button x:Name="DestinationViewPermissionsButton"
                             AutomationProperties.Name="View destination tenant permissions"
                             Content="View Permissions"
                             Width="140"
-                            Click="DestinationViewPermissionsButton_Click"/>
-                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                        <Image x:Name="DestinationLoginStatusImage"
-                               Width="20"
-                               Height="20"
-                               Source="/Assets/RedCross.png"/>
-                        <TextBlock x:Name="DestinationLoginStatusText"
-                                   Text="Not signed in"
-                                   VerticalAlignment="Center"
-                                   Opacity="0.8"/>
-                    </StackPanel>
+                            Click="DestinationViewPermissionsButton_Click"
+                            ToolTipService.ToolTip="See the granted Microsoft Graph permissions for the current destination-tenant token."/>
+                    <ProgressRing x:Name="DestinationLoginProgress"
+                                  Width="20"
+                                  Height="20"
+                                  IsActive="False"
+                                  Visibility="Collapsed"/>
                 </StackPanel>
             </StackPanel>
         </Border>

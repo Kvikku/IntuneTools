@@ -57,6 +57,11 @@ namespace IntuneTools.Pages
         {
             var statusImage = isSource ? SourceLoginStatusImage : DestinationLoginStatusImage;
             var statusText = isSource ? SourceLoginStatusText : DestinationLoginStatusText;
+            var statusPill = isSource ? SourceStatusPill : DestinationStatusPill;
+            var signOutButton = isSource ? SourceSignOutButton : DestinationSignOutButton;
+            var detailPanel = isSource ? SourceTenantDetailPanel : DestinationTenantDetailPanel;
+            var detailIdText = isSource ? SourceTenantIdText : DestinationTenantIdText;
+            var tenantId = isSource ? sourceTenantID : destinationTenantID;
 
             if (statusText != null)
             {
@@ -66,6 +71,55 @@ namespace IntuneTools.Pages
             }
 
             UpdateImage(statusImage, isSignedIn ? "GreenCheck.png" : "RedCross.png");
+
+            // Theme-aware pill background — green when connected, red when not.
+            if (statusPill != null)
+            {
+                var brushKey = isSignedIn
+                    ? "SystemFillColorSuccessBackgroundBrush"
+                    : "SystemFillColorCriticalBackgroundBrush";
+                if (Application.Current.Resources.TryGetValue(brushKey, out var brush) && brush is Brush b)
+                {
+                    statusPill.Background = b;
+                }
+            }
+
+            // Sign-out only makes sense when actually signed in.
+            if (signOutButton != null)
+            {
+                signOutButton.IsEnabled = isSignedIn;
+            }
+
+            // Show tenant ID when signed in (helps users disambiguate look-alike tenant names).
+            if (detailPanel != null && detailIdText != null)
+            {
+                if (isSignedIn && !string.IsNullOrWhiteSpace(tenantId))
+                {
+                    detailIdText.Text = tenantId;
+                    detailPanel.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    detailPanel.Visibility = Visibility.Collapsed;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Toggles the sign-in progress UI (spinner + login button disabled) while authentication is in flight.
+        /// </summary>
+        private void SetSignInInProgress(bool isSource, bool inProgress)
+        {
+            var loginButton = isSource ? SourceLoginButton : DestinationLoginButton;
+            var signOutButton = isSource ? SourceSignOutButton : DestinationSignOutButton;
+            var ring = isSource ? SourceLoginProgress : DestinationLoginProgress;
+            if (loginButton != null) loginButton.IsEnabled = !inProgress;
+            if (signOutButton != null && inProgress) signOutButton.IsEnabled = false;
+            if (ring != null)
+            {
+                ring.IsActive = inProgress;
+                ring.Visibility = inProgress ? Visibility.Visible : Visibility.Collapsed;
+            }
         }
 
         #endregion
@@ -78,9 +132,12 @@ namespace IntuneTools.Pages
         /// <param name="isSource">True for source tenant, false for destination tenant.</param>
         private async Task AuthenticateToTenantAsync(bool isSource)
         {
-            var client = isSource
-                ? await SourceUserAuthentication.GetGraphClientAsync()
-                : await DestinationUserAuthentication.GetGraphClientAsync();
+            SetSignInInProgress(isSource, true);
+            try
+            {
+                var client = isSource
+                    ? await SourceUserAuthentication.GetGraphClientAsync()
+                    : await DestinationUserAuthentication.GetGraphClientAsync();
 
             var tenantLabel = isSource ? "Source" : "Destination";
 
@@ -114,6 +171,11 @@ namespace IntuneTools.Pages
                     Variables.destinationTenantName = string.Empty;
 
                 UpdateTenantStatusUI(isSource, isSignedIn: false, tenantName: null);
+            }
+            }
+            finally
+            {
+                SetSignInInProgress(isSource, false);
             }
         }
 

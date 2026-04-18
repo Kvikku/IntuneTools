@@ -72,23 +72,43 @@
                                FontWeight="SemiBold"/>
                     <ComboBox x:Name="DaysComboBox"
                               Width="180"
-                              SelectedIndex="0">
+                              SelectedIndex="0"
+                              SelectionChanged="DaysComboBox_SelectionChanged">
                         <ComboBoxItem Content="Last 1 day" Tag="1"/>
                         <ComboBoxItem Content="Last 3 days" Tag="3"/>
                         <ComboBoxItem Content="Last 7 days" Tag="7"/>
                         <ComboBoxItem Content="Last 14 days" Tag="14"/>
                         <ComboBoxItem Content="Last 30 days" Tag="30"/>
+                        <ComboBoxItem Content="Custom range…" Tag="custom"/>
                     </ComboBox>
+                    <!-- Custom date range pickers — only shown when 'Custom range…' is chosen. -->
+                    <StackPanel x:Name="CustomRangePanel"
+                                Orientation="Horizontal"
+                                Spacing="6"
+                                VerticalAlignment="Center"
+                                Visibility="Collapsed">
+                        <CalendarDatePicker x:Name="CustomFromPicker"
+                                             AutomationProperties.Name="Custom range from"
+                                             PlaceholderText="From"
+                                             ToolTipService.ToolTip="Start of the custom range (inclusive)."/>
+                        <TextBlock Text="→" VerticalAlignment="Center" Opacity="0.7"/>
+                        <CalendarDatePicker x:Name="CustomToPicker"
+                                             AutomationProperties.Name="Custom range to"
+                                             PlaceholderText="To"
+                                             ToolTipService.ToolTip="End of the custom range (inclusive)."/>
+                    </StackPanel>
                     <AppBarButton x:Name="LoadButton"
                                   Icon="Refresh"
                                   Label="Load Audit Events"
                                   Click="LoadButton_Click"
-                                  IsEnabled="False"/>
+                                  IsEnabled="False"
+                                  ToolTipService.ToolTip="Load audit events for the selected range. Requires a signed-in source tenant."/>
                     <AppBarSeparator/>
                     <AppBarButton x:Name="ExportCsvButton"
                                   Label="Export to CSV"
                                   Click="ExportCsvButton_Click"
-                                  IsEnabled="False">
+                                  IsEnabled="False"
+                                  ToolTipService.ToolTip="Export the currently filtered events to a CSV file. Disabled until events are loaded.">
                         <AppBarButton.Icon>
                             <FontIcon Glyph="&#xEDE1;"/>
                         </AppBarButton.Icon>
@@ -96,7 +116,8 @@
                     <AppBarButton x:Name="ExportReportButton"
                                   Label="Export Report"
                                   Click="ExportReportButton_Click"
-                                  IsEnabled="False">
+                                  IsEnabled="False"
+                                  ToolTipService.ToolTip="Export an HTML report including summary cards. Disabled until events are loaded.">
                         <AppBarButton.Icon>
                             <FontIcon Glyph="&#xE9D9;"/>
                         </AppBarButton.Icon>
@@ -104,28 +125,37 @@
                     <AppBarButton x:Name="ClearLogButton"
                                   Icon="Delete"
                                   Label="Clear Log"
-                                  Click="ClearLogButton_Click"/>
+                                  Click="ClearLogButton_Click"
+                                  ToolTipService.ToolTip="Clear the page log console."/>
                 </StackPanel>
-                <!-- Filter row: search text + actor filter (client-side) -->
+                <!-- Filter row: search text + actor filter (client-side). Always visible so users
+                     know filtering is available even before loading. Filter inputs are disabled
+                     until events are loaded. -->
                 <StackPanel x:Name="FilterPanel"
                             Orientation="Horizontal"
                             Spacing="12"
-                            Visibility="Collapsed">
+                            Visibility="Visible">
                     <TextBlock Text="Filter:"
                                VerticalAlignment="Center"
                                FontWeight="SemiBold"/>
-                    <TextBox x:Name="SearchTextBox"
-                             PlaceholderText="Search activity, category, result, component, resource..."
-                             Width="360"
-                             TextChanged="SearchTextBox_TextChanged"/>
+                    <AutoSuggestBox x:Name="SearchTextBox"
+                                    AutomationProperties.Name="Audit log filter text"
+                                    PlaceholderText="Search activity, category, result, component, resource..."
+                                    QueryIcon="Filter"
+                                    Width="360"
+                                    TextChanged="SearchTextBox_TextChanged"
+                                    IsEnabled="False"/>
                     <TextBlock Text="Actor:"
                                VerticalAlignment="Center"
                                FontWeight="SemiBold"/>
                     <ComboBox x:Name="ActorFilterComboBox"
+                              AutomationProperties.Name="Filter by actor"
                               Width="240"
+                              IsEnabled="False"
                               SelectionChanged="ActorFilterComboBox_SelectionChanged"/>
                     <Button x:Name="ClearFiltersButton"
                             Content="Clear filters"
+                            IsEnabled="False"
                             Click="ClearFiltersButton_Click"/>
                     <TextBlock x:Name="FilterResultCountText"
                                VerticalAlignment="Center"
@@ -240,22 +270,46 @@
                     </StackPanel>
                 </Border>
 
-                <controls:DataGrid Grid.Row="2"
-                                   x:Name="AuditDataGrid"
-                                   AutoGenerateColumns="False"
-                                   IsReadOnly="True"
-                                   CanUserSortColumns="True"
-                                   GridLinesVisibility="Horizontal"
-                                   SelectionMode="Single"
-                                   SelectionChanged="AuditDataGrid_SelectionChanged">
-                    <controls:DataGrid.Columns>
-                        <controls:DataGridTextColumn Header="Date/Time" Binding="{Binding ActivityDateTimeFormatted}" Width="140"/>
-                        <controls:DataGridTextColumn Header="Actor" Binding="{Binding ActorDisplayName}" Width="180"/>
-                        <controls:DataGridTextColumn Header="Activity" Binding="{Binding ActivityDisplayName}" Width="*"/>
-                        <controls:DataGridTextColumn Header="Category" Binding="{Binding CategoryName}" Width="140"/>
-                        <controls:DataGridTextColumn Header="Result" Binding="{Binding ResultText}" Width="80"/>
-                    </controls:DataGrid.Columns>
-                </controls:DataGrid>
+                <Grid Grid.Row="2">
+                    <controls:DataGrid x:Name="AuditDataGrid"
+                                       AutoGenerateColumns="False"
+                                       IsReadOnly="True"
+                                       CanUserSortColumns="True"
+                                       GridLinesVisibility="Horizontal"
+                                       SelectionMode="Single"
+                                       SelectionChanged="AuditDataGrid_SelectionChanged">
+                        <controls:DataGrid.Columns>
+                            <controls:DataGridTextColumn Header="Date/Time" Binding="{Binding ActivityDateTimeFormatted}" Width="140"/>
+                            <controls:DataGridTextColumn Header="Actor" Binding="{Binding ActorDisplayName}" Width="180"/>
+                            <controls:DataGridTextColumn Header="Activity" Binding="{Binding ActivityDisplayName}" Width="*"/>
+                            <controls:DataGridTextColumn Header="Category" Binding="{Binding CategoryName}" Width="140"/>
+                            <controls:DataGridTextColumn Header="Result" Binding="{Binding ResultText}" Width="80"/>
+                        </controls:DataGrid.Columns>
+                    </controls:DataGrid>
+
+                    <!-- Empty state shown before any load, or when filters yield 0 results. -->
+                    <StackPanel x:Name="AuditEmptyState"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Spacing="6"
+                                IsHitTestVisible="False">
+                        <FontIcon Glyph="&#xEA37;" FontSize="32" Opacity="0.5" HorizontalAlignment="Center"/>
+                        <TextBlock x:Name="AuditEmptyStateTitle"
+                                   Text="No audit events loaded"
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
+                                   HorizontalAlignment="Center"
+                                   Opacity="0.75"/>
+                        <TextBlock x:Name="AuditEmptyStateBody"
+                                   Text="Pick a time range above and click 'Load Audit Events'."
+                                   FontSize="12"
+                                   HorizontalAlignment="Center"
+                                   Opacity="0.6"
+                                   TextWrapping="WrapWholeWords"
+                                   MaxWidth="360"
+                                   TextAlignment="Center"/>
+                    </StackPanel>
+                </Grid>
             </Grid>
 
             <!-- Log Console Panel -->
@@ -310,7 +364,7 @@
         </Grid>
 
         <!-- Loading Overlay -->
-        <Grid x:Name="LoadingOverlay" Grid.RowSpan="4" Background="#80000000" Visibility="Collapsed">
+        <Grid x:Name="LoadingOverlay" Grid.RowSpan="4" Background="{ThemeResource SystemControlAcrylicWindowBrush}" Visibility="Collapsed">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
                 <ProgressRing x:Name="LoadingProgressRing" IsActive="False" Width="48" Height="48"/>
                 <TextBlock x:Name="LoadingStatusText" Text="Loading..." FontSize="16"

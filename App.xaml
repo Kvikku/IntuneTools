@@ -55,6 +55,15 @@
                 <Setter Property="Margin" Value="0,4,0,0"/>
             </Style>
 
+            <!-- Tenant status pill: shared shape used by Settings + MainWindow. The Background is
+                 set per-instance to the appropriate status brush (success / warning / danger). -->
+            <Style x:Key="TenantStatusPillStyle" TargetType="Border">
+                <Setter Property="CornerRadius" Value="12"/>
+                <Setter Property="Padding" Value="10,4"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}"/>
+            </Style>
+
         </ResourceDictionary>  
     </Application.Resources>  
 </Application>
