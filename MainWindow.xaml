@@ -17,45 +17,103 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- Custom Title Bar -->
-        <Grid x:Name="CustomTitleBar" Background="CornflowerBlue" Height="32" VerticalAlignment="Top" Grid.Row="0">
+        <!-- Custom Title Bar — transparent so Mica shows through -->
+        <Grid x:Name="CustomTitleBar" Background="Transparent" Height="32" VerticalAlignment="Top" Grid.Row="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <!-- Icon: Ensure the Source path points to a valid image in your project -->
             <Image Source="Assets/Square44x44Logo.png" Width="16" Height="16" Margin="10,0,0,0" VerticalAlignment="Center" Grid.Column="0"/>
 
-            <!-- Title -->
-            <TextBlock Text="InToolz" VerticalAlignment="Center" Margin="10,0,0,0" FontWeight="Bold" Foreground="White" Grid.Column="1"/>
+            <TextBlock Text="InToolz" VerticalAlignment="Center" Margin="10,0,0,0" FontWeight="Bold"
+                       Foreground="{ThemeResource TextFillColorPrimaryBrush}" Grid.Column="1"/>
         </Grid>
 
         <!-- NavigationView -->
         <muxc:NavigationView x:Name="NavView" ItemInvoked="NavView_ItemInvoked" Grid.Row="1">
             <muxc:NavigationView.MenuItems>
-                <muxc:NavigationViewItem Content="Home" Tag="Home" Icon="Home"/>
-                <muxc:NavigationViewItem Content="Assignment" Tag="Application" Icon="AllApps"/>
+                <muxc:NavigationViewItem Content="Home" Tag="Home" Icon="Home">
+                    <muxc:NavigationViewItem.KeyboardAccelerators>
+                        <KeyboardAccelerator Modifiers="Control" Key="Number1"/>
+                    </muxc:NavigationViewItem.KeyboardAccelerators>
+                </muxc:NavigationViewItem>
+                <muxc:NavigationViewItem Content="Assignment" Tag="Application" Icon="AllApps">
+                    <muxc:NavigationViewItem.KeyboardAccelerators>
+                        <KeyboardAccelerator Modifiers="Control" Key="Number2"/>
+                    </muxc:NavigationViewItem.KeyboardAccelerators>
+                </muxc:NavigationViewItem>
                 <muxc:NavigationViewItem Content="Manage Assignments" Tag="ManageAssignments">
                     <muxc:NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE77B;"/>
                     </muxc:NavigationViewItem.Icon>
+                    <muxc:NavigationViewItem.KeyboardAccelerators>
+                        <KeyboardAccelerator Modifiers="Control" Key="Number3"/>
+                    </muxc:NavigationViewItem.KeyboardAccelerators>
                 </muxc:NavigationViewItem>
-                <muxc:NavigationViewItem Content="Import" Tag="Import" Icon="Import"/>
-                <muxc:NavigationViewItem Content="Cleanup" Tag="Cleanup" Icon="Delete"/>
-                <muxc:NavigationViewItem Content="Renaming" Tag="Renaming" Icon="Rename"/>
+                <muxc:NavigationViewItem Content="Import" Tag="Import" Icon="Import">
+                    <muxc:NavigationViewItem.KeyboardAccelerators>
+                        <KeyboardAccelerator Modifiers="Control" Key="Number4"/>
+                    </muxc:NavigationViewItem.KeyboardAccelerators>
+                </muxc:NavigationViewItem>
+                <muxc:NavigationViewItem Content="Cleanup" Tag="Cleanup" Icon="Delete">
+                    <muxc:NavigationViewItem.KeyboardAccelerators>
+                        <KeyboardAccelerator Modifiers="Control" Key="Number5"/>
+                    </muxc:NavigationViewItem.KeyboardAccelerators>
+                </muxc:NavigationViewItem>
+                <muxc:NavigationViewItem Content="Renaming" Tag="Renaming" Icon="Rename">
+                    <muxc:NavigationViewItem.KeyboardAccelerators>
+                        <KeyboardAccelerator Modifiers="Control" Key="Number6"/>
+                    </muxc:NavigationViewItem.KeyboardAccelerators>
+                </muxc:NavigationViewItem>
                 <muxc:NavigationViewItem Content="JSON" Tag="Json">
                     <muxc:NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE8AB;"/>
                     </muxc:NavigationViewItem.Icon>
+                    <muxc:NavigationViewItem.KeyboardAccelerators>
+                        <KeyboardAccelerator Modifiers="Control" Key="Number7"/>
+                    </muxc:NavigationViewItem.KeyboardAccelerators>
                 </muxc:NavigationViewItem>
                 <muxc:NavigationViewItem Content="Audit Log" Tag="AuditLog">
                     <muxc:NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE7BA;"/>
                     </muxc:NavigationViewItem.Icon>
+                    <muxc:NavigationViewItem.KeyboardAccelerators>
+                        <KeyboardAccelerator Modifiers="Control" Key="Number8"/>
+                    </muxc:NavigationViewItem.KeyboardAccelerators>
                 </muxc:NavigationViewItem>
             </muxc:NavigationView.MenuItems>
+
+            <!-- Pane footer: tenant connection status pills -->
+            <muxc:NavigationView.PaneFooter>
+                <StackPanel Margin="12,0,12,12" Spacing="4">
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <Ellipse x:Name="SourceTenantDot" Width="8" Height="8" VerticalAlignment="Center">
+                            <Ellipse.Fill>
+                                <SolidColorBrush x:Name="SourceTenantDotBrush" Color="Gray"/>
+                            </Ellipse.Fill>
+                        </Ellipse>
+                        <TextBlock x:Name="SourceTenantPill"
+                                   Text="Source: Not signed in"
+                                   FontSize="11"
+                                   Opacity="0.8"
+                                   TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <Ellipse x:Name="DestTenantDot" Width="8" Height="8" VerticalAlignment="Center">
+                            <Ellipse.Fill>
+                                <SolidColorBrush x:Name="DestTenantDotBrush" Color="Gray"/>
+                            </Ellipse.Fill>
+                        </Ellipse>
+                        <TextBlock x:Name="DestTenantPill"
+                                   Text="Destination: Not signed in"
+                                   FontSize="11"
+                                   Opacity="0.8"
+                                   TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                </StackPanel>
+            </muxc:NavigationView.PaneFooter>
 
             <Grid>
                 <Grid.RowDefinitions>
@@ -78,7 +136,7 @@
                     </muxc:InfoBar.ActionButton>
                 </muxc:InfoBar>
 
-                <Frame x:Name="ContentFrame" Grid.Row="1"/>
+                <Frame x:Name="ContentFrame" Grid.Row="1" Navigated="ContentFrame_Navigated"/>
             </Grid>
         </muxc:NavigationView>
     </Grid>
