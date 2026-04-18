@@ -205,7 +205,7 @@ internal sealed class UserAuthenticationBase
                         .ExecuteAsync(cancellationToken)
                         .ConfigureAwait(false);
                 }
-                catch (MsalUiRequiredException uiEx)
+                catch (MsalUiRequiredException)
                 {
                     try
                     {
@@ -225,7 +225,6 @@ internal sealed class UserAuthenticationBase
                         throw new InvalidOperationException(
                             "Authentication session expired. Please sign in again.", ex);
                     }
-                    _ = uiEx; // silence unused-variable
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
