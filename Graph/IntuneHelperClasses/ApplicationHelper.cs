@@ -71,6 +71,20 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             protected override Task DeleteByIdAsync(GraphServiceClient client, string id)
                 => client.DeviceAppManagement.MobileApps[id].DeleteAsync();
 
+            protected override async Task PatchNameAsync(GraphServiceClient client, string id, string newName)
+            {
+                var existing = await GetByIdAsync(client, id);
+                var odataType = existing?.OdataType ?? "#microsoft.graph.mobileApp";
+                await PatchNameWithTypeAsync(client, id, newName, odataType);
+            }
+
+            protected override async Task PatchDescriptionAsync(GraphServiceClient client, string id, string description)
+            {
+                var existing = await GetByIdAsync(client, id);
+                var odataType = existing?.OdataType ?? "#microsoft.graph.mobileApp";
+                await PatchDescriptionWithTypeAsync(client, id, description, odataType);
+            }
+
             private async Task PatchNameWithTypeAsync(GraphServiceClient client, string id, string newName, string odataType)
             {
                 var app = new MobileApp
