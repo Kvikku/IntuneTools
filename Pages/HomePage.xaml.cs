@@ -74,6 +74,15 @@ namespace IntuneTools.Pages
             base.OnNavigatedTo(e);
             UpdateLoginStatus();
             RefreshRecentActivity();
+            UpdateSignInGate();
+        }
+
+        private void UpdateSignInGate()
+        {
+            var signedIn = !string.IsNullOrWhiteSpace(sourceTenantName);
+            SignInFirstInfoBar.IsOpen = !signedIn;
+            QuickActionsGrid.IsHitTestVisible = signedIn;
+            QuickActionsGrid.Opacity = signedIn ? 1.0 : 0.4;
         }
 
         private void RefreshRecentActivity()

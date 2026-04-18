@@ -1,11 +1,8 @@
-﻿using IntuneTools.Utilities;
+using IntuneTools.Utilities;
 using Microsoft.Graph;
-using Microsoft.Kiota.Serialization.Json;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -13,272 +10,277 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 {
     public class macOSShellScript
     {
-        public static async Task<List<DeviceShellScript>> SearchForShellScriptmacOS(GraphServiceClient graphServiceClient, string searchQuery)
+        private class Helper : GraphHelper<DeviceShellScript, DeviceShellScriptCollectionResponse>
         {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, "Searching for macOS shell scripts. Search query: " + searchQuery);
+            protected override string ResourceName => "macOS shell scripts";
+            protected override string ContentTypeName => "MacOS Shell Script";
+            protected override string? FixedPlatform => "macOS";
 
-                // Note: The Graph API for DeviceShellScript might not support filtering by name directly in the same way.
-                // This might require fetching all and filtering locally, or adjusting the query if supported.
-                // For now, let's assume a similar filter structure, but this might need adjustment.
-                var result = await graphServiceClient.DeviceManagement.DeviceShellScripts.GetAsync((requestConfiguration) =>
+            protected override string? GetPolicyName(DeviceShellScript policy) => policy.DisplayName;
+            protected override string? GetPolicyId(DeviceShellScript policy) => policy.Id;
+            protected override string? GetPolicyDescription(DeviceShellScript policy) => policy.Description;
+
+            protected override Task<DeviceShellScriptCollectionResponse?> GetCollectionAsync(GraphServiceClient client)
+                => client.DeviceManagement.DeviceShellScripts.GetAsync(rc =>
                 {
-                    // Filter for macOS platform and name contains search query
-                    requestConfiguration.QueryParameters.Filter = $"contains(displayName,'{searchQuery}')";
-                    requestConfiguration.QueryParameters.Top = 1000; // Adjust as needed
+                    rc.QueryParameters.Top = 1000;
                 });
 
-                List<DeviceShellScript> shellScripts = new List<DeviceShellScript>();
-                var pageIterator = PageIterator<DeviceShellScript, DeviceShellScriptCollectionResponse>.CreatePageIterator(graphServiceClient, result, (script) =>
+            protected override Task<DeviceShellScriptCollectionResponse?> SearchCollectionAsync(GraphServiceClient client, string searchQuery)
+                => client.DeviceManagement.DeviceShellScripts.GetAsync(rc =>
                 {
-                    shellScripts.Add(script);
-                    return true;
-                });
-                await pageIterator.IterateAsync();
-
-                LogToFunctionFile(appFunction.Main, $"Found {shellScripts.Count} macOS shell scripts matching the search.");
-
-                return shellScripts;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for macOS shell scripts: {ex.Message}", LogLevels.Error);
-                return new List<DeviceShellScript>();
-            }
-        }
-
-        public static async Task<List<DeviceShellScript>> GetAllmacOSShellScripts(GraphServiceClient graphServiceClient)
-        {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, "Retrieving all macOS shell scripts.");
-
-                var result = await graphServiceClient.DeviceManagement.DeviceShellScripts.GetAsync((requestConfiguration) =>
-                {
-                    requestConfiguration.QueryParameters.Top = 1000; // Adjust as needed
+                    rc.QueryParameters.Filter = $"contains(displayName,'{searchQuery}')";
+                    rc.QueryParameters.Top = 1000;
                 });
 
-                List<DeviceShellScript> shellScripts = new List<DeviceShellScript>();
-                var pageIterator = PageIterator<DeviceShellScript, DeviceShellScriptCollectionResponse>.CreatePageIterator(graphServiceClient, result, (script) =>
-                {
-                    shellScripts.Add(script);
-                    return true;
-                });
-                await pageIterator.IterateAsync();
+            protected override Task<DeviceShellScript?> GetByIdAsync(GraphServiceClient client, string id)
+                => client.DeviceManagement.DeviceShellScripts[id].GetAsync();
 
-                LogToFunctionFile(appFunction.Main, $"Found {shellScripts.Count} macOS shell scripts.");
+            protected override Task DeleteByIdAsync(GraphServiceClient client, string id)
+                => client.DeviceManagement.DeviceShellScripts[id].DeleteAsync();
 
-                return shellScripts;
-            }
-            catch (Exception ex)
+            protected override async Task PatchNameAsync(GraphServiceClient client, string id, string newName)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while retrieving all macOS shell scripts: {ex.Message}", LogLevels.Error);
-                return new List<DeviceShellScript>();
+                var script = new DeviceShellScript { DisplayName = newName };
+                await client.DeviceManagement.DeviceShellScripts[id].PatchAsync(script);
             }
-        }
-        public static async Task ImportMultiplemacOSShellScripts(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> scriptIDs, bool assignments, bool filter, List<string> groups)
-        {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, $"Importing {scriptIDs.Count} macOS shell scripts.");
 
-                foreach (var scriptId in scriptIDs)
+            protected override async Task PatchDescriptionAsync(GraphServiceClient client, string id, string description)
+            {
+                var script = new DeviceShellScript { Description = description };
+                await client.DeviceManagement.DeviceShellScripts[id].PatchAsync(script);
+            }
+
+            public override async Task<string?> ImportFromJsonDataAsync(GraphServiceClient client, JsonElement policyData)
+            {
+                try
                 {
-                    try
+                    var exported = GraphImportHelper.DeserializeFromJson(policyData, DeviceShellScript.CreateFromDiscriminatorValue);
+
+                    if (exported == null)
                     {
-                        // Get the full script object, including script content
-                        var sourceScript = await sourceGraphServiceClient.DeviceManagement.DeviceShellScripts[scriptId].GetAsync();
-
-
-                        if (sourceScript == null)
-                        {
-                            LogToFunctionFile(appFunction.Main, $"Script with ID {scriptId} not found in source tenant. Skipping.");
-                            continue;
-                        }
-
-                        var newScript = new DeviceShellScript
-                        {
-
-                        };
-
-                        foreach (var property in sourceScript.GetType().GetProperties())
-                        {
-                            var value = property.GetValue(sourceScript);
-                            if (value != null && property.CanWrite)
-                            {
-                                property.SetValue(newScript, value);
-                            }
-                        }
-
-                        newScript.Id = "";
-
-                        var importResult = await destinationGraphServiceClient.DeviceManagement.DeviceShellScripts.PostAsync(newScript);
-
-                        if (importResult != null)
-                        {
-                            LogToFunctionFile(appFunction.Main, $"Imported script: {importResult.DisplayName} (ID: {importResult.Id})");
-
-                            if (assignments && groups != null && groups.Any())
-                            {
-                                // Shell script assignments use a different structure
-                                await AssignGroupsToSingleShellScriptmacOS(importResult.Id, groups, destinationGraphServiceClient); // Pass filter bool if needed for assignment logic
-                            }
-                        }
-                        else
-                        {
-                            LogToFunctionFile(appFunction.Main, $"Failed to import script: {sourceScript.DisplayName} (ID: {scriptId}). Result was null.");
-                        }
-
-                    }
-                    catch (Exception ex)
-                    {
-                        LogToFunctionFile(appFunction.Main, $"Failed to import script  (ID: {scriptId}): {ex.Message}", LogLevels.Error);
-                    }
-                }
-                LogToFunctionFile(appFunction.Main, "macOS shell script import process finished.");
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred during the macOS shell script import process: {ex.Message}", LogLevels.Error);
-            }
-        }
-
-
-        // Note: Assignment structure for Shell Scripts is different from Configuration Policies
-        public static async Task AssignGroupsToSingleShellScriptmacOS(string scriptId, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(scriptId))
-                {
-                    throw new ArgumentNullException(nameof(scriptId));
-                }
-
-                if (groupIDs == null)
-                {
-                    throw new ArgumentNullException(nameof(groupIDs));
-                }
-
-                if (destinationGraphServiceClient == null)
-                {
-                    throw new ArgumentNullException(nameof(destinationGraphServiceClient));
-                }
-
-                var assignments = new List<DeviceManagementScriptGroupAssignment>();
-                var seenGroupIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                var hasAllUsers = false;
-                var hasAllDevices = false;
-
-                LogToFunctionFile(appFunction.Main, $"Assigning {groupIDs.Count} groups to macOS shell script {scriptId}.");
-
-                // Step 1: Add new assignments to request body
-                foreach (var groupId in groupIDs)
-                {
-                    if (string.IsNullOrWhiteSpace(groupId) || !seenGroupIds.Add(groupId))
-                    {
-                        continue;
+                        LogToFunctionFile(appFunction.Main, "Failed to deserialize macOS shell script data from JSON.", LogLevels.Error);
+                        return null;
                     }
 
-                    // Check if this is a virtual group (All Users or All Devices)
-                    if (groupId.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                    var newScript = GraphImportHelper.CloneForImport(exported);
+
+                    var imported = await client.DeviceManagement.DeviceShellScripts.PostAsync(newScript);
+
+                    LogToFunctionFile(appFunction.Main, $"Imported macOS shell script: {imported?.DisplayName}");
+                    return imported?.DisplayName;
+                }
+                catch (Exception ex)
+                {
+                    GraphErrorHandler.HandleException(ex, "importing from JSON", ResourceName);
+                    return null;
+                }
+            }
+
+            public override async Task<bool?> HasAssignmentsAsync(GraphServiceClient client, string id)
+            {
+                try
+                {
+                    var result = await client.DeviceManagement.DeviceShellScripts[id].Assignments.GetAsync(rc =>
                     {
-                        hasAllUsers = true;
-                        assignments.Add(new DeviceManagementScriptGroupAssignment
+                        rc.QueryParameters.Top = 1;
+                    });
+                    return result?.Value != null && result.Value.Count > 0;
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+
+            public override async Task<List<AssignmentInfo>?> GetAssignmentDetailsAsync(GraphServiceClient client, string id)
+            {
+                try
+                {
+                    var details = new List<AssignmentInfo>();
+                    var result = await client.DeviceManagement.DeviceShellScripts[id].Assignments.GetAsync();
+
+                    while (result?.Value != null)
+                    {
+                        foreach (var assignment in result.Value)
                         {
-                            OdataType = "#microsoft.graph.deviceManagementScriptGroupAssignment",
-                            TargetGroupId = allUsersVirtualGroupID
-                        });
+                            details.Add(AssignmentInfo.FromTarget(assignment.Id, assignment.Target));
+                        }
+
+                        if (string.IsNullOrEmpty(result.OdataNextLink)) break;
+
+                        result = await client.DeviceManagement.DeviceShellScripts[id]
+                            .Assignments.WithUrl(result.OdataNextLink).GetAsync();
                     }
-                    else if (groupId.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+
+                    return details;
+                }
+                catch (Exception ex)
+                {
+                    GraphErrorHandler.HandleException(ex, "getting assignment details for", $"macOS Shell Script {id}");
+                    return null;
+                }
+            }
+
+            public override async Task RemoveAllAssignmentsAsync(GraphServiceClient client, string id)
+            {
+                var requestBody = new Microsoft.Graph.Beta.DeviceManagement.DeviceShellScripts.Item.Assign.AssignPostRequestBody
+                {
+                    DeviceManagementScriptGroupAssignments = new List<DeviceManagementScriptGroupAssignment>()
+                };
+
+                await client.DeviceManagement.DeviceShellScripts[id].Assign.PostAsync(requestBody);
+                LogToFunctionFile(appFunction.Main, $"Removed all assignments from macOS Shell Script {id}.");
+            }
+
+            public override async Task ImportMultipleAsync(
+                GraphServiceClient sourceClient,
+                GraphServiceClient destinationClient,
+                List<string> ids,
+                bool assignments,
+                bool filter,
+                List<string> groups)
+            {
+                await GraphImportHelper.ImportBatchAsync(ids, ResourceName, async id =>
+                {
+                    var sourceScript = await sourceClient.DeviceManagement.DeviceShellScripts[id].GetAsync();
+
+                    if (sourceScript == null)
                     {
-                        hasAllDevices = true;
-                        assignments.Add(new DeviceManagementScriptGroupAssignment
+                        LogToFunctionFile(appFunction.Main, $"Script with ID {id} not found in source tenant. Skipping.");
+                        return;
+                    }
+
+                    var newScript = GraphImportHelper.CloneForImport(sourceScript);
+
+                    var importResult = await destinationClient.DeviceManagement.DeviceShellScripts.PostAsync(newScript);
+
+                    if (importResult != null)
+                    {
+                        LogToFunctionFile(appFunction.Main, $"Imported script: {importResult.DisplayName} (ID: {importResult.Id})");
+
+                        if (assignments && groups != null && groups.Any())
                         {
-                            OdataType = "#microsoft.graph.deviceManagementScriptGroupAssignment",
-                            TargetGroupId = allDevicesVirtualGroupID
-                        });
+                            await AssignGroupsToSingleShellScriptmacOS(importResult.Id, groups, destinationClient);
+                        }
                     }
                     else
                     {
-                        // Regular group assignment
-                        assignments.Add(new DeviceManagementScriptGroupAssignment
-                        {
-                            OdataType = "#microsoft.graph.deviceManagementScriptGroupAssignment",
-                            TargetGroupId = groupId
-                        });
+                        LogToFunctionFile(appFunction.Main, $"Failed to import script: {sourceScript.DisplayName} (ID: {id}). Result was null.");
                     }
-                }
+                });
+            }
 
-                // Step 2: Check for existing assignments and add only if not already present
-                var existingAssignments = await destinationGraphServiceClient
-                    .DeviceManagement
-                    .DeviceShellScripts[scriptId]
-                    .GroupAssignments
-                    .GetAsync();
-
-                if (existingAssignments?.Value != null)
+            // Shell script assignments use DeviceManagementScriptGroupAssignment with TargetGroupId (not Target objects),
+            // so we cannot use GraphAssignmentHelper.BuildAssignments. Custom assignment building is required.
+            public override async Task AssignGroupsAsync(string id, List<string> groupIds, GraphServiceClient client)
+            {
+                try
                 {
-                    foreach (var existing in existingAssignments.Value)
+                    ArgumentNullException.ThrowIfNull(id);
+                    ArgumentNullException.ThrowIfNull(groupIds);
+                    ArgumentNullException.ThrowIfNull(client);
+
+                    var assignments = new List<DeviceManagementScriptGroupAssignment>();
+                    var seenGroupIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    var hasAllUsers = false;
+                    var hasAllDevices = false;
+
+                    LogToFunctionFile(appFunction.Main, $"Assigning {groupIds.Count} groups to macOS shell script {id}.");
+
+                    foreach (var groupId in groupIds)
                     {
-                        var existingGroupId = existing.TargetGroupId;
-
-                        if (string.IsNullOrWhiteSpace(existingGroupId))
-                        {
+                        if (string.IsNullOrWhiteSpace(groupId) || !seenGroupIds.Add(groupId))
                             continue;
-                        }
 
-                        // Check if this is a virtual group
-                        if (existingGroupId.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                        if (groupId.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
                         {
-                            // Skip if we're already adding All Users
-                            if (!hasAllUsers)
+                            hasAllUsers = true;
+                            assignments.Add(new DeviceManagementScriptGroupAssignment
                             {
-                                assignments.Add(existing);
-                            }
+                                OdataType = "#microsoft.graph.deviceManagementScriptGroupAssignment",
+                                TargetGroupId = allUsersVirtualGroupID
+                            });
                         }
-                        else if (existingGroupId.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                        else if (groupId.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
                         {
-                            // Skip if we're already adding All Devices
-                            if (!hasAllDevices)
+                            hasAllDevices = true;
+                            assignments.Add(new DeviceManagementScriptGroupAssignment
                             {
-                                assignments.Add(existing);
-                            }
+                                OdataType = "#microsoft.graph.deviceManagementScriptGroupAssignment",
+                                TargetGroupId = allDevicesVirtualGroupID
+                            });
                         }
                         else
                         {
-                            // Only add if not already in the new assignments
-                            if (seenGroupIds.Add(existingGroupId))
+                            assignments.Add(new DeviceManagementScriptGroupAssignment
                             {
-                                assignments.Add(existing);
+                                OdataType = "#microsoft.graph.deviceManagementScriptGroupAssignment",
+                                TargetGroupId = groupId
+                            });
+                        }
+                    }
+
+                    // Merge existing assignments
+                    var existingAssignments = await client
+                        .DeviceManagement
+                        .DeviceShellScripts[id]
+                        .GroupAssignments
+                        .GetAsync();
+
+                    if (existingAssignments?.Value != null)
+                    {
+                        foreach (var existing in existingAssignments.Value)
+                        {
+                            var existingGroupId = existing.TargetGroupId;
+
+                            if (string.IsNullOrWhiteSpace(existingGroupId))
+                                continue;
+
+                            if (existingGroupId.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                            {
+                                if (!hasAllUsers)
+                                    assignments.Add(existing);
+                            }
+                            else if (existingGroupId.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                            {
+                                if (!hasAllDevices)
+                                    assignments.Add(existing);
+                            }
+                            else
+                            {
+                                if (seenGroupIds.Add(existingGroupId))
+                                    assignments.Add(existing);
                             }
                         }
                     }
-                }
 
-                if (!assignments.Any())
-                {
-                    LogToFunctionFile(appFunction.Main, $"No valid group assignments to process for script {scriptId}.");
-                    return;
-                }
-
-                // Step 3: Update the script with the assignments
-                var requestBody = new Microsoft.Graph.Beta.DeviceManagement.DeviceShellScripts.Item.Assign.AssignPostRequestBody
-                {
-                    DeviceManagementScriptGroupAssignments = assignments
-                };
-
-                try
-                {
-                    await destinationGraphServiceClient.DeviceManagement.DeviceShellScripts[scriptId].Assign.PostAsync(requestBody);
-                    LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to macOS shell script {scriptId}.");
-                    UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
-
-                    // Note: Filters are not directly supported in the Assign action for shell scripts
-                    // They would need to be applied via a separate PATCH operation if supported
-                    if (!string.IsNullOrEmpty(SelectedFilterID))
+                    if (!assignments.Any())
                     {
-                        LogToFunctionFile(appFunction.Main, $"Filter application requested for script {scriptId}, but direct filter assignment via Assign action is not supported for shell scripts. Manual verification/update might be needed.");
+                        LogToFunctionFile(appFunction.Main, $"No valid group assignments to process for script {id}.");
+                        return;
+                    }
+
+                    var requestBody = new Microsoft.Graph.Beta.DeviceManagement.DeviceShellScripts.Item.Assign.AssignPostRequestBody
+                    {
+                        DeviceManagementScriptGroupAssignments = assignments
+                    };
+
+                    try
+                    {
+                        await client.DeviceManagement.DeviceShellScripts[id].Assign.PostAsync(requestBody);
+                        LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to macOS shell script {id}.");
+                        UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
+
+                        // Note: Filters are not directly supported in the Assign action for shell scripts
+                        if (!string.IsNullOrEmpty(SelectedFilterID))
+                        {
+                            LogToFunctionFile(appFunction.Main, $"Filter application requested for script {id}, but direct filter assignment via Assign action is not supported for shell scripts. Manual verification/update might be needed.");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        LogToFunctionFile(appFunction.Main, $"An error occurred while assigning groups to macOS shell script: {ex.Message}", LogLevels.Warning);
                     }
                 }
                 catch (Exception ex)
@@ -286,305 +288,49 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     LogToFunctionFile(appFunction.Main, $"An error occurred while assigning groups to macOS shell script: {ex.Message}", LogLevels.Warning);
                 }
             }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while assigning groups to macOS shell script: {ex.Message}", LogLevels.Warning);
-            }
-        }
-        public static async Task DeleteMacosShellScript(GraphServiceClient graphServiceClient, string profileID)
-        {
-            try
-            {
-                if (graphServiceClient == null)
-                {
-                    throw new ArgumentNullException(nameof(graphServiceClient));
-                }
-
-                if (profileID == null)
-                {
-                    throw new InvalidOperationException("Profile ID cannot be null.");
-                }
-                await graphServiceClient.DeviceManagement.DeviceShellScripts[profileID].DeleteAsync();
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while deleting macOS shell script: {ex.Message}", LogLevels.Error);
-            }
-        }
-        public static async Task RenameMacOSShellScript(GraphServiceClient graphServiceClient, string scriptID, string newName)
-        {
-            try
-            {
-                if (graphServiceClient == null)
-                {
-                    throw new ArgumentNullException(nameof(graphServiceClient));
-                }
-
-                if (scriptID == null)
-                {
-                    throw new InvalidOperationException("Script ID cannot be null.");
-                }
-
-                if (string.IsNullOrWhiteSpace(newName))
-                {
-                    throw new InvalidOperationException("New name cannot be null or empty.");
-                }
-
-                if (selectedRenameMode == "Prefix")
-                {
-                    // Look up the existing script
-                    var existingScript = await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptID].GetAsync();
-
-                    if (existingScript == null)
-                    {
-                        throw new InvalidOperationException($"Script with ID '{scriptID}' not found.");
-                    }
-
-                    var name = FindPreFixInPolicyName(existingScript.DisplayName ?? string.Empty, newName);
-
-                    // Create an instance of the specific script type using reflection
-                    var scriptType = existingScript.GetType();
-                    var script = (DeviceShellScript?)Activator.CreateInstance(scriptType);
-
-                    if (script == null)
-                    {
-                        throw new InvalidOperationException($"Failed to create instance of type {scriptType.Name}");
-                    }
-
-                    // Set the DisplayName on the new instance
-                    script.DisplayName = name;
-
-                    await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptID].PatchAsync(script);
-                    LogToFunctionFile(appFunction.Main, $"Renamed macOS shell script '{existingScript.DisplayName}' to '{name}' (ID: {scriptID})");
-                }
-                else if (selectedRenameMode == "Suffix")
-                {
-
-                }
-                else if (selectedRenameMode == "Description")
-                {
-                    // Look up the existing script
-                    var existingScript = await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptID].GetAsync();
-
-                    if (existingScript == null)
-                    {
-                        throw new InvalidOperationException($"Script with ID '{scriptID}' not found.");
-                    }
-
-                    // Create an instance of the specific script type using reflection
-                    var scriptType = existingScript.GetType();
-                    var script = (DeviceShellScript?)Activator.CreateInstance(scriptType);
-
-                    if (script == null)
-                    {
-                        throw new InvalidOperationException($"Failed to create instance of type {scriptType.Name}");
-                    }
-
-                    script.Description = newName;
-
-                    await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptID].PatchAsync(script);
-                    LogToFunctionFile(appFunction.Main, $"Updated description for macOS shell script {scriptID} to '{newName}'");
-                }
-                else if (selectedRenameMode == "RemovePrefix")
-                {
-                    var existingScript = await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptID].GetAsync();
-
-                    if (existingScript == null)
-                    {
-                        throw new InvalidOperationException($"Script with ID '{scriptID}' not found.");
-                    }
-
-                    var name = RemovePrefixFromPolicyName(existingScript.DisplayName);
-
-                    var script = new DeviceShellScript
-                    {
-                        DisplayName = name
-                    };
-
-                    await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptID].PatchAsync(script);
-                    LogToFunctionFile(appFunction.Main, $"Removed prefix from macOS shell script {scriptID}, new name: '{name}'");
-                }
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while renaming macOS shell scripts: {ex.Message}", LogLevels.Warning);
-            }
         }
 
-        public static async Task<List<CustomContentInfo>> GetAllMacOSShellScriptContentAsync(GraphServiceClient graphServiceClient)
-        {
-            var scripts = await GetAllmacOSShellScripts(graphServiceClient);
-            var content = new List<CustomContentInfo>();
+        private static readonly Helper _helper = new();
 
-            foreach (var script in scripts)
-            {
-                content.Add(new CustomContentInfo
-                {
-                    ContentName = script.DisplayName,
-                    ContentType = "MacOS Shell Script",
-                    ContentPlatform = "macOS",
-                    ContentId = script.Id,
-                    ContentDescription = script.Description
-                });
-            }
+        // ── Public static methods (signatures preserved for existing consumers) ──
 
-            return content;
-        }
+        public static Task<List<DeviceShellScript>> SearchForShellScriptmacOS(GraphServiceClient graphServiceClient, string searchQuery)
+            => _helper.SearchAsync(graphServiceClient, searchQuery);
 
-        public static async Task<List<CustomContentInfo>> SearchMacOSShellScriptContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
-        {
-            var scripts = await SearchForShellScriptmacOS(graphServiceClient, searchQuery);
-            var content = new List<CustomContentInfo>();
+        public static Task<List<DeviceShellScript>> GetAllmacOSShellScripts(GraphServiceClient graphServiceClient)
+            => _helper.GetAllAsync(graphServiceClient);
 
-            foreach (var script in scripts)
-            {
-                content.Add(new CustomContentInfo
-                {
-                    ContentName = script.DisplayName,
-                    ContentType = "MacOS Shell Script",
-                    ContentPlatform = "macOS",
-                    ContentId = script.Id,
-                    ContentDescription = script.Description
-                });
-            }
+        public static Task ImportMultiplemacOSShellScripts(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> scriptIDs, bool assignments, bool filter, List<string> groups)
+            => _helper.ImportMultipleAsync(sourceGraphServiceClient, destinationGraphServiceClient, scriptIDs, assignments, filter, groups);
 
-            return content;
-        }
+        public static Task AssignGroupsToSingleShellScriptmacOS(string scriptId, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
+            => _helper.AssignGroupsAsync(scriptId, groupIDs, destinationGraphServiceClient);
 
-        /// <summary>
-        /// Exports a macOS shell script's full data as a JsonElement for JSON file export.
-        /// </summary>
-        public static async Task<JsonElement?> ExportMacOSShellScriptDataAsync(GraphServiceClient graphServiceClient, string scriptId)
-        {
-            try
-            {
-                var result = await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptId].GetAsync();
+        public static Task DeleteMacosShellScript(GraphServiceClient graphServiceClient, string profileID)
+            => _helper.DeleteAsync(graphServiceClient, profileID);
 
-                if (result == null)
-                {
-                    LogToFunctionFile(appFunction.Main, $"macOS shell script {scriptId} not found for export.", LogLevels.Warning);
-                    return null;
-                }
+        public static Task RenameMacOSShellScript(GraphServiceClient graphServiceClient, string scriptID, string newName)
+            => _helper.RenameAsync(graphServiceClient, scriptID, newName);
 
-                using var writer = new JsonSerializationWriter();
-                writer.WriteObjectValue(null, result);
-                using var stream = writer.GetSerializedContent();
-                var doc = await JsonDocument.ParseAsync(stream);
-                return doc.RootElement.Clone();
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"Error exporting macOS shell script {scriptId}: {ex.Message}", LogLevels.Error);
-                return null;
-            }
-        }
+        public static Task<List<CustomContentInfo>> GetAllMacOSShellScriptContentAsync(GraphServiceClient graphServiceClient)
+            => _helper.GetAllContentAsync(graphServiceClient);
 
-        /// <summary>
-        /// Imports a macOS shell script from previously exported JSON data into the destination tenant.
-        /// </summary>
-        public static async Task<string?> ImportMacOSShellScriptFromJsonDataAsync(GraphServiceClient graphServiceClient, JsonElement policyData)
-        {
-            try
-            {
-                var json = policyData.GetRawText();
-                using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
-                var parseNode = new JsonParseNode(JsonDocument.Parse(stream).RootElement);
-                var exported = parseNode.GetObjectValue(DeviceShellScript.CreateFromDiscriminatorValue);
+        public static Task<List<CustomContentInfo>> SearchMacOSShellScriptContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
+            => _helper.SearchContentAsync(graphServiceClient, searchQuery);
 
-                if (exported == null)
-                {
-                    LogToFunctionFile(appFunction.Main, "Failed to deserialize macOS shell script data from JSON.", LogLevels.Error);
-                    return null;
-                }
+        public static Task<JsonElement?> ExportMacOSShellScriptDataAsync(GraphServiceClient graphServiceClient, string scriptId)
+            => _helper.ExportDataAsync(graphServiceClient, scriptId);
 
-                var newScript = new DeviceShellScript();
+        public static Task<string?> ImportMacOSShellScriptFromJsonDataAsync(GraphServiceClient graphServiceClient, JsonElement policyData)
+            => _helper.ImportFromJsonDataAsync(graphServiceClient, policyData);
 
-                foreach (var property in exported.GetType().GetProperties())
-                {
-                    var value = property.GetValue(exported);
-                    if (value != null && property.CanWrite)
-                    {
-                        property.SetValue(newScript, value);
-                    }
-                }
+        public static Task<bool?> HasMacOSShellScriptAssignmentsAsync(GraphServiceClient graphServiceClient, string scriptId)
+            => _helper.HasAssignmentsAsync(graphServiceClient, scriptId);
 
-                newScript.Id = "";
+        public static Task<List<AssignmentInfo>?> GetMacOSShellScriptAssignmentDetailsAsync(GraphServiceClient graphServiceClient, string scriptId)
+            => _helper.GetAssignmentDetailsAsync(graphServiceClient, scriptId);
 
-                var imported = await graphServiceClient.DeviceManagement.DeviceShellScripts.PostAsync(newScript);
-
-                LogToFunctionFile(appFunction.Main, $"Imported macOS shell script: {imported?.DisplayName}");
-                return imported?.DisplayName;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"Error importing macOS shell script from JSON: {ex.Message}", LogLevels.Error);
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Checks if a macOS shell script has any group assignments.
-        /// </summary>
-        public static async Task<bool?> HasMacOSShellScriptAssignmentsAsync(GraphServiceClient graphServiceClient, string scriptId)
-        {
-            try
-            {
-                var result = await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptId].Assignments.GetAsync(rc =>
-                {
-                    rc.QueryParameters.Top = 1;
-                });
-                return result?.Value != null && result.Value.Count > 0;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Gets detailed assignment information for a macOS Shell Script.
-        /// </summary>
-        public static async Task<List<AssignmentInfo>?> GetMacOSShellScriptAssignmentDetailsAsync(GraphServiceClient graphServiceClient, string scriptId)
-        {
-            try
-            {
-                var details = new List<AssignmentInfo>();
-                var result = await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptId].Assignments.GetAsync();
-
-                while (result?.Value != null)
-                {
-                    foreach (var assignment in result.Value)
-                    {
-                        details.Add(AssignmentInfo.FromTarget(assignment.Id, assignment.Target));
-                    }
-
-                    if (string.IsNullOrEmpty(result.OdataNextLink)) break;
-
-                    result = await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptId]
-                        .Assignments.WithUrl(result.OdataNextLink).GetAsync();
-                }
-
-                return details;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"Error getting assignment details for macOS Shell Script {scriptId}: {ex.Message}", LogLevels.Error);
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Removes all assignments from a macOS Shell Script.
-        /// </summary>
-        public static async Task RemoveAllMacOSShellScriptAssignmentsAsync(GraphServiceClient graphServiceClient, string scriptId)
-        {
-            var requestBody = new Microsoft.Graph.Beta.DeviceManagement.DeviceShellScripts.Item.Assign.AssignPostRequestBody
-            {
-                DeviceManagementScriptGroupAssignments = new List<DeviceManagementScriptGroupAssignment>()
-            };
-
-            await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptId].Assign.PostAsync(requestBody);
-            LogToFunctionFile(appFunction.Main, $"Removed all assignments from macOS Shell Script {scriptId}.");
-        }
+        public static Task RemoveAllMacOSShellScriptAssignmentsAsync(GraphServiceClient graphServiceClient, string scriptId)
+            => _helper.RemoveAllAssignmentsAsync(graphServiceClient, scriptId);
     }
 }

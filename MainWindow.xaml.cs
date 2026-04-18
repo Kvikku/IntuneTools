@@ -1,7 +1,12 @@
+using IntuneTools.Graph;
 using IntuneTools.Pages;
+using Microsoft.UI.Composition.SystemBackdrops;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.IO;
 using System.Linq;
@@ -20,10 +25,16 @@ namespace IntuneTools
     public sealed partial class MainWindow : Window
     {
         private AppWindow appWindow;
+        private readonly DispatcherQueue _dispatcherQueue;
 
         public MainWindow()
         {
             this.InitializeComponent();
+
+            _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
+
+            // Apply Mica system backdrop
+            this.SystemBackdrop = new MicaBackdrop();
 
             // Extend content into the title bar and set the custom title bar
             ExtendsContentIntoTitleBar = true;
@@ -51,9 +62,10 @@ namespace IntuneTools
                 appWindow.TitleBar.ExtendsContentIntoTitleBar = true;
                 appWindow.TitleBar.ButtonBackgroundColor = Microsoft.UI.Colors.Transparent;
                 appWindow.TitleBar.ButtonInactiveBackgroundColor = Microsoft.UI.Colors.Transparent;
-                UpdateTitleBarButtonColors();
             }
 
+            // Set theme-aware title bar button colors and update when theme changes
+            UpdateTitleBarButtonColors();
             if (Content is FrameworkElement rootElement)
             {
                 rootElement.ActualThemeChanged += (_, _) => UpdateTitleBarButtonColors();
@@ -64,30 +76,62 @@ namespace IntuneTools
             // Navigate to the Home page by default
             NavView.SelectedItem = NavView.MenuItems.OfType<NavigationViewItem>().FirstOrDefault(x => x.Tag.ToString() == "Home");
             ContentFrame.Navigate(typeof(IntuneTools.Pages.HomePage));
+
+            // Subscribe to global authentication-lost notifications so the app shell can
+            // show a prominent re-auth banner regardless of which page is active.
+            AuthenticationEvents.AuthenticationLost += OnAuthenticationLost;
+            this.Closed += (_, _) => AuthenticationEvents.AuthenticationLost -= OnAuthenticationLost;
         }
 
+        private void OnAuthenticationLost(string reason)
+        {
+            // Event may be raised from a background thread in the auth pipeline — marshal to UI thread.
+            _dispatcherQueue?.TryEnqueue(() =>
+            {
+                if (ReauthInfoBar == null) return;
+                ReauthInfoBar.Message = string.IsNullOrWhiteSpace(reason)
+                    ? "Your tenant session has expired. Please sign in again to continue using InToolz."
+                    : $"Your tenant session has expired. Please sign in again. Details: {reason}";
+                ReauthInfoBar.IsOpen = true;
+            });
+        }
+
+        private void ReauthInfoBar_ReauthClicked(object sender, RoutedEventArgs e)
+        {
+            // Send users to the Settings page where they can re-authenticate against
+            // the source and destination tenants.
+            ReauthInfoBar.IsOpen = false;
+            var settingsItem = NavView.MenuItems
+                .OfType<NavigationViewItem>()
+                .FirstOrDefault(x => string.Equals(x.Tag?.ToString(), "Settings", StringComparison.Ordinal));
+            if (settingsItem != null)
+                NavView.SelectedItem = settingsItem;
+            ContentFrame.Navigate(typeof(SettingsPage));
+        }
+
+        /// <summary>
+        /// Updates title bar button foreground / hover colors to match the current app theme.
+        /// </summary>
         private void UpdateTitleBarButtonColors()
         {
-            if (appWindow?.TitleBar == null)
-                return;
+            if (appWindow?.TitleBar == null) return;
 
-            var isDark = (Content as FrameworkElement)?.ActualTheme == ElementTheme.Dark;
-            if (isDark)
-            {
-                appWindow.TitleBar.ButtonForegroundColor = Microsoft.UI.Colors.White;
-                appWindow.TitleBar.ButtonHoverBackgroundColor = Microsoft.UI.Colors.DimGray;
-                appWindow.TitleBar.ButtonHoverForegroundColor = Microsoft.UI.Colors.White;
-                appWindow.TitleBar.ButtonPressedBackgroundColor = Microsoft.UI.Colors.Gray;
-                appWindow.TitleBar.ButtonPressedForegroundColor = Microsoft.UI.Colors.White;
-            }
-            else
-            {
-                appWindow.TitleBar.ButtonForegroundColor = Microsoft.UI.Colors.Black;
-                appWindow.TitleBar.ButtonHoverBackgroundColor = Microsoft.UI.Colors.LightGray;
-                appWindow.TitleBar.ButtonHoverForegroundColor = Microsoft.UI.Colors.Black;
-                appWindow.TitleBar.ButtonPressedBackgroundColor = Microsoft.UI.Colors.DarkGray;
-                appWindow.TitleBar.ButtonPressedForegroundColor = Microsoft.UI.Colors.Black;
-            }
+            var rootElement = Content as FrameworkElement;
+            var isDark = rootElement?.ActualTheme == ElementTheme.Dark;
+            var fg = isDark ? Microsoft.UI.Colors.White : Microsoft.UI.Colors.Black;
+            var hoverBg = isDark
+                ? Windows.UI.Color.FromArgb(40, 255, 255, 255)
+                : Windows.UI.Color.FromArgb(40, 0, 0, 0);
+            var pressedBg = isDark
+                ? Windows.UI.Color.FromArgb(80, 255, 255, 255)
+                : Windows.UI.Color.FromArgb(80, 0, 0, 0);
+
+            appWindow.TitleBar.ButtonForegroundColor = fg;
+            appWindow.TitleBar.ButtonInactiveForegroundColor = fg;
+            appWindow.TitleBar.ButtonHoverBackgroundColor = hoverBg;
+            appWindow.TitleBar.ButtonHoverForegroundColor = fg;
+            appWindow.TitleBar.ButtonPressedBackgroundColor = pressedBg;
+            appWindow.TitleBar.ButtonPressedForegroundColor = fg;
         }
 
         private void myButton_Click(object sender, RoutedEventArgs e)
@@ -142,6 +186,40 @@ namespace IntuneTools
                 default:
                     break;
             }
+        }
+
+        /// <summary>
+        /// Refreshes the pane-footer tenant status pills whenever navigation completes
+        /// (so changes made on the Settings page are reflected immediately).
+        /// </summary>
+        private void ContentFrame_Navigated(object sender, NavigationEventArgs e)
+        {
+            UpdateTenantPills();
+        }
+
+        /// <summary>
+        /// Updates the source / destination tenant status indicators in the NavigationView pane footer.
+        /// </summary>
+        private void UpdateTenantPills()
+        {
+            var sourceConnected = !string.IsNullOrWhiteSpace(sourceTenantName);
+            var destConnected   = !string.IsNullOrWhiteSpace(destinationTenantName);
+
+            SourceTenantPill.Text = sourceConnected
+                ? $"Source: {sourceTenantName}"
+                : "Source: Not signed in";
+
+            SourceTenantDotBrush.Color = sourceConnected
+                ? Windows.UI.Color.FromArgb(255, 46, 139, 87)   // SeaGreen
+                : Windows.UI.Color.FromArgb(255, 128, 128, 128); // Gray
+
+            DestTenantPill.Text = destConnected
+                ? $"Destination: {destinationTenantName}"
+                : "Destination: Not signed in";
+
+            DestTenantDotBrush.Color = destConnected
+                ? Windows.UI.Color.FromArgb(255, 46, 139, 87)
+                : Windows.UI.Color.FromArgb(255, 128, 128, 128);
         }
 
     }

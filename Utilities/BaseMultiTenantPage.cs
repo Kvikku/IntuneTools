@@ -1,11 +1,13 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Documents;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace IntuneTools.Utilities
@@ -389,6 +391,183 @@ namespace IntuneTools.Utilities
             var result = await dialog.ShowAsync();
             return result == ContentDialogResult.Primary;
         }
+
+        #region Destructive confirmation & typed confirmation helpers
+
+        /// <summary>
+        /// Shows a destructive confirmation dialog. The primary (confirm) button is styled red
+        /// to reinforce that the action is dangerous and cannot be undone.
+        /// </summary>
+        protected async Task<bool> ShowDestructiveConfirmationDialogAsync(
+            string title,
+            object content,
+            string confirmText = "Delete",
+            string cancelText = "Cancel")
+        {
+            var dialog = new ContentDialog
+            {
+                Title = title,
+                Content = content,
+                PrimaryButtonText = confirmText,
+                CloseButtonText = cancelText,
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot,
+                PrimaryButtonStyle = BuildDestructivePrimaryButtonStyle()
+            };
+
+            var result = await dialog.ShowAsync();
+            return result == ContentDialogResult.Primary;
+        }
+
+        /// <summary>
+        /// Shows a two-step typed confirmation dialog. The primary button remains disabled until
+        /// the user types <paramref name="requiredPhrase"/> exactly. Intended for highly destructive
+        /// bulk operations where an accidental single-click must be prevented.
+        /// </summary>
+        /// <param name="title">Dialog title.</param>
+        /// <param name="preview">Content shown above the textbox (string or XAML element).</param>
+        /// <param name="requiredPhrase">Exact phrase the user must type to enable the confirm button.</param>
+        /// <param name="confirmText">Label for the destructive primary button.</param>
+        /// <returns>True if the user typed the phrase and clicked confirm; false otherwise.</returns>
+        protected async Task<bool> ShowTypedConfirmationDialogAsync(
+            string title,
+            object preview,
+            string requiredPhrase,
+            string confirmText = "Delete")
+        {
+            if (string.IsNullOrEmpty(requiredPhrase))
+                throw new ArgumentException("Required phrase must be provided.", nameof(requiredPhrase));
+
+            var root = new StackPanel { Spacing = 12 };
+
+            // Preview content (caller-provided element or text)
+            if (preview is UIElement previewElement)
+            {
+                root.Children.Add(previewElement);
+            }
+            else if (preview != null)
+            {
+                root.Children.Add(new TextBlock
+                {
+                    Text = preview.ToString(),
+                    TextWrapping = TextWrapping.Wrap
+                });
+            }
+
+            var instruction = new TextBlock
+            {
+                Text = $"Type \"{requiredPhrase}\" to confirm:",
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Margin = new Thickness(0, 8, 0, 0)
+            };
+            root.Children.Add(instruction);
+
+            var confirmationBox = new TextBox
+            {
+                PlaceholderText = requiredPhrase,
+                // Disable IME pre-processing of the expected token to reduce false positives
+                IsSpellCheckEnabled = false
+            };
+            root.Children.Add(confirmationBox);
+
+            var dialog = new ContentDialog
+            {
+                Title = title,
+                Content = new ScrollViewer
+                {
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                    MaxHeight = 480,
+                    Content = root
+                },
+                PrimaryButtonText = confirmText,
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                IsPrimaryButtonEnabled = false,
+                XamlRoot = this.XamlRoot,
+                PrimaryButtonStyle = BuildDestructivePrimaryButtonStyle()
+            };
+
+            confirmationBox.TextChanged += (_, _) =>
+            {
+                dialog.IsPrimaryButtonEnabled = string.Equals(
+                    confirmationBox.Text?.Trim(),
+                    requiredPhrase,
+                    StringComparison.Ordinal);
+            };
+
+            var result = await dialog.ShowAsync();
+            return result == ContentDialogResult.Primary;
+        }
+
+        /// <summary>
+        /// Builds a red "destructive" style for a ContentDialog primary button.
+        /// Extracted so multiple dialogs share a consistent visual treatment.
+        /// </summary>
+        protected static Style BuildDestructivePrimaryButtonStyle()
+        {
+            var style = new Style(typeof(Button));
+            style.Setters.Add(new Setter(Control.BackgroundProperty,
+                new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0xC4, 0x2B, 0x1C))));
+            style.Setters.Add(new Setter(Control.ForegroundProperty,
+                new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0xFF, 0xFF, 0xFF))));
+            return style;
+        }
+
+        #endregion
+
+        #region Cancellation helpers
+
+        private CancellationTokenSource? _operationCts;
+
+        /// <summary>
+        /// Gets the cancellation token for the current long-running operation (or <c>None</c> if none is active).
+        /// </summary>
+        protected CancellationToken CurrentOperationToken => _operationCts?.Token ?? CancellationToken.None;
+
+        /// <summary>
+        /// Indicates whether a cancellable long-running operation is currently active.
+        /// </summary>
+        protected bool IsOperationInProgress => _operationCts is { IsCancellationRequested: false };
+
+        /// <summary>
+        /// Begins a cancellable operation and returns its token. Any prior active operation is cancelled.
+        /// Call <see cref="EndOperation"/> in a <c>finally</c> block.
+        /// </summary>
+        protected CancellationToken BeginCancellableOperation()
+        {
+            CancelCurrentOperation();
+            _operationCts = new CancellationTokenSource();
+            return _operationCts.Token;
+        }
+
+        /// <summary>
+        /// Requests cancellation of the currently running operation, if any.
+        /// Safe to call repeatedly.
+        /// </summary>
+        protected void CancelCurrentOperation()
+        {
+            try
+            {
+                _operationCts?.Cancel();
+            }
+            catch (ObjectDisposedException)
+            {
+                // Already disposed — nothing to cancel.
+            }
+        }
+
+        /// <summary>
+        /// Disposes the token source for the current operation. Must be called from a <c>finally</c>
+        /// block after the awaited operation completes to avoid leaking a CTS.
+        /// </summary>
+        protected void EndOperation()
+        {
+            var cts = _operationCts;
+            _operationCts = null;
+            cts?.Dispose();
+        }
+
+        #endregion
 
         /// <summary>
         /// Handler for clear log button - shows confirmation then clears.
