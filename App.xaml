@@ -38,7 +38,7 @@
                 <Setter Property="Height" Value="40"/>
                 <Setter Property="Padding" Value="16,0"/>
                 <Setter Property="FontWeight" Value="SemiBold"/>
-                <Setter Property="Foreground" Value="White"/>
+                <Setter Property="Foreground" Value="{ThemeResource TextOnAccentFillColorPrimaryBrush}"/>
                 <Setter Property="Background" Value="{ThemeResource StatusDangerBrush}"/>
                 <Setter Property="BorderBrush" Value="{ThemeResource StatusDangerBrush}"/>
             </Style>

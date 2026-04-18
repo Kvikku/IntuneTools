@@ -667,17 +667,6 @@ namespace IntuneTools.Pages
             HandleDataGridSorting(sender, e);
         }
 
-        private async void SearchButton_Click(object sender, RoutedEventArgs e)
-        {
-            string searchQuery = SearchQueryTextBox.Text.Trim();
-            if (string.IsNullOrEmpty(searchQuery))
-            {
-                LogWarning("Please enter a search query.");
-                return;
-            }
-            await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
-        }
-
         /// <summary>
         /// AutoSuggestBox QuerySubmitted handler — fires on Enter or when the search icon is clicked.
         /// </summary>

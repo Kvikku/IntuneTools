@@ -543,7 +543,8 @@ namespace IntuneTools.Pages
                     tenantName: destinationTenant,
                     extraMessage: extras.ToString().Trim(),
                     severity: InfoBarSeverity.Informational,
-                    confirmText: "Start import");
+                    confirmText: "Start import",
+                    tenantPreposition: "to");
                 if (!confirmed)
                 {
                     AppendToLog("Bulk import cancelled by user.");

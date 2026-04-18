@@ -72,12 +72,11 @@ namespace IntuneTools.Pages
 
             UpdateImage(statusImage, isSignedIn ? "GreenCheck.png" : "RedCross.png");
 
-            // Theme-aware pill background — green when connected, red when not.
+            // Theme-aware pill background — uses shared StatusSuccessBrush / StatusDangerBrush
+            // tokens for consistency with the rest of the shell (see MainWindow.GetStatusColor).
             if (statusPill != null)
             {
-                var brushKey = isSignedIn
-                    ? "SystemFillColorSuccessBackgroundBrush"
-                    : "SystemFillColorCriticalBackgroundBrush";
+                var brushKey = isSignedIn ? "StatusSuccessBrush" : "StatusDangerBrush";
                 if (Application.Current.Resources.TryGetValue(brushKey, out var brush) && brush is Brush b)
                 {
                     statusPill.Background = b;

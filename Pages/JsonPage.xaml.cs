@@ -724,17 +724,6 @@ namespace IntuneTools.Pages
             await ListAllOrchestrator(sourceGraphServiceClient);
         }
 
-        private async void SearchButton_Click(object sender, RoutedEventArgs e)
-        {
-            var searchQuery = InputTextBox.Text.Trim();
-            if (string.IsNullOrWhiteSpace(searchQuery))
-            {
-                AppendToDetailsRichTextBlock("Please enter a search query.");
-                return;
-            }
-            await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
-        }
-
         /// <summary>
         /// AutoSuggestBox QuerySubmitted handler — fires on Enter or when the search icon is clicked.
         /// </summary>

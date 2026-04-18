@@ -135,10 +135,31 @@ namespace IntuneTools.Pages
             LogConsole.ItemsSource = LogEntries;
 
             this.Loaded += AssignmentPage_Loaded;
+            this.Loaded += AssignmentPage_UpdateStagingEmptyStateOnLoaded;
+            this.Unloaded += AssignmentPage_Unloaded;
             // Keep the empty-state placeholder in sync with the staging collection.
-            AssignmentList.CollectionChanged += (_, _) => UpdateStagingEmptyState();
-            this.Loaded += (_, _) => UpdateStagingEmptyState();
+            // Named handler + Unloaded unsubscribe avoids leaking the page through the static
+            // AssignmentList collection across navigations.
+            AssignmentList.CollectionChanged += AssignmentList_CollectionChanged;
             RightClickMenu.AttachDataGridContextMenu(AppDataGrid);
+        }
+
+        private void AssignmentPage_UpdateStagingEmptyStateOnLoaded(object sender, RoutedEventArgs e)
+        {
+            UpdateStagingEmptyState();
+        }
+
+        private void AssignmentList_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            UpdateStagingEmptyState();
+        }
+
+        private void AssignmentPage_Unloaded(object sender, RoutedEventArgs e)
+        {
+            this.Loaded -= AssignmentPage_Loaded;
+            this.Loaded -= AssignmentPage_UpdateStagingEmptyStateOnLoaded;
+            this.Unloaded -= AssignmentPage_Unloaded;
+            AssignmentList.CollectionChanged -= AssignmentList_CollectionChanged;
         }
 
         protected override string[] GetManagedControlNames() => new[]
@@ -1162,9 +1183,8 @@ namespace IntuneTools.Pages
         private void UpdateStagingEmptyState()
         {
             if (StagingEmptyState == null) return;
-            // ContentList lives on BaseDataOperationPage but AssignmentPage uses AssignmentList directly.
-            var hasItems = (AppDataGrid.ItemsSource is System.Collections.IEnumerable items)
-                           && items.Cast<object>().Any();
+            // AssignmentList is the page's source of truth for the staging grid.
+            var hasItems = AssignmentList.Count > 0;
             StagingEmptyState.Visibility = hasItems ? Visibility.Collapsed : Visibility.Visible;
         }
 

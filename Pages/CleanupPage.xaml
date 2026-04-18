@@ -142,8 +142,8 @@
                                 ToolTipService.ToolTip="Permanently delete all staged items (Ctrl+Enter)."
                                 Style="{StaticResource DestructiveActionButtonStyle}">
                             <StackPanel Orientation="Horizontal" Spacing="8">
-                                <FontIcon Glyph="&#xE74D;" FontSize="16" Foreground="White"/>
-                                <TextBlock x:Name="DeleteButtonText" Text="Delete All" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="White"/>
+                                <FontIcon Glyph="&#xE74D;" FontSize="16"/>
+                                <TextBlock x:Name="DeleteButtonText" Text="Delete All" VerticalAlignment="Center" FontWeight="SemiBold"/>
                             </StackPanel>
                         </Button>
                     </StackPanel>

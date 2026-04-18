@@ -19,6 +19,11 @@ namespace IntuneTools.Utilities
         /// <param name="action">Verb describing the action (e.g. "assign", "delete", "copy").</param>
         /// <param name="itemCount">Number of items affected.</param>
         /// <param name="tenantName">Optional tenant name to display (e.g. destination tenant for an import).</param>
+        /// <param name="tenantPreposition">
+        /// Preposition used when composing the tenant clause — e.g. "in" for operations performed
+        /// inside a tenant ("delete 5 items in Contoso"), or "to" for operations targeting a tenant
+        /// ("copy 5 items to Contoso"). Ignored when <paramref name="tenantName"/> is empty.
+        /// </param>
         /// <param name="extraMessage">Optional additional warning text (e.g. "This action cannot be undone.").</param>
         /// <param name="severity">Severity for the embedded InfoBar.</param>
         /// <param name="confirmText">Label for the primary button.</param>
@@ -30,14 +35,16 @@ namespace IntuneTools.Utilities
             string? tenantName = null,
             string? extraMessage = null,
             InfoBarSeverity severity = InfoBarSeverity.Warning,
-            string confirmText = "Continue")
+            string confirmText = "Continue",
+            string tenantPreposition = "in")
         {
             if (root == null) return false;
 
             var itemWord = itemCount == 1 ? "item" : "items";
+            var preposition = string.IsNullOrWhiteSpace(tenantPreposition) ? "in" : tenantPreposition.Trim();
             var message = string.IsNullOrWhiteSpace(tenantName)
                 ? $"You are about to {action} {itemCount} {itemWord}."
-                : $"You are about to {action} {itemCount} {itemWord} in {tenantName}.";
+                : $"You are about to {action} {itemCount} {itemWord} {preposition} {tenantName}.";
 
             var stack = new StackPanel { Spacing = 12 };
             stack.Children.Add(new InfoBar
