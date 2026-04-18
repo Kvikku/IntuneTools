@@ -7,6 +7,37 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace IntuneTools.Graph;
+
+/// <summary>
+/// Global authentication state notifications surfaced by the auth pipeline.
+/// Pages and the application shell can subscribe to react to auth loss
+/// (for example, to show a global re-auth banner).
+/// </summary>
+public static class AuthenticationEvents
+{
+    /// <summary>
+    /// Raised when a token could not be acquired silently or interactively and
+    /// the caller's Graph request will fail. Subscribers should be resilient
+    /// to being invoked on a non-UI thread.
+    /// </summary>
+    /// <remarks>
+    /// The argument is a short human-readable reason, useful for logging and UI.
+    /// </remarks>
+    public static event Action<string>? AuthenticationLost;
+
+    internal static void NotifyAuthenticationLost(string reason)
+    {
+        try
+        {
+            AuthenticationLost?.Invoke(reason);
+        }
+        catch
+        {
+            // Never allow a subscriber exception to propagate into the auth pipeline.
+        }
+    }
+}
+
 /// <summary>
 /// Encapsulates reusable user-interactive authentication against Microsoft Graph (delegated) using MSAL PublicClientApplication.
 /// Wraps acquisition logic and returns a GraphServiceClient configured with a token provider that silently refreshes tokens.
@@ -176,11 +207,30 @@ internal sealed class UserAuthenticationBase
                 }
                 catch (MsalUiRequiredException)
                 {
-                    _cached = await _pca
-                        .AcquireTokenInteractive(_scopes)
-                        .WithPrompt(Microsoft.Identity.Client.Prompt.SelectAccount)
-                        .ExecuteAsync(cancellationToken)
-                        .ConfigureAwait(false);
+                    try
+                    {
+                        _cached = await _pca
+                            .AcquireTokenInteractive(_scopes)
+                            .WithPrompt(Microsoft.Identity.Client.Prompt.SelectAccount)
+                            .ExecuteAsync(cancellationToken)
+                            .ConfigureAwait(false);
+                    }
+                    catch (Exception ex) when (ex is not OperationCanceledException)
+                    {
+                        // Interactive re-auth also failed (e.g., user cancelled, no interactive
+                        // context available). Surface a centralized notification so the shell
+                        // can display a re-auth banner.
+                        AuthenticationEvents.NotifyAuthenticationLost(
+                            $"Token refresh failed and interactive sign-in could not complete: {ex.Message}");
+                        throw new InvalidOperationException(
+                            "Authentication session expired. Please sign in again.", ex);
+                    }
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    AuthenticationEvents.NotifyAuthenticationLost(
+                        $"Silent token acquisition failed: {ex.Message}");
+                    throw;
                 }
                 return _cached.AccessToken;
             }

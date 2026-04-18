@@ -54,6 +54,11 @@
                                      Width="200"
                                      IsIndeterminate="False"
                                      Visibility="Collapsed"/>
+                        <Button x:Name="CancelOperationButton"
+                                Content="Cancel"
+                                Click="CancelOperationButton_Click"
+                                Visibility="Collapsed"
+                                ToolTipService.ToolTip="Cancel the currently running delete operation (already-deleted items will not be restored)."/>
                     </StackPanel>
                 </InfoBar.Content>
             </InfoBar>

@@ -2,6 +2,7 @@ using IntuneTools.Graph.IntuneHelperClasses;
 using IntuneTools.Utilities;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -48,7 +49,19 @@ namespace IntuneTools.Pages
         private readonly ObservableCollection<AuditEventViewModel> _auditEvents = new();
         private readonly ObservableCollection<ActorSummaryItem> _actorSummary = new();
         private List<AuditEvent> _rawAuditEvents = new();
+
+        // All view-models produced from the most recent load. Filters applied client-side
+        // produce the visible subset shown in _auditEvents.
+        private readonly List<AuditEventViewModel> _allViewModels = new();
+
+        // Tracks whether we have auto-loaded events in this session so we do not
+        // re-trigger a (potentially expensive) load every time the user navigates
+        // back to the page.
+        private bool _hasAutoLoaded;
+
         private CancellationTokenSource? _loadCts;
+
+        private const string AllActorsOption = "All actors";
 
         public AuditLogPage()
         {
@@ -61,6 +74,21 @@ namespace IntuneTools.Pages
         protected override IEnumerable<string> GetManagedControlNames()
         {
             yield return "LoadButton";
+        }
+
+        protected override async void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+
+            // Auto-load audit events the first time the user navigates here while authenticated.
+            // Subsequent visits do not re-query; the user can press Load to refresh explicitly.
+            if (_hasAutoLoaded) return;
+            if (string.IsNullOrEmpty(Variables.sourceTenantName)) return;
+            if (sourceGraphServiceClient == null) return;
+
+            _hasAutoLoaded = true;
+            LogInfo("Auto-loading audit events on navigation…");
+            await LoadAuditEventsAsync(GetSelectedDays());
         }
 
         #region Event Handlers
@@ -103,6 +131,26 @@ namespace IntuneTools.Pages
                 btn.Content = "Cancelling\u2026";
             }
             LogWarning("Cancellation requested \u2014 waiting for current page to finish...");
+        }
+
+        private void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (_allViewModels.Count == 0) return;
+            ApplyFilters();
+        }
+
+        private void ActorFilterComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_allViewModels.Count == 0) return;
+            ApplyFilters();
+        }
+
+        private void ClearFiltersButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (SearchTextBox != null) SearchTextBox.Text = string.Empty;
+            if (ActorFilterComboBox != null && ActorFilterComboBox.Items.Count > 0)
+                ActorFilterComboBox.SelectedIndex = 0;
+            // SearchTextBox_TextChanged / ActorFilterComboBox_SelectionChanged will re-apply.
         }
 
         #endregion
@@ -186,10 +234,6 @@ namespace IntuneTools.Pages
                 if (progressDetail != null)
                     progressDetail.Text = "Processing events\u2026";
                 PopulateDataGrid();
-                UpdateSummaryCards();
-                UpdateActorSummary();
-                ExportCsvButton.IsEnabled = _auditEvents.Count > 0;
-                ExportReportButton.IsEnabled = _auditEvents.Count > 0;
 
                 UpdateTotalTimeSaved(secondsSavedOnAuditLog, appFunction.AuditLog);
 
@@ -207,7 +251,7 @@ namespace IntuneTools.Pages
 
         private void PopulateDataGrid()
         {
-            _auditEvents.Clear();
+            _allViewModels.Clear();
 
             foreach (var evt in _rawAuditEvents)
             {
@@ -225,7 +269,7 @@ namespace IntuneTools.Pages
                     resourceInfo = string.Join(", ", resourceNames);
                 }
 
-                _auditEvents.Add(new AuditEventViewModel
+                _allViewModels.Add(new AuditEventViewModel
                 {
                     ActivityDateTime = evt.ActivityDateTime,
                     ActivityDateTimeFormatted = evt.ActivityDateTime?.LocalDateTime.ToString("yyyy-MM-dd HH:mm") ?? "N/A",
@@ -238,7 +282,102 @@ namespace IntuneTools.Pages
                     ResourceInfo = resourceInfo
                 });
             }
+
+            PopulateActorFilterOptions();
+            ApplyFilters();
+
+            LogInfo($"Summary: {_allViewModels.Count:N0} events loaded. Use the filter controls to narrow the view.");
         }
+
+        /// <summary>
+        /// Rebuilds the Actor filter dropdown from the loaded event set, preserving the
+        /// current selection when possible. Always includes an "All actors" sentinel option.
+        /// </summary>
+        private void PopulateActorFilterOptions()
+        {
+            if (ActorFilterComboBox == null) return;
+
+            var previouslySelected = ActorFilterComboBox.SelectedItem as string;
+
+            var distinctActors = _allViewModels
+                .Select(v => v.ActorDisplayName ?? "Unknown")
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(a => a, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            ActorFilterComboBox.ItemsSource = null;
+            var items = new List<string> { AllActorsOption };
+            items.AddRange(distinctActors);
+            ActorFilterComboBox.ItemsSource = items;
+
+            // Restore previous selection if still present; otherwise default to "All actors".
+            if (!string.IsNullOrEmpty(previouslySelected) && items.Contains(previouslySelected, StringComparer.OrdinalIgnoreCase))
+            {
+                ActorFilterComboBox.SelectedItem = items.First(i =>
+                    string.Equals(i, previouslySelected, StringComparison.OrdinalIgnoreCase));
+            }
+            else
+            {
+                ActorFilterComboBox.SelectedIndex = 0;
+            }
+
+            if (FilterPanel != null)
+                FilterPanel.Visibility = _allViewModels.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        /// <summary>
+        /// Applies the current search text and actor filter to the loaded view-models,
+        /// refreshing the visible DataGrid and the summary cards/actor summary to reflect
+        /// the filtered subset.
+        /// </summary>
+        private void ApplyFilters()
+        {
+            var search = SearchTextBox?.Text?.Trim() ?? string.Empty;
+            var actor = ActorFilterComboBox?.SelectedItem as string;
+
+            IEnumerable<AuditEventViewModel> filtered = _allViewModels;
+
+            if (!string.IsNullOrEmpty(actor) && !string.Equals(actor, AllActorsOption, StringComparison.Ordinal))
+            {
+                filtered = filtered.Where(v =>
+                    string.Equals(v.ActorDisplayName, actor, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (!string.IsNullOrEmpty(search))
+            {
+                filtered = filtered.Where(v =>
+                    ContainsCI(v.ActivityDisplayName, search)
+                    || ContainsCI(v.CategoryName, search)
+                    || ContainsCI(v.ResultText, search)
+                    || ContainsCI(v.ComponentName, search)
+                    || ContainsCI(v.OperationType, search)
+                    || ContainsCI(v.ResourceInfo, search)
+                    || ContainsCI(v.ActorDisplayName, search));
+            }
+
+            _auditEvents.Clear();
+            foreach (var vm in filtered)
+            {
+                _auditEvents.Add(vm);
+            }
+
+            UpdateSummaryCards();
+            UpdateActorSummary();
+
+            if (FilterResultCountText != null)
+            {
+                FilterResultCountText.Text = _auditEvents.Count == _allViewModels.Count
+                    ? $"Showing all {_allViewModels.Count:N0} event(s)"
+                    : $"Showing {_auditEvents.Count:N0} of {_allViewModels.Count:N0} event(s)";
+            }
+
+            ExportCsvButton.IsEnabled = _auditEvents.Count > 0;
+            ExportReportButton.IsEnabled = _auditEvents.Count > 0;
+        }
+
+        private static bool ContainsCI(string? haystack, string needle)
+            => !string.IsNullOrEmpty(haystack)
+               && haystack.IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0;
 
         private void UpdateSummaryCards()
         {
@@ -265,8 +404,6 @@ namespace IntuneTools.Pages
             var failureCount = _auditEvents.Count(e =>
                 string.Equals(e.ResultText, "Failure", StringComparison.OrdinalIgnoreCase));
             SuccessFailureText.Text = $"{successCount} / {failureCount}";
-
-            LogInfo($"Summary: {_auditEvents.Count} events, {uniqueActors} actors, {categories} categories, {successCount} success / {failureCount} failure");
         }
 
         private void UpdateActorSummary()
@@ -293,11 +430,21 @@ namespace IntuneTools.Pages
         private void ClearSummary()
         {
             _auditEvents.Clear();
+            _allViewModels.Clear();
             _actorSummary.Clear();
             SummaryCardsPanel.Visibility = Visibility.Collapsed;
             ActorSummaryPanel.Visibility = Visibility.Collapsed;
             ExportCsvButton.IsEnabled = false;
             ExportReportButton.IsEnabled = false;
+
+            if (FilterPanel != null)
+                FilterPanel.Visibility = Visibility.Collapsed;
+            if (ActorFilterComboBox != null)
+            {
+                ActorFilterComboBox.ItemsSource = null;
+            }
+            if (FilterResultCountText != null)
+                FilterResultCountText.Text = string.Empty;
 
             TotalEventsText.Text = "0";
             UniqueActorsText.Text = "0";
