@@ -85,13 +85,16 @@ namespace IntuneTools.Pages
             RightClickMenu.AttachDataGridContextMenu(AssignmentsDataGrid);
             LogConsole.ItemsSource = LogEntries;
             InitializeDataGridPersistence(AssignmentsDataGrid, AssignmentsGridStateKey);
+            // Keep the empty-state placeholder in sync with the staging collection.
+            ContentList.CollectionChanged += (_, _) => UpdateStagingEmptyState();
+            this.Loaded += (_, _) => UpdateStagingEmptyState();
         }
 
         protected override string UnauthenticatedMessage => "You must authenticate with a tenant before managing assignments.";
 
         protected override IEnumerable<string> GetManagedControlNames() => new[]
         {
-            "InputTextBox", "SearchButton", "ListAllButton", "ViewAssignmentsButton",
+            "InputTextBox", "ListAllButton", "ViewAssignmentsButton",
             "ClearSelectedButton", "ClearAllButton",
             "AssignmentsDataGrid", "ClearLogButton"
         };
@@ -104,14 +107,14 @@ namespace IntuneTools.Pages
         {
             base.ShowLoading(message);
             ListAllButton.IsEnabled = false;
-            SearchButton.IsEnabled = false;
+            InputTextBox.IsEnabled = false;
         }
 
         protected override void HideLoading()
         {
             base.HideLoading();
             ListAllButton.IsEnabled = true;
-            SearchButton.IsEnabled = true;
+            InputTextBox.IsEnabled = true;
         }
 
         #endregion
@@ -923,15 +926,47 @@ namespace IntuneTools.Pages
             await ListAllOrchestrator(sourceGraphServiceClient);
         }
 
-        private async void SearchButton_Click(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// AutoSuggestBox QuerySubmitted handler — fires on Enter or when the search icon is clicked.
+        /// </summary>
+        private async void InputTextBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
         {
-            var searchQuery = InputTextBox.Text.Trim();
-            if (string.IsNullOrWhiteSpace(searchQuery))
+            var query = (args.QueryText ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(query))
             {
                 AppendToLog("Please enter a search query.");
                 return;
             }
-            await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
+            await SearchOrchestrator(sourceGraphServiceClient, query);
+        }
+
+        private void FocusSearch_Accelerator(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            args.Handled = true;
+            InputTextBox?.Focus(FocusState.Programmatic);
+        }
+
+        private void ListAll_Accelerator(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            args.Handled = true;
+            ListAllButton_Click(this, new RoutedEventArgs());
+        }
+
+        private void PrimaryAction_Accelerator(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            args.Handled = true;
+            ViewAssignmentsButton_Click(this, new RoutedEventArgs());
+        }
+
+        /// <summary>
+        /// Toggles the empty-state placeholder over the staging grid based on the current ContentList count.
+        /// </summary>
+        private void UpdateStagingEmptyState()
+        {
+            if (StagingEmptyState == null) return;
+            StagingEmptyState.Visibility = ContentList.Count == 0
+                ? Visibility.Visible
+                : Visibility.Collapsed;
         }
 
         private async void ViewAssignmentsButton_Click(object sender, RoutedEventArgs e)
