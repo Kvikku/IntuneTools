@@ -1,7 +1,6 @@
 using IntuneTools.Pages;
 using IntuneTools.Utilities;
 using Microsoft.Graph;
-using Microsoft.Graph.Beta.Models.ODataErrors;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -72,31 +71,25 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             protected override Task DeleteByIdAsync(GraphServiceClient client, string id)
                 => client.DeviceAppManagement.MobileApps[id].DeleteAsync();
 
-            protected override async Task PatchNameAsync(GraphServiceClient client, string id, string newName)
+            private async Task PatchNameWithTypeAsync(GraphServiceClient client, string id, string newName, string odataType)
             {
-                // Called from RenameAppAsync with correct OdataType already resolved
                 var app = new MobileApp
                 {
-                    OdataType = _cachedOdataType,
+                    OdataType = odataType,
                     DisplayName = newName,
                 };
                 await client.DeviceAppManagement.MobileApps[id].PatchAsync(app);
             }
 
-            protected override async Task PatchDescriptionAsync(GraphServiceClient client, string id, string description)
+            private async Task PatchDescriptionWithTypeAsync(GraphServiceClient client, string id, string description, string odataType)
             {
-                // Called from RenameAppAsync with correct OdataType already resolved
                 var app = new MobileApp
                 {
-                    OdataType = _cachedOdataType,
+                    OdataType = odataType,
                     Description = description,
                 };
                 await client.DeviceAppManagement.MobileApps[id].PatchAsync(app);
             }
-
-            // Thread-local cache for OdataType set during rename flow to avoid extra GETs
-            [ThreadStatic]
-            private static string? _cachedOdataType;
 
             public override async Task<string?> ImportFromJsonDataAsync(GraphServiceClient client, JsonElement policyData)
             {
@@ -163,39 +156,31 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         return;
                     }
 
-                    // Cache the OdataType so PatchNameAsync/PatchDescriptionAsync don't need to re-fetch
-                    _cachedOdataType = existingApp.OdataType;
+                    var odataType = existingApp.OdataType;
 
-                    try
+                    if (selectedRenameMode == "Prefix")
                     {
-                        if (selectedRenameMode == "Prefix")
-                        {
-                            var currentName = GetPolicyName(existingApp) ?? string.Empty;
-                            var name = FindPreFixInPolicyName(currentName, newName);
-                            await PatchNameAsync(client, id, name);
-                            LogToFunctionFile(appFunction.Main, $"Renamed {ResourceName} {id} to {name}");
-                        }
-                        else if (selectedRenameMode == "Description")
-                        {
-                            await PatchDescriptionAsync(client, id, newName);
-                            LogToFunctionFile(appFunction.Main, $"Updated description for {ResourceName} {id} to {newName}");
-                        }
-                        else if (selectedRenameMode == "RemovePrefix")
-                        {
-                            var currentName = GetPolicyName(existingApp);
-                            if (string.IsNullOrWhiteSpace(currentName))
-                            {
-                                LogToFunctionFile(appFunction.Main, $"Unable to remove prefix from {ResourceName} {id}: name is null or empty.", LogLevels.Warning);
-                                return;
-                            }
-                            var name = RemovePrefixFromPolicyName(currentName);
-                            await PatchNameAsync(client, id, name);
-                            LogToFunctionFile(appFunction.Main, $"Removed prefix from {ResourceName} {id}, new name: {name}");
-                        }
+                        var currentName = GetPolicyName(existingApp) ?? string.Empty;
+                        var name = FindPreFixInPolicyName(currentName, newName);
+                        await PatchNameWithTypeAsync(client, id, name, odataType);
+                        LogToFunctionFile(appFunction.Main, $"Renamed {ResourceName} {id} to {name}");
                     }
-                    finally
+                    else if (selectedRenameMode == "Description")
                     {
-                        _cachedOdataType = null;
+                        await PatchDescriptionWithTypeAsync(client, id, newName, odataType);
+                        LogToFunctionFile(appFunction.Main, $"Updated description for {ResourceName} {id} to {newName}");
+                    }
+                    else if (selectedRenameMode == "RemovePrefix")
+                    {
+                        var currentName = GetPolicyName(existingApp);
+                        if (string.IsNullOrWhiteSpace(currentName))
+                        {
+                            LogToFunctionFile(appFunction.Main, $"Unable to remove prefix from {ResourceName} {id}: name is null or empty.", LogLevels.Warning);
+                            return;
+                        }
+                        var name = RemovePrefixFromPolicyName(currentName);
+                        await PatchNameWithTypeAsync(client, id, name, odataType);
+                        LogToFunctionFile(appFunction.Main, $"Removed prefix from {ResourceName} {id}, new name: {name}");
                     }
                 }
                 catch (Exception ex)

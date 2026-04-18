@@ -74,7 +74,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 if (existing.OdataType?.Contains("activeDirectory", StringComparison.OrdinalIgnoreCase) == true)
                 {
-                    LogToFunctionFile(appFunction.Main, "Active Directory Autopilot profiles is not supported yet. Skipping.", LogLevels.Warning);
+                    LogToFunctionFile(appFunction.Main, "Active Directory Autopilot profiles are not supported yet. Skipping.", LogLevels.Warning);
                     return;
                 }
 

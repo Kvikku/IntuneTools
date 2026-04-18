@@ -183,8 +183,9 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 await _helper.DeleteAsync(graphServiceClient, filterID);
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                GraphErrorHandler.HandleException(ex, "deleting", "assignment filter");
                 return false;
             }
         }
