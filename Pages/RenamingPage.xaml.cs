@@ -112,6 +112,7 @@ namespace IntuneTools.Pages
                 CustomContentList.Clear();
                 await LoadAllContentTypesAsync(graphServiceClient, LogInfo);
                 RenamingDataGrid.ItemsSource = CustomContentList;
+                RefreshRenamePreview();
             }
             catch (Exception ex)
             {
@@ -132,6 +133,7 @@ namespace IntuneTools.Pages
                 CustomContentList.Clear();
                 await SearchAllContentTypesAsync(graphServiceClient, searchQuery, LogInfo);
                 RenamingDataGrid.ItemsSource = CustomContentList;
+                RefreshRenamePreview();
             }
             catch (Exception ex)
             {
@@ -425,6 +427,59 @@ namespace IntuneTools.Pages
         #region UI Helpers
 
         /// <summary>
+        /// Recomputes <see cref="CustomContentInfo.PreviewName"/> for every staged item
+        /// based on the current rename mode, new name input and selected prefix format.
+        /// Called when any of those inputs change and after list loads, so the grid's
+        /// "New Name (live preview)" column stays in sync with what the Update action
+        /// will actually produce.
+        /// </summary>
+        private void RefreshRenamePreview()
+        {
+            if (CustomContentList == null || CustomContentList.Count == 0)
+                return;
+
+            var mode = GetSelectedRenameMode();
+            var newNameInput = NewNameTextBox?.Text?.Trim() ?? string.Empty;
+            var prefixSymbol = GetSelectedPrefixOption();
+
+            foreach (var item in CustomContentList)
+            {
+                var original = item.ContentName ?? string.Empty;
+                string preview;
+
+                switch (mode)
+                {
+                    case RenameMode.Prefix:
+                        if (prefixSymbol == null || string.IsNullOrEmpty(newNameInput))
+                        {
+                            preview = original;
+                        }
+                        else
+                        {
+                            var prefix = $"{prefixSymbol[0]}{newNameInput}{prefixSymbol[1]}";
+                            preview = FindPreFixInPolicyName(original, prefix);
+                        }
+                        break;
+
+                    case RenameMode.RemovePrefix:
+                        preview = RemovePrefixFromPolicyName(original);
+                        break;
+
+                    case RenameMode.Description:
+                        // Rename mode "Description" updates the description field, not the display name.
+                        preview = original;
+                        break;
+
+                    default:
+                        preview = original;
+                        break;
+                }
+
+                item.PreviewName = preview;
+            }
+        }
+
+        /// <summary>
         /// Shows a confirmation dialog and returns true if user confirmed.
         /// </summary>
         private async Task<bool> ShowConfirmationDialog(string title, string content, string confirmButtonText)
@@ -590,6 +645,18 @@ namespace IntuneTools.Pages
                 RenameMode.Description => "Enter description...",
                 _ => "Not required"
             };
+
+            RefreshRenamePreview();
+        }
+
+        private void NewNameTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            RefreshRenamePreview();
+        }
+
+        private void PrefixFormat_Changed(object sender, RoutedEventArgs e)
+        {
+            RefreshRenamePreview();
         }
 
         private void RenamingDataGrid_Sorting(object sender, DataGridColumnEventArgs e)

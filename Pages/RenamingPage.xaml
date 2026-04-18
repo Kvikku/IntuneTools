@@ -125,7 +125,8 @@
                     </ComboBox>
                     <TextBox x:Name="NewNameTextBox"
                              PlaceholderText="Enter prefix..."
-                             Width="220"/>
+                             Width="220"
+                             TextChanged="NewNameTextBox_TextChanged"/>
                     <AppBarButton x:Name="PrefixButton" Label="Format">
                         <AppBarButton.Icon>
                             <FontIcon Glyph="&#xE8D2;"/>
@@ -134,9 +135,9 @@
                             <Flyout Placement="BottomEdgeAlignedLeft">
                                 <StackPanel x:Name="OptionsPanel" Orientation="Vertical" MinWidth="200">
                                     <TextBlock Text="Prefix Format" FontWeight="SemiBold" Margin="0,0,0,8"/>
-                                    <RadioButton x:Name="Parentheses" Content="Parentheses (  )" GroupName="PrefixOptions" IsChecked="True"/>
-                                    <RadioButton x:Name="SquareBrackets" Content="Square brackets [  ]" GroupName="PrefixOptions"/>
-                                    <RadioButton x:Name="CurlyBrackets" Content="Curly brackets {  }" GroupName="PrefixOptions"/>
+                                    <RadioButton x:Name="Parentheses" Content="Parentheses (  )" GroupName="PrefixOptions" IsChecked="True" Checked="PrefixFormat_Changed"/>
+                                    <RadioButton x:Name="SquareBrackets" Content="Square brackets [  ]" GroupName="PrefixOptions" Checked="PrefixFormat_Changed"/>
+                                    <RadioButton x:Name="CurlyBrackets" Content="Curly brackets {  }" GroupName="PrefixOptions" Checked="PrefixFormat_Changed"/>
                                 </StackPanel>
                             </Flyout>
                         </AppBarButton.Flyout>
@@ -198,6 +199,7 @@
                     SelectionChanged="RenamingDataGrid_SelectionChanged">
                     <controls:DataGrid.Columns>
                         <controls:DataGridTextColumn Header="Name" Binding="{Binding ContentName}" Width="2*"/>
+                        <controls:DataGridTextColumn Header="New Name (live preview)" Binding="{Binding PreviewName}" Width="2*"/>
                         <controls:DataGridTextColumn Header="Type" Binding="{Binding ContentType}" Width="*"/>
                         <controls:DataGridTextColumn Header="Platform" Binding="{Binding ContentPlatform}" Width="*"/>
                         <controls:DataGridTextColumn Header="ID" Binding="{Binding ContentId}" Width="2*"/>
