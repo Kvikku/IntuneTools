@@ -273,7 +273,7 @@ namespace IntuneTools.Graph
                 using var writer = new JsonSerializationWriter();
                 writer.WriteObjectValue(null, result);
                 using var stream = writer.GetSerializedContent();
-                var doc = await JsonDocument.ParseAsync(stream);
+                using var doc = await JsonDocument.ParseAsync(stream);
                 return doc.RootElement.Clone();
             }
             catch (Exception ex)
