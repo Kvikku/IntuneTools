@@ -1127,7 +1127,8 @@ namespace IntuneTools.Pages
 
         private void SelectAllButton_Click(object sender, RoutedEventArgs e)
         {
-            AppDataGrid.SelectAll();
+            foreach (var item in AppDataGrid.ItemsSource)
+                AppDataGrid.SelectedItems.Add(item);
         }
 
         private void DeselectAllButton_Click(object sender, RoutedEventArgs e)

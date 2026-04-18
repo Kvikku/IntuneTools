@@ -557,7 +557,8 @@ namespace IntuneTools.Pages
 
         private void SelectAllButton_Click(object sender, RoutedEventArgs e)
         {
-            CleanupDataGrid.SelectAll();
+            foreach (var item in CleanupDataGrid.ItemsSource)
+                CleanupDataGrid.SelectedItems.Add(item);
         }
 
         private void DeselectAllButton_Click(object sender, RoutedEventArgs e)

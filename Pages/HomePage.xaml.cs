@@ -75,7 +75,8 @@ namespace IntuneTools.Pages
         {
             var signedIn = !string.IsNullOrWhiteSpace(sourceTenantName);
             SignInFirstInfoBar.IsOpen = !signedIn;
-            QuickActionsGrid.IsEnabled = signedIn;
+            QuickActionsGrid.IsHitTestVisible = signedIn;
+            QuickActionsGrid.Opacity = signedIn ? 1.0 : 0.4;
         }
 
         private void UpdateLoginStatus()

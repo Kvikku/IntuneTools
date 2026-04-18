@@ -616,7 +616,8 @@ namespace IntuneTools.Pages
 
         private void SelectAllButton_Click(object sender, RoutedEventArgs e)
         {
-            RenamingDataGrid.SelectAll();
+            foreach (var item in RenamingDataGrid.ItemsSource)
+                RenamingDataGrid.SelectedItems.Add(item);
         }
 
         private void DeselectAllButton_Click(object sender, RoutedEventArgs e)
