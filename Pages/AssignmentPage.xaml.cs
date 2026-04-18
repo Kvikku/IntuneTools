@@ -128,6 +128,9 @@ namespace IntuneTools.Pages
             LogConsole.ItemsSource = LogEntries;
 
             this.Loaded += AssignmentPage_Loaded;
+            // Keep the empty-state placeholder in sync with the staging collection.
+            AssignmentList.CollectionChanged += (_, _) => UpdateStagingEmptyState();
+            this.Loaded += (_, _) => UpdateStagingEmptyState();
             RightClickMenu.AttachDataGridContextMenu(AppDataGrid);
         }
 
@@ -251,22 +254,24 @@ namespace IntuneTools.Pages
 
             // Get all content
             var content = GetAllContentFromDatagrid();
+            var groupCount = GroupDataGrid.SelectedItems?.Count ?? 0;
 
-            // Bulk operation safeguard: warn when assigning 10 or more items
-            if (content.Count >= 10)
+            // Pre-flight confirmation for any bulk assignment so the user always sees what
+            // they're about to do (item count, group count, and tenant). Skipped when the
+            // payload is small (<10 items AND <=2 groups) to avoid friction on tiny ops.
+            if (content.Count >= 10 || groupCount > 2)
             {
-                var bulkWarning = new ContentDialog
-                {
-                    Title = "\u26A0 Large Bulk Assignment",
-                    Content = $"You are about to assign {content.Count} items. Are you sure you want to continue?",
-                    PrimaryButtonText = "Continue",
-                    CloseButtonText = "Cancel",
-                    DefaultButton = ContentDialogButton.Close,
-                    XamlRoot = this.XamlRoot
-                };
-
-                var bulkResult = await bulkWarning.ShowAsync();
-                if (bulkResult != ContentDialogResult.Primary)
+                var groupWord = groupCount == 1 ? "group" : "groups";
+                var confirmed = await ConfirmationDialogHelper.ConfirmAsync(
+                    this.XamlRoot,
+                    title: "Confirm assignment",
+                    action: $"assign to {groupCount} {groupWord}",
+                    itemCount: content.Count,
+                    tenantName: Variables.sourceTenantName,
+                    extraMessage: "You can adjust intent, filter, and platform-specific options on the next screen.",
+                    severity: InfoBarSeverity.Informational,
+                    confirmText: "Continue");
+                if (!confirmed)
                 {
                     AppendToLog("Bulk assignment cancelled by user.");
                     return;
@@ -1123,6 +1128,13 @@ namespace IntuneTools.Pages
         {
             var count = AppDataGrid.SelectedItems?.Count ?? 0;
             SelectionCountText.Text = $"Selected: {count}";
+            UpdateStagingEmptyState();
+        }
+
+        private void GroupDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var count = GroupDataGrid.SelectedItems?.Count ?? 0;
+            GroupSelectionCountText.Text = $"Groups selected: {count}";
         }
 
         private void SelectAllButton_Click(object sender, RoutedEventArgs e)
@@ -1134,6 +1146,54 @@ namespace IntuneTools.Pages
         private void DeselectAllButton_Click(object sender, RoutedEventArgs e)
         {
             AppDataGrid.SelectedItems.Clear();
+        }
+
+        /// <summary>
+        /// Toggles the empty-state placeholder over the staging grid based on the current ContentList count.
+        /// Called whenever items are added/removed/cleared.
+        /// </summary>
+        private void UpdateStagingEmptyState()
+        {
+            if (StagingEmptyState == null) return;
+            // ContentList lives on BaseDataOperationPage but AssignmentPage uses AssignmentList directly.
+            var hasItems = (AppDataGrid.ItemsSource is System.Collections.IEnumerable items)
+                           && items.Cast<object>().Any();
+            StagingEmptyState.Visibility = hasItems ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        #endregion
+
+        #region Keyboard Accelerators
+
+        private void FocusSearch_Accelerator(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            args.Handled = true;
+            ContentSearchBox?.Focus(FocusState.Programmatic);
+        }
+
+        private void ListAll_Accelerator(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            args.Handled = true;
+            ListAllButton_Click(this, new RoutedEventArgs());
+        }
+
+        private void SelectAll_Accelerator(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            args.Handled = true;
+            SelectAllButton_Click(this, new RoutedEventArgs());
+        }
+
+        private void DeselectAll_Accelerator(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            args.Handled = true;
+            DeselectAllButton_Click(this, new RoutedEventArgs());
+        }
+
+        private void PrimaryAction_Accelerator(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            args.Handled = true;
+            // Ctrl+Enter is the universal "do the primary action on this page" shortcut.
+            AssignButton_Click(this, new RoutedEventArgs());
         }
 
         #endregion

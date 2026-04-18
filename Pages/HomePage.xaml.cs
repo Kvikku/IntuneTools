@@ -38,15 +38,13 @@ namespace IntuneTools.Pages
                 if (status.IsUpdateAvailable)
                 {
                     VersionStatusText.Text = $"Newer version available: {status.LatestVersion} (current {status.CurrentVersion})";
-                    SetIndicatorColor(Windows.UI.Color.FromArgb(255, 255, 165, 0)); // OrangeRed
-                    VersionStatusText.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 165, 0));
+                    ApplyVersionStatusVisuals("StatusWarningBrush");
                     UpdateButtonsPanel.Visibility = Visibility.Visible;
                 }
                 else
                 {
                     VersionStatusText.Text = $"You are up to date ({status.CurrentVersion}).";
-                    SetIndicatorColor(Windows.UI.Color.FromArgb(255, 46, 139, 87)); // SeaGreen
-                    VersionStatusText.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 46, 139, 87));
+                    ApplyVersionStatusVisuals("StatusSuccessBrush");
                     UpdateButtonsPanel.Visibility = Visibility.Collapsed;
                 }
             }
@@ -55,9 +53,30 @@ namespace IntuneTools.Pages
                 System.Diagnostics.Debug.WriteLine($"Version check failed: {ex.Message}");
                 LogToFunctionFile(appFunction.Main, $"Version check failed: {ex}", LogLevels.Warning);
                 VersionStatusText.Text = "Version check failed.";
-                SetIndicatorColor(Windows.UI.Color.FromArgb(255, 128, 128, 128)); // Gray
-                VersionStatusText.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 128, 128, 128));
+                ApplyVersionStatusVisuals("StatusNeutralBrush");
                 UpdateButtonsPanel.Visibility = Visibility.Collapsed;
+            }
+            finally
+            {
+                // Stop the inline spinner once the check is done (success, up-to-date, or error).
+                if (VersionStatusProgressRing != null)
+                {
+                    VersionStatusProgressRing.IsActive = false;
+                    VersionStatusProgressRing.Visibility = Visibility.Collapsed;
+                }
+                if (VersionStatusIndicator != null)
+                    VersionStatusIndicator.Visibility = Visibility.Visible;
+            }
+        }
+
+        private void ApplyVersionStatusVisuals(string brushResourceKey)
+        {
+            if (Application.Current.Resources.TryGetValue(brushResourceKey, out var resource)
+                && resource is SolidColorBrush brush)
+            {
+                if (VersionStatusBrush != null)
+                    VersionStatusBrush.Color = brush.Color;
+                VersionStatusText.Foreground = brush;
             }
         }
 
@@ -80,9 +99,10 @@ namespace IntuneTools.Pages
         private void UpdateSignInGate()
         {
             var signedIn = !string.IsNullOrWhiteSpace(sourceTenantName);
+            // The banner alone communicates the gate. We no longer dim or disable the
+            // quick-action grid (users can still click into a page; the page itself shows
+            // its own auth-required state). This avoids the opaque "is it broken?" feeling.
             SignInFirstInfoBar.IsOpen = !signedIn;
-            QuickActionsGrid.IsHitTestVisible = signedIn;
-            QuickActionsGrid.Opacity = signedIn ? 1.0 : 0.4;
         }
 
         private void RefreshRecentActivity()
@@ -91,6 +111,15 @@ namespace IntuneTools.Pages
             foreach (var entry in RecentActivityStore.GetRecent())
             {
                 _recentActivity.Add(entry);
+            }
+
+            // Toggle the empty-state placeholder so first-run users get an explanation
+            // instead of an empty white box.
+            if (RecentActivityEmptyState != null)
+            {
+                RecentActivityEmptyState.Visibility = _recentActivity.Count == 0
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
             }
         }
 
