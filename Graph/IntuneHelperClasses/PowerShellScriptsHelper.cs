@@ -1,10 +1,7 @@
-﻿using IntuneTools.Utilities;
+using IntuneTools.Utilities;
 using Microsoft.Graph;
-using Microsoft.Kiota.Serialization.Json;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -12,544 +9,251 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 {
     public class PowerShellScriptsHelper
     {
-        public static async Task<List<DeviceManagementScript>> SearchForPowerShellScripts(GraphServiceClient graphServiceClient, string searchQuery)
+        private class Helper : GraphHelper<DeviceManagementScript, DeviceManagementScriptCollectionResponse>
         {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, "Searching for PowerShell scripts. Search query: " + searchQuery);
+            protected override string ResourceName => "PowerShell scripts";
+            protected override string ContentTypeName => "PowerShell Script";
+            protected override string? FixedPlatform => "Windows";
 
-                var result = await graphServiceClient.DeviceManagement.DeviceManagementScripts.GetAsync((requestConfiguration) =>
+            protected override string? GetPolicyName(DeviceManagementScript policy) => policy.DisplayName;
+            protected override string? GetPolicyId(DeviceManagementScript policy) => policy.Id;
+            protected override string? GetPolicyDescription(DeviceManagementScript policy) => policy.Description;
+
+            protected override Task<DeviceManagementScriptCollectionResponse?> GetCollectionAsync(GraphServiceClient client)
+                => client.DeviceManagement.DeviceManagementScripts.GetAsync(rc =>
                 {
-                    requestConfiguration.QueryParameters.Filter = $"contains(displayName,'{searchQuery}')";
+                    rc.QueryParameters.Top = 1000;
                 });
 
-                List<DeviceManagementScript> scripts = new List<DeviceManagementScript>();
-                var pageIterator = PageIterator<DeviceManagementScript, DeviceManagementScriptCollectionResponse>.CreatePageIterator(graphServiceClient, result, (script) =>
+            protected override Task<DeviceManagementScriptCollectionResponse?> SearchCollectionAsync(GraphServiceClient client, string searchQuery)
+                => client.DeviceManagement.DeviceManagementScripts.GetAsync(rc =>
                 {
-                    scripts.Add(script);
-                    return true;
-                });
-                await pageIterator.IterateAsync();
-
-                LogToFunctionFile(appFunction.Main, $"Found {scripts.Count} PowerShell scripts.");
-
-                return scripts;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for PowerShell scripts: {ex.Message}", LogLevels.Error);
-                return new List<DeviceManagementScript>();
-            }
-        }
-
-        public static async Task<List<DeviceManagementScript>> GetAllPowerShellScripts(GraphServiceClient graphServiceClient)
-        {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, "Retrieving all PowerShell scripts.");
-
-                var result = await graphServiceClient.DeviceManagement.DeviceManagementScripts.GetAsync((requestConfiguration) =>
-                {
-                    requestConfiguration.QueryParameters.Top = 1000;
+                    rc.QueryParameters.Filter = $"contains(displayName,'{searchQuery}')";
                 });
 
-                List<DeviceManagementScript> scripts = new List<DeviceManagementScript>();
-                var pageIterator = PageIterator<DeviceManagementScript, DeviceManagementScriptCollectionResponse>.CreatePageIterator(graphServiceClient, result, (script) =>
+            protected override Task<DeviceManagementScript?> GetByIdAsync(GraphServiceClient client, string id)
+                => client.DeviceManagement.DeviceManagementScripts[id].GetAsync();
+
+            protected override Task DeleteByIdAsync(GraphServiceClient client, string id)
+                => client.DeviceManagement.DeviceManagementScripts[id].DeleteAsync();
+
+            protected override async Task PatchNameAsync(GraphServiceClient client, string id, string newName)
+            {
+                var script = new DeviceManagementScript { DisplayName = newName };
+                await client.DeviceManagement.DeviceManagementScripts[id].PatchAsync(script);
+            }
+
+            protected override async Task PatchDescriptionAsync(GraphServiceClient client, string id, string description)
+            {
+                var script = new DeviceManagementScript { Description = description };
+                await client.DeviceManagement.DeviceManagementScripts[id].PatchAsync(script);
+            }
+
+            public override async Task<string?> ImportFromJsonDataAsync(GraphServiceClient client, JsonElement policyData)
+            {
+                try
                 {
-                    scripts.Add(script);
-                    return true;
+                    var exported = GraphImportHelper.DeserializeFromJson(policyData, DeviceManagementScript.CreateFromDiscriminatorValue);
+
+                    if (exported == null)
+                    {
+                        LogToFunctionFile(appFunction.Main, "Failed to deserialize PowerShell script data from JSON.", LogLevels.Error);
+                        return null;
+                    }
+
+                    var newScript = GraphImportHelper.CloneForImport(exported);
+
+                    var imported = await client.DeviceManagement.DeviceManagementScripts.PostAsync(newScript);
+
+                    LogToFunctionFile(appFunction.Main, $"Imported PowerShell script: {imported?.DisplayName}");
+                    return imported?.DisplayName;
+                }
+                catch (Exception ex)
+                {
+                    GraphErrorHandler.HandleException(ex, "importing from JSON", ResourceName);
+                    return null;
+                }
+            }
+
+            public override async Task<bool?> HasAssignmentsAsync(GraphServiceClient client, string id)
+            {
+                try
+                {
+                    var result = await client.DeviceManagement.DeviceManagementScripts[id].Assignments.GetAsync(rc =>
+                    {
+                        rc.QueryParameters.Top = 1;
+                    });
+                    return result?.Value != null && result.Value.Count > 0;
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+
+            public override async Task<List<AssignmentInfo>?> GetAssignmentDetailsAsync(GraphServiceClient client, string id)
+            {
+                try
+                {
+                    var details = new List<AssignmentInfo>();
+                    var result = await client.DeviceManagement.DeviceManagementScripts[id].Assignments.GetAsync();
+
+                    while (result?.Value != null)
+                    {
+                        foreach (var assignment in result.Value)
+                        {
+                            details.Add(AssignmentInfo.FromTarget(assignment.Id, assignment.Target));
+                        }
+
+                        if (string.IsNullOrEmpty(result.OdataNextLink)) break;
+
+                        result = await client.DeviceManagement.DeviceManagementScripts[id]
+                            .Assignments.WithUrl(result.OdataNextLink).GetAsync();
+                    }
+
+                    return details;
+                }
+                catch (Exception ex)
+                {
+                    GraphErrorHandler.HandleException(ex, "getting assignment details for", $"PowerShell Script {id}");
+                    return null;
+                }
+            }
+
+            public override async Task RemoveAllAssignmentsAsync(GraphServiceClient client, string id)
+            {
+                var requestBody = new Microsoft.Graph.Beta.DeviceManagement.DeviceManagementScripts.Item.Assign.AssignPostRequestBody
+                {
+                    DeviceManagementScriptAssignments = new List<DeviceManagementScriptAssignment>()
+                };
+
+                await client.DeviceManagement.DeviceManagementScripts[id].Assign.PostAsync(requestBody);
+                LogToFunctionFile(appFunction.Main, $"Removed all assignments from PowerShell Script {id}.");
+            }
+
+            public override async Task ImportMultipleAsync(
+                GraphServiceClient sourceClient,
+                GraphServiceClient destinationClient,
+                List<string> ids,
+                bool assignments,
+                bool filter,
+                List<string> groups)
+            {
+                await GraphImportHelper.ImportBatchAsync(ids, ResourceName, async id =>
+                {
+                    var result = await sourceClient.DeviceManagement.DeviceManagementScripts[id].GetAsync();
+
+                    var requestBody = GraphImportHelper.CloneForImport(result);
+
+                    var import = await destinationClient.DeviceManagement.DeviceManagementScripts.PostAsync(requestBody);
+                    LogToFunctionFile(appFunction.Main, $"Imported script: {requestBody.DisplayName}");
+
+                    if (assignments)
+                    {
+                        await AssignGroupsToSinglePowerShellScript(import.Id, groups, destinationClient);
+                    }
                 });
-                await pageIterator.IterateAsync();
-
-                LogToFunctionFile(appFunction.Main, $"Found {scripts.Count} PowerShell scripts.");
-
-                return scripts;
             }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while retrieving all PowerShell scripts: {ex.Message}", LogLevels.Error);
-                return new List<DeviceManagementScript>();
-            }
-        }
 
-        public static async Task ImportMultiplePowerShellScripts(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> scripts, bool assignments, bool filter, List<string> groups)
-        {
-            try
+            public override async Task AssignGroupsAsync(string id, List<string> groupIds, GraphServiceClient client)
             {
-                LogToFunctionFile(appFunction.Main, $"Importing {scripts.Count} PowerShell scripts.");
-
-                foreach (var script in scripts)
+                try
                 {
+                    ArgumentNullException.ThrowIfNull(id);
+                    ArgumentNullException.ThrowIfNull(groupIds);
+                    ArgumentNullException.ThrowIfNull(client);
+
+                    var assignments = new List<DeviceManagementScriptAssignment>();
+
+                    var buildResult = GraphAssignmentHelper.BuildAssignments<DeviceManagementScriptAssignment>(
+                        groupIds,
+                        (target, groupId) =>
+                        {
+                            return new DeviceManagementScriptAssignment
+                            {
+                                OdataType = "#microsoft.graph.deviceManagementScriptAssignment",
+                                Target = target
+                            };
+                        },
+                        assignments);
+
+                    // Merge existing assignments
+                    var existingAssignments = await client
+                        .DeviceManagement
+                        .DeviceManagementScripts[id]
+                        .Assignments
+                        .GetAsync();
+
+                    GraphAssignmentHelper.MergeExistingAssignments(
+                        existingAssignments?.Value,
+                        assignments,
+                        buildResult,
+                        a => a.Target);
+
+                    var requestBody = new Microsoft.Graph.Beta.DeviceManagement.DeviceManagementScripts.Item.Assign.AssignPostRequestBody
+                    {
+                        DeviceManagementScriptAssignments = assignments
+                    };
+
                     try
                     {
-                        var result = await sourceGraphServiceClient.DeviceManagement.DeviceManagementScripts[script].GetAsync();
-
-                        var requestBody = new DeviceManagementScript
-                        {
-                        };
-
-                        foreach (var property in result.GetType().GetProperties())
-                        {
-                            var value = property.GetValue(result);
-                            if (value != null && property.CanWrite)
-                            {
-                                property.SetValue(requestBody, value);
-                            }
-                        }
-
-                        requestBody.Id = "";
-
-                        var import = await destinationGraphServiceClient.DeviceManagement.DeviceManagementScripts.PostAsync(requestBody);
-                        LogToFunctionFile(appFunction.Main, $"Imported script: {requestBody.DisplayName}");
-
-                        if (assignments)
-                        {
-                            await AssignGroupsToSinglePowerShellScript(import.Id, groups, destinationGraphServiceClient);
-                        }
+                        await client.DeviceManagement.DeviceManagementScripts[id].Assign.PostAsync(requestBody);
+                        LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to script {id} with filter type {deviceAndAppManagementAssignmentFilterType}.");
+                        UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
                     }
                     catch (Exception ex)
                     {
-                        LogToFunctionFile(appFunction.Main, $"Error importing script {script}: {ex.Message}", LogLevels.Error);
+                        LogToFunctionFile(appFunction.Main, $"An error occurred while assigning groups to PowerShell script: {ex.Message}", LogLevels.Warning);
                     }
-                }
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred during the import process: {ex.Message}", LogLevels.Error);
-            }
-        }
-
-        public static async Task AssignGroupsToSinglePowerShellScript(string scriptID, List<string> groupID, GraphServiceClient destinationGraphServiceClient)
-        {
-            try
-            {
-                if (scriptID == null)
-                {
-                    throw new ArgumentNullException(nameof(scriptID));
-                }
-
-                if (groupID == null)
-                {
-                    throw new ArgumentNullException(nameof(groupID));
-                }
-
-                if (destinationGraphServiceClient == null)
-                {
-                    throw new ArgumentNullException(nameof(destinationGraphServiceClient));
-                }
-
-                var assignments = new List<DeviceManagementScriptAssignment>();
-                var seenGroupIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                var hasAllUsers = false;
-                var hasAllDevices = false;
-
-                // Step 1: Add new assignments to request body
-                foreach (var group in groupID)
-                {
-                    if (string.IsNullOrWhiteSpace(group) || !seenGroupIds.Add(group))
-                    {
-                        continue;
-                    }
-
-                    DeviceManagementScriptAssignment assignment;
-
-                    // Check if this is a virtual group (All Users or All Devices)
-                    if (group.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
-                    {
-                        hasAllUsers = true;
-                        assignment = new DeviceManagementScriptAssignment
-                        {
-                            OdataType = "#microsoft.graph.deviceManagementScriptAssignment",
-                            Target = new AllLicensedUsersAssignmentTarget
-                            {
-                                OdataType = "#microsoft.graph.allLicensedUsersAssignmentTarget",
-                                DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
-                                DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
-                            }
-                        };
-                    }
-                    else if (group.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
-                    {
-                        hasAllDevices = true;
-                        assignment = new DeviceManagementScriptAssignment
-                        {
-                            OdataType = "#microsoft.graph.deviceManagementScriptAssignment",
-                            Target = new AllDevicesAssignmentTarget
-                            {
-                                OdataType = "#microsoft.graph.allDevicesAssignmentTarget",
-                                DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
-                                DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
-                            }
-                        };
-                    }
-                    else
-                    {
-                        // Regular group assignment
-                        assignment = new DeviceManagementScriptAssignment
-                        {
-                            OdataType = "#microsoft.graph.deviceManagementScriptAssignment",
-                            Target = new GroupAssignmentTarget
-                            {
-                                OdataType = "#microsoft.graph.groupAssignmentTarget",
-                                DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
-                                DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType,
-                                GroupId = group
-                            }
-                        };
-                    }
-
-                    assignments.Add(assignment);
-                }
-
-                // Step 2: Check for existing assignments and add only if not already present
-                var existingAssignments = await destinationGraphServiceClient
-                    .DeviceManagement
-                    .DeviceManagementScripts[scriptID]
-                    .Assignments
-                    .GetAsync();
-
-                if (existingAssignments?.Value != null)
-                {
-                    foreach (var existing in existingAssignments.Value)
-                    {
-                        // Check the type of assignment target
-                        if (existing.Target is AllLicensedUsersAssignmentTarget)
-                        {
-                            // Skip if we're already adding All Users
-                            if (!hasAllUsers)
-                            {
-                                assignments.Add(existing);
-                            }
-                        }
-                        else if (existing.Target is AllDevicesAssignmentTarget)
-                        {
-                            // Skip if we're already adding All Devices
-                            if (!hasAllDevices)
-                            {
-                                assignments.Add(existing);
-                            }
-                        }
-                        else if (existing.Target is GroupAssignmentTarget groupTarget)
-                        {
-                            var existingGroupId = groupTarget.GroupId;
-
-                            // Only add if not already in the new assignments
-                            if (!string.IsNullOrWhiteSpace(existingGroupId) && seenGroupIds.Add(existingGroupId))
-                            {
-                                assignments.Add(existing);
-                            }
-                        }
-                        else
-                        {
-                            // Include any other assignment types (e.g., exclusions, all users with exclusions, etc.)
-                            assignments.Add(existing);
-                        }
-                    }
-                }
-
-                // Step 3: Update the script with the assignments
-                var requestBody = new Microsoft.Graph.Beta.DeviceManagement.DeviceManagementScripts.Item.Assign.AssignPostRequestBody
-                {
-                    DeviceManagementScriptAssignments = assignments
-                };
-
-                try
-                {
-                    await destinationGraphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].Assign.PostAsync(requestBody);
-                    LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to script {scriptID} with filter type {deviceAndAppManagementAssignmentFilterType}.");
-                    UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
                 }
                 catch (Exception ex)
                 {
                     LogToFunctionFile(appFunction.Main, $"An error occurred while assigning groups to PowerShell script: {ex.Message}", LogLevels.Warning);
                 }
             }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while assigning groups to a single PowerShell script: {ex.Message}", LogLevels.Warning);
-            }
-        }
-        public static async Task DeletePowerShellScript(GraphServiceClient graphServiceClient, string scriptID)
-        {
-            try
-            {
-                if (graphServiceClient == null)
-                {
-                    throw new ArgumentNullException(nameof(graphServiceClient));
-                }
-
-                if (scriptID == null)
-                {
-                    throw new InvalidOperationException("Script ID cannot be null.");
-                }
-                await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].DeleteAsync();
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while deleting PowerShell scripts: {ex.Message}", LogLevels.Error);
-            }
-        }
-        public static async Task RenamePowerShellScript(GraphServiceClient graphServiceClient, string scriptID, string newName)
-        {
-            try
-            {
-                if (graphServiceClient == null)
-                {
-                    throw new ArgumentNullException(nameof(graphServiceClient));
-                }
-
-                if (scriptID == null)
-                {
-                    throw new InvalidOperationException("Script ID cannot be null.");
-                }
-
-                if (string.IsNullOrWhiteSpace(newName))
-                {
-                    throw new InvalidOperationException("New name cannot be null or empty.");
-                }
-
-                if (selectedRenameMode == "Prefix")
-                {
-                    // Look up the existing script
-                    var existingScript = await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].GetAsync();
-
-                    if (existingScript == null)
-                    {
-                        throw new InvalidOperationException($"Script with ID '{scriptID}' not found.");
-                    }
-
-                    var name = FindPreFixInPolicyName(existingScript.DisplayName ?? string.Empty, newName);
-
-                    var script = new DeviceManagementScript
-                    {
-                        DisplayName = name,
-                    };
-
-                    await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].PatchAsync(script);
-                    LogToFunctionFile(appFunction.Main, $"Renamed Powershell script {scriptID} to {name}");
-                }
-                else if (selectedRenameMode == "Suffix")
-                {
-
-                }
-                else if (selectedRenameMode == "Description")
-                {
-                    // Look up the existing script
-                    var existingScript = await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].GetAsync();
-
-                    if (existingScript == null)
-                    {
-                        throw new InvalidOperationException($"Script with ID '{scriptID}' not found.");
-                    }
-
-                    var script = new DeviceManagementScript
-                    {
-                        Description = newName,
-                    };
-
-                    await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].PatchAsync(script);
-                    LogToFunctionFile(appFunction.Main, $"Updated description for Powershell script {scriptID} to {newName}");
-                }
-                else if (selectedRenameMode == "RemovePrefix")
-                {
-                    var existingScript = await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].GetAsync();
-
-                    if (existingScript == null)
-                    {
-                        throw new InvalidOperationException($"Script with ID '{scriptID}' not found.");
-                    }
-
-                    var name = RemovePrefixFromPolicyName(existingScript.DisplayName);
-
-                    var script = new DeviceManagementScript
-                    {
-                        DisplayName = name
-                    };
-
-                    await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].PatchAsync(script);
-                    LogToFunctionFile(appFunction.Main, $"Removed prefix from PowerShell script {scriptID}, new name: '{name}'");
-                }
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while renaming PowerShell scripts: {ex.Message}", LogLevels.Warning);
-            }
         }
 
-        public static async Task<List<CustomContentInfo>> GetAllPowerShellScriptContentAsync(GraphServiceClient graphServiceClient)
-        {
-            var scripts = await GetAllPowerShellScripts(graphServiceClient);
-            var content = new List<CustomContentInfo>();
+        private static readonly Helper _helper = new();
 
-            foreach (var script in scripts)
-            {
-                content.Add(new CustomContentInfo
-                {
-                    ContentName = script.DisplayName,
-                    ContentType = "PowerShell Script",
-                    ContentPlatform = "Windows",
-                    ContentId = script.Id,
-                    ContentDescription = script.Description
-                });
-            }
+        // ── Public static methods (signatures preserved for existing consumers) ──
 
-            return content;
-        }
+        public static Task<List<DeviceManagementScript>> SearchForPowerShellScripts(GraphServiceClient graphServiceClient, string searchQuery)
+            => _helper.SearchAsync(graphServiceClient, searchQuery);
 
-        public static async Task<List<CustomContentInfo>> SearchPowerShellScriptContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
-        {
-            var scripts = await SearchForPowerShellScripts(graphServiceClient, searchQuery);
-            var content = new List<CustomContentInfo>();
+        public static Task<List<DeviceManagementScript>> GetAllPowerShellScripts(GraphServiceClient graphServiceClient)
+            => _helper.GetAllAsync(graphServiceClient);
 
-            foreach (var script in scripts)
-            {
-                content.Add(new CustomContentInfo
-                {
-                    ContentName = script.DisplayName,
-                    ContentType = "PowerShell Script",
-                    ContentPlatform = "Windows",
-                    ContentId = script.Id,
-                    ContentDescription = script.Description
-                });
-            }
+        public static Task ImportMultiplePowerShellScripts(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> scripts, bool assignments, bool filter, List<string> groups)
+            => _helper.ImportMultipleAsync(sourceGraphServiceClient, destinationGraphServiceClient, scripts, assignments, filter, groups);
 
-            return content;
-        }
+        public static Task AssignGroupsToSinglePowerShellScript(string scriptID, List<string> groupID, GraphServiceClient destinationGraphServiceClient)
+            => _helper.AssignGroupsAsync(scriptID, groupID, destinationGraphServiceClient);
 
-        /// <summary>
-        /// Exports a PowerShell script's full data as a JsonElement for JSON file export.
-        /// </summary>
-        public static async Task<JsonElement?> ExportPowerShellScriptDataAsync(GraphServiceClient graphServiceClient, string scriptId)
-        {
-            try
-            {
-                var result = await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptId].GetAsync();
+        public static Task DeletePowerShellScript(GraphServiceClient graphServiceClient, string scriptID)
+            => _helper.DeleteAsync(graphServiceClient, scriptID);
 
-                if (result == null)
-                {
-                    LogToFunctionFile(appFunction.Main, $"PowerShell script {scriptId} not found for export.", LogLevels.Warning);
-                    return null;
-                }
+        public static Task RenamePowerShellScript(GraphServiceClient graphServiceClient, string scriptID, string newName)
+            => _helper.RenameAsync(graphServiceClient, scriptID, newName);
 
-                using var writer = new JsonSerializationWriter();
-                writer.WriteObjectValue(null, result);
-                using var stream = writer.GetSerializedContent();
-                var doc = await JsonDocument.ParseAsync(stream);
-                return doc.RootElement.Clone();
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"Error exporting PowerShell script {scriptId}: {ex.Message}", LogLevels.Error);
-                return null;
-            }
-        }
+        public static Task<List<CustomContentInfo>> GetAllPowerShellScriptContentAsync(GraphServiceClient graphServiceClient)
+            => _helper.GetAllContentAsync(graphServiceClient);
 
-        /// <summary>
-        /// Imports a PowerShell script from previously exported JSON data into the destination tenant.
-        /// </summary>
-        public static async Task<string?> ImportPowerShellScriptFromJsonDataAsync(GraphServiceClient graphServiceClient, JsonElement policyData)
-        {
-            try
-            {
-                var json = policyData.GetRawText();
-                using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
-                var parseNode = new JsonParseNode(JsonDocument.Parse(stream).RootElement);
-                var exported = parseNode.GetObjectValue(DeviceManagementScript.CreateFromDiscriminatorValue);
+        public static Task<List<CustomContentInfo>> SearchPowerShellScriptContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
+            => _helper.SearchContentAsync(graphServiceClient, searchQuery);
 
-                if (exported == null)
-                {
-                    LogToFunctionFile(appFunction.Main, "Failed to deserialize PowerShell script data from JSON.", LogLevels.Error);
-                    return null;
-                }
+        public static Task<JsonElement?> ExportPowerShellScriptDataAsync(GraphServiceClient graphServiceClient, string scriptId)
+            => _helper.ExportDataAsync(graphServiceClient, scriptId);
 
-                var newScript = new DeviceManagementScript();
+        public static Task<string?> ImportPowerShellScriptFromJsonDataAsync(GraphServiceClient graphServiceClient, JsonElement policyData)
+            => _helper.ImportFromJsonDataAsync(graphServiceClient, policyData);
 
-                foreach (var property in exported.GetType().GetProperties())
-                {
-                    var value = property.GetValue(exported);
-                    if (value != null && property.CanWrite)
-                    {
-                        property.SetValue(newScript, value);
-                    }
-                }
+        public static Task<bool?> HasPowerShellScriptAssignmentsAsync(GraphServiceClient graphServiceClient, string scriptId)
+            => _helper.HasAssignmentsAsync(graphServiceClient, scriptId);
 
-                newScript.Id = "";
+        public static Task<List<AssignmentInfo>?> GetPowerShellScriptAssignmentDetailsAsync(GraphServiceClient graphServiceClient, string scriptId)
+            => _helper.GetAssignmentDetailsAsync(graphServiceClient, scriptId);
 
-                var imported = await graphServiceClient.DeviceManagement.DeviceManagementScripts.PostAsync(newScript);
-
-                LogToFunctionFile(appFunction.Main, $"Imported PowerShell script: {imported?.DisplayName}");
-                return imported?.DisplayName;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"Error importing PowerShell script from JSON: {ex.Message}", LogLevels.Error);
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Checks if a PowerShell script has any group assignments.
-        /// </summary>
-        public static async Task<bool?> HasPowerShellScriptAssignmentsAsync(GraphServiceClient graphServiceClient, string scriptId)
-        {
-            try
-            {
-                var result = await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptId].Assignments.GetAsync(rc =>
-                {
-                    rc.QueryParameters.Top = 1;
-                });
-                return result?.Value != null && result.Value.Count > 0;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Gets detailed assignment information for a PowerShell script.
-        /// </summary>
-        public static async Task<List<AssignmentInfo>?> GetPowerShellScriptAssignmentDetailsAsync(GraphServiceClient graphServiceClient, string scriptId)
-        {
-            try
-            {
-                var details = new List<AssignmentInfo>();
-                var result = await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptId].Assignments.GetAsync();
-
-                while (result?.Value != null)
-                {
-                    foreach (var assignment in result.Value)
-                    {
-                        details.Add(AssignmentInfo.FromTarget(assignment.Id, assignment.Target));
-                    }
-
-                    if (string.IsNullOrEmpty(result.OdataNextLink)) break;
-
-                    result = await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptId]
-                        .Assignments.WithUrl(result.OdataNextLink).GetAsync();
-                }
-
-                return details;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"Error getting assignment details for PowerShell Script {scriptId}: {ex.Message}", LogLevels.Error);
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Removes all assignments from a PowerShell script.
-        /// </summary>
-        public static async Task RemoveAllPowerShellScriptAssignmentsAsync(GraphServiceClient graphServiceClient, string scriptId)
-        {
-            var requestBody = new Microsoft.Graph.Beta.DeviceManagement.DeviceManagementScripts.Item.Assign.AssignPostRequestBody
-            {
-                DeviceManagementScriptAssignments = new List<DeviceManagementScriptAssignment>()
-            };
-
-            await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptId].Assign.PostAsync(requestBody);
-            LogToFunctionFile(appFunction.Main, $"Removed all assignments from PowerShell Script {scriptId}.");
-        }
+        public static Task RemoveAllPowerShellScriptAssignmentsAsync(GraphServiceClient graphServiceClient, string scriptId)
+            => _helper.RemoveAllAssignmentsAsync(graphServiceClient, scriptId);
     }
 }
