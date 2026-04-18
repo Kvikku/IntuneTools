@@ -1116,5 +1116,26 @@ namespace IntuneTools.Pages
 
 
         #endregion
+
+        #region Selection Handlers
+
+        private void AppDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var count = AppDataGrid.SelectedItems?.Count ?? 0;
+            SelectionCountText.Text = $"Selected: {count}";
+        }
+
+        private void SelectAllButton_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (var item in AppDataGrid.ItemsSource)
+                AppDataGrid.SelectedItems.Add(item);
+        }
+
+        private void DeselectAllButton_Click(object sender, RoutedEventArgs e)
+        {
+            AppDataGrid.SelectedItems.Clear();
+        }
+
+        #endregion
     }
 }

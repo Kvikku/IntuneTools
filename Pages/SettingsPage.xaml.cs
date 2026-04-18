@@ -188,7 +188,7 @@ namespace IntuneTools.Pages
 
         #region Event Handlers
 
-        private async void DestinationClearTokenButton_Click(object sender, RoutedEventArgs e)
+        private async void DestinationSignOutButton_Click(object sender, RoutedEventArgs e)
         {
             await ClearTenantSessionAsync(isSource: false);
         }
@@ -223,7 +223,7 @@ namespace IntuneTools.Pages
             SwapTenants();
         }
 
-        private async void SourceClearTokenButton_Click(object sender, RoutedEventArgs e)
+        private async void SourceSignOutButton_Click(object sender, RoutedEventArgs e)
         {
             await ClearTenantSessionAsync(isSource: true);
         }

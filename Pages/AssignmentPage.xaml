@@ -31,6 +31,12 @@
                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                        FontSize="14"
                        Margin="0,4,0,0"/>
+            <InfoBar IsOpen="True"
+                     IsClosable="True"
+                     Severity="Informational"
+                     Title="How this page works"
+                     Message="1. Search or list all content to populate the staging grid.  2. Select the groups (and optional filter) in the right panel.  3. Click 'Assign' to bulk-assign every staged item to those groups."
+                     Margin="0,8,0,0"/>
             <InfoBar x:Name="TenantInfoBar"
                      Severity="Informational"
                      IsClosable="False"
@@ -113,6 +119,23 @@
                         <AppBarButton x:Name="RemoveAllButton" Icon="Clear" Label="Remove All" Click="RemoveAllButton_Click" ToolTipService.ToolTip="Clear all items from the grid."/>
                         <AppBarSeparator/>
                         <AppBarButton x:Name="ClearLogButton" Icon="Delete" Label="Clear Log" Click="ClearLogButton_Click" ToolTipService.ToolTip="Clear the log console."/>
+                        <AppBarSeparator/>
+                        <AppBarButton x:Name="SelectAllButton" Label="Select All" Click="SelectAllButton_Click" ToolTipService.ToolTip="Select all items in the staging grid.">
+                            <AppBarButton.Icon>
+                                <FontIcon Glyph="&#xE8B3;"/>
+                            </AppBarButton.Icon>
+                        </AppBarButton>
+                        <AppBarButton x:Name="DeselectAllButton" Label="Deselect All" Click="DeselectAllButton_Click" ToolTipService.ToolTip="Clear the grid selection.">
+                            <AppBarButton.Icon>
+                                <FontIcon Glyph="&#xE711;"/>
+                            </AppBarButton.Icon>
+                        </AppBarButton>
+                        <TextBlock x:Name="SelectionCountText"
+                                   Text="Selected: 0"
+                                   VerticalAlignment="Center"
+                                   FontSize="12"
+                                   Margin="4,0,0,0"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -153,7 +176,8 @@
                                    IsReadOnly="True"
                                    CanUserSortColumns="True"
                                    CanUserReorderColumns="False"
-                                   Sorting="AppDataGrid_Sorting">
+                                   Sorting="AppDataGrid_Sorting"
+                                   SelectionChanged="AppDataGrid_SelectionChanged">
                     <controls:DataGrid.Columns>
                         <controls:DataGridTextColumn Header="Name" Binding="{Binding ContentName}" Width="*"/>
                         <controls:DataGridTextColumn Header="Type" Binding="{Binding ContentType}" Width="*"/>
