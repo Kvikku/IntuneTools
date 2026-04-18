@@ -1,11 +1,9 @@
-﻿using IntuneTools.Utilities;
+using IntuneTools.Utilities;
 using Microsoft.Graph;
 using Microsoft.Graph.Beta.Models.ODataErrors;
-using Microsoft.Kiota.Serialization.Json;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
+using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -13,708 +11,428 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 {
     public class WindowsAutoPilotHelper
     {
-        public static async Task<List<WindowsAutopilotDeploymentProfile>> SearchForWindowsAutoPilotProfiles(GraphServiceClient graphServiceClient, string searchQuery)
+        private class Helper : GraphHelper<WindowsAutopilotDeploymentProfile, WindowsAutopilotDeploymentProfileCollectionResponse>
         {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, "Searching for Windows AutoPilot profiles. Search query: " + searchQuery);
-
-                var result = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles.GetAsync((requestConfiguration) =>
-                {
-                    requestConfiguration.QueryParameters.Filter = $"contains(displayName,'{searchQuery}')";
-                });
-
-                List<WindowsAutopilotDeploymentProfile> profiles = new List<WindowsAutopilotDeploymentProfile>();
-                var pageIterator = PageIterator<WindowsAutopilotDeploymentProfile, WindowsAutopilotDeploymentProfileCollectionResponse>.CreatePageIterator(graphServiceClient, result, (profile) =>
-                {
-                    profiles.Add(profile);
-                    return true;
-                });
-                await pageIterator.IterateAsync();
-
-                LogToFunctionFile(appFunction.Main, $"Found {profiles.Count} Windows AutoPilot profiles.");
-
-                return profiles;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for Windows AutoPilot profiles: {ex.Message}", LogLevels.Error);
-                return new List<WindowsAutopilotDeploymentProfile>();
-            }
-        }
-
-        public static async Task<List<WindowsAutopilotDeploymentProfile>> GetAllWindowsAutoPilotProfiles(GraphServiceClient graphServiceClient)
-        {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, "Retrieving all Windows AutoPilot profiles.");
-
-                var result = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles.GetAsync((requestConfiguration) =>
-                {
-                    requestConfiguration.QueryParameters.Top = 1000;
-                });
-
-                List<WindowsAutopilotDeploymentProfile> profiles = new List<WindowsAutopilotDeploymentProfile>();
-                var pageIterator = PageIterator<WindowsAutopilotDeploymentProfile, WindowsAutopilotDeploymentProfileCollectionResponse>.CreatePageIterator(graphServiceClient, result, (profile) =>
-                {
-                    profiles.Add(profile);
-                    return true;
-                });
-                await pageIterator.IterateAsync();
-
-                LogToFunctionFile(appFunction.Main, $"Found {profiles.Count} Windows AutoPilot profiles.");
-
-                return profiles;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while retrieving all Windows AutoPilot profiles: {ex.Message}", LogLevels.Error);
-                return new List<WindowsAutopilotDeploymentProfile>();
-            }
-        }
-        public static async Task ImportMultipleWindowsAutoPilotProfiles(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> profiles, bool assignments, bool filter, List<string> groups)
-        {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, $"Importing {profiles.Count} Windows AutoPilot profiles.");
-                foreach (var profile in profiles)
-                {
-                    try
-                    {
-                        var result = await sourceGraphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profile].GetAsync();
-
-                        // Check what Autopilot profile it is
-
-
-
-                        if (result.OdataType.Contains("ActiveDirectory", StringComparison.OrdinalIgnoreCase))
-                        {
-                            LogToFunctionFile(appFunction.Main, "Hybrid Autopilot profiles are currently bugged in Graph API/C# SDK. Please handle manually for now.", LogLevels.Warning);
-
-                            //var requestBody = new ActiveDirectoryWindowsAutopilotDeploymentProfile()
-                            //{
-
-                            //};
-
-                            //foreach (var property in result.GetType().GetProperties())
-                            //{
-                            //    var value = property.GetValue(result);
-                            //    if (value != null && property.CanWrite)
-                            //    {
-                            //        property.SetValue(requestBody, value);
-                            //    }
-                            //}
-
-                            //requestBody.Id = "";
-
-                            //await destinationGraphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles.PostAsync(requestBody);
-                            //rtb.AppendText($"Imported profile: {requestBody.DisplayName}\n");
-                            //WriteToImportStatusFile($"Imported profile: {requestBody.DisplayName}");
-
-                            //if (assignments)
-                            //{
-                            //    await AssignGroupsToSingleWindowsAutoPilotProfile(requestBody.Id, groups, destinationGraphServiceClient);
-                            //}
-
-                        }
-
-                        else if (result.OdataType.Contains("azureAD"))
-                        {
-                            var requestBody = new WindowsAutopilotDeploymentProfile
-                            {
-                            };
-
-                            foreach (var property in result.GetType().GetProperties())
-                            {
-                                var value = property.GetValue(result);
-                                if (value != null && property.CanWrite)
-                                {
-                                    property.SetValue(requestBody, value);
-                                }
-                            }
-                            var import = await destinationGraphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles.PostAsync(requestBody);
-                            LogToFunctionFile(appFunction.Main, $"Imported profile: {requestBody.DisplayName}");
-                            if (assignments)
-                            {
-                                await AssignGroupsToSingleWindowsAutoPilotProfile(import.Id, groups, destinationGraphServiceClient);
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        LogToFunctionFile(appFunction.Main, $"Error importing profile {profile}: {ex.Message}", LogLevels.Error);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred during the import process: {ex.Message}", LogLevels.Error);
-            }
-        }
-
-        public static async Task AssignGroupsToSingleWindowsAutoPilotProfile(string profileID, List<string> groupID, GraphServiceClient destinationGraphServiceClient)
-        {
-            try
-            {
-                if (profileID == null)
-                {
-                    throw new ArgumentNullException(nameof(profileID));
-                }
-
-                if (groupID == null)
-                {
-                    throw new ArgumentNullException(nameof(groupID));
-                }
-
-                if (destinationGraphServiceClient == null)
-                {
-                    throw new ArgumentNullException(nameof(destinationGraphServiceClient));
-                }
-
-                var assignments = new List<WindowsAutopilotDeploymentProfileAssignment>();
-                var seenGroupIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                var hasAllDevices = false;
-
-                // Step 1: Add new assignments to list
-                foreach (var group in groupID)
-                {
-                    if (string.IsNullOrWhiteSpace(group) || !seenGroupIds.Add(group))
-                    {
-                        continue;
-                    }
-
-                    // Check if this is All Users - AutoPilot profiles cannot be assigned to All Users
-                    if (group.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
-                    {
-                        LogToFunctionFile(appFunction.Main, "Warning: AutoPilot profiles cannot be assigned to 'All Users'. Skipping this assignment.", LogLevels.Warning);
-                        continue;
-                    }
-
-                    WindowsAutopilotDeploymentProfileAssignment assignment;
-
-                    // Check if this is All Devices
-                    if (group.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
-                    {
-                        hasAllDevices = true;
-                        assignment = new WindowsAutopilotDeploymentProfileAssignment
-                        {
-                            Source = DeviceAndAppManagementAssignmentSource.Direct,
-                            SourceId = profileID,
-                            Target = new AllDevicesAssignmentTarget
-                            {
-                                OdataType = "#microsoft.graph.allDevicesAssignmentTarget"
-                            }
-                        };
-                    }
-                    else
-                    {
-                        // Regular group assignment
-                        assignment = new WindowsAutopilotDeploymentProfileAssignment
-                        {
-                            Source = DeviceAndAppManagementAssignmentSource.Direct,
-                            SourceId = profileID,
-                            Target = new GroupAssignmentTarget
-                            {
-                                OdataType = "#microsoft.graph.groupAssignmentTarget",
-                                GroupId = group
-                            }
-                        };
-                    }
-
-                    assignments.Add(assignment);
-                }
-
-                // Step 2: Check for existing assignments and add only if not already present
-                var existingAssignments = await destinationGraphServiceClient
-                    .DeviceManagement
-                    .WindowsAutopilotDeploymentProfiles[profileID]
-                    .Assignments
-                    .GetAsync();
-
-                if (existingAssignments?.Value != null)
-                {
-                    foreach (var existing in existingAssignments.Value)
-                    {
-                        // Check the type of assignment target
-                        if (existing.Target is AllLicensedUsersAssignmentTarget)
-                        {
-                            // Skip All Users assignments - they shouldn't exist but handle gracefully
-                            LogToFunctionFile(appFunction.Main, $"Warning: Found existing 'All Users' assignment on AutoPilot profile {profileID}. This should not exist and will be skipped.", LogLevels.Warning);
-                            continue;
-                        }
-                        else if (existing.Target is AllDevicesAssignmentTarget)
-                        {
-                            // Skip if we're already adding All Devices
-                            if (!hasAllDevices)
-                            {
-                                assignments.Add(existing);
-                            }
-                        }
-                        else if (existing.Target is GroupAssignmentTarget groupTarget)
-                        {
-                            var existingGroupId = groupTarget.GroupId;
-
-                            // Only add if not already in the new assignments
-                            if (!string.IsNullOrWhiteSpace(existingGroupId) && seenGroupIds.Add(existingGroupId))
-                            {
-                                assignments.Add(existing);
-                            }
-                        }
-                        else
-                        {
-                            // Include any other assignment types (e.g., exclusions, etc.)
-                            assignments.Add(existing);
-                        }
-                    }
-                }
-
-                // Step 3: Post assignments individually (AutoPilot profiles require individual posts)
-                int successCount = 0;
-                foreach (var assignment in assignments)
-                {
-                    // Skip existing assignments that were already posted
-                    if (!string.IsNullOrEmpty(assignment.Id))
-                    {
-                        successCount++;
-                        continue;
-                    }
-
-                    try
-                    {
-                        await destinationGraphServiceClient
-                            .DeviceManagement
-                            .WindowsAutopilotDeploymentProfiles[profileID]
-                            .Assignments
-                            .PostAsync(assignment);
-
-                        successCount++;
-
-                        string targetType = assignment.Target switch
-                        {
-                            AllDevicesAssignmentTarget => "All Devices",
-                            GroupAssignmentTarget gt => $"group {gt.GroupId}",
-                            _ => "unknown target"
-                        };
-
-                        LogToFunctionFile(appFunction.Main, $"Assigned {targetType} to AutoPilot profile {profileID}.");
-                        UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
-                    }
-                    catch (Exception ex)
-                    {
-                        LogToFunctionFile(appFunction.Main, $"Error assigning to profile {profileID}: {ex.Message}", LogLevels.Error);
-                    }
-                }
-
-                LogToFunctionFile(appFunction.Main, $"Assigned {successCount} of {assignments.Count} assignments to AutoPilot profile {profileID}.");
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while assigning groups to a single Windows AutoPilot profile: {ex.Message}", LogLevels.Warning);
-            }
-        }
-
-        public static async Task DeleteWindowsAutoPilotProfileAssignments(GraphServiceClient graphServiceClient, string profileID)
-        {
-            try
-            {
-                if (graphServiceClient == null)
-                {
-                    throw new ArgumentNullException(nameof(graphServiceClient));
-                }
-
-                if (profileID == null)
-                {
-                    throw new InvalidOperationException("Profile ID cannot be null.");
-                }
-
-                // Get the assignments for the profile
-
-                var result = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].Assignments.GetAsync((requestConfiguration) =>
-                {
-                    requestConfiguration.QueryParameters.Top = 1000;
-                });
-
-                // If the result is not null and has assignments, delete them
-
-                if (result != null && result.Value != null && result.Value.Count > 0)
-                {
-                    foreach (var assignment in result.Value)
-                    {
-                        await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].Assignments[assignment.Id].DeleteAsync();
-                    }
-                }
-
-            }
-            catch (ODataError error)
-            {
-                LogToFunctionFile(appFunction.Main, "An error occurred while attempting to delete Autopilot profile assignments", LogLevels.Error);
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while attempting to delete Autopilot profile assignments: {ex.Message}", LogLevels.Error);
-            }
-        }
-
-        public static async Task<bool?> CheckIfAutoPilotProfileHasAssignments(GraphServiceClient graphServiceClient, string profileID)
-        {
-            try
-            {
-                // Check if the GraphServiceClient and profileID are not null
-                if (graphServiceClient == null)
-                {
-                    throw new ArgumentNullException(nameof(graphServiceClient));
-                }
-
-                if (profileID == null)
-                {
-                    throw new InvalidOperationException("Profile ID cannot be null.");
-                }
-
-                // Get the assignments for the profile
-                var result = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].Assignments.GetAsync((requestConfiguration) =>
-                {
-                    requestConfiguration.QueryParameters.Top = 1000;
-                });
-
-                // If the result is not null and has assignments, return true
-                if (result != null && result.Value != null && result.Value.Count > 0)
-                {
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-            catch (ODataError error)
-            {
-                LogToFunctionFile(appFunction.Main, $"OData error checking AutoPilot profile assignments: {error.Error?.Message}", LogLevels.Error);
-                return null;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"Error checking AutoPilot profile assignments: {ex.Message}", LogLevels.Error);
-                return null;
-            }
-        }
-        public static async Task DeleteWindowsAutopilotProfile(GraphServiceClient graphServiceClient, string profileID)
-        {
-            try
-            {
-                if (graphServiceClient == null)
-                {
-                    throw new ArgumentNullException(nameof(graphServiceClient));
-                }
-
-                if (profileID == null)
-                {
-                    throw new InvalidOperationException("Profile ID cannot be null.");
-                }
-
-
-
-                await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].DeleteAsync();
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while deleting Windows Autopilot profiles: {ex.Message}", LogLevels.Error);
-            }
-        }
-
-        public static async Task RenameWindowsAutoPilotProfile(GraphServiceClient graphServiceClient, string profileID, string newName)
-        {
-            try
-            {
-                if (graphServiceClient == null)
-                {
-                    throw new ArgumentNullException(nameof(graphServiceClient));
-                }
-
-                if (profileID == null)
-                {
-                    throw new InvalidOperationException("Profile ID cannot be null.");
-                }
-
-                if (string.IsNullOrWhiteSpace(newName))
-                {
-                    throw new InvalidOperationException("New name cannot be null or empty.");
-                }
-
-                if (selectedRenameMode == "Prefix")
-                {
-                    // Look up the existing profile
-                    var existingProfile = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].GetAsync();
-
-                    if (existingProfile == null)
-                    {
-                        throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
-                    }
-
-                    var name = FindPreFixInPolicyName(existingProfile.DisplayName ?? string.Empty, newName);
-
-                    // after existingProfile is retrieved
-                    if (existingProfile.OdataType?.Contains("activeDirectory", StringComparison.OrdinalIgnoreCase) == true)
-                    {
-                        var profile = new ActiveDirectoryWindowsAutopilotDeploymentProfile
-                        {
-                            OdataType = existingProfile.OdataType,
-                            DisplayName = name
-                        };
-                        await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].PatchAsync(profile);
-                    }
-                    else
-                    {
-                        var profile = new AzureADWindowsAutopilotDeploymentProfile
-                        {
-                            OdataType = existingProfile.OdataType ?? "#microsoft.graph.azureADWindowsAutopilotDeploymentProfile",
-                            DisplayName = name
-                        };
-                        await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].PatchAsync(profile);
-                    }
-
-                    LogToFunctionFile(appFunction.Main, $"Renamed Windows Autopilot profile '{existingProfile.DisplayName}' to '{name}'", LogLevels.Info);
-                }
-                else if (selectedRenameMode == "Suffix")
-                {
-
-                }
-                else if (selectedRenameMode == "Description")
-                {
-                    // Look up the existing profile
-                    var existingProfile = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].GetAsync();
-
-                    if (existingProfile == null)
-                    {
-                        throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
-                    }
-
-                    if (existingProfile.OdataType?.Contains("activeDirectory", StringComparison.OrdinalIgnoreCase) == true)
-                    {
-                        LogToFunctionFile(appFunction.Main, "Active Directory Autopilot profiles is not supported yet. Skipping.", LogLevels.Warning);
-                        return;
-                    }
-
-                    var profile = new AzureADWindowsAutopilotDeploymentProfile
-                    {
-                        OdataType = existingProfile.OdataType ?? "#microsoft.graph.azureADWindowsAutopilotDeploymentProfile",
-                        Description = newName,
-                    };
-
-                    await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].PatchAsync(profile);
-                    LogToFunctionFile(appFunction.Main, $"Updated description for Windows Autopilot profile {profileID} to '{newName}'", LogLevels.Info);
-                }
-                else if (selectedRenameMode == "RemovePrefix")
-                {
-                    var existingProfile = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].GetAsync();
-
-                    if (existingProfile == null)
-                    {
-                        throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
-                    }
-
-                    if (existingProfile.OdataType?.Contains("activeDirectory", StringComparison.OrdinalIgnoreCase) == true)
-                    {
-                        LogToFunctionFile(appFunction.Main, "Active Directory Autopilot profiles is not supported yet. Skipping.", LogLevels.Warning);
-                        return;
-                    }
-
-                    var name = RemovePrefixFromPolicyName(existingProfile.DisplayName);
-
-                    var profile = new AzureADWindowsAutopilotDeploymentProfile
-                    {
-                        OdataType = existingProfile.OdataType ?? "#microsoft.graph.azureADWindowsAutopilotDeploymentProfile",
-                        DisplayName = name
-                    };
-
-                    await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].PatchAsync(profile);
-                    LogToFunctionFile(appFunction.Main, $"Removed prefix from Windows Autopilot profile {profileID}, new name: '{name}'", LogLevels.Info);
-                }
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while renaming Windows Autopilot profiles: {ex.Message}", LogLevels.Warning);
-            }
-        }
-
-        public static async Task<List<CustomContentInfo>> GetAllWindowsAutoPilotContentAsync(GraphServiceClient graphServiceClient)
-        {
-            var profiles = await GetAllWindowsAutoPilotProfiles(graphServiceClient);
-            var content = new List<CustomContentInfo>();
-
-            foreach (var profile in profiles)
-            {
-                content.Add(new CustomContentInfo
-                {
-                    ContentName = profile.DisplayName,
-                    ContentType = "Windows AutoPilot Profile",
-                    ContentPlatform = "Windows",
-                    ContentId = profile.Id,
-                    ContentDescription = profile.Description
-                });
-            }
-
-            return content;
-        }
-
-        public static async Task<List<CustomContentInfo>> SearchWindowsAutoPilotContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
-        {
-            var profiles = await SearchForWindowsAutoPilotProfiles(graphServiceClient, searchQuery);
-            var content = new List<CustomContentInfo>();
-
-            foreach (var profile in profiles)
-            {
-                content.Add(new CustomContentInfo
-                {
-                    ContentName = profile.DisplayName,
-                    ContentType = "Windows AutoPilot Profile",
-                    ContentPlatform = "Windows",
-                    ContentId = profile.Id,
-                    ContentDescription = profile.Description
-                });
-            }
-
-            return content;
-        }
-
-        /// <summary>
-        /// Exports a Windows AutoPilot deployment profile's full data as a JsonElement for JSON file export.
-        /// </summary>
-        public static async Task<JsonElement?> ExportWindowsAutoPilotProfileDataAsync(GraphServiceClient graphServiceClient, string profileId)
-        {
-            try
-            {
-                var result = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileId].GetAsync();
-
-                if (result == null)
-                {
-                    LogToFunctionFile(appFunction.Main, $"Windows AutoPilot profile {profileId} not found for export.", LogLevels.Warning);
-                    return null;
-                }
-
-                using var writer = new JsonSerializationWriter();
-                writer.WriteObjectValue(null, result);
-                using var stream = writer.GetSerializedContent();
-                var doc = await JsonDocument.ParseAsync(stream);
-                return doc.RootElement.Clone();
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"Error exporting Windows AutoPilot profile {profileId}: {ex.Message}", LogLevels.Error);
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Imports a Windows AutoPilot deployment profile from previously exported JSON data into the destination tenant.
-        /// Note: Hybrid Azure AD join profiles are not supported via Graph API and will be skipped.
-        /// </summary>
-        public static async Task<string?> ImportWindowsAutoPilotProfileFromJsonDataAsync(GraphServiceClient graphServiceClient, JsonElement policyData)
-        {
-            try
-            {
-                var json = policyData.GetRawText();
-                using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
-                var parseNode = new JsonParseNode(JsonDocument.Parse(stream).RootElement);
-                var exported = parseNode.GetObjectValue(WindowsAutopilotDeploymentProfile.CreateFromDiscriminatorValue);
-
-                if (exported == null)
-                {
-                    LogToFunctionFile(appFunction.Main, "Failed to deserialize Windows AutoPilot profile data from JSON.", LogLevels.Error);
-                    return null;
-                }
-
-                // Hybrid AD join profiles are not supported via Graph API
-                if (exported.OdataType != null && exported.OdataType.Contains("ActiveDirectory", StringComparison.OrdinalIgnoreCase))
-                {
-                    LogToFunctionFile(appFunction.Main, $"Skipping Hybrid Azure AD join AutoPilot profile '{exported.DisplayName}' - not supported via Graph API.", LogLevels.Warning);
-                    return null;
-                }
-
-                var newProfile = new WindowsAutopilotDeploymentProfile();
-
-                foreach (var property in exported.GetType().GetProperties())
-                {
-                    var value = property.GetValue(exported);
-                    if (value != null && property.CanWrite)
-                    {
-                        property.SetValue(newProfile, value);
-                    }
-                }
-
-                newProfile.Id = "";
-
-                var imported = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles.PostAsync(newProfile);
-
-                LogToFunctionFile(appFunction.Main, $"Imported Windows AutoPilot profile: {imported?.DisplayName}");
-                return imported?.DisplayName;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"Error importing Windows AutoPilot profile from JSON: {ex.Message}", LogLevels.Error);
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Gets detailed assignment information for a Windows AutoPilot Deployment Profile.
-        /// </summary>
-        public static async Task<List<AssignmentInfo>?> GetWindowsAutoPilotAssignmentDetailsAsync(GraphServiceClient graphServiceClient, string profileId)
-        {
-            try
-            {
-                var details = new List<AssignmentInfo>();
-                var result = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileId].Assignments.GetAsync(rc =>
+            protected override string ResourceName => "Windows AutoPilot profiles";
+            protected override string ContentTypeName => "Windows AutoPilot Profile";
+            protected override string? FixedPlatform => "Windows";
+
+            protected override string? GetPolicyName(WindowsAutopilotDeploymentProfile policy) => policy.DisplayName;
+            protected override string? GetPolicyId(WindowsAutopilotDeploymentProfile policy) => policy.Id;
+            protected override string? GetPolicyDescription(WindowsAutopilotDeploymentProfile policy) => policy.Description;
+
+            protected override Task<WindowsAutopilotDeploymentProfileCollectionResponse?> GetCollectionAsync(GraphServiceClient client)
+                => client.DeviceManagement.WindowsAutopilotDeploymentProfiles.GetAsync(rc =>
                 {
                     rc.QueryParameters.Top = 1000;
                 });
 
-                while (result?.Value != null)
+            protected override Task<WindowsAutopilotDeploymentProfileCollectionResponse?> SearchCollectionAsync(GraphServiceClient client, string searchQuery)
+                => client.DeviceManagement.WindowsAutopilotDeploymentProfiles.GetAsync(rc =>
+                {
+                    rc.QueryParameters.Filter = $"contains(displayName,'{searchQuery}')";
+                });
+
+            protected override Task<WindowsAutopilotDeploymentProfile?> GetByIdAsync(GraphServiceClient client, string id)
+                => client.DeviceManagement.WindowsAutopilotDeploymentProfiles[id].GetAsync();
+
+            protected override Task DeleteByIdAsync(GraphServiceClient client, string id)
+                => client.DeviceManagement.WindowsAutopilotDeploymentProfiles[id].DeleteAsync();
+
+            /// <summary>
+            /// AutoPilot profiles use polymorphic types (ActiveDirectory vs AzureAD) for patch operations.
+            /// </summary>
+            protected override async Task PatchNameAsync(GraphServiceClient client, string id, string newName)
+            {
+                var existing = await GetByIdAsync(client, id);
+                if (existing == null) return;
+
+                if (existing.OdataType?.Contains("activeDirectory", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    var profile = new ActiveDirectoryWindowsAutopilotDeploymentProfile
+                    {
+                        OdataType = existing.OdataType,
+                        DisplayName = newName
+                    };
+                    await client.DeviceManagement.WindowsAutopilotDeploymentProfiles[id].PatchAsync(profile);
+                }
+                else
+                {
+                    var profile = new AzureADWindowsAutopilotDeploymentProfile
+                    {
+                        OdataType = existing.OdataType ?? "#microsoft.graph.azureADWindowsAutopilotDeploymentProfile",
+                        DisplayName = newName
+                    };
+                    await client.DeviceManagement.WindowsAutopilotDeploymentProfiles[id].PatchAsync(profile);
+                }
+            }
+
+            protected override async Task PatchDescriptionAsync(GraphServiceClient client, string id, string description)
+            {
+                var existing = await GetByIdAsync(client, id);
+                if (existing == null) return;
+
+                if (existing.OdataType?.Contains("activeDirectory", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    LogToFunctionFile(appFunction.Main, "Active Directory Autopilot profiles are not supported yet. Skipping.", LogLevels.Warning);
+                    return;
+                }
+
+                var profile = new AzureADWindowsAutopilotDeploymentProfile
+                {
+                    OdataType = existing.OdataType ?? "#microsoft.graph.azureADWindowsAutopilotDeploymentProfile",
+                    Description = description,
+                };
+                await client.DeviceManagement.WindowsAutopilotDeploymentProfiles[id].PatchAsync(profile);
+            }
+
+            public override async Task<string?> ImportFromJsonDataAsync(GraphServiceClient client, JsonElement policyData)
+            {
+                try
+                {
+                    var exported = GraphImportHelper.DeserializeFromJson(policyData, WindowsAutopilotDeploymentProfile.CreateFromDiscriminatorValue);
+
+                    if (exported == null)
+                    {
+                        LogToFunctionFile(appFunction.Main, "Failed to deserialize Windows AutoPilot profile data from JSON.", LogLevels.Error);
+                        return null;
+                    }
+
+                    // Hybrid AD join profiles are not supported via Graph API
+                    if (exported.OdataType != null && exported.OdataType.Contains("ActiveDirectory", StringComparison.OrdinalIgnoreCase))
+                    {
+                        LogToFunctionFile(appFunction.Main, $"Skipping Hybrid Azure AD join AutoPilot profile '{exported.DisplayName}' - not supported via Graph API.", LogLevels.Warning);
+                        return null;
+                    }
+
+                    var newProfile = GraphImportHelper.CloneForImport(exported);
+
+                    var imported = await client.DeviceManagement.WindowsAutopilotDeploymentProfiles.PostAsync(newProfile);
+
+                    LogToFunctionFile(appFunction.Main, $"Imported Windows AutoPilot profile: {imported?.DisplayName}");
+                    return imported?.DisplayName;
+                }
+                catch (Exception ex)
+                {
+                    GraphErrorHandler.HandleException(ex, "importing from JSON", ResourceName);
+                    return null;
+                }
+            }
+
+            public override async Task<bool?> HasAssignmentsAsync(GraphServiceClient client, string id)
+            {
+                try
+                {
+                    var result = await client.DeviceManagement.WindowsAutopilotDeploymentProfiles[id].Assignments.GetAsync(rc =>
+                    {
+                        rc.QueryParameters.Top = 1;
+                    });
+                    return result?.Value != null && result.Value.Count > 0;
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+
+            public override async Task<List<AssignmentInfo>?> GetAssignmentDetailsAsync(GraphServiceClient client, string id)
+            {
+                try
+                {
+                    var details = new List<AssignmentInfo>();
+                    var result = await client.DeviceManagement.WindowsAutopilotDeploymentProfiles[id].Assignments.GetAsync(rc =>
+                    {
+                        rc.QueryParameters.Top = 1000;
+                    });
+
+                    while (result?.Value != null)
+                    {
+                        foreach (var assignment in result.Value)
+                        {
+                            details.Add(AssignmentInfo.FromTarget(assignment.Id, assignment.Target));
+                        }
+
+                        if (string.IsNullOrEmpty(result.OdataNextLink)) break;
+
+                        result = await client.DeviceManagement.WindowsAutopilotDeploymentProfiles[id]
+                            .Assignments.WithUrl(result.OdataNextLink).GetAsync();
+                    }
+
+                    return details;
+                }
+                catch (Exception ex)
+                {
+                    GraphErrorHandler.HandleException(ex, "getting assignment details for", $"Windows AutoPilot Profile {id}");
+                    return null;
+                }
+            }
+
+            /// <summary>
+            /// Removes all assignments using individual DELETE calls since AutoPilot does not support batch assignment removal.
+            /// </summary>
+            public override async Task RemoveAllAssignmentsAsync(GraphServiceClient client, string id)
+            {
+                var result = await client.DeviceManagement.WindowsAutopilotDeploymentProfiles[id].Assignments.GetAsync(rc =>
+                {
+                    rc.QueryParameters.Top = 1000;
+                });
+
+                while (result?.Value != null && result.Value.Count > 0)
                 {
                     foreach (var assignment in result.Value)
                     {
-                        details.Add(AssignmentInfo.FromTarget(assignment.Id, assignment.Target));
+                        await client.DeviceManagement.WindowsAutopilotDeploymentProfiles[id].Assignments[assignment.Id].DeleteAsync();
                     }
 
                     if (string.IsNullOrEmpty(result.OdataNextLink)) break;
 
-                    result = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileId]
+                    result = await client.DeviceManagement.WindowsAutopilotDeploymentProfiles[id]
                         .Assignments.WithUrl(result.OdataNextLink).GetAsync();
                 }
 
-                return details;
+                LogToFunctionFile(appFunction.Main, $"Removed all assignments from Windows AutoPilot Profile {id}.");
             }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"Error getting assignment details for Windows AutoPilot Profile {profileId}: {ex.Message}", LogLevels.Error);
-                return null;
-            }
-        }
 
-        /// <summary>
-        /// Removes all assignments from a Windows AutoPilot Deployment Profile.
-        /// Uses individual DELETE calls since AutoPilot does not support batch assignment removal.
-        /// </summary>
-        public static async Task RemoveAllWindowsAutoPilotAssignmentsAsync(GraphServiceClient graphServiceClient, string profileId)
-        {
-            var result = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileId].Assignments.GetAsync(rc =>
+            public override async Task ImportMultipleAsync(
+                GraphServiceClient sourceClient,
+                GraphServiceClient destinationClient,
+                List<string> ids,
+                bool assignments,
+                bool filter,
+                List<string> groups)
             {
-                rc.QueryParameters.Top = 1000;
-            });
-
-            while (result?.Value != null && result.Value.Count > 0)
-            {
-                foreach (var assignment in result.Value)
+                await GraphImportHelper.ImportBatchAsync(ids, ResourceName, async id =>
                 {
-                    await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileId].Assignments[assignment.Id].DeleteAsync();
-                }
+                    try
+                    {
+                        var result = await sourceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[id].GetAsync();
 
-                if (string.IsNullOrEmpty(result.OdataNextLink)) break;
+                        if (result == null)
+                        {
+                            LogToFunctionFile(appFunction.Main, $"Skipping profile ID {id}: Not found in source tenant.");
+                            return;
+                        }
 
-                result = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileId]
-                    .Assignments.WithUrl(result.OdataNextLink).GetAsync();
+                        if (result.OdataType != null && result.OdataType.Contains("ActiveDirectory", StringComparison.OrdinalIgnoreCase))
+                        {
+                            LogToFunctionFile(appFunction.Main, "Hybrid Autopilot profiles are currently bugged in Graph API/C# SDK. Please handle manually for now.", LogLevels.Warning);
+                            return;
+                        }
+
+                        var requestBody = GraphImportHelper.CloneForImport(result);
+
+                        var import = await destinationClient.DeviceManagement.WindowsAutopilotDeploymentProfiles.PostAsync(requestBody);
+                        LogToFunctionFile(appFunction.Main, $"Imported profile: {requestBody.DisplayName}");
+
+                        if (assignments && groups != null && groups.Any())
+                        {
+                            await AssignGroupsToSingleWindowsAutoPilotProfile(import.Id, groups, destinationClient);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        LogToFunctionFile(appFunction.Main, $"Error importing profile {id}: {ex.Message}", LogLevels.Error);
+                    }
+                });
             }
 
-            LogToFunctionFile(appFunction.Main, $"Removed all assignments from Windows AutoPilot Profile {profileId}.");
+            /// <summary>
+            /// AutoPilot profiles cannot be assigned to 'All Users'. Only All Devices + regular groups are supported.
+            /// Assignments are posted individually since AutoPilot profiles require individual POSTs.
+            /// </summary>
+            public override async Task AssignGroupsAsync(string id, List<string> groupIds, GraphServiceClient client)
+            {
+                try
+                {
+                    ArgumentNullException.ThrowIfNull(id);
+                    ArgumentNullException.ThrowIfNull(groupIds);
+                    ArgumentNullException.ThrowIfNull(client);
+
+                    var assignments = new List<WindowsAutopilotDeploymentProfileAssignment>();
+                    var seenGroupIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    var hasAllDevices = false;
+
+                    foreach (var groupId in groupIds)
+                    {
+                        if (string.IsNullOrWhiteSpace(groupId) || !seenGroupIds.Add(groupId))
+                            continue;
+
+                        // AutoPilot profiles cannot be assigned to All Users
+                        if (groupId.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                        {
+                            LogToFunctionFile(appFunction.Main, "Warning: AutoPilot profiles cannot be assigned to 'All Users'. Skipping this assignment.", LogLevels.Warning);
+                            continue;
+                        }
+
+                        WindowsAutopilotDeploymentProfileAssignment assignment;
+
+                        if (groupId.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                        {
+                            hasAllDevices = true;
+                            var target = new AllDevicesAssignmentTarget
+                            {
+                                OdataType = "#microsoft.graph.allDevicesAssignmentTarget"
+                            };
+                            GraphAssignmentHelper.ApplySelectedFilter(target);
+
+                            assignment = new WindowsAutopilotDeploymentProfileAssignment
+                            {
+                                Source = DeviceAndAppManagementAssignmentSource.Direct,
+                                SourceId = id,
+                                Target = target
+                            };
+                        }
+                        else
+                        {
+                            var target = new GroupAssignmentTarget
+                            {
+                                OdataType = "#microsoft.graph.groupAssignmentTarget",
+                                GroupId = groupId
+                            };
+                            GraphAssignmentHelper.ApplySelectedFilter(target);
+
+                            assignment = new WindowsAutopilotDeploymentProfileAssignment
+                            {
+                                Source = DeviceAndAppManagementAssignmentSource.Direct,
+                                SourceId = id,
+                                Target = target
+                            };
+                        }
+
+                        assignments.Add(assignment);
+                    }
+
+                    // Merge existing assignments
+                    var existingAssignments = await client
+                        .DeviceManagement
+                        .WindowsAutopilotDeploymentProfiles[id]
+                        .Assignments
+                        .GetAsync();
+
+                    if (existingAssignments?.Value != null)
+                    {
+                        foreach (var existing in existingAssignments.Value)
+                        {
+                            if (existing.Target is AllLicensedUsersAssignmentTarget)
+                            {
+                                LogToFunctionFile(appFunction.Main, $"Warning: Found existing 'All Users' assignment on AutoPilot profile {id}. This should not exist and will be skipped.", LogLevels.Warning);
+                                continue;
+                            }
+                            else if (existing.Target is AllDevicesAssignmentTarget)
+                            {
+                                if (!hasAllDevices)
+                                {
+                                    assignments.Add(existing);
+                                }
+                            }
+                            else if (existing.Target is GroupAssignmentTarget groupTarget)
+                            {
+                                var existingGroupId = groupTarget.GroupId;
+                                if (!string.IsNullOrWhiteSpace(existingGroupId) && seenGroupIds.Add(existingGroupId))
+                                {
+                                    assignments.Add(existing);
+                                }
+                            }
+                            else
+                            {
+                                assignments.Add(existing);
+                            }
+                        }
+                    }
+
+                    // Post assignments individually (AutoPilot profiles require individual posts)
+                    int successCount = 0;
+                    foreach (var assignment in assignments)
+                    {
+                        if (!string.IsNullOrEmpty(assignment.Id))
+                        {
+                            successCount++;
+                            continue;
+                        }
+
+                        try
+                        {
+                            await client
+                                .DeviceManagement
+                                .WindowsAutopilotDeploymentProfiles[id]
+                                .Assignments
+                                .PostAsync(assignment);
+
+                            successCount++;
+
+                            string targetType = assignment.Target switch
+                            {
+                                AllDevicesAssignmentTarget => "All Devices",
+                                GroupAssignmentTarget gt => $"group {gt.GroupId}",
+                                _ => "unknown target"
+                            };
+
+                            LogToFunctionFile(appFunction.Main, $"Assigned {targetType} to AutoPilot profile {id}.");
+                            UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
+                        }
+                        catch (ODataError odataError)
+                        {
+                            LogToFunctionFile(appFunction.Main, $"Graph API error assigning to profile {id}: {odataError.Error?.Message}", LogLevels.Error);
+                        }
+                        catch (Exception ex)
+                        {
+                            LogToFunctionFile(appFunction.Main, $"Error assigning to profile {id}: {ex.Message}", LogLevels.Error);
+                        }
+                    }
+
+                    LogToFunctionFile(appFunction.Main, $"Assigned {successCount} of {assignments.Count} assignments to AutoPilot profile {id}.");
+                }
+                catch (Exception ex)
+                {
+                    LogToFunctionFile(appFunction.Main, $"An error occurred while assigning groups to a single Windows AutoPilot profile: {ex.Message}", LogLevels.Warning);
+                }
+            }
         }
+
+        private static readonly Helper _helper = new();
+
+        // ── Public static methods (signatures preserved for existing consumers) ──
+
+        public static Task<List<WindowsAutopilotDeploymentProfile>> SearchForWindowsAutoPilotProfiles(GraphServiceClient graphServiceClient, string searchQuery)
+            => _helper.SearchAsync(graphServiceClient, searchQuery);
+
+        public static Task<List<WindowsAutopilotDeploymentProfile>> GetAllWindowsAutoPilotProfiles(GraphServiceClient graphServiceClient)
+            => _helper.GetAllAsync(graphServiceClient);
+
+        public static Task ImportMultipleWindowsAutoPilotProfiles(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> profiles, bool assignments, bool filter, List<string> groups)
+            => _helper.ImportMultipleAsync(sourceGraphServiceClient, destinationGraphServiceClient, profiles, assignments, filter, groups);
+
+        public static Task AssignGroupsToSingleWindowsAutoPilotProfile(string profileID, List<string> groupID, GraphServiceClient destinationGraphServiceClient)
+            => _helper.AssignGroupsAsync(profileID, groupID, destinationGraphServiceClient);
+
+        public static Task<bool?> CheckIfAutoPilotProfileHasAssignments(GraphServiceClient graphServiceClient, string profileID)
+            => _helper.HasAssignmentsAsync(graphServiceClient, profileID);
+
+        public static Task DeleteWindowsAutoPilotProfileAssignments(GraphServiceClient graphServiceClient, string profileID)
+            => _helper.RemoveAllAssignmentsAsync(graphServiceClient, profileID);
+
+        public static Task DeleteWindowsAutopilotProfile(GraphServiceClient graphServiceClient, string profileID)
+            => _helper.DeleteAsync(graphServiceClient, profileID);
+
+        public static Task RenameWindowsAutoPilotProfile(GraphServiceClient graphServiceClient, string profileID, string newName)
+            => _helper.RenameAsync(graphServiceClient, profileID, newName);
+
+        public static Task<List<CustomContentInfo>> GetAllWindowsAutoPilotContentAsync(GraphServiceClient graphServiceClient)
+            => _helper.GetAllContentAsync(graphServiceClient);
+
+        public static Task<List<CustomContentInfo>> SearchWindowsAutoPilotContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
+            => _helper.SearchContentAsync(graphServiceClient, searchQuery);
+
+        public static Task<JsonElement?> ExportWindowsAutoPilotProfileDataAsync(GraphServiceClient graphServiceClient, string profileId)
+            => _helper.ExportDataAsync(graphServiceClient, profileId);
+
+        public static Task<string?> ImportWindowsAutoPilotProfileFromJsonDataAsync(GraphServiceClient graphServiceClient, JsonElement policyData)
+            => _helper.ImportFromJsonDataAsync(graphServiceClient, policyData);
+
+        public static Task<List<AssignmentInfo>?> GetWindowsAutoPilotAssignmentDetailsAsync(GraphServiceClient graphServiceClient, string profileId)
+            => _helper.GetAssignmentDetailsAsync(graphServiceClient, profileId);
+
+        public static Task RemoveAllWindowsAutoPilotAssignmentsAsync(GraphServiceClient graphServiceClient, string profileId)
+            => _helper.RemoveAllAssignmentsAsync(graphServiceClient, profileId);
     }
 }

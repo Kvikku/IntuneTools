@@ -163,6 +163,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         requestConfiguration.QueryParameters.Expand = new[] { "settings" };
                     });
 
+                    if (result == null)
+                    {
+                        LogToFunctionFile(appFunction.Main, $"Skipping policy ID {id}: Not found in source tenant.");
+                        return;
+                    }
+
                     var newPolicy = new DeviceManagementConfigurationPolicy
                     {
                         Name = result.Name,
