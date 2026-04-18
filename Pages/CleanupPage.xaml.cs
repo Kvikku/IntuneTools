@@ -133,28 +133,49 @@ namespace IntuneTools.Pages
                 return;
             }
 
-            ShowOperationProgress("Preparing to delete items...", 0, _deleteTotal);
+            var token = BeginCancellableOperation();
+            if (CancelOperationButton != null)
+                CancelOperationButton.Visibility = Visibility.Visible;
 
-            foreach (var definition in GetDeleteTypeRegistry())
+            try
             {
-                var ids = GetContentIdsByType(definition.TypeKey);
-                if (ids.Count > 0)
+                ShowOperationProgress("Preparing to delete items...", 0, _deleteTotal);
+
+                foreach (var definition in GetDeleteTypeRegistry())
                 {
-                    await DeleteItemsAsync(ids, definition);
+                    if (token.IsCancellationRequested) break;
+
+                    var ids = GetContentIdsByType(definition.TypeKey);
+                    if (ids.Count > 0)
+                    {
+                        await DeleteItemsAsync(ids, definition, token);
+                    }
                 }
-            }
 
-            // Show final status
-            if (_deleteErrorCount == 0)
-            {
-                ShowOperationSuccess($"Successfully deleted {_deleteSuccessCount} items");
-            }
-            else
-            {
-                ShowOperationError($"Completed with {_deleteErrorCount} error(s). {_deleteSuccessCount} items deleted successfully.");
-            }
+                // Show final status
+                if (token.IsCancellationRequested)
+                {
+                    ShowOperationError(
+                        $"Delete cancelled. {_deleteSuccessCount} item(s) deleted before cancellation, {_deleteTotal - _deleteCurrent} not attempted.");
+                    AppendToDetailsRichTextBlock("Delete operation cancelled by user.");
+                }
+                else if (_deleteErrorCount == 0)
+                {
+                    ShowOperationSuccess($"Successfully deleted {_deleteSuccessCount} items");
+                }
+                else
+                {
+                    ShowOperationError($"Completed with {_deleteErrorCount} error(s). {_deleteSuccessCount} items deleted successfully.");
+                }
 
-            AppendToDetailsRichTextBlock("Content deletion completed.");
+                AppendToDetailsRichTextBlock("Content deletion completed.");
+            }
+            finally
+            {
+                if (CancelOperationButton != null)
+                    CancelOperationButton.Visibility = Visibility.Collapsed;
+                EndOperation();
+            }
         }
 
         /// <summary>
@@ -209,11 +230,16 @@ namespace IntuneTools.Pages
 
         /// <summary>
         /// Generic helper to delete items, reducing code duplication across all content types.
+        /// Honours <paramref name="cancellationToken"/> — already-deleted items are not restored,
+        /// but further items will not be attempted once cancellation is requested.
         /// </summary>
-        private async Task DeleteItemsAsync(List<string> ids, DeleteTypeDefinition definition)
+        private async Task DeleteItemsAsync(List<string> ids, DeleteTypeDefinition definition, System.Threading.CancellationToken cancellationToken = default)
         {
             foreach (var id in ids)
             {
+                if (cancellationToken.IsCancellationRequested)
+                    break;
+
                 _deleteCurrent++;
                 ShowOperationProgress($"Deleting {definition.DisplayName}", _deleteCurrent, _deleteTotal);
                 try
@@ -226,6 +252,11 @@ namespace IntuneTools.Pages
                         _deleteSuccessCount++;
                     }
                     // If not deleted (skipped), don't count as success or error
+                }
+                catch (OperationCanceledException)
+                {
+                    // Cancellation is expected — break the loop cleanly.
+                    break;
                 }
                 catch (Exception ex)
                 {
@@ -487,45 +518,120 @@ namespace IntuneTools.Pages
         private async void DeleteButton_Click(object sender, RoutedEventArgs e)
         {
             var numberOfItems = ContentList.Count;
+            if (numberOfItems == 0)
+            {
+                AppendToDetailsRichTextBlock("No items staged for deletion.");
+                return;
+            }
 
-            // Bulk operation safeguard: warn when deleting 10 or more items
+            // Step 1: preview of staged items grouped by content type.
+            var previewElement = BuildDeletePreviewPanel(numberOfItems);
+
+            // Step 2: typed confirmation. Require a literal "DELETE" token so that an
+            // accidental double-click cannot destroy content.
+            var confirmed = await ShowTypedConfirmationDialogAsync(
+                title: $"Delete {numberOfItems} item(s)?",
+                preview: previewElement,
+                requiredPhrase: "DELETE",
+                confirmText: "Delete permanently");
+
+            if (!confirmed)
+            {
+                AppendToDetailsRichTextBlock("Delete cancelled by user.");
+                return;
+            }
+
+            // Step 3: large-bulk extra safeguard preserved from the previous flow.
             if (numberOfItems >= 10)
             {
-                var bulkWarning = new ContentDialog
-                {
-                    Title = "\u26A0 Large Bulk Delete",
-                    Content = $"You are about to delete {numberOfItems} items. This is a large operation and cannot be undone. Are you sure you want to continue?",
-                    PrimaryButtonText = "Continue",
-                    CloseButtonText = "Cancel",
-                    DefaultButton = ContentDialogButton.Close,
-                    XamlRoot = this.XamlRoot
-                };
+                var bulkConfirmed = await ShowDestructiveConfirmationDialogAsync(
+                    title: "\u26A0 Large Bulk Delete",
+                    content: $"Final check: {numberOfItems} items will be permanently deleted. Proceed?",
+                    confirmText: "Delete all",
+                    cancelText: "Cancel");
 
-                var bulkResult = await bulkWarning.ShowAsync().AsTask();
-                if (bulkResult != ContentDialogResult.Primary)
+                if (!bulkConfirmed)
                 {
                     AppendToDetailsRichTextBlock("Bulk delete cancelled by user.");
                     return;
                 }
             }
 
-            var dialog = new ContentDialog
-            {
-                Title = "Delete content?",
-                Content = $"Are you sure you want to delete all {numberOfItems} items? This action cannot be undone.",
-                PrimaryButtonText = "Delete",
-                CloseButtonText = "Cancel",
-                DefaultButton = ContentDialogButton.Close,
-                XamlRoot = this.XamlRoot
-            };
+            await DeleteContent();
+            ContentList.Clear();
+            AppendToDetailsRichTextBlock("Cleared the data grid.");
+        }
 
-            var result = await dialog.ShowAsync().AsTask();
-            if (result == ContentDialogResult.Primary)
+        /// <summary>
+        /// Builds a preview panel summarising the staged items grouped by content type.
+        /// Shown inside the typed-confirmation dialog so the user can verify exactly what
+        /// will be deleted before proceeding.
+        /// </summary>
+        private UIElement BuildDeletePreviewPanel(int totalItems)
+        {
+            var panel = new StackPanel { Spacing = 8 };
+
+            panel.Children.Add(new TextBlock
             {
-                await DeleteContent();
-                ContentList.Clear();
-                AppendToDetailsRichTextBlock("Cleared the data grid.");
+                Text = $"You are about to permanently delete {totalItems} item(s). This cannot be undone.",
+                TextWrapping = TextWrapping.Wrap,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
+            });
+
+            // Group by content type so users can verify the breakdown at a glance.
+            var groups = ContentList
+                .GroupBy(c => c.ContentType ?? "(Unknown)")
+                .OrderByDescending(g => g.Count())
+                .ThenBy(g => g.Key, System.StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var summary = new StackPanel { Spacing = 2, Margin = new Thickness(0, 4, 0, 4) };
+            foreach (var group in groups)
+            {
+                summary.Children.Add(new TextBlock
+                {
+                    Text = $"\u2022 {group.Count()} \u00D7 {group.Key}",
+                    FontSize = 13
+                });
             }
+            panel.Children.Add(summary);
+
+            // Item-level preview — first 10 items for a quick spot-check, then count of remainder.
+            var itemList = new StackPanel { Spacing = 1 };
+            const int previewLimit = 10;
+            foreach (var item in ContentList.Take(previewLimit))
+            {
+                itemList.Children.Add(new TextBlock
+                {
+                    Text = $"  \u2023 {item.ContentName ?? "(unnamed)"}  —  {item.ContentType ?? "Unknown"}",
+                    FontSize = 12,
+                    Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+                        Windows.UI.Color.FromArgb(255, 0x80, 0x80, 0x80)),
+                    TextTrimming = TextTrimming.CharacterEllipsis
+                });
+            }
+            if (totalItems > previewLimit)
+            {
+                itemList.Children.Add(new TextBlock
+                {
+                    Text = $"  … and {totalItems - previewLimit} more item(s).",
+                    FontSize = 12,
+                    FontStyle = Windows.UI.Text.FontStyle.Italic,
+                    Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+                        Windows.UI.Color.FromArgb(255, 0x80, 0x80, 0x80))
+                });
+            }
+            panel.Children.Add(itemList);
+
+            return panel;
+        }
+
+        private void CancelOperationButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!IsOperationInProgress) return;
+
+            CancelCurrentOperation();
+            AppendToDetailsRichTextBlock("Cancellation requested. Waiting for the current item to finish…");
         }
 
         private async void ListAllButton_Click(object sender, RoutedEventArgs e)
