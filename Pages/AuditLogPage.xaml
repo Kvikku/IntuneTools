@@ -368,9 +368,9 @@
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
                 <ProgressRing x:Name="LoadingProgressRing" IsActive="False" Width="48" Height="48"/>
                 <TextBlock x:Name="LoadingStatusText" Text="Loading..." FontSize="16"
-                           Foreground="White" HorizontalAlignment="Center"/>
+                           Foreground="{ThemeResource TextFillColorPrimaryBrush}" HorizontalAlignment="Center"/>
                 <TextBlock x:Name="LoadingProgressDetail" Text="" FontSize="13"
-                           Foreground="#CCCCCC" HorizontalAlignment="Center"/>
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center"/>
                 <Button x:Name="CancelLoadButton" Content="Cancel" Click="CancelLoadButton_Click"
                         HorizontalAlignment="Center" Visibility="Collapsed"/>
             </StackPanel>
