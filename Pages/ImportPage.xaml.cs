@@ -48,6 +48,10 @@ namespace IntuneTools.Pages
     {
         private const string ContentGridStateKey = "ImportPage.ContentGrid";
 
+        // Threshold above which a confirmation dialog is shown before the user kicks off an import.
+        // Tuned to "non-trivial batch" — small one-off imports don't need the prompt.
+        private const int MinItemsForImportConfirmation = 5;
+
         #region Fields & Types
 
         /// <summary>
@@ -521,7 +525,7 @@ namespace IntuneTools.Pages
             var destinationTenant = string.IsNullOrWhiteSpace(Variables.destinationTenantName)
                 ? "the destination tenant"
                 : Variables.destinationTenantName;
-            if (ContentList.Count >= 5 || IsGroupSelected || IsFilterSelected)
+            if (ContentList.Count >= MinItemsForImportConfirmation || IsGroupSelected || IsFilterSelected)
             {
                 var extras = new System.Text.StringBuilder();
                 if (IsGroupSelected)

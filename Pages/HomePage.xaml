@@ -258,7 +258,7 @@
                                 <TextBlock Text="Time Saved" FontSize="20" FontWeight="SemiBold"/>
                                 <Button Padding="4" Background="Transparent" BorderThickness="0"
                                         AutomationProperties.Name="About the time saved metric"
-                                        ToolTipService.ToolTip="Estimated based on recorded actions and typical manual completion times in Intune. Each action type contributes a fixed seconds-saved value (rename ~20s, assign ~30s, delete ~10s, import ~90s, etc.).">
+                                        ToolTipService.ToolTip="Estimated from your recorded actions, using fixed seconds-saved values for each action type (e.g., rename ~20s, assign ~30s, delete ~10s, import ~90s).">
                                     <FontIcon Glyph="&#xE9CE;" FontSize="14" Opacity="0.6"/>
                                 </Button>
                             </StackPanel>

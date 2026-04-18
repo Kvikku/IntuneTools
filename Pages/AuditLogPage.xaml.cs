@@ -63,6 +63,12 @@ namespace IntuneTools.Pages
 
         private const string AllActorsOption = "All actors";
 
+        // Audit-log queries can be expensive; cap a custom From→To span to roughly one quarter
+        // (Microsoft's audit log retention guidance) so we don't accidentally page through years
+        // of events. The default fall-back when no range can be inferred is one week.
+        private const int MaxCustomRangeDays = 90;
+        private const int DefaultRangeDays = 7;
+
         public AuditLogPage()
         {
             InitializeComponent();
@@ -620,16 +626,16 @@ namespace IntuneTools.Pages
                     if (CustomFromPicker?.Date is DateTimeOffset from)
                     {
                         var span = (DateTime.Today - from.Date).Days + 1;
-                        return Math.Max(1, Math.Min(span, 90));
+                        return Math.Max(1, Math.Min(span, MaxCustomRangeDays));
                     }
-                    return 7;
+                    return DefaultRangeDays;
                 }
                 if (int.TryParse(tag, out int days))
                 {
                     return days;
                 }
             }
-            return 7; // Default to 7 days
+            return DefaultRangeDays;
         }
 
         /// <summary>

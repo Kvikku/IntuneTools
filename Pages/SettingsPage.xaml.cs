@@ -61,7 +61,7 @@ namespace IntuneTools.Pages
             var signOutButton = isSource ? SourceSignOutButton : DestinationSignOutButton;
             var detailPanel = isSource ? SourceTenantDetailPanel : DestinationTenantDetailPanel;
             var detailIdText = isSource ? SourceTenantIdText : DestinationTenantIdText;
-            var tenantId = isSource ? sourceTenantID : destinationTenantID;
+            var tenantID = isSource ? sourceTenantID : destinationTenantID;
 
             if (statusText != null)
             {
@@ -93,9 +93,9 @@ namespace IntuneTools.Pages
             // Show tenant ID when signed in (helps users disambiguate look-alike tenant names).
             if (detailPanel != null && detailIdText != null)
             {
-                if (isSignedIn && !string.IsNullOrWhiteSpace(tenantId))
+                if (isSignedIn && !string.IsNullOrWhiteSpace(tenantID))
                 {
-                    detailIdText.Text = tenantId;
+                    detailIdText.Text = tenantID;
                     detailPanel.Visibility = Visibility.Visible;
                 }
                 else

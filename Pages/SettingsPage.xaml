@@ -129,6 +129,7 @@
                 VerticalAlignment="Center"
                 Margin="16,24,16,0">
             <StackPanel Orientation="Vertical" Spacing="4">
+                <!-- Sync glyph (E895) — chosen as a clearer "swap" affordance than the previous E8AB. -->
                 <FontIcon Glyph="&#xE895;" FontSize="20"/>
                 <TextBlock Text="Swap" FontSize="11"/>
             </StackPanel>

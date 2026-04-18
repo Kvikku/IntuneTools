@@ -57,6 +57,12 @@ namespace IntuneTools.Pages
             string ContentTypeDisplayName,
             Func<string, List<string>, GraphServiceClient, Task> AssignAsync);
 
+        // Thresholds above which a pre-flight confirmation dialog is shown before kicking off
+        // a bulk assignment. Tuned so that small one-off ops don't get a friction prompt, while
+        // anything that touches many items or many groups does.
+        private const int MinItemsForAssignConfirmation = 10;
+        private const int MaxGroupsWithoutConfirmation = 2;
+
         public static ObservableCollection<CustomContentInfo> AssignmentList { get; } = new();
         public ObservableCollection<AssignmentGroupInfo> GroupList { get; } = new();
         public ObservableCollection<DeviceAndAppManagementAssignmentFilter> FilterOptions { get; } = new();
@@ -260,7 +266,7 @@ namespace IntuneTools.Pages
             // Pre-flight confirmation for any bulk assignment so the user always sees what
             // they're about to do (item count, group count, and tenant). Skipped when the
             // payload is small (<10 items AND <=2 groups) to avoid friction on tiny ops.
-            if (content.Count >= 10 || groupCount > 2)
+            if (content.Count >= MinItemsForAssignConfirmation || groupCount > MaxGroupsWithoutConfirmation)
             {
                 var groupWord = groupCount == 1 ? "group" : "groups";
                 var confirmed = await ConfirmationDialogHelper.ConfirmAsync(

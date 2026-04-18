@@ -813,7 +813,7 @@ namespace IntuneTools.Pages
         /// Shows a success summary after a folder export, with an "Open folder" affordance
         /// so the user can immediately verify the output.
         /// </summary>
-        private async System.Threading.Tasks.Task ShowExportSuccessDialogAsync(string folderPath, int filesWritten, int totalItems)
+        private async Task ShowExportSuccessDialogAsync(string folderPath, int filesWritten, int totalItems)
         {
             var stack = new StackPanel { Spacing = 12 };
             stack.Children.Add(new InfoBar
