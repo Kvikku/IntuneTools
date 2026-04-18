@@ -1,10 +1,8 @@
-﻿using IntuneTools.Utilities;
+using IntuneTools.Utilities;
 using Microsoft.Graph;
-using Microsoft.Kiota.Serialization.Json;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
+using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -12,591 +10,346 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 {
     public class WindowsDriverUpdateHelper
     {
-        /// <summary>
-        /// Searches for Windows Driver Update Profiles matching the specified search query.
-        /// </summary>
-        /// <param name="graphServiceClient">The GraphServiceClient instance for Microsoft Graph calls.</param>
-        /// <param name="searchQuery">The string to search for in profile DisplayName.</param>
-        /// <returns>A list of WindowsDriverUpdateProfile objects that match the search criteria.</returns>
-        public static async Task<List<WindowsDriverUpdateProfile>> SearchForDriverProfiles(GraphServiceClient graphServiceClient, string searchQuery)
+        private class Helper : GraphHelper<WindowsDriverUpdateProfile, WindowsDriverUpdateProfileCollectionResponse>
         {
-            try
+            protected override string ResourceName => "Windows Driver Update profiles";
+            protected override string ContentTypeName => "Windows Driver Update";
+            protected override string? FixedPlatform => "Windows";
+
+            protected override string? GetPolicyName(WindowsDriverUpdateProfile policy) => policy.DisplayName;
+            protected override string? GetPolicyId(WindowsDriverUpdateProfile policy) => policy.Id;
+            protected override string? GetPolicyDescription(WindowsDriverUpdateProfile policy) => policy.Description;
+
+            protected override Task<WindowsDriverUpdateProfileCollectionResponse?> GetCollectionAsync(GraphServiceClient client)
+                => client.DeviceManagement.WindowsDriverUpdateProfiles.GetAsync();
+
+            // No server-side filter support; client-side filtering is applied in the public static method
+            protected override Task<WindowsDriverUpdateProfileCollectionResponse?> SearchCollectionAsync(GraphServiceClient client, string searchQuery)
+                => client.DeviceManagement.WindowsDriverUpdateProfiles.GetAsync();
+
+            protected override Task<WindowsDriverUpdateProfile?> GetByIdAsync(GraphServiceClient client, string id)
+                => client.DeviceManagement.WindowsDriverUpdateProfiles[id].GetAsync();
+
+            protected override Task DeleteByIdAsync(GraphServiceClient client, string id)
+                => client.DeviceManagement.WindowsDriverUpdateProfiles[id].DeleteAsync();
+
+            protected override async Task PatchNameAsync(GraphServiceClient client, string id, string newName)
             {
-                LogToFunctionFile(appFunction.Main, "Searching for Windows Driver Update Profiles. Search query: " + searchQuery);
+                var profile = new WindowsDriverUpdateProfile { DisplayName = newName };
+                await client.DeviceManagement.WindowsDriverUpdateProfiles[id].PatchAsync(profile);
+            }
 
-                var result = await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles.GetAsync();
+            protected override async Task PatchDescriptionAsync(GraphServiceClient client, string id, string description)
+            {
+                var profile = new WindowsDriverUpdateProfile { Description = description };
+                await client.DeviceManagement.WindowsDriverUpdateProfiles[id].PatchAsync(profile);
+            }
 
-                List<WindowsDriverUpdateProfile> driverProfiles = new List<WindowsDriverUpdateProfile>();
-
-                if (result?.Value != null) // Check if result and Value are not null
+            public override async Task<string?> ImportFromJsonDataAsync(GraphServiceClient client, JsonElement policyData)
+            {
+                try
                 {
-                    // Use PageIterator to handle paginated results
-                    var pageIterator = PageIterator<WindowsDriverUpdateProfile, WindowsDriverUpdateProfileCollectionResponse>.CreatePageIterator(graphServiceClient, result, (profile) =>
+                    var exportedProfile = GraphImportHelper.DeserializeFromJson(policyData, WindowsDriverUpdateProfile.CreateFromDiscriminatorValue);
+
+                    if (exportedProfile == null)
                     {
-                        if (!string.IsNullOrEmpty(profile.DisplayName) && profile.DisplayName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
-                        {
-                            driverProfiles.Add(profile);
-                        }
-                        return true;
-                    });
-                    await pageIterator.IterateAsync();
-
-                    LogToFunctionFile(appFunction.Main, $"Found {driverProfiles.Count} Windows Driver Update Profiles matching the search query.");
-                }
-                else
-                {
-                    LogToFunctionFile(appFunction.Main, "No Windows Driver Update Profiles found matching the search query or the result was null.", LogLevels.Error);
-                }
-
-
-                return driverProfiles;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for Windows Driver Update Profiles: {ex.Message}", LogLevels.Error);
-                return new List<WindowsDriverUpdateProfile>();
-            }
-        }
-
-        /// <summary>
-        /// Retrieves all Windows Driver Update Profiles.
-        /// </summary>
-        /// <param name="graphServiceClient">The GraphServiceClient instance for Microsoft Graph calls.</param>
-        /// <returns>A list of all WindowsDriverUpdateProfile objects.</returns>
-        public static async Task<List<WindowsDriverUpdateProfile>> GetAllDriverProfiles(GraphServiceClient graphServiceClient)
-        {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, "Retrieving all Windows Driver Update Profiles.");
-
-                var result = await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles.GetAsync();
-
-                List<WindowsDriverUpdateProfile> driverProfiles = new List<WindowsDriverUpdateProfile>();
-
-                if (result?.Value != null) // Check if result and Value are not null
-                {
-                    var pageIterator = PageIterator<WindowsDriverUpdateProfile, WindowsDriverUpdateProfileCollectionResponse>.CreatePageIterator(graphServiceClient, result, (profile) =>
-                    {
-                        driverProfiles.Add(profile);
-                        return true;
-                    });
-                    await pageIterator.IterateAsync();
-                    LogToFunctionFile(appFunction.Main, $"Found {driverProfiles.Count} Windows Driver Update Profiles.");
-                }
-                else
-                {
-                    LogToFunctionFile(appFunction.Main, "No Windows Driver Update Profiles found or the result was null.");
-                }
-
-                return driverProfiles;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while retrieving all Windows Driver Update Profiles: {ex.Message}", LogLevels.Error);
-                return new List<WindowsDriverUpdateProfile>();
-            }
-        }
-
-        /// <summary>
-        /// Imports multiple Windows Driver Update Profiles from source to destination tenant.
-        /// </summary>
-        /// <param name="sourceGraphServiceClient">GraphServiceClient for source tenant.</param>
-        /// <param name="destinationGraphServiceClient">GraphServiceClient for destination tenant.</param>
-        /// <param name="profileIds">List of profile IDs to import.</param>
-        /// <param name="assignments">Whether to import assignments after creating profiles.</param>
-        /// <param name="filter">Whether to apply an assignment filter.</param>
-        /// <param name="groups">List of group IDs for assignment.</param>
-        /// <returns>A Task representing the asynchronous import operation.</returns>
-        public static async Task ImportMultipleDriverProfiles(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> profileIds, bool assignments, bool filter, List<string> groups)
-        {
-            try
-            {
-                LogToFunctionFile(appFunction.Main, $"Importing {profileIds.Count} Windows Driver Update Profiles.");
-                foreach (var profileId in profileIds)
-                {
-                    var profileName = "";
-                    try
-                    {
-                        // Get the source profile
-                        var sourceProfile = await sourceGraphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileId].GetAsync();
-
-                        if (sourceProfile == null)
-                        {
-                            LogToFunctionFile(appFunction.Main, $"Profile with ID {profileId} not found in source tenant.");
-                            continue;
-                        }
-
-                        profileName = sourceProfile.DisplayName ?? "Unknown Profile"; // Handle potential null DisplayName
-
-                        // Create the new profile object for the destination tenant
-                        // Map relevant properties. Check API documentation for required/allowed properties.
-                        var newProfile = new WindowsDriverUpdateProfile
-                        {
-                            OdataType = "#microsoft.graph.windowsDriverUpdateProfile",
-                            DisplayName = sourceProfile.DisplayName,
-                            Description = sourceProfile.Description,
-                            ApprovalType = sourceProfile.ApprovalType,
-                            RoleScopeTagIds = sourceProfile.RoleScopeTagIds,
-                            DeploymentDeferralInDays = sourceProfile.DeploymentDeferralInDays
-                        };
-
-
-                        var importResult = await destinationGraphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles.PostAsync(newProfile);
-                        LogToFunctionFile(appFunction.Main, $"Imported profile: {importResult?.DisplayName ?? "Unknown"}");
-
-                        if (assignments && importResult?.Id != null)
-                        {
-                            // Assign groups using the specific method for Driver Update Profiles
-                            await AssignGroupsToSingleDriverProfile(importResult.Id, groups, destinationGraphServiceClient); // Pass filter status
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        //rtb.AppendText($"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active\n");
-                        LogToFunctionFile(appFunction.Main, $"Failed to import Windows Driver Update policy {profileName}: {ex.Message}", LogLevels.Error);
-                        LogToFunctionFile(appFunction.Main, $"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", LogLevels.Warning);
-                    }
-                }
-                LogToFunctionFile(appFunction.Main, "Windows Driver Update policy import process finished.");
-            }
-
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred during the driver profile import process: {ex.Message}", LogLevels.Warning);
-            }
-        }
-
-
-        // Note: Assignment structure for Driver Update Profiles differs from Settings Catalog.
-        /// <summary>
-        /// Assigns groups to a single Windows Driver Update Profile.
-        /// Windows Driver Update profiles can ONLY be assigned to device groups - not All Users or All Devices.
-        /// </summary>
-        /// <param name="profileID">The ID of the profile to assign groups to.</param>
-        /// <param name="groupIDs">List of group IDs to assign.</param>
-        /// <param name="destinationGraphServiceClient">GraphServiceClient for the destination tenant.</param>
-        /// <returns>A Task representing the asynchronous assignment operation.</returns>
-        public static async Task AssignGroupsToSingleDriverProfile(string profileID, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(profileID))
-                {
-                    throw new ArgumentNullException(nameof(profileID));
-                }
-
-                if (groupIDs == null)
-                {
-                    throw new ArgumentNullException(nameof(groupIDs));
-                }
-
-                if (destinationGraphServiceClient == null)
-                {
-                    throw new ArgumentNullException(nameof(destinationGraphServiceClient));
-                }
-
-                var assignments = new List<WindowsDriverUpdateProfileAssignment>();
-                var seenGroupIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-                LogToFunctionFile(appFunction.Main, $"Assigning {groupIDs.Count} groups to driver profile {profileID}.");
-
-                // Step 1: Add new assignments to request body
-                foreach (var groupId in groupIDs)
-                {
-                    if (string.IsNullOrWhiteSpace(groupId) || !seenGroupIds.Add(groupId))
-                    {
-                        continue;
+                        LogToFunctionFile(appFunction.Main, "Failed to deserialize Windows Driver Update profile data from JSON.", LogLevels.Error);
+                        return null;
                     }
 
-                    // Check if this is All Users - Driver Update profiles cannot be assigned to All Users
-                    if (groupId.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                    var newProfile = new WindowsDriverUpdateProfile
                     {
-                        LogToFunctionFile(appFunction.Main, "Warning: Windows Driver Update profiles cannot be assigned to 'All Users'. Only device groups are supported. Skipping this assignment.", LogLevels.Warning);
-                        continue;
-                    }
-
-                    // Check if this is All Devices - Driver Update profiles cannot be assigned to All Devices
-                    if (groupId.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
-                    {
-                        LogToFunctionFile(appFunction.Main, "Warning: Windows Driver Update profiles cannot be assigned to 'All Devices'. Only device groups are supported. Skipping this assignment.", LogLevels.Warning);
-                        continue;
-                    }
-
-                    // Regular group assignment (device groups only)
-                    var assignment = new WindowsDriverUpdateProfileAssignment
-                    {
-                        OdataType = "#microsoft.graph.windowsDriverUpdateProfileAssignment",
-                        Target = new GroupAssignmentTarget
-                        {
-                            OdataType = "#microsoft.graph.groupAssignmentTarget",
-                            GroupId = groupId,
-                            DeviceAndAppManagementAssignmentFilterId = SelectedFilterID,
-                            DeviceAndAppManagementAssignmentFilterType = deviceAndAppManagementAssignmentFilterType
-                        }
+                        OdataType = "#microsoft.graph.windowsDriverUpdateProfile",
+                        DisplayName = exportedProfile.DisplayName,
+                        Description = exportedProfile.Description,
+                        ApprovalType = exportedProfile.ApprovalType,
+                        RoleScopeTagIds = exportedProfile.RoleScopeTagIds,
+                        DeploymentDeferralInDays = exportedProfile.DeploymentDeferralInDays
                     };
 
-                    assignments.Add(assignment);
+                    var imported = await client.DeviceManagement.WindowsDriverUpdateProfiles.PostAsync(newProfile);
+
+                    LogToFunctionFile(appFunction.Main, $"Imported Windows Driver Update profile: {imported?.DisplayName}");
+                    return imported?.DisplayName;
                 }
-
-                // Step 2: Check for existing assignments and add only if not already present
-                var existingAssignments = await destinationGraphServiceClient
-                    .DeviceManagement
-                    .WindowsDriverUpdateProfiles[profileID]
-                    .Assignments
-                    .GetAsync();
-
-                if (existingAssignments?.Value != null)
+                catch (Exception ex)
                 {
-                    foreach (var existing in existingAssignments.Value)
-                    {
-                        // Check the type of assignment target
-                        if (existing.Target is AllLicensedUsersAssignmentTarget)
-                        {
-                            // Skip All Users assignments - they shouldn't exist but handle gracefully
-                            LogToFunctionFile(appFunction.Main, $"Warning: Found existing 'All Users' assignment on Driver Update profile {profileID}. This should not exist and will be skipped.", LogLevels.Warning);
-                            continue;
-                        }
-                        else if (existing.Target is AllDevicesAssignmentTarget)
-                        {
-                            // Skip All Devices assignments - they shouldn't exist but handle gracefully
-                            LogToFunctionFile(appFunction.Main, $"Warning: Found existing 'All Devices' assignment on Driver Update profile {profileID}. This should not exist and will be skipped.", LogLevels.Warning);
-                            continue;
-                        }
-                        else if (existing.Target is GroupAssignmentTarget groupTarget)
-                        {
-                            var existingGroupId = groupTarget.GroupId;
+                    GraphErrorHandler.HandleException(ex, "importing from JSON", ResourceName);
+                    LogToFunctionFile(appFunction.Main, "This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", LogLevels.Warning);
+                    return null;
+                }
+            }
 
-                            // Only add if not already in the new assignments
-                            if (!string.IsNullOrWhiteSpace(existingGroupId) && seenGroupIds.Add(existingGroupId))
+            public override async Task<bool?> HasAssignmentsAsync(GraphServiceClient client, string id)
+            {
+                try
+                {
+                    var result = await client.DeviceManagement.WindowsDriverUpdateProfiles[id].Assignments.GetAsync(rc =>
+                    {
+                        rc.QueryParameters.Top = 1;
+                    });
+                    return result?.Value != null && result.Value.Count > 0;
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+
+            public override async Task<List<AssignmentInfo>?> GetAssignmentDetailsAsync(GraphServiceClient client, string id)
+            {
+                try
+                {
+                    var details = new List<AssignmentInfo>();
+                    var result = await client.DeviceManagement.WindowsDriverUpdateProfiles[id].Assignments.GetAsync();
+
+                    while (result?.Value != null)
+                    {
+                        foreach (var assignment in result.Value)
+                        {
+                            details.Add(AssignmentInfo.FromTarget(assignment.Id, assignment.Target));
+                        }
+
+                        if (string.IsNullOrEmpty(result.OdataNextLink)) break;
+
+                        result = await client.DeviceManagement.WindowsDriverUpdateProfiles[id]
+                            .Assignments.WithUrl(result.OdataNextLink).GetAsync();
+                    }
+
+                    return details;
+                }
+                catch (Exception ex)
+                {
+                    GraphErrorHandler.HandleException(ex, "getting assignment details for", $"Windows Driver Update {id}");
+                    return null;
+                }
+            }
+
+            public override async Task RemoveAllAssignmentsAsync(GraphServiceClient client, string id)
+            {
+                var requestBody = new Microsoft.Graph.Beta.DeviceManagement.WindowsDriverUpdateProfiles.Item.Assign.AssignPostRequestBody
+                {
+                    Assignments = new List<WindowsDriverUpdateProfileAssignment>()
+                };
+
+                await client.DeviceManagement.WindowsDriverUpdateProfiles[id].Assign.PostAsync(requestBody);
+                LogToFunctionFile(appFunction.Main, $"Removed all assignments from Windows Driver Update profile {id}.");
+            }
+
+            public override async Task ImportMultipleAsync(
+                GraphServiceClient sourceClient,
+                GraphServiceClient destinationClient,
+                List<string> ids,
+                bool assignments,
+                bool filter,
+                List<string> groups)
+            {
+                try
+                {
+                    LogToFunctionFile(appFunction.Main, $"Importing {ids.Count} {ResourceName}.");
+
+                    foreach (var id in ids)
+                    {
+                        var profileName = "";
+                        try
+                        {
+                            var sourceProfile = await sourceClient.DeviceManagement.WindowsDriverUpdateProfiles[id].GetAsync();
+
+                            if (sourceProfile == null)
+                            {
+                                LogToFunctionFile(appFunction.Main, $"Profile with ID {id} not found in source tenant.");
+                                continue;
+                            }
+
+                            profileName = sourceProfile.DisplayName ?? "Unknown Profile";
+
+                            var newProfile = new WindowsDriverUpdateProfile
+                            {
+                                OdataType = "#microsoft.graph.windowsDriverUpdateProfile",
+                                DisplayName = sourceProfile.DisplayName,
+                                Description = sourceProfile.Description,
+                                ApprovalType = sourceProfile.ApprovalType,
+                                RoleScopeTagIds = sourceProfile.RoleScopeTagIds,
+                                DeploymentDeferralInDays = sourceProfile.DeploymentDeferralInDays
+                            };
+
+                            var importResult = await destinationClient.DeviceManagement.WindowsDriverUpdateProfiles.PostAsync(newProfile);
+                            LogToFunctionFile(appFunction.Main, $"Imported profile: {importResult?.DisplayName ?? "Unknown"}");
+
+                            if (assignments && importResult?.Id != null)
+                            {
+                                await AssignGroupsToSingleDriverProfile(importResult.Id, groups, destinationClient);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            LogToFunctionFile(appFunction.Main, $"Failed to import Windows Driver Update policy {profileName}: {ex.Message}", LogLevels.Error);
+                            LogToFunctionFile(appFunction.Main, "This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", LogLevels.Warning);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    GraphErrorHandler.HandleException(ex, "during import process for", ResourceName);
+                }
+            }
+
+            // Driver Update profiles can ONLY be assigned to device groups - not All Users or All Devices
+            public override async Task AssignGroupsAsync(string id, List<string> groupIds, GraphServiceClient client)
+            {
+                try
+                {
+                    ArgumentNullException.ThrowIfNull(id);
+                    ArgumentNullException.ThrowIfNull(groupIds);
+                    ArgumentNullException.ThrowIfNull(client);
+
+                    var assignments = new List<WindowsDriverUpdateProfileAssignment>();
+                    var seenGroupIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                    foreach (var groupId in groupIds)
+                    {
+                        if (string.IsNullOrWhiteSpace(groupId) || !seenGroupIds.Add(groupId))
+                            continue;
+
+                        if (groupId.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                        {
+                            LogToFunctionFile(appFunction.Main, "Warning: Windows Driver Update profiles cannot be assigned to 'All Users'. Only device groups are supported. Skipping this assignment.", LogLevels.Warning);
+                            continue;
+                        }
+
+                        if (groupId.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
+                        {
+                            LogToFunctionFile(appFunction.Main, "Warning: Windows Driver Update profiles cannot be assigned to 'All Devices'. Only device groups are supported. Skipping this assignment.", LogLevels.Warning);
+                            continue;
+                        }
+
+                        var target = new GroupAssignmentTarget
+                        {
+                            OdataType = "#microsoft.graph.groupAssignmentTarget",
+                            GroupId = groupId
+                        };
+                        GraphAssignmentHelper.ApplySelectedFilter(target);
+
+                        assignments.Add(new WindowsDriverUpdateProfileAssignment
+                        {
+                            OdataType = "#microsoft.graph.windowsDriverUpdateProfileAssignment",
+                            Target = target
+                        });
+                    }
+
+                    // Merge existing assignments
+                    var existingAssignments = await client
+                        .DeviceManagement
+                        .WindowsDriverUpdateProfiles[id]
+                        .Assignments
+                        .GetAsync();
+
+                    if (existingAssignments?.Value != null)
+                    {
+                        foreach (var existing in existingAssignments.Value)
+                        {
+                            if (existing.Target is AllLicensedUsersAssignmentTarget)
+                            {
+                                LogToFunctionFile(appFunction.Main, $"Warning: Found existing 'All Users' assignment on Driver Update profile {id}. This should not exist and will be skipped.", LogLevels.Warning);
+                                continue;
+                            }
+                            else if (existing.Target is AllDevicesAssignmentTarget)
+                            {
+                                LogToFunctionFile(appFunction.Main, $"Warning: Found existing 'All Devices' assignment on Driver Update profile {id}. This should not exist and will be skipped.", LogLevels.Warning);
+                                continue;
+                            }
+                            else if (existing.Target is GroupAssignmentTarget groupTarget)
+                            {
+                                var existingGroupId = groupTarget.GroupId;
+                                if (!string.IsNullOrWhiteSpace(existingGroupId) && seenGroupIds.Add(existingGroupId))
+                                {
+                                    assignments.Add(existing);
+                                }
+                            }
+                            else
                             {
                                 assignments.Add(existing);
                             }
                         }
-                        else
-                        {
-                            // Include any other assignment types (e.g., exclusions, etc.)
-                            assignments.Add(existing);
-                        }
                     }
-                }
 
-                // Step 3: Update the profile with the assignments
-                var requestBody = new Microsoft.Graph.Beta.DeviceManagement.WindowsDriverUpdateProfiles.Item.Assign.AssignPostRequestBody
-                {
-                    Assignments = assignments
-                };
+                    var requestBody = new Microsoft.Graph.Beta.DeviceManagement.WindowsDriverUpdateProfiles.Item.Assign.AssignPostRequestBody
+                    {
+                        Assignments = assignments
+                    };
 
-                try
-                {
-                    await destinationGraphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileID].Assign.PostAsync(requestBody);
-                    LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to driver profile {profileID}. Filter: {SelectedFilterID ?? "None"}");
-                    UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
-                }
-                catch (ServiceException svcex)
-                {
-                    LogToFunctionFile(appFunction.Main, $"Graph API error assigning groups to profile {profileID}: {svcex.Message}", LogLevels.Error);
+                    try
+                    {
+                        await client.DeviceManagement.WindowsDriverUpdateProfiles[id].Assign.PostAsync(requestBody);
+                        LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to driver profile {id}. Filter: {SelectedFilterID ?? "None"}");
+                        UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
+                    }
+                    catch (Exception ex)
+                    {
+                        LogToFunctionFile(appFunction.Main, $"Error assigning groups to profile {id}: {ex.Message}", LogLevels.Error);
+                    }
                 }
                 catch (Exception ex)
                 {
-                    LogToFunctionFile(appFunction.Main, $"Error assigning groups to profile {profileID}: {ex.Message}", LogLevels.Error);
+                    LogToFunctionFile(appFunction.Main, $"An unexpected error occurred while preparing group assignments for a driver profile: {ex.Message}", LogLevels.Warning);
                 }
             }
-            catch (ArgumentNullException argEx)
-            {
-                LogToFunctionFile(appFunction.Main, $"Argument null exception during group assignment setup: {argEx.Message}", LogLevels.Error);
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An unexpected error occurred while preparing group assignments for a driver profile: {ex.Message}", LogLevels.Warning);
-            }
         }
-        public static async Task DeleteDriverProfile(GraphServiceClient graphServiceClient, string profileID)
+
+        private static readonly Helper _helper = new();
+
+        // ── Public static methods (signatures preserved for existing consumers) ──
+
+        public static async Task<List<WindowsDriverUpdateProfile>> SearchForDriverProfiles(GraphServiceClient graphServiceClient, string searchQuery)
         {
-            try
-            {
-                if (graphServiceClient == null)
-                {
-                    throw new ArgumentNullException(nameof(graphServiceClient));
-                }
-
-                if (string.IsNullOrEmpty(profileID))
-                {
-                    throw new ArgumentNullException(nameof(profileID), "Profile ID cannot be null or empty.");
-                }
-
-                LogToFunctionFile(appFunction.Main, $"Attempting to delete Windows Driver Update Profile with ID: {profileID}");
-                await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileID].DeleteAsync();
-                LogToFunctionFile(appFunction.Main, $"Successfully deleted Windows Driver Update Profile with ID: {profileID}");
-            }
-            catch (ServiceException svcex) when (svcex.ResponseStatusCode == (int)System.Net.HttpStatusCode.NotFound) // Corrected comparison
-            {
-                // Handle case where the profile doesn't exist (might have been deleted already)
-                LogToFunctionFile(appFunction.Main, $"Windows Driver Update Profile with ID {profileID} not found. It might have already been deleted. Details: {svcex.Message}", LogLevels.Warning);
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while deleting Windows Driver Update Profile with ID: {profileID}: {ex.Message}", LogLevels.Error);
-            }
-        }
-        public static async Task RenameDriverProfile(GraphServiceClient graphServiceClient, string profileID, string newName)
-        {
-            try
-            {
-                if (graphServiceClient == null)
-                {
-                    throw new ArgumentNullException(nameof(graphServiceClient));
-                }
-
-                if (string.IsNullOrEmpty(profileID))
-                {
-                    throw new ArgumentNullException(nameof(profileID), "Profile ID cannot be null or empty.");
-                }
-
-                if (string.IsNullOrWhiteSpace(newName))
-                {
-                    throw new InvalidOperationException("New name cannot be null or empty.");
-                }
-
-                if (selectedRenameMode == "Prefix")
-                {
-                    // Look up the existing profile
-                    var existingProfile = await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileID].GetAsync();
-
-                    if (existingProfile == null)
-                    {
-                        throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
-                    }
-
-                    var name = FindPreFixInPolicyName(existingProfile.DisplayName ?? string.Empty, newName);
-
-                    var profile = new WindowsDriverUpdateProfile
-                    {
-                        DisplayName = name,
-                    };
-
-                    await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileID].PatchAsync(profile);
-                    LogToFunctionFile(appFunction.Main, $"Successfully renamed Windows Driver Update Profile from '{existingProfile.DisplayName}' to '{name}'");
-                }
-                else if (selectedRenameMode == "Suffix")
-                {
-
-                }
-                else if (selectedRenameMode == "Description")
-                {
-                    // Look up the existing profile
-                    var existingProfile = await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileID].GetAsync();
-
-                    if (existingProfile == null)
-                    {
-                        throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
-                    }
-
-                    var profile = new WindowsDriverUpdateProfile
-                    {
-                        Description = newName,
-                    };
-
-                    await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileID].PatchAsync(profile);
-                    LogToFunctionFile(appFunction.Main, $"Updated description for Windows Driver Update Profile {profileID} to '{newName}'");
-                }
-                else if (selectedRenameMode == "RemovePrefix")
-                {
-                    var existingProfile = await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileID].GetAsync();
-
-                    if (existingProfile == null)
-                    {
-                        throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
-                    }
-
-                    var name = RemovePrefixFromPolicyName(existingProfile.DisplayName);
-
-                    var profile = new WindowsDriverUpdateProfile
-                    {
-                        DisplayName = name
-                    };
-
-                    await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileID].PatchAsync(profile);
-                    LogToFunctionFile(appFunction.Main, $"Removed prefix from Windows Driver Update Profile {profileID}, new name: '{name}'");
-                }
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while renaming Windows Driver Update Profile: {ex.Message}", LogLevels.Warning);
-            }
+            var all = await _helper.GetAllAsync(graphServiceClient);
+            return all.Where(p => !string.IsNullOrEmpty(p.DisplayName) && p.DisplayName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)).ToList();
         }
 
-        public static async Task<List<CustomContentInfo>> GetAllWindowsDriverUpdateContentAsync(GraphServiceClient graphServiceClient)
-        {
-            var profiles = await GetAllDriverProfiles(graphServiceClient);
-            var content = new List<CustomContentInfo>();
+        public static Task<List<WindowsDriverUpdateProfile>> GetAllDriverProfiles(GraphServiceClient graphServiceClient)
+            => _helper.GetAllAsync(graphServiceClient);
 
-            foreach (var profile in profiles)
-            {
-                content.Add(new CustomContentInfo
-                {
-                    ContentName = profile.DisplayName,
-                    ContentType = "Windows Driver Update",
-                    ContentPlatform = "Windows",
-                    ContentId = profile.Id,
-                    ContentDescription = profile.Description
-                });
-            }
+        public static Task ImportMultipleDriverProfiles(GraphServiceClient sourceGraphServiceClient, GraphServiceClient destinationGraphServiceClient, List<string> profileIds, bool assignments, bool filter, List<string> groups)
+            => _helper.ImportMultipleAsync(sourceGraphServiceClient, destinationGraphServiceClient, profileIds, assignments, filter, groups);
 
-            return content;
-        }
+        public static Task AssignGroupsToSingleDriverProfile(string profileID, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
+            => _helper.AssignGroupsAsync(profileID, groupIDs, destinationGraphServiceClient);
+
+        public static Task DeleteDriverProfile(GraphServiceClient graphServiceClient, string profileID)
+            => _helper.DeleteAsync(graphServiceClient, profileID);
+
+        public static Task RenameDriverProfile(GraphServiceClient graphServiceClient, string profileID, string newName)
+            => _helper.RenameAsync(graphServiceClient, profileID, newName);
+
+        public static Task<List<CustomContentInfo>> GetAllWindowsDriverUpdateContentAsync(GraphServiceClient graphServiceClient)
+            => _helper.GetAllContentAsync(graphServiceClient);
 
         public static async Task<List<CustomContentInfo>> SearchWindowsDriverUpdateContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
             var profiles = await SearchForDriverProfiles(graphServiceClient, searchQuery);
-            var content = new List<CustomContentInfo>();
-
-            foreach (var profile in profiles)
+            return profiles.Select(p => new CustomContentInfo
             {
-                content.Add(new CustomContentInfo
-                {
-                    ContentName = profile.DisplayName,
-                    ContentType = "Windows Driver Update",
-                    ContentPlatform = "Windows",
-                    ContentId = profile.Id,
-                    ContentDescription = profile.Description
-                });
-            }
-
-            return content;
+                ContentName = p.DisplayName,
+                ContentType = "Windows Driver Update",
+                ContentPlatform = "Windows",
+                ContentId = p.Id,
+                ContentDescription = p.Description
+            }).ToList();
         }
 
-        /// <summary>
-        /// Exports a Windows Driver Update profile's full data as a JsonElement for JSON file export.
-        /// </summary>
-        public static async Task<JsonElement?> ExportWindowsDriverUpdatePolicyDataAsync(GraphServiceClient graphServiceClient, string profileId)
-        {
-            try
-            {
-                var result = await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileId].GetAsync();
+        public static Task<JsonElement?> ExportWindowsDriverUpdatePolicyDataAsync(GraphServiceClient graphServiceClient, string profileId)
+            => _helper.ExportDataAsync(graphServiceClient, profileId);
 
-                if (result == null)
-                {
-                    LogToFunctionFile(appFunction.Main, $"Windows Driver Update profile {profileId} not found for export.", LogLevels.Warning);
-                    return null;
-                }
+        public static Task<string?> ImportWindowsDriverUpdateFromJsonDataAsync(GraphServiceClient graphServiceClient, JsonElement policyData)
+            => _helper.ImportFromJsonDataAsync(graphServiceClient, policyData);
 
-                using var writer = new JsonSerializationWriter();
-                writer.WriteObjectValue(null, result);
-                using var stream = writer.GetSerializedContent();
-                var doc = await JsonDocument.ParseAsync(stream);
-                return doc.RootElement.Clone();
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"Error exporting Windows Driver Update profile {profileId}: {ex.Message}", LogLevels.Error);
-                return null;
-            }
-        }
+        public static Task<bool?> HasWindowsDriverUpdateAssignmentsAsync(GraphServiceClient graphServiceClient, string profileId)
+            => _helper.HasAssignmentsAsync(graphServiceClient, profileId);
 
-        /// <summary>
-        /// Imports a Windows Driver Update profile from previously exported JSON data into the destination tenant.
-        /// </summary>
-        public static async Task<string?> ImportWindowsDriverUpdateFromJsonDataAsync(GraphServiceClient graphServiceClient, JsonElement policyData)
-        {
-            try
-            {
-                var json = policyData.GetRawText();
-                using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
-                var parseNode = new JsonParseNode(JsonDocument.Parse(stream).RootElement);
-                var exportedProfile = parseNode.GetObjectValue(WindowsDriverUpdateProfile.CreateFromDiscriminatorValue);
+        public static Task<List<AssignmentInfo>?> GetWindowsDriverUpdateAssignmentDetailsAsync(GraphServiceClient graphServiceClient, string profileId)
+            => _helper.GetAssignmentDetailsAsync(graphServiceClient, profileId);
 
-                if (exportedProfile == null)
-                {
-                    LogToFunctionFile(appFunction.Main, "Failed to deserialize Windows Driver Update profile data from JSON.", LogLevels.Error);
-                    return null;
-                }
-
-                var newProfile = new WindowsDriverUpdateProfile
-                {
-                    OdataType = "#microsoft.graph.windowsDriverUpdateProfile",
-                    DisplayName = exportedProfile.DisplayName,
-                    Description = exportedProfile.Description,
-                    ApprovalType = exportedProfile.ApprovalType,
-                    RoleScopeTagIds = exportedProfile.RoleScopeTagIds,
-                    DeploymentDeferralInDays = exportedProfile.DeploymentDeferralInDays
-                };
-
-                var imported = await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles.PostAsync(newProfile);
-
-                LogToFunctionFile(appFunction.Main, $"Imported Windows Driver Update profile: {imported?.DisplayName}");
-                return imported?.DisplayName;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"Error importing Windows Driver Update profile from JSON: {ex.Message}", LogLevels.Error);
-                LogToFunctionFile(appFunction.Main, $"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", LogLevels.Warning);
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Checks if a Windows driver update profile has any group assignments.
-        /// </summary>
-        public static async Task<bool?> HasWindowsDriverUpdateAssignmentsAsync(GraphServiceClient graphServiceClient, string profileId)
-        {
-            try
-            {
-                var result = await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileId].Assignments.GetAsync(rc =>
-                {
-                    rc.QueryParameters.Top = 1;
-                });
-                return result?.Value != null && result.Value.Count > 0;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Gets detailed assignment information for a Windows Driver Update profile.
-        /// </summary>
-        public static async Task<List<AssignmentInfo>?> GetWindowsDriverUpdateAssignmentDetailsAsync(GraphServiceClient graphServiceClient, string profileId)
-        {
-            try
-            {
-                var details = new List<AssignmentInfo>();
-                var result = await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileId].Assignments.GetAsync();
-
-                while (result?.Value != null)
-                {
-                    foreach (var assignment in result.Value)
-                    {
-                        details.Add(AssignmentInfo.FromTarget(assignment.Id, assignment.Target));
-                    }
-
-                    if (string.IsNullOrEmpty(result.OdataNextLink)) break;
-
-                    result = await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileId]
-                        .Assignments.WithUrl(result.OdataNextLink).GetAsync();
-                }
-
-                return details;
-            }
-            catch (Exception ex)
-            {
-                LogToFunctionFile(appFunction.Main, $"Error getting assignment details for Windows Driver Update {profileId}: {ex.Message}", LogLevels.Error);
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Removes all assignments from a Windows Driver Update profile.
-        /// </summary>
-        public static async Task RemoveAllWindowsDriverUpdateAssignmentsAsync(GraphServiceClient graphServiceClient, string profileId)
-        {
-            var requestBody = new Microsoft.Graph.Beta.DeviceManagement.WindowsDriverUpdateProfiles.Item.Assign.AssignPostRequestBody
-            {
-                Assignments = new List<WindowsDriverUpdateProfileAssignment>()
-            };
-
-            await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileId].Assign.PostAsync(requestBody);
-            LogToFunctionFile(appFunction.Main, $"Removed all assignments from Windows Driver Update profile {profileId}.");
-        }
+        public static Task RemoveAllWindowsDriverUpdateAssignmentsAsync(GraphServiceClient graphServiceClient, string profileId)
+            => _helper.RemoveAllAssignmentsAsync(graphServiceClient, profileId);
     }
 }
