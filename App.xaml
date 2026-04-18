@@ -64,6 +64,60 @@
                 <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}"/>
             </Style>
 
+            <!-- Toolbar card: the Border container used for "Search & Staging", action cards, etc.
+                 See XAML_STYLE_GUIDE.md §1 / §4. Pages should prefer the ToolbarCard UserControl. -->
+            <Style x:Key="ToolbarCardStyle" TargetType="Border">
+                <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}"/>
+                <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="CornerRadius" Value="8"/>
+                <Setter Property="Padding" Value="12,8"/>
+            </Style>
+
+            <!-- Standard search input across all data pages. See XAML_STYLE_GUIDE.md §6. -->
+            <Style x:Key="ToolbarSearchBoxStyle" TargetType="AutoSuggestBox">
+                <Setter Property="Width" Value="280"/>
+                <Setter Property="QueryIcon" Value="Find"/>
+            </Style>
+
+            <!-- Section label inside a ToolbarCard ("Search & Staging", "JSON Actions", etc.). -->
+            <Style x:Key="SectionLabelTextBlockStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}"/>
+            </Style>
+
+            <!-- Empty-state visual elements. See XAML_STYLE_GUIDE.md §9. -->
+            <Style x:Key="EmptyStateGlyphStyle" TargetType="FontIcon">
+                <Setter Property="FontSize" Value="32"/>
+                <Setter Property="Opacity" Value="0.5"/>
+                <Setter Property="HorizontalAlignment" Value="Center"/>
+            </Style>
+            <Style x:Key="EmptyStateTitleStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="14"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Opacity" Value="0.75"/>
+                <Setter Property="HorizontalAlignment" Value="Center"/>
+            </Style>
+            <Style x:Key="EmptyStateMessageStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="Opacity" Value="0.6"/>
+                <Setter Property="TextWrapping" Value="WrapWholeWords"/>
+                <Setter Property="MaxWidth" Value="380"/>
+                <Setter Property="HorizontalAlignment" Value="Center"/>
+                <Setter Property="TextAlignment" Value="Center"/>
+            </Style>
+
+            <!-- Stat tile typography (e.g., AuditLogPage summary cards). -->
+            <Style x:Key="StatCardLabelStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}"/>
+            </Style>
+            <Style x:Key="StatCardValueStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="28"/>
+                <Setter Property="FontWeight" Value="Bold"/>
+            </Style>
+
         </ResourceDictionary>  
     </Application.Resources>  
 </Application>
