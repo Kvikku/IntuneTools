@@ -140,14 +140,14 @@
                             </StackPanel>
                         </Button>
                         <AppBarSeparator/>
-                        <Button x:Name="ImportToTenantButton"
-                                Click="ImportToTenantButton_Click"
+                        <Button x:Name="CreateInTenantButton"
+                                Click="CreateInTenantButton_Click"
                                 ToolTipService.ToolTip="Recreate staged policies in the destination tenant. Requires a destination tenant to be authenticated."
                                 Height="40"
                                 Padding="16,0">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <FontIcon Glyph="&#xE8B5;" FontSize="16"/>
-                                <TextBlock x:Name="ImportToTenantButtonText" Text="Create in Tenant" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                <TextBlock x:Name="CreateInTenantButtonText" Text="Create in Tenant" VerticalAlignment="Center" FontWeight="SemiBold"/>
                             </StackPanel>
                         </Button>
                     </StackPanel>

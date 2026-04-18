@@ -60,7 +60,10 @@ namespace IntuneTools
 
             // Set theme-aware title bar button colors and update when theme changes
             UpdateTitleBarButtonColors();
-            this.ActualThemeChanged += (_, _) => UpdateTitleBarButtonColors();
+            if (NavView is FrameworkElement themeSource)
+            {
+                themeSource.ActualThemeChanged += (_, _) => UpdateTitleBarButtonColors();
+            }
 
             // Minimize/close the NavigationView pane by default
             NavView.IsPaneOpen = false;
@@ -76,7 +79,8 @@ namespace IntuneTools
         {
             if (appWindow?.TitleBar == null) return;
 
-            var isDark = this.ActualTheme == ElementTheme.Dark;
+            var rootElement = Content as FrameworkElement;
+            var isDark = rootElement?.ActualTheme == ElementTheme.Dark;
             var fg = isDark ? Microsoft.UI.Colors.White : Microsoft.UI.Colors.Black;
             var hoverBg = isDark
                 ? Windows.UI.Color.FromArgb(40, 255, 255, 255)

@@ -147,10 +147,10 @@ namespace IntuneTools.Pages
             ExportButton.IsEnabled = true;
 
             bool hasDestination = !string.IsNullOrEmpty(Variables.destinationTenantName);
-            ImportToTenantButton.IsEnabled = hasDestination;
+            CreateInTenantButton.IsEnabled = hasDestination;
 
             // Update the Create in Tenant button to show the destination tenant name
-            ImportToTenantButtonText.Text = hasDestination
+            CreateInTenantButtonText.Text = hasDestination
                 ? $"Create in {Variables.destinationTenantName}"
                 : "Create in Tenant (no destination)";
 
@@ -708,7 +708,7 @@ namespace IntuneTools.Pages
             await ImportFromJsonAsync();
         }
 
-        private async void ImportToTenantButton_Click(object sender, RoutedEventArgs e)
+        private async void CreateInTenantButton_Click(object sender, RoutedEventArgs e)
         {
             await ImportToTenantAsync();
         }

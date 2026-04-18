@@ -58,7 +58,7 @@
                 <!-- Quick Actions -->
                 <InfoBar x:Name="SignInFirstInfoBar"
                          IsOpen="False"
-                         IsClosable="False"
+                         IsClosable="True"
                          Severity="Warning"
                          Title="Sign in first"
                          Message="Go to Settings and sign in to a source tenant before using any features."/>

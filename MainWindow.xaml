@@ -10,10 +10,6 @@
     mc:Ignorable="d"
     Title="IntuneTools">
 
-    <Window.SystemBackdrop>
-        <MicaBackdrop/>
-    </Window.SystemBackdrop>
-
     <Grid>
         <!-- Define two rows: one for the custom title bar, one for the NavigationView -->
         <Grid.RowDefinitions>
