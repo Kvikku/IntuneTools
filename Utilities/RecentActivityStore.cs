@@ -18,6 +18,7 @@ namespace IntuneTools.Utilities
     {
         private const string SettingsKey = "Home.RecentActivity";
         private const int MaxItems = 30;
+        private const int MaxMessageLength = 220;
 
         public static void Add(string message, string status = "Info")
         {
@@ -26,7 +27,7 @@ namespace IntuneTools.Utilities
             {
                 Timestamp = DateTimeOffset.UtcNow,
                 Status = status,
-                Message = message
+                Message = TrimMessage(message, MaxMessageLength)
             });
 
             if (items.Count > MaxItems)
@@ -64,7 +65,36 @@ namespace IntuneTools.Utilities
         private static void Save(List<RecentActivityEntry> items)
         {
             var settings = ApplicationData.Current.LocalSettings;
-            settings.Values[SettingsKey] = JsonSerializer.Serialize(items);
+            try
+            {
+                settings.Values[SettingsKey] = JsonSerializer.Serialize(items);
+            }
+            catch
+            {
+                try
+                {
+                    var fallback = items
+                        .Take(10)
+                        .Select(i => new RecentActivityEntry
+                        {
+                            Timestamp = i.Timestamp,
+                            Status = i.Status,
+                            Message = TrimMessage(i.Message, 120)
+                        })
+                        .ToList();
+                    settings.Values[SettingsKey] = JsonSerializer.Serialize(fallback);
+                }
+                catch
+                {
+                    // Ignore persistence failures; recent activity is best-effort only.
+                }
+            }
+        }
+
+        private static string TrimMessage(string? message, int maxLength)
+        {
+            var normalized = string.IsNullOrWhiteSpace(message) ? "No details" : message.Trim();
+            return normalized.Length <= maxLength ? normalized : normalized[..maxLength];
         }
     }
 }

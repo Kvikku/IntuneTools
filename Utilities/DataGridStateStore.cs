@@ -26,6 +26,8 @@ namespace IntuneTools.Utilities
 
     public static class DataGridStateStore
     {
+        private const int MaxPersistedSelectedIds = 100;
+
         public static void Save(DataGrid dataGrid, string stateKey)
         {
             var state = new DataGridState();
@@ -52,9 +54,10 @@ namespace IntuneTools.Utilities
                 .Where(id => !string.IsNullOrWhiteSpace(id))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .Select(id => id!)
+                .Take(MaxPersistedSelectedIds)
                 .ToList();
 
-            ApplicationData.Current.LocalSettings.Values[stateKey] = JsonSerializer.Serialize(state);
+            TrySaveState(stateKey, state);
         }
 
         public static void RestoreLayout(DataGrid dataGrid, string stateKey)
@@ -136,6 +139,27 @@ namespace IntuneTools.Utilities
             catch
             {
                 return null;
+            }
+        }
+
+        private static void TrySaveState(string stateKey, DataGridState state)
+        {
+            var settings = ApplicationData.Current.LocalSettings;
+            try
+            {
+                settings.Values[stateKey] = JsonSerializer.Serialize(state);
+            }
+            catch
+            {
+                try
+                {
+                    state.SelectedIds.Clear();
+                    settings.Values[stateKey] = JsonSerializer.Serialize(state);
+                }
+                catch
+                {
+                    // Ignore persistence failures; UX state persistence is best-effort only.
+                }
             }
         }
 

@@ -595,6 +595,7 @@ namespace IntuneTools.Pages
                     _importSuccessCount++;
                     _importCurrent += typeItemCount;
                     importedItemCount += typeItemCount;
+                    ShowOperationProgress($"Imported {definition.DisplayName}", _importCurrent, _importTotal);
                 }
                 catch (Exception ex)
                 {
@@ -603,7 +604,13 @@ namespace IntuneTools.Pages
                     _importErrorCount++;
                     _importCurrent += typeItemCount;
                     failedItemCount += typeItemCount;
+                    ShowOperationProgress($"Completed {definition.DisplayName} with errors", _importCurrent, _importTotal);
                 }
+            }
+
+            if (_importTotal > 0)
+            {
+                ShowOperationProgress("Finalizing import...", _importTotal, _importTotal);
             }
 
             // Show final status
