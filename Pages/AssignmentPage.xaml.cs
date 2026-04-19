@@ -132,7 +132,6 @@ namespace IntuneTools.Pages
 
             _allAssignments.AddRange(AssignmentList);
             AppDataGrid.ItemsSource = AssignmentList;
-            LogConsole.ItemsSource = LogEntries;
 
             this.Loaded += AssignmentPage_Loaded;
             this.Loaded += AssignmentPage_UpdateStagingEmptyStateOnLoaded;
