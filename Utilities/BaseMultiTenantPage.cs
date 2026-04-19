@@ -131,14 +131,27 @@ namespace IntuneTools.Utilities
         /// </summary>
         protected virtual void ShowLoading(string message = "Loading data from Microsoft Graph...")
         {
-            if (FindName("LoadingStatusText") is TextBlock loadingStatusText)
-                loadingStatusText.Text = message;
+            // Newer pages use the shared LoadingOverlay UserControl (Pages/Controls/LoadingOverlay).
+            // Older pages still use a hand-rolled Border + ProgressRing + TextBlock trio with the
+            // legacy x:Name="LoadingOverlay"/"LoadingProgressRing"/"LoadingStatusText" names.
+            // Support both so pages can migrate independently.
+            var loadingOverlayElement = FindName("LoadingOverlay") as FrameworkElement;
+            if (loadingOverlayElement is Pages.Controls.LoadingOverlay sharedOverlay)
+            {
+                sharedOverlay.StatusText = message;
+                sharedOverlay.IsLoading = true;
+            }
+            else
+            {
+                if (FindName("LoadingStatusText") is TextBlock loadingStatusText)
+                    loadingStatusText.Text = message;
 
-            if (FindName("LoadingOverlay") is FrameworkElement loadingOverlay)
-                loadingOverlay.Visibility = Visibility.Visible;
+                if (loadingOverlayElement != null)
+                    loadingOverlayElement.Visibility = Visibility.Visible;
 
-            if (FindName("LoadingProgressRing") is ProgressRing loadingProgressRing)
-                loadingProgressRing.IsActive = true;
+                if (FindName("LoadingProgressRing") is ProgressRing loadingProgressRing)
+                    loadingProgressRing.IsActive = true;
+            }
         }
 
         /// <summary>
@@ -146,11 +159,19 @@ namespace IntuneTools.Utilities
         /// </summary>
         protected virtual void HideLoading()
         {
-            if (FindName("LoadingOverlay") is FrameworkElement loadingOverlay)
-                loadingOverlay.Visibility = Visibility.Collapsed;
+            var loadingOverlayElement = FindName("LoadingOverlay") as FrameworkElement;
+            if (loadingOverlayElement is Pages.Controls.LoadingOverlay sharedOverlay)
+            {
+                sharedOverlay.IsLoading = false;
+            }
+            else
+            {
+                if (loadingOverlayElement != null)
+                    loadingOverlayElement.Visibility = Visibility.Collapsed;
 
-            if (FindName("LoadingProgressRing") is ProgressRing loadingProgressRing)
-                loadingProgressRing.IsActive = false;
+                if (FindName("LoadingProgressRing") is ProgressRing loadingProgressRing)
+                    loadingProgressRing.IsActive = false;
+            }
         }
 
         #region Operation Status Methods
@@ -317,6 +338,14 @@ namespace IntuneTools.Utilities
         /// </summary>
         protected void ScrollLogToEnd()
         {
+            // New approach: shared LogConsole UserControl exposes its inner ListView.
+            if (FindName("LogConsole") is Pages.Controls.LogConsole sharedLog && LogEntries.Count > 0)
+            {
+                sharedLog.ListView.UpdateLayout();
+                sharedLog.ListView.ScrollIntoView(LogEntries[^1]);
+                return;
+            }
+
             // Try ListView first (new approach)
             if (FindName("LogConsole") is ListView logListView && LogEntries.Count > 0)
             {
