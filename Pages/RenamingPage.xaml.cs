@@ -70,7 +70,6 @@ namespace IntuneTools.Pages
         {
             this.InitializeComponent();
             RightClickMenu.AttachDataGridContextMenu(RenamingDataGrid);
-            LogConsole.ItemsSource = LogEntries;
             CustomContentList.CollectionChanged += (_, _) => UpdateStagingEmptyState();
             this.Loaded += (_, _) => UpdateStagingEmptyState();
         }
