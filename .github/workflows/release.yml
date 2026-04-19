@@ -13,8 +13,6 @@ on:
 
 permissions:
   contents: write        # needed to create releases and upload assets
-  id-token: write        # needed for build provenance attestation
-  attestations: write    # needed for build provenance attestation
 
 concurrency:
   group: release
@@ -23,6 +21,10 @@ concurrency:
 jobs:
   build:
     runs-on: windows-latest
+    permissions:
+      contents: write        # needed to push the version-bump commit to master
+      id-token: write        # needed for build provenance attestation
+      attestations: write    # needed for build provenance attestation
     outputs:
       version: ${{ steps.version.outputs.VERSION }}
 
