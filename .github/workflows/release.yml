@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-2022
     permissions:
       contents: write        # needed to push the version-bump commit to master
       id-token: write        # needed for build provenance attestation
