@@ -346,7 +346,7 @@ namespace IntuneTools.Utilities
                 return;
             }
 
-            // Try ListView first (new approach)
+            // Legacy ListView path (for pages not yet migrated to the shared LogConsole).
             if (FindName("LogConsole") is ListView logListView && LogEntries.Count > 0)
             {
                 logListView.UpdateLayout();
