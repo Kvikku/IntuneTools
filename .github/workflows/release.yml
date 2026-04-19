@@ -21,6 +21,10 @@ concurrency:
 jobs:
   build:
     runs-on: windows-latest
+    permissions:
+      contents: write        # needed to push the version-bump commit to master
+      id-token: write        # needed for build provenance attestation
+      attestations: write    # needed for build provenance attestation
     outputs:
       version: ${{ steps.version.outputs.VERSION }}
 
@@ -70,6 +74,23 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
+      - name: Cache NuGet packages
+        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'global.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore test project
+        run: dotnet restore IntuneTools.Tests/IntuneTools.Tests.csproj -p:Platform=x64
+
+      - name: Build tests
+        run: dotnet build IntuneTools.Tests/IntuneTools.Tests.csproj --no-restore --configuration Release -p:Platform=x64
+
+      - name: Run tests
+        run: dotnet test IntuneTools.Tests/IntuneTools.Tests.csproj --no-build --configuration Release -p:Platform=x64 --verbosity normal
+
       - name: Publish self-contained app
         run: >
           dotnet publish IntuneTools.csproj
@@ -96,6 +117,11 @@ jobs:
         with:
           name: IntuneTools-x64
           path: ${{ steps.zip.outputs.ZIP_NAME }}
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2
+        with:
+          subject-path: ${{ steps.zip.outputs.ZIP_NAME }}
 
       - name: Commit version bump
         shell: pwsh

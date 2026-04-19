@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   build:
     runs-on: windows-latest
@@ -20,6 +24,14 @@ jobs:
         uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
           dotnet-version: 8.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'global.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
 
       - name: Restore dependencies
         run: |
@@ -33,4 +45,28 @@ jobs:
         run: dotnet build IntuneTools.Tests/IntuneTools.Tests.csproj --no-restore --configuration Release -p:Platform=x64
 
       - name: Run tests
-        run: dotnet test IntuneTools.Tests/IntuneTools.Tests.csproj --no-build --configuration Release -p:Platform=x64 --verbosity normal
+        run: >
+          dotnet test IntuneTools.Tests/IntuneTools.Tests.csproj
+          --no-build
+          --configuration Release
+          -p:Platform=x64
+          --verbosity normal
+          --logger "trx;LogFileName=test-results.trx"
+          --results-directory TestResults
+          --collect:"XPlat Code Coverage"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: test-results
+          path: TestResults/**/*.trx
+          if-no-files-found: warn
+
+      - name: Upload code coverage
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: code-coverage
+          path: TestResults/**/coverage.cobertura.xml
+          if-no-files-found: warn
