@@ -57,7 +57,7 @@ The order is non-negotiable: **Title → Subtitle → Instruction InfoBar → Te
 | 12 / SemiBold | `SectionLabelTextBlockStyle` | Card header label ("Search & Staging", "JSON Actions") |
 | 13 / Regular / secondary | `StatCardLabelStyle` | Label inside a stat tile |
 | 28 / Bold | `StatCardValueStyle` | Value inside a stat tile |
-| 12 / Consolas | (inline) | Log console rows; tenant ID display |
+| 12 / Consolas | (inline) | Log console timestamp column; tenant ID display |
 
 Do not introduce new font sizes. If you need one, add it to this table first.
 

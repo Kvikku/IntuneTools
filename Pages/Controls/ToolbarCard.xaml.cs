@@ -29,20 +29,20 @@ namespace IntuneTools.Pages.Controls
             set => SetValue(HeaderTextProperty, value);
         }
 
-        public static readonly DependencyProperty HasHeaderProperty =
-            DependencyProperty.Register(nameof(HasHeader), typeof(Visibility), typeof(ToolbarCard),
+        public static readonly DependencyProperty HeaderVisibilityProperty =
+            DependencyProperty.Register(nameof(HeaderVisibility), typeof(Visibility), typeof(ToolbarCard),
                 new PropertyMetadata(Visibility.Collapsed));
 
-        public Visibility HasHeader
+        public Visibility HeaderVisibility
         {
-            get => (Visibility)GetValue(HasHeaderProperty);
-            private set => SetValue(HasHeaderProperty, value);
+            get => (Visibility)GetValue(HeaderVisibilityProperty);
+            private set => SetValue(HeaderVisibilityProperty, value);
         }
 
         private static void OnHeaderTextChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var control = (ToolbarCard)d;
-            control.HasHeader = string.IsNullOrEmpty(control.HeaderText) ? Visibility.Collapsed : Visibility.Visible;
+            control.HeaderVisibility = string.IsNullOrEmpty(control.HeaderText) ? Visibility.Collapsed : Visibility.Visible;
         }
 
         public static readonly DependencyProperty CardContentProperty =

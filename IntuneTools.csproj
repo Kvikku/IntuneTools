@@ -113,7 +113,7 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
-  <!-- Shared UX building blocks. See XAML_STYLE_GUIDE.md §3. -->
+  <!-- Shared UX building blocks. See XAML_STYLE_GUIDE.md. -->
   <ItemGroup>
     <Page Update="Pages\Controls\PageHeader.xaml">
       <Generator>MSBuild:Compile</Generator>

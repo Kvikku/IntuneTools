@@ -38,20 +38,20 @@ namespace IntuneTools.Pages.Controls
             set => SetValue(SubtitleProperty, value);
         }
 
-        public static readonly DependencyProperty HasSubtitleProperty =
-            DependencyProperty.Register(nameof(HasSubtitle), typeof(Visibility), typeof(PageHeader),
+        public static readonly DependencyProperty SubtitleVisibilityProperty =
+            DependencyProperty.Register(nameof(SubtitleVisibility), typeof(Visibility), typeof(PageHeader),
                 new PropertyMetadata(Visibility.Collapsed));
 
-        public Visibility HasSubtitle
+        public Visibility SubtitleVisibility
         {
-            get => (Visibility)GetValue(HasSubtitleProperty);
-            private set => SetValue(HasSubtitleProperty, value);
+            get => (Visibility)GetValue(SubtitleVisibilityProperty);
+            private set => SetValue(SubtitleVisibilityProperty, value);
         }
 
         private static void OnSubtitleChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var control = (PageHeader)d;
-            control.HasSubtitle = string.IsNullOrEmpty(control.Subtitle) ? Visibility.Collapsed : Visibility.Visible;
+            control.SubtitleVisibility = string.IsNullOrEmpty(control.Subtitle) ? Visibility.Collapsed : Visibility.Visible;
         }
 
         public static readonly DependencyProperty InstructionTextProperty =
@@ -84,20 +84,20 @@ namespace IntuneTools.Pages.Controls
             set => SetValue(InstructionSeverityProperty, value);
         }
 
-        public static readonly DependencyProperty HasInstructionProperty =
-            DependencyProperty.Register(nameof(HasInstruction), typeof(Visibility), typeof(PageHeader),
+        public static readonly DependencyProperty InstructionVisibilityProperty =
+            DependencyProperty.Register(nameof(InstructionVisibility), typeof(Visibility), typeof(PageHeader),
                 new PropertyMetadata(Visibility.Collapsed));
 
-        public Visibility HasInstruction
+        public Visibility InstructionVisibility
         {
-            get => (Visibility)GetValue(HasInstructionProperty);
-            private set => SetValue(HasInstructionProperty, value);
+            get => (Visibility)GetValue(InstructionVisibilityProperty);
+            private set => SetValue(InstructionVisibilityProperty, value);
         }
 
         private static void OnInstructionChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var control = (PageHeader)d;
-            control.HasInstruction = string.IsNullOrEmpty(control.InstructionText) ? Visibility.Collapsed : Visibility.Visible;
+            control.InstructionVisibility = string.IsNullOrEmpty(control.InstructionText) ? Visibility.Collapsed : Visibility.Visible;
         }
 
         /// <summary>

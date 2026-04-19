@@ -17,7 +17,7 @@
         <StackPanel Spacing="6">
             <TextBlock Text="{x:Bind HeaderText, Mode=OneWay}"
                        Style="{StaticResource SectionLabelTextBlockStyle}"
-                       Visibility="{x:Bind HasHeader, Mode=OneWay}"/>
+                       Visibility="{x:Bind HeaderVisibility, Mode=OneWay}"/>
             <ContentPresenter Content="{x:Bind CardContent, Mode=OneWay}"/>
         </StackPanel>
     </Border>

@@ -19,7 +19,7 @@
 
         <TextBlock Text="{x:Bind Subtitle, Mode=OneWay}"
                    Style="{StaticResource PageSubtitleTextBlockStyle}"
-                   Visibility="{x:Bind HasSubtitle, Mode=OneWay}"/>
+                   Visibility="{x:Bind SubtitleVisibility, Mode=OneWay}"/>
 
         <InfoBar IsOpen="True"
                  IsClosable="True"
@@ -27,7 +27,7 @@
                  Title="{x:Bind InstructionTitle, Mode=OneWay}"
                  Message="{x:Bind InstructionText, Mode=OneWay}"
                  Margin="0,8,0,0"
-                 Visibility="{x:Bind HasInstruction, Mode=OneWay}"/>
+                 Visibility="{x:Bind InstructionVisibility, Mode=OneWay}"/>
 
         <ContentPresenter Content="{x:Bind ExtraContent, Mode=OneWay}"/>
     </StackPanel>
