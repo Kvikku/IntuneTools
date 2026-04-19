@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="IntuneTools.Pages.Controls.TenantPill"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <!--
+        Tenant pill used by MainWindow PaneFooter and SettingsPage.
+        See XAML_STYLE_GUIDE.md §8.
+
+        Background is always SubtleFillColorSecondaryBrush. Status is conveyed by the
+        dot color (set via DotBrush, driven by the Status enum in code-behind).
+    -->
+    <Border Style="{StaticResource TenantStatusPillStyle}"
+            Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+            ToolTipService.ToolTip="{x:Bind ToolTipText, Mode=OneWay}">
+        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <Ellipse Width="10" Height="10" VerticalAlignment="Center"
+                     Fill="{x:Bind DotBrush, Mode=OneWay}"/>
+            <TextBlock Text="{x:Bind DisplayText, Mode=OneWay}"
+                       FontSize="12"
+                       TextTrimming="CharacterEllipsis"/>
+        </StackPanel>
+    </Border>
+</UserControl>

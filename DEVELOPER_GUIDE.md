@@ -2,6 +2,10 @@
 
 This guide documents the design patterns, base classes, and reusable components in the IntuneTools codebase. Reference it when adding new pages to ensure consistency and maximize code reuse.
 
+> **Before you start a new page:** read [`XAML_STYLE_GUIDE.md`](./XAML_STYLE_GUIDE.md). It locks in the page skeleton, typography/spacing scale, button taxonomy, search-vs-filter rules, keyboard accelerator matrix, and tenant-context rules every page must follow. This developer guide tells you *which base class to derive from and how the helpers work*; the style guide tells you *what the page must look and feel like*. Both apply.
+>
+> The shared UI building blocks (`PageHeader`, `ToolbarCard`, `EmptyState`, `LoadingOverlay`, `LogConsole`, `TenantPill`, `SelectionToolbar`) live under [`Pages/Controls/`](./Pages/Controls/) — prefer them over hand-rolling another `Border` / `StackPanel` / `ListView` template.
+
 ---
 
 ## Table of Contents

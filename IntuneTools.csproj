@@ -113,6 +113,30 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
+  <!-- Shared UX building blocks. See XAML_STYLE_GUIDE.md. -->
+  <ItemGroup>
+    <Page Update="Pages\Controls\PageHeader.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Pages\Controls\ToolbarCard.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Pages\Controls\EmptyState.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Pages\Controls\LoadingOverlay.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Pages\Controls\LogConsole.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Pages\Controls\TenantPill.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Pages\Controls\SelectionToolbar.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
   <ItemGroup>
     <Page Update="Pages\AssignmentPage.xaml">
       <Generator>MSBuild:Compile</Generator>

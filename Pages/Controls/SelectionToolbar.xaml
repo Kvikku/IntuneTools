@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="IntuneTools.Pages.Controls.SelectionToolbar"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <!--
+        Standard "Select All / Deselect All / Selected: N" cluster used in toolbar
+        cards next to the search box. See XAML_STYLE_GUIDE.md §5 / §7.
+
+        Wire SelectAllClick and DeselectAllClick from your page; bind SelectedCount
+        from your DataGrid's SelectedItems.Count.
+    -->
+    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+        <AppBarButton Label="Select All"
+                      Icon="SelectAll"
+                      ToolTipService.ToolTip="Select All (Ctrl+A)"
+                      Click="OnSelectAllClick"/>
+        <AppBarButton Label="Clear Selected"
+                      Icon="ClearSelection"
+                      ToolTipService.ToolTip="Deselect All (Ctrl+Shift+A)"
+                      Click="OnDeselectAllClick"/>
+        <TextBlock VerticalAlignment="Center"
+                   FontSize="12"
+                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                   Text="{x:Bind SelectionLabel, Mode=OneWay}"/>
+    </StackPanel>
+</UserControl>

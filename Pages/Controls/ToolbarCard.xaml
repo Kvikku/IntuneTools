@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="IntuneTools.Pages.Controls.ToolbarCard"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <!--
+        Bordered card used as the container for toolbar groups (search, actions, …).
+        See XAML_STYLE_GUIDE.md §1 / §3.
+
+        The card always has a small section label on top followed by the caller's content.
+    -->
+    <Border Style="{StaticResource ToolbarCardStyle}">
+        <StackPanel Spacing="6">
+            <TextBlock Text="{x:Bind HeaderText, Mode=OneWay}"
+                       Style="{StaticResource SectionLabelTextBlockStyle}"
+                       Visibility="{x:Bind HeaderVisibility, Mode=OneWay}"/>
+            <ContentPresenter Content="{x:Bind CardContent, Mode=OneWay}"/>
+        </StackPanel>
+    </Border>
+</UserControl>
