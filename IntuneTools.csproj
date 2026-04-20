@@ -93,6 +93,11 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
+    <Page Update="Styles\PageStyles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
     <Page Update="Pages\CleanupPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
