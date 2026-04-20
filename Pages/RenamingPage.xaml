@@ -26,7 +26,7 @@
         </Grid.RowDefinitions>
 
         <!-- ===== Header ===== -->
-        <StackPanel Grid.Row="0" Margin="0,0,0,20">
+        <StackPanel Grid.Row="0" Margin="{StaticResource PageHeaderBottomMargin}">
             <TextBlock Text="Intune Renaming"
                        Style="{StaticResource PageTitleTextBlockStyle}"/>
             <TextBlock Text="Bulk rename policies by adding prefixes, updating descriptions, or removing prefixes."
@@ -59,7 +59,7 @@
         </StackPanel>
 
         <!-- ===== Toolbar Cards Row ===== -->
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="12" Margin="0,0,0,16">
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="{StaticResource PageSectionSpacing}" Margin="0,0,0,16">
 
             <!-- Search & Staging Card -->
             <Border Style="{StaticResource CardBorderStyle}">

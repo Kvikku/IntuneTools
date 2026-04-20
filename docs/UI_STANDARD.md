@@ -50,13 +50,13 @@ styles from this standard, but are not bound to the three-row data layout.
 Defined in `Styles/PageStyles.xaml`. Pages should reference the tokens
 instead of hard-coding numbers.
 
-| Token                      | Value          | Use                                   |
-| -------------------------- | -------------- | ------------------------------------- |
-| `PageRootMargin`           | `24,24,24,24`  | Outer margin of the page root `Grid`  |
-| `PageHeaderBottomMargin`   | `20`           | Bottom margin under the header block  |
-| `PageSectionSpacing`       | `12`           | Spacing between toolbar cards         |
-| `CardCornerRadius`         | `8`            | Corner radius of every card           |
-| `CardPadding`              | `16,12,16,12`  | Inner padding of every card           |
+| Token                      | Type / Value          | Use                                                     |
+| -------------------------- | --------------------- | ------------------------------------------------------- |
+| `PageRootMargin`           | `Thickness 24,24,24,24` | Outer margin of the page root `Grid`                  |
+| `PageHeaderBottomMargin`   | `Thickness 0,0,0,20`  | `Margin` of the header `StackPanel` (Row 0)             |
+| `PageSectionSpacing`       | `Double 12`           | `Spacing` between toolbar cards (Row 1 `StackPanel`)    |
+| `CardCornerRadius`         | `CornerRadius 8`      | `CornerRadius` of every card (consumed by `CardBorderStyle`) |
+| `CardPadding`              | `Thickness 16,12,16,12` | Inner `Padding` of every card (consumed by `CardBorderStyle`) |
 
 ## 3. Typography
 

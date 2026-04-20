@@ -12,12 +12,11 @@
 
     <!-- ===== Spacing & sizing tokens =====
          Centralised so we can tune the whole app from one place. -->
-    <x:Double x:Key="PageOuterPadding">24</x:Double>
-    <x:Double x:Key="PageHeaderBottomMargin">20</x:Double>
-    <x:Double x:Key="PageSectionSpacing">12</x:Double>
-    <x:Double x:Key="CardCornerRadius">8</x:Double>
-    <Thickness x:Key="CardPadding">16,12,16,12</Thickness>
     <Thickness x:Key="PageRootMargin">24,24,24,24</Thickness>
+    <Thickness x:Key="PageHeaderBottomMargin">0,0,0,20</Thickness>
+    <x:Double x:Key="PageSectionSpacing">12</x:Double>
+    <CornerRadius x:Key="CardCornerRadius">8</CornerRadius>
+    <Thickness x:Key="CardPadding">16,12,16,12</Thickness>
 
     <!-- ===== Typography =====
          Page title: Fluent "Title" type ramp - lighter than the previous 38/Bold,
@@ -57,8 +56,8 @@
         <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}"/>
         <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="CornerRadius" Value="8"/>
-        <Setter Property="Padding" Value="16,12,16,12"/>
+        <Setter Property="CornerRadius" Value="{StaticResource CardCornerRadius}"/>
+        <Setter Property="Padding" Value="{StaticResource CardPadding}"/>
     </Style>
 
     <!-- ===== Action buttons =====
