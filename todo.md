@@ -12,7 +12,7 @@ visual regression is easy to bisect.
 
 - [x] **`Pages/RenamingPage.xaml`** - reference implementation of the
       unified standard (initial migration PR).
-- [ ] `Pages/CleanupPage.xaml` - same data-operation layout, swap to
+- [x] `Pages/CleanupPage.xaml` - same data-operation layout, swap to
       shared styles, replace the hard-coded `#C42B1C` Delete button with
       `DestructiveActionButtonStyle`.
 - [ ] `Pages/JsonPage.xaml` - swap to shared styles; both Export and
