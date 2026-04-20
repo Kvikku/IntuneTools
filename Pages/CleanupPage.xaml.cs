@@ -80,7 +80,7 @@ namespace IntuneTools.Pages
         {
             InitializeComponent();
             RightClickMenu.AttachDataGridContextMenu(CleanupDataGrid);
-            LogConsole.ItemsSource = LogEntries;
+            // LogConsole entries are bound via x:Bind in XAML (Entries="{x:Bind LogEntries}").
             // Keep the empty-state placeholder + dynamic Delete button label in sync with the staging grid.
             ContentList.CollectionChanged += (_, _) => UpdateStagingEmptyState();
             this.Loaded += (_, _) => UpdateStagingEmptyState();

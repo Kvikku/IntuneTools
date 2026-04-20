@@ -1,6 +1,6 @@
 # IntuneTools XAML Style Guide
 
-This guide locks in the visual and interaction conventions every page in InToolz must follow so users feel "at home" no matter where they navigate. If you are adding a new page, read this first and start from the canonical skeleton at the bottom.
+This guide locks in the visual and interaction conventions every page in IntuneTools must follow so users feel "at home" no matter where they navigate. If you are adding a new page, read this first and start from the canonical skeleton at the bottom.
 
 > **Goal:** same skeleton, same controls in the same places, same visual weight, same keyboard behavior on every page.
 
@@ -259,7 +259,8 @@ Copy this as the starting point for any new feature page:
             </Grid.ColumnDefinitions>
 
             <!-- Main content goes here (DataGrid, etc.) -->
-            <controls:LoadingOverlay Grid.Column="0"
+            <controls:LoadingOverlay x:Name="LoadingOverlay"
+                                     Grid.Column="0"
                                      IsLoading="{x:Bind IsLoading, Mode=OneWay}"
                                      StatusText="Loading…"/>
 
@@ -268,7 +269,8 @@ Copy this as the starting point for any new feature page:
                                  ResizeDirection="Columns"
                                  Background="Transparent"/>
 
-            <controls:LogConsole Grid.Column="2"
+            <controls:LogConsole x:Name="LogConsole"
+                                 Grid.Column="2"
                                  Entries="{x:Bind LogEntries, Mode=OneWay}"/>
         </Grid>
     </Grid>
