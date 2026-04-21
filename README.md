@@ -28,7 +28,7 @@ Import, assign, rename, clean up, and export Intune policies and profiles in bul
 | 📥 | **Import** | Copy policies and profiles from one tenant to another via Microsoft Graph |
 | 🎯 | **Assignment** | Assign Entra groups to policies and apps in bulk, with optional assignment filters |
 | ✏️ | **Renaming** | Add prefixes/suffixes to display names and update descriptions across many items at once |
-| 🧹 | **Cleanup** | Mass-delete Intune content with confirmation and progress tracking |
+| 🧹 | **Cleanup** | Mass-delete Intune content with confirmation and progress tracking, including a **Find Unassigned** scan that surfaces policies and profiles with no group assignments so you can prune them in one go |
 | 📄 | **JSON Export/Import** | Export Intune content to JSON files and reimport them — great for backup and version control |
 
 ## Supported content types
