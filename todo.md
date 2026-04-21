@@ -18,7 +18,7 @@ visual regression is easy to bisect.
 - [x] `Pages/JsonPage.xaml` - swap to shared styles; both Export and
       Import buttons should use `PrimaryActionButtonStyle` /
       `SecondaryActionButtonStyle`.
-- [ ] `Pages/AssignmentPage.xaml` - largest page; migrate header,
+- [x] `Pages/AssignmentPage.xaml` - largest page; migrate header,
       toolbar cards, action buttons, and the right-hand "Groups" panel
       header. Audit the long content-types `CheckBox` flyout for
       consistent indentation.
