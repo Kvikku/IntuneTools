@@ -24,7 +24,7 @@ visual regression is easy to bisect.
       consistent indentation.
 - [x] `Pages/ManageAssignmentsPage.xaml` - swap to shared styles.
 - [x] `Pages/ImportPage.xaml` - swap to shared styles.
-- [ ] `Pages/AuditLogPage.xaml` - swap to shared styles; align the
+- [x] `Pages/AuditLogPage.xaml` - swap to shared styles; align the
       summary stat cards (Total Events, Unique Actors, ...) to the card
       style and standardize their typography.
 - [ ] `Pages/SettingsPage.xaml` - special-case landing layout; adopt the
