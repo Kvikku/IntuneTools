@@ -50,6 +50,15 @@
         <Setter Property="Margin" Value="0,0,0,12"/>
     </Style>
 
+    <!-- Big numeric value inside a summary stat card (Total Events, Unique
+         Actors, etc.). Pairs with CardSectionLabelTextBlockStyle as the
+         small caption above it. -->
+    <Style x:Key="StatValueTextBlockStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="28"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{ThemeResource TextFillColorPrimaryBrush}"/>
+    </Style>
+
     <!-- ===== Surfaces =====
          Standard card used for toolbars and configuration groups. -->
     <Style x:Key="CardBorderStyle" TargetType="Border">
