@@ -12,8 +12,10 @@
     <!--
         Migrated to the unified UI standard (see docs/UI_STANDARD.md).
         Settings is a special-case landing page (not the three-row data layout),
-        so per the standard it only adopts the typography tokens
-        (PageTitleTextBlockStyle / PageSubtitleTextBlockStyle) and CardBorderStyle.
+        so per the standard it adopts the shared title/subtitle typography tokens
+        (PageTitleTextBlockStyle / PageSubtitleTextBlockStyle), CardBorderStyle,
+        and page spacing/layout tokens such as PageRootMargin and
+        PageHeaderBottomMargin.
     -->
     <Grid Margin="{StaticResource PageRootMargin}">
         <Grid.RowDefinitions>
