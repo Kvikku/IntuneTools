@@ -340,7 +340,7 @@ namespace IntuneTools.Pages
                 async id => { await DeleteWindowsQualityUpdateProfile(sourceGraphServiceClient, id); return true; }),
 
             new(ContentTypes.Application, "Application",
-                async id => { await DeleteApplication(sourceGraphServiceClient, id); return true; }),
+                id => DeleteApplication(sourceGraphServiceClient, id)),
         ];
 
         #endregion

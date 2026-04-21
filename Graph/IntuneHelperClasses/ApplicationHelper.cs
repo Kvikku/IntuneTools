@@ -516,7 +516,8 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         /// <summary>
         /// Deletes a mobile application by ID.
         /// </summary>
-        public static async Task DeleteApplication(GraphServiceClient graphServiceClient, string appId)
+        /// <returns><c>true</c> if the application was deleted successfully; <c>false</c> otherwise.</returns>
+        public static async Task<bool> DeleteApplication(GraphServiceClient graphServiceClient, string appId)
         {
             try
             {
@@ -531,10 +532,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }
 
                 await graphServiceClient.DeviceAppManagement.MobileApps[appId].DeleteAsync();
+                return true;
             }
             catch (Exception ex)
             {
                 LogToFunctionFile(appFunction.Main, $"An error occurred while deleting application: {ex.Message}", LogLevels.Warning);
+                return false;
             }
         }
 
