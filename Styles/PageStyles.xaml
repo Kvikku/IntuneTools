@@ -71,7 +71,7 @@
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
 
-    <Style x:Key="SecondaryActionButtonStyle" TargetType="Button">
+    <Style x:Key="SecondaryActionButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
         <Setter Property="Height" Value="36"/>
         <Setter Property="MinWidth" Value="120"/>
         <Setter Property="Padding" Value="16,0,16,0"/>
@@ -81,7 +81,7 @@
 
     <!-- Destructive actions (Delete, etc.). Keeps the same shape but uses the
          system "critical" colour so it reads as dangerous in both themes. -->
-    <Style x:Key="DestructiveActionButtonStyle" TargetType="Button">
+    <Style x:Key="DestructiveActionButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
         <Setter Property="Height" Value="36"/>
         <Setter Property="MinWidth" Value="120"/>
         <Setter Property="Padding" Value="16,0,16,0"/>
