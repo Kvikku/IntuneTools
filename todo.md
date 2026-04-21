@@ -22,7 +22,7 @@ visual regression is easy to bisect.
       toolbar cards, action buttons, and the right-hand "Groups" panel
       header. Audit the long content-types `CheckBox` flyout for
       consistent indentation.
-- [ ] `Pages/ManageAssignmentsPage.xaml` - swap to shared styles.
+- [x] `Pages/ManageAssignmentsPage.xaml` - swap to shared styles.
 - [ ] `Pages/ImportPage.xaml` - swap to shared styles.
 - [ ] `Pages/AuditLogPage.xaml` - swap to shared styles; align the
       summary stat cards (Total Events, Unique Actors, ...) to the card
