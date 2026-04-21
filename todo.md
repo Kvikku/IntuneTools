@@ -15,7 +15,7 @@ visual regression is easy to bisect.
 - [x] `Pages/CleanupPage.xaml` - same data-operation layout, swap to
       shared styles, replace the hard-coded `#C42B1C` Delete button with
       `DestructiveActionButtonStyle`.
-- [ ] `Pages/JsonPage.xaml` - swap to shared styles; both Export and
+- [x] `Pages/JsonPage.xaml` - swap to shared styles; both Export and
       Import buttons should use `PrimaryActionButtonStyle` /
       `SecondaryActionButtonStyle`.
 - [ ] `Pages/AssignmentPage.xaml` - largest page; migrate header,
