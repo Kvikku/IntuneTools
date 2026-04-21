@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using static IntuneTools.Graph.EntraHelperClasses.GroupHelperClass;
 using static IntuneTools.Graph.IntuneHelperClasses.AppleBYODEnrollmentProfileHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.ApplicationHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceCompliancePolicyHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceConfigurationHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.FilterHelperClass;
@@ -51,7 +52,7 @@ namespace IntuneTools.Pages
             Func<string, Task<bool>> DeleteAsync);
 
         /// <summary>
-        /// Content types supported by CleanupPage (excludes Application since delete is not supported).
+        /// Content types supported by CleanupPage.
         /// </summary>
         private static readonly string[] SupportedContentTypes = new[]
         {
@@ -69,6 +70,7 @@ namespace IntuneTools.Pages
             ContentTypes.WindowsFeatureUpdate,
             ContentTypes.WindowsQualityUpdatePolicy,
             ContentTypes.WindowsQualityUpdateProfile,
+            ContentTypes.Application,
         };
 
         #endregion
@@ -137,7 +139,11 @@ namespace IntuneTools.Pages
 
             foreach (var definition in GetDeleteTypeRegistry())
             {
-                var ids = GetContentIdsByType(definition.TypeKey);
+                // Applications have per-app ContentType values (e.g., "App - Windows app (Win32)"),
+                // so use the dedicated helper that matches any application content type.
+                var ids = definition.TypeKey == ContentTypes.Application
+                    ? GetApplicationContentIds()
+                    : GetContentIdsByType(definition.TypeKey);
                 if (ids.Count > 0)
                 {
                     await DeleteItemsAsync(ids, definition);
@@ -332,6 +338,9 @@ namespace IntuneTools.Pages
 
             new(ContentTypes.WindowsQualityUpdateProfile, "Windows Quality Update Profile",
                 async id => { await DeleteWindowsQualityUpdateProfile(sourceGraphServiceClient, id); return true; }),
+
+            new(ContentTypes.Application, "Application",
+                id => DeleteApplication(sourceGraphServiceClient, id)),
         ];
 
         #endregion
@@ -355,6 +364,7 @@ namespace IntuneTools.Pages
             ContentTypes.WindowsFeatureUpdate,
             ContentTypes.WindowsQualityUpdatePolicy,
             ContentTypes.WindowsQualityUpdateProfile,
+            ContentTypes.Application,
         };
 
         /// <summary>
@@ -374,6 +384,7 @@ namespace IntuneTools.Pages
             [ContentTypes.WindowsFeatureUpdate] = HasWindowsFeatureUpdateAssignmentsAsync,
             [ContentTypes.WindowsQualityUpdatePolicy] = HasWindowsQualityUpdatePolicyAssignmentsAsync,
             [ContentTypes.WindowsQualityUpdateProfile] = HasWindowsQualityUpdateProfileAssignmentsAsync,
+            [ContentTypes.Application] = HasApplicationAssignmentsAsync,
         };
 
         /// <summary>
@@ -413,7 +424,13 @@ namespace IntuneTools.Pages
                         continue;
                     }
 
-                    if (assignmentChecks.TryGetValue(item.ContentType, out var checkFunc))
+                    // Applications have per-app ContentType values (e.g., "App - Windows app (Win32)"),
+                    // so normalize them to ContentTypes.Application for registry lookup.
+                    var lookupKey = UserInterfaceHelper.IsApplicationContentType(item.ContentType)
+                        ? ContentTypes.Application
+                        : item.ContentType;
+
+                    if (assignmentChecks.TryGetValue(lookupKey, out var checkFunc))
                     {
                         var hasAssignments = await checkFunc(graphServiceClient, item.ContentId);
                         UpdateTotalTimeSaved(secondsSavedOnFindingUnassigned, appFunction.FindUnassigned);

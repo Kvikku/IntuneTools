@@ -513,6 +513,53 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             return content;
         }
 
+        /// <summary>
+        /// Deletes a mobile application by ID.
+        /// </summary>
+        /// <returns><c>true</c> if the application was deleted successfully; <c>false</c> otherwise.</returns>
+        public static async Task<bool> DeleteApplication(GraphServiceClient graphServiceClient, string appId)
+        {
+            try
+            {
+                if (graphServiceClient == null)
+                {
+                    throw new ArgumentNullException(nameof(graphServiceClient));
+                }
+
+                if (string.IsNullOrWhiteSpace(appId))
+                {
+                    throw new InvalidOperationException("Application ID cannot be null or empty.");
+                }
+
+                await graphServiceClient.DeviceAppManagement.MobileApps[appId].DeleteAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"An error occurred while deleting application: {ex.Message}", LogLevels.Warning);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Checks if a mobile application has any assignments.
+        /// </summary>
+        public static async Task<bool?> HasApplicationAssignmentsAsync(GraphServiceClient graphServiceClient, string appId)
+        {
+            try
+            {
+                var result = await graphServiceClient.DeviceAppManagement.MobileApps[appId].Assignments.GetAsync(rc =>
+                {
+                    rc.QueryParameters.Top = 1;
+                });
+                return result?.Value != null && result.Value.Count > 0;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
         public static async Task<List<CustomContentInfo>> SearchApplicationContentAsync(GraphServiceClient graphServiceClient, string searchQuery)
         {
             var apps = await SearchMobileApps(graphServiceClient, searchQuery);
