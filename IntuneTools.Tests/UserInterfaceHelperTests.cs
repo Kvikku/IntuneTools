@@ -25,8 +25,8 @@ public class UserInterfaceHelperTests : IDisposable
     [InlineData("Application", true)]
     [InlineData("application", true)]
     [InlineData("APPLICATION", true)]
-    [InlineData("AppSomething", true)]
-    [InlineData("appOther", true)]
+    [InlineData("App - Windows app (Win32)", true)]
+    [InlineData("app - iOS VPP app", true)]
     public void IsApplicationContentType_MatchingTypes_ReturnsTrue(string contentType, bool expected)
     {
         Assert.Equal(expected, UserInterfaceHelper.IsApplicationContentType(contentType));
@@ -35,6 +35,8 @@ public class UserInterfaceHelperTests : IDisposable
     [Theory]
     [InlineData("Settings Catalog", false)]
     [InlineData("Device Compliance Policy", false)]
+    [InlineData("Apple BYOD Enrollment Profile", false)]
+    [InlineData("AppSomething", false)]
     [InlineData("", false)]
     [InlineData("NotApplication", false)]
     public void IsApplicationContentType_NonMatchingTypes_ReturnsFalse(string contentType, bool expected)

@@ -536,7 +536,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while deleting application: {ex.Message}", LogLevels.Warning);
+                LogToFunctionFile(appFunction.Main, $"An error occurred while deleting application '{appId}': {ex.Message}", LogLevels.Warning);
                 throw;
             }
         }
