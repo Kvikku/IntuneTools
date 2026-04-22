@@ -32,13 +32,13 @@ namespace IntuneTools.Utilities
     /// Expected XAML control names:
     /// - LogConsole (ListView) - for log output; binds to LogEntries observable collection
     /// - LogScrollViewer (ScrollViewer) - legacy fallback for pages not yet using ListView-based logging
-    /// - LoadingOverlay (Grid) - overlay shown during loading
-    /// - LoadingProgressRing (ProgressRing) - progress indicator
-    /// - LoadingStatusText (TextBlock) - loading status message
+    /// - LoadingOverlay - either the shared <see cref="LoadingOverlay"/> UserControl
+    ///   or, on pages with a bespoke overlay (e.g. AuditLogPage), a FrameworkElement
+    ///   accompanied by LoadingProgressRing (ProgressRing) and LoadingStatusText (TextBlock).
     /// - TenantInfoBar (InfoBar) - displays authentication status
-    /// - OperationStatusBar (InfoBar) - displays operation progress/status (optional)
-    /// - OperationProgressRing (ProgressRing) - progress indicator inside OperationStatusBar (optional)
-    /// - OperationProgressBar (ProgressBar) - determinate progress bar inside OperationStatusBar (optional)
+    /// - OperationStatusBar - either the shared <see cref="OperationStatusBar"/> UserControl
+    ///   or a raw InfoBar accompanied by OperationProgressRing (ProgressRing) and
+    ///   OperationProgressBar (ProgressBar) (optional).
     /// </summary>
     public abstract class BaseMultiTenantPage : Page
     {
@@ -129,6 +129,14 @@ namespace IntuneTools.Utilities
         /// </summary>
         protected virtual void ShowLoading(string message = "Loading data from Microsoft Graph...")
         {
+            // Prefer the shared UserControl when present.
+            if (FindName("LoadingOverlay") is LoadingOverlay overlayControl)
+            {
+                overlayControl.Show(message);
+                return;
+            }
+
+            // Legacy fallback for pages with a bespoke overlay (e.g. AuditLogPage).
             if (FindName("LoadingStatusText") is TextBlock loadingStatusText)
                 loadingStatusText.Text = message;
 
@@ -144,6 +152,12 @@ namespace IntuneTools.Utilities
         /// </summary>
         protected virtual void HideLoading()
         {
+            if (FindName("LoadingOverlay") is LoadingOverlay overlayControl)
+            {
+                overlayControl.Hide();
+                return;
+            }
+
             if (FindName("LoadingOverlay") is FrameworkElement loadingOverlay)
                 loadingOverlay.Visibility = Visibility.Collapsed;
 
@@ -198,6 +212,12 @@ namespace IntuneTools.Utilities
         /// </summary>
         protected void HideOperationStatus()
         {
+            if (FindName("OperationStatusBar") is OperationStatusBar statusBarControl)
+            {
+                statusBarControl.Hide();
+                return;
+            }
+
             if (FindName("OperationStatusBar") is InfoBar statusBar)
             {
                 statusBar.IsOpen = false;
@@ -209,6 +229,39 @@ namespace IntuneTools.Utilities
         /// </summary>
         private void UpdateOperationStatus(OperationState state, string message, int? current, int? total, bool isIndeterminate)
         {
+            // Prefer the shared UserControl when present.
+            if (FindName("OperationStatusBar") is OperationStatusBar statusBarControl)
+            {
+                switch (state)
+                {
+                    case OperationState.InProgress:
+                        if (isIndeterminate)
+                        {
+                            statusBarControl.ShowProgress(message);
+                        }
+                        else if (current.HasValue && total.HasValue)
+                        {
+                            statusBarControl.ShowProgress(message, current.Value, total.Value);
+                        }
+                        else
+                        {
+                            statusBarControl.ShowProgress(message);
+                        }
+                        break;
+                    case OperationState.Success:
+                        statusBarControl.ShowSuccess(message);
+                        break;
+                    case OperationState.Error:
+                        statusBarControl.ShowError(message);
+                        break;
+                    default:
+                        statusBarControl.Hide();
+                        break;
+                }
+                return;
+            }
+
+            // Legacy fallback for pages that still use a raw InfoBar.
             if (!(FindName("OperationStatusBar") is InfoBar statusBar))
                 return;
 

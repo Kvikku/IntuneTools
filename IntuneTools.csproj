@@ -93,6 +93,14 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
+    <Page Update="Utilities\OperationStatusBar.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Utilities\LoadingOverlay.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
     <Page Update="Styles\PageStyles.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>

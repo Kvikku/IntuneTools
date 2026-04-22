@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="IntuneTools.Utilities.OperationStatusBar"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <!--
+        Shared "operation in progress / success / error" InfoBar used by every
+        data page. See Utilities/BaseMultiTenantPage.cs for the dispatch logic.
+        Drop into a page header with:
+            <utilities:OperationStatusBar x:Name="OperationStatusBar" Margin="0,8,0,0"/>
+    -->
+    <InfoBar x:Name="StatusBar"
+             Severity="Informational"
+             IsClosable="True"
+             IsOpen="False">
+        <InfoBar.Content>
+            <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                <ProgressRing x:Name="ProgressRing"
+                              IsActive="False"
+                              Width="20"
+                              Height="20"
+                              Visibility="Collapsed"/>
+                <ProgressBar x:Name="ProgressBar"
+                             Width="200"
+                             IsIndeterminate="False"
+                             Visibility="Collapsed"/>
+            </StackPanel>
+        </InfoBar.Content>
+    </InfoBar>
+</UserControl>
