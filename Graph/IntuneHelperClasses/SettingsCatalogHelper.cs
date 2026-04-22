@@ -1,12 +1,7 @@
-﻿using IntuneTools.Utilities;
-using Microsoft.Graph;
+﻿using Microsoft.Graph;
 using Microsoft.Kiota.Serialization.Json;
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
 {

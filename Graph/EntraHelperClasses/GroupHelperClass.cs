@@ -1,8 +1,4 @@
-﻿using IntuneTools.Utilities;
-using Microsoft.Graph;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using Microsoft.Graph;
 
 namespace IntuneTools.Graph.EntraHelperClasses
 {
