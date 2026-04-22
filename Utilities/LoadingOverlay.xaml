@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="IntuneTools.Utilities.LoadingOverlay"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Visibility="Collapsed"
+    HorizontalAlignment="Stretch"
+    VerticalAlignment="Stretch">
+
+    <!--
+        Shared "scoped" loading overlay used by every data page. See
+        Utilities/BaseMultiTenantPage.cs for the dispatch logic. Drop into the
+        same Grid as your DataGrid and span all rows, e.g.:
+            <utilities:LoadingOverlay x:Name="LoadingOverlay" Grid.RowSpan="2"/>
+    -->
+    <Border Background="{ThemeResource SystemControlAcrylicWindowBrush}"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch">
+        <StackPanel Orientation="Vertical"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Spacing="15">
+            <ProgressRing x:Name="LoadingRing"
+                          IsActive="True"
+                          Width="50"
+                          Height="50"/>
+            <TextBlock x:Name="LoadingStatusText"
+                       Text="Loading..."
+                       Style="{StaticResource LoadingStatusTextBlockStyle}"/>
+        </StackPanel>
+    </Border>
+</UserControl>

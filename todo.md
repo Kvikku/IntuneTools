@@ -46,9 +46,13 @@ visual regression is easy to bisect.
       `HomePage` `VersionStatusText` body line (`FontSize="14"`).*
 - [x] Remove the per-page duplicated `LogConsole` `ListView.ItemTemplate`
       definitions in favour of a shared `DataTemplate` resource.
-- [ ] Consider moving the `LoadingOverlay` and `OperationStatusBar`
+- [x] Consider moving the `LoadingOverlay` and `OperationStatusBar`
       blocks into a reusable `UserControl` so each page just declares
       `<utilities:OperationStatus />` instead of copy-pasting ~40 lines.
+      *Done: shared `Utilities/OperationStatusBar.xaml` and
+      `Utilities/LoadingOverlay.xaml` UserControls; `BaseMultiTenantPage`
+      dispatches to them with a legacy fallback for `AuditLogPage`'s
+      bespoke full-screen overlay.*
 - [ ] Add a screenshot of the migrated Renaming page to
       `docs/UI_STANDARD.md` once the first PR ships.
 

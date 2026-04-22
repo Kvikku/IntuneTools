@@ -104,13 +104,15 @@ embed a `FontIcon` (`FontSize="16"`) plus a `TextBlock`, separated by a
 ## 6. Status & feedback
 
 - Every data page exposes a `TenantInfoBar` (informational, hidden by
-  default) and an `OperationStatusBar` containing a `ProgressRing` and a
-  `ProgressBar`. Names must stay constant so `BaseDataOperationPage` can
-  bind to them.
-- Long operations show the `LoadingOverlay` border with the `ProgressRing`
-  + `LoadingStatusText`. The status `TextBlock` should use
-  `LoadingStatusTextBlockStyle` so the spinner caption is identical across
-  every data page. Do not invent new spinners.
+  default) and an `OperationStatusBar` (the shared
+  `IntuneTools.Utilities.OperationStatusBar` `UserControl`) for bulk-operation
+  feedback. Names must stay constant so `BaseDataOperationPage` /
+  `BaseMultiTenantPage` can find and dispatch to them.
+- Long operations show the `LoadingOverlay` (the shared
+  `IntuneTools.Utilities.LoadingOverlay` `UserControl`). Pages with bespoke
+  overlay needs (e.g. `AuditLogPage`'s full-screen overlay with a Cancel
+  button) keep their hand-rolled overlay and rely on the legacy fallback in
+  `BaseMultiTenantPage`. Do not invent new spinners.
 - Use `InfoBar` (not custom yellow rectangles) for staging-area guidance.
 
 ## 7. Side panels
@@ -128,9 +130,11 @@ embed a `FontIcon` (`FontSize="16"`) plus a `TextBlock`, separated by a
 These names are part of the implicit contract with `BaseDataOperationPage`
 and `BaseMultiTenantPage` and **must not be renamed** when migrating a page:
 
-`TenantInfoBar`, `OperationStatusBar`, `OperationProgressRing`,
-`OperationProgressBar`, `LoadingOverlay`, `LoadingProgressRing`,
-`LoadingStatusText`, `LogConsole`.
+`TenantInfoBar`, `OperationStatusBar`, `LoadingOverlay`, `LogConsole`.
+(`OperationStatusBar` and `LoadingOverlay` are the shared `UserControl`s
+under `IntuneTools.Utilities`; pages that still use a hand-rolled overlay
+must additionally keep `LoadingProgressRing` and `LoadingStatusText` so the
+legacy fallback in `BaseMultiTenantPage` still works.)
 
 ## 9. Migration checklist for a page
 

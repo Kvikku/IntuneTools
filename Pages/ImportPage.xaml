@@ -37,26 +37,8 @@
                      IsClosable="False"
                      IsOpen="False"
                      Margin="0,12,0,0"/>
-            <!-- Operation Status Bar - provides visual feedback during bulk operations -->
-            <InfoBar x:Name="OperationStatusBar"
-                     Severity="Informational"
-                     IsClosable="True"
-                     IsOpen="False"
-                     Margin="0,8,0,0">
-                <InfoBar.Content>
-                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-                        <ProgressRing x:Name="OperationProgressRing"
-                                      IsActive="False"
-                                      Width="20"
-                                      Height="20"
-                                      Visibility="Collapsed"/>
-                        <ProgressBar x:Name="OperationProgressBar"
-                                     Width="200"
-                                     IsIndeterminate="False"
-                                     Visibility="Collapsed"/>
-                    </StackPanel>
-                </InfoBar.Content>
-            </InfoBar>
+            <!-- Operation Status Bar - shared UserControl -->
+            <utilities:OperationStatusBar x:Name="OperationStatusBar" Margin="0,8,0,0"/>
         </StackPanel>
 
         <!-- ===== Toolbar Cards Row ===== -->
@@ -167,26 +149,9 @@
                     </controls:DataGrid.Columns>
                 </controls:DataGrid>
 
-                <!-- Loading Overlay -->
-                <Border Grid.RowSpan="2"
-                        x:Name="LoadingOverlay"
-                        Background="{ThemeResource SystemControlAcrylicWindowBrush}"
-                        Visibility="Collapsed"
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Stretch">
-                    <StackPanel Orientation="Vertical"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Spacing="15">
-                        <ProgressRing x:Name="LoadingProgressRing"
-                                      IsActive="True"
-                                      Width="50"
-                                      Height="50"/>
-                        <TextBlock x:Name="LoadingStatusText"
-                                   Text="Loading data from Microsoft Graph..."
-                                   Style="{StaticResource LoadingStatusTextBlockStyle}"/>
-                    </StackPanel>
-                </Border>
+                <!-- Loading Overlay - shared UserControl -->
+                <utilities:LoadingOverlay Grid.RowSpan="2"
+                                          x:Name="LoadingOverlay"/>
             </Grid>
 
             <!-- Import Side Panel -->
