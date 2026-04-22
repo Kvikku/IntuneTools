@@ -82,7 +82,8 @@
                             <AppBarButton.Flyout>
                                 <Flyout Placement="BottomEdgeAlignedLeft">
                                     <StackPanel x:Name="OptionsPanel" Orientation="Vertical" MinWidth="300">
-                                        <TextBlock Text="Content Types" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                        <TextBlock Text="Content Types"
+                                                   Style="{StaticResource SubsectionLabelTextBlockStyle}"/>
                                         <CheckBox x:Name="OptionsAllCheckBox"
                                                   Content="Select all"
                                                   IsThreeState="False"
@@ -183,9 +184,7 @@
                                       Height="50"/>
                         <TextBlock x:Name="LoadingStatusText"
                                    Text="Loading data from Microsoft Graph..."
-                                   HorizontalAlignment="Center"
-                                   FontSize="14"
-                                   Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                                   Style="{StaticResource LoadingStatusTextBlockStyle}"/>
                     </StackPanel>
                 </Border>
             </Grid>

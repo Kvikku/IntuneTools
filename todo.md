@@ -36,7 +36,7 @@ visual regression is easy to bisect.
 
 ## Cross-cutting follow-ups (do as you migrate)
 
-- [ ] Remove all hard-coded font sizes, weights, paddings, and corner
+- [x] Remove all hard-coded font sizes, weights, paddings, and corner
       radii from page XAML once all pages are migrated.
 - [ ] Remove the per-page duplicated `LogConsole` `ListView.ItemTemplate`
       definitions in favour of a shared `DataTemplate` resource.

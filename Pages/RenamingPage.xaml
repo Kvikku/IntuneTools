@@ -107,7 +107,8 @@
                             <AppBarButton.Flyout>
                                 <Flyout Placement="BottomEdgeAlignedLeft">
                                     <StackPanel x:Name="OptionsPanel" Orientation="Vertical" MinWidth="200">
-                                        <TextBlock Text="Prefix Format" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                        <TextBlock Text="Prefix Format"
+                                                   Style="{StaticResource SubsectionLabelTextBlockStyle}"/>
                                         <RadioButton x:Name="Parentheses" Content="Parentheses (  )" GroupName="PrefixOptions" IsChecked="True"/>
                                         <RadioButton x:Name="SquareBrackets" Content="Square brackets [  ]" GroupName="PrefixOptions"/>
                                         <RadioButton x:Name="CurlyBrackets" Content="Curly brackets {  }" GroupName="PrefixOptions"/>
@@ -188,9 +189,7 @@
                                       Height="50"/>
                         <TextBlock x:Name="LoadingStatusText"
                                    Text="Loading..."
-                                   HorizontalAlignment="Center"
-                                   FontSize="14"
-                                   Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                                   Style="{StaticResource LoadingStatusTextBlockStyle}"/>
                     </StackPanel>
                 </Border>
             </Grid>
