@@ -57,6 +57,14 @@ namespace IntuneTools.Utilities
         public void Hide()
         {
             StatusBar.IsOpen = false;
+
+            ProgressRing.IsActive = false;
+            ProgressRing.Visibility = Visibility.Collapsed;
+
+            ProgressBar.Visibility = Visibility.Collapsed;
+            ProgressBar.IsIndeterminate = false;
+            ProgressBar.Maximum = 1;
+            ProgressBar.Value = 0;
         }
 
         private void UpdateStatus(OperationState state, string message, int? current, int? total, bool isIndeterminate)
