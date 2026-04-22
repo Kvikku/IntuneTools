@@ -48,8 +48,7 @@
                     Style="{StaticResource CardBorderStyle}">
                 <StackPanel Spacing="12">
                     <TextBlock Text="Source Tenant"
-                               FontSize="20"
-                               FontWeight="SemiBold"/>
+                               Style="{StaticResource SectionTitleTextBlockStyle}"/>
 
                     <controls:InfoBar
                         IsOpen="True"
@@ -103,8 +102,7 @@
                     Style="{StaticResource CardBorderStyle}">
                 <StackPanel Spacing="12">
                     <TextBlock Text="Destination Tenant"
-                               FontSize="20"
-                               FontWeight="SemiBold"/>
+                               Style="{StaticResource SectionTitleTextBlockStyle}"/>
 
                     <controls:InfoBar
                         IsOpen="True"

@@ -72,127 +72,85 @@
 
                     <Button Grid.Column="0"
                             Click="QuickAction_Assignment_Click"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Stretch"
-                            VerticalAlignment="Stretch"
-                            Padding="20"
-                            CornerRadius="8"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1">
+                            Style="{StaticResource FeatureCardButtonStyle}">
                         <StackPanel Spacing="8">
                             <SymbolIcon Symbol="AllApps" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" HorizontalAlignment="Left"/>
-                            <TextBlock Text="Assignment" FontSize="16" FontWeight="SemiBold"/>
+                            <TextBlock Text="Assignment"
+                                       Style="{StaticResource FeatureCardTitleTextBlockStyle}"/>
                             <TextBlock Text="Assign policies and apps to groups in bulk."
-                                       FontSize="13" Opacity="0.65" TextWrapping="Wrap"/>
+                                       Style="{StaticResource FeatureCardDescriptionTextBlockStyle}"/>
                         </StackPanel>
                     </Button>
 
                     <Button Grid.Column="1"
                             Click="QuickAction_Import_Click"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Stretch"
-                            VerticalAlignment="Stretch"
-                            Padding="20"
-                            CornerRadius="8"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1">
+                            Style="{StaticResource FeatureCardButtonStyle}">
                         <StackPanel Spacing="8">
                             <SymbolIcon Symbol="Import" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" HorizontalAlignment="Left"/>
-                            <TextBlock Text="Import" FontSize="16" FontWeight="SemiBold"/>
+                            <TextBlock Text="Import"
+                                       Style="{StaticResource FeatureCardTitleTextBlockStyle}"/>
                             <TextBlock Text="Export and import configurations between tenants."
-                                       FontSize="13" Opacity="0.65" TextWrapping="Wrap"/>
+                                       Style="{StaticResource FeatureCardDescriptionTextBlockStyle}"/>
                         </StackPanel>
                     </Button>
 
                     <Button Grid.Column="2"
                             Click="QuickAction_Cleanup_Click"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Stretch"
-                            VerticalAlignment="Stretch"
-                            Padding="20"
-                            CornerRadius="8"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1">
+                            Style="{StaticResource FeatureCardButtonStyle}">
                         <StackPanel Spacing="8">
                             <SymbolIcon Symbol="Delete" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" HorizontalAlignment="Left"/>
-                            <TextBlock Text="Cleanup" FontSize="16" FontWeight="SemiBold"/>
+                            <TextBlock Text="Cleanup"
+                                       Style="{StaticResource FeatureCardTitleTextBlockStyle}"/>
                             <TextBlock Text="Remove policies, scripts, and profiles in bulk."
-                                       FontSize="13" Opacity="0.65" TextWrapping="Wrap"/>
+                                       Style="{StaticResource FeatureCardDescriptionTextBlockStyle}"/>
                         </StackPanel>
                     </Button>
 
                     <Button Grid.Column="3"
                             Click="QuickAction_Renaming_Click"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Stretch"
-                            VerticalAlignment="Stretch"
-                            Padding="20"
-                            CornerRadius="8"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1">
+                            Style="{StaticResource FeatureCardButtonStyle}">
                         <StackPanel Spacing="8">
                             <SymbolIcon Symbol="Rename" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" HorizontalAlignment="Left"/>
-                            <TextBlock Text="Renaming" FontSize="16" FontWeight="SemiBold"/>
+                            <TextBlock Text="Renaming"
+                                       Style="{StaticResource FeatureCardTitleTextBlockStyle}"/>
                             <TextBlock Text="Rename objects with customizable prefixes."
-                                       FontSize="13" Opacity="0.65" TextWrapping="Wrap"/>
+                                       Style="{StaticResource FeatureCardDescriptionTextBlockStyle}"/>
                         </StackPanel>
                     </Button>
 
                     <Button Grid.Column="4"
                             Click="QuickAction_Json_Click"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Stretch"
-                            VerticalAlignment="Stretch"
-                            Padding="20"
-                            CornerRadius="8"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1">
+                            Style="{StaticResource FeatureCardButtonStyle}">
                         <StackPanel Spacing="8">
                             <FontIcon Glyph="&#xE8AB;" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" HorizontalAlignment="Left"/>
-                            <TextBlock Text="JSON" FontSize="16" FontWeight="SemiBold"/>
+                            <TextBlock Text="JSON"
+                                       Style="{StaticResource FeatureCardTitleTextBlockStyle}"/>
                             <TextBlock Text="Import from and export to JSON files."
-                                       FontSize="13" Opacity="0.65" TextWrapping="Wrap"/>
+                                       Style="{StaticResource FeatureCardDescriptionTextBlockStyle}"/>
                         </StackPanel>
                     </Button>
 
                     <Button Grid.Column="5"
                             Click="QuickAction_ManageAssignments_Click"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Stretch"
-                            VerticalAlignment="Stretch"
-                            Padding="20"
-                            CornerRadius="8"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1">
+                            Style="{StaticResource FeatureCardButtonStyle}">
                         <StackPanel Spacing="8">
                             <FontIcon Glyph="&#xE71D;" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" HorizontalAlignment="Left"/>
-                            <TextBlock Text="Manage Assignments" FontSize="16" FontWeight="SemiBold"/>
+                            <TextBlock Text="Manage Assignments"
+                                       Style="{StaticResource FeatureCardTitleTextBlockStyle}"/>
                             <TextBlock Text="View and remove group assignments from content."
-                                       FontSize="13" Opacity="0.65" TextWrapping="Wrap"/>
+                                       Style="{StaticResource FeatureCardDescriptionTextBlockStyle}"/>
                         </StackPanel>
                     </Button>
 
                     <Button Grid.Column="6"
                             Click="QuickAction_AuditLog_Click"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Stretch"
-                            VerticalAlignment="Stretch"
-                            Padding="20"
-                            CornerRadius="8"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1">
+                            Style="{StaticResource FeatureCardButtonStyle}">
                         <StackPanel Spacing="8">
                             <FontIcon Glyph="&#xE7BA;" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" HorizontalAlignment="Left"/>
-                            <TextBlock Text="Audit Log" FontSize="16" FontWeight="SemiBold"/>
+                            <TextBlock Text="Audit Log"
+                                       Style="{StaticResource FeatureCardTitleTextBlockStyle}"/>
                             <TextBlock Text="Review recent changes and who made them."
-                                       FontSize="13" Opacity="0.65" TextWrapping="Wrap"/>
+                                       Style="{StaticResource FeatureCardDescriptionTextBlockStyle}"/>
                         </StackPanel>
                     </Button>
                 </Grid>
@@ -208,14 +166,7 @@
                     <!-- Connection Info (clickable → Settings) -->
                     <Button Grid.Column="0"
                             Click="QuickAction_Settings_Click"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Stretch"
-                            VerticalAlignment="Stretch"
-                            Padding="20"
-                            CornerRadius="{StaticResource CardCornerRadius}"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1">
+                            Style="{StaticResource FeatureCardButtonStyle}">
                         <StackPanel Spacing="10">
                             <TextBlock Text="Connection"
                                        Style="{StaticResource SidePanelHeaderTextBlockStyle}"
@@ -223,8 +174,11 @@
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="8">
                                 <Image x:Name="LoginStatusImage" Width="24" Height="24" VerticalAlignment="Center"/>
                                 <StackPanel>
-                                    <TextBlock Text="Tenant" FontSize="13" Opacity="0.6"/>
-                                    <TextBlock x:Name="TenantNameText" Text="Not Connected" FontSize="16" FontWeight="SemiBold"/>
+                                    <TextBlock Text="Tenant"
+                                               Style="{StaticResource MutedCaptionTextBlockStyle}"/>
+                                    <TextBlock x:Name="TenantNameText"
+                                               Text="Not Connected"
+                                               Style="{StaticResource FeatureCardTitleTextBlockStyle}"/>
                                 </StackPanel>
                             </StackPanel>
                         </StackPanel>
@@ -240,13 +194,9 @@
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="12">
                                 <TextBlock x:Name="TimeSavedMinutesText"
                                            Text="0"
-                                           FontSize="40"
-                                           FontWeight="Bold"
-                                           VerticalAlignment="Center"/>
+                                           Style="{StaticResource StatHeroValueTextBlockStyle}"/>
                                 <TextBlock Text="minutes saved"
-                                           FontSize="16"
-                                           Opacity="0.7"
-                                           VerticalAlignment="Center"/>
+                                           Style="{StaticResource StatHeroLabelTextBlockStyle}"/>
                             </StackPanel>
                             <ProgressBar x:Name="TimeSavedProgress"
                                          Height="6"
@@ -256,42 +206,58 @@
                                          CornerRadius="3"/>
                             <TextBlock Text="Estimate based on recorded actions and typical manual completion times."
                                        TextWrapping="WrapWholeWords"
-                                       FontSize="13"
-                                       Opacity="0.6"/>
+                                       Style="{StaticResource MutedCaptionTextBlockStyle}"/>
 
                             <StackPanel x:Name="TimeSavedBreakdownPanel" Spacing="4" Visibility="Collapsed">
-                                <TextBlock Text="Breakdown" FontSize="14" FontWeight="SemiBold" Margin="0,4,0,0"/>
+                                <TextBlock Text="Breakdown"
+                                           Style="{StaticResource SubsectionLabelTextBlockStyle}"/>
                                 <StackPanel x:Name="RenamedItemsPanel" Orientation="Horizontal" Spacing="6" Visibility="Collapsed">
-                                    <TextBlock x:Name="RenamedItemsCountText" Text="0" FontWeight="SemiBold" FontSize="13"/>
-                                    <TextBlock Text="items renamed / descriptions updated" FontSize="13" Opacity="0.7"/>
+                                    <TextBlock x:Name="RenamedItemsCountText" Text="0"
+                                               Style="{StaticResource StatBreakdownValueTextBlockStyle}"/>
+                                    <TextBlock Text="items renamed / descriptions updated"
+                                               Style="{StaticResource StatBreakdownLabelTextBlockStyle}"/>
                                 </StackPanel>
                                 <StackPanel x:Name="AssignedItemsPanel" Orientation="Horizontal" Spacing="6" Visibility="Collapsed">
-                                    <TextBlock x:Name="AssignedItemsCountText" Text="0" FontWeight="SemiBold" FontSize="13"/>
-                                    <TextBlock Text="items assigned" FontSize="13" Opacity="0.7"/>
+                                    <TextBlock x:Name="AssignedItemsCountText" Text="0"
+                                               Style="{StaticResource StatBreakdownValueTextBlockStyle}"/>
+                                    <TextBlock Text="items assigned"
+                                               Style="{StaticResource StatBreakdownLabelTextBlockStyle}"/>
                                 </StackPanel>
                                 <StackPanel x:Name="DeletedItemsPanel" Orientation="Horizontal" Spacing="6" Visibility="Collapsed">
-                                    <TextBlock x:Name="DeletedItemsCountText" Text="0" FontWeight="SemiBold" FontSize="13"/>
-                                    <TextBlock Text="items deleted" FontSize="13" Opacity="0.7"/>
+                                    <TextBlock x:Name="DeletedItemsCountText" Text="0"
+                                               Style="{StaticResource StatBreakdownValueTextBlockStyle}"/>
+                                    <TextBlock Text="items deleted"
+                                               Style="{StaticResource StatBreakdownLabelTextBlockStyle}"/>
                                 </StackPanel>
                                 <StackPanel x:Name="ImportedItemsPanel" Orientation="Horizontal" Spacing="6" Visibility="Collapsed">
-                                    <TextBlock x:Name="ImportedItemsCountText" Text="0" FontWeight="SemiBold" FontSize="13"/>
-                                    <TextBlock Text="items imported" FontSize="13" Opacity="0.7"/>
+                                    <TextBlock x:Name="ImportedItemsCountText" Text="0"
+                                               Style="{StaticResource StatBreakdownValueTextBlockStyle}"/>
+                                    <TextBlock Text="items imported"
+                                               Style="{StaticResource StatBreakdownLabelTextBlockStyle}"/>
                                 </StackPanel>
                                 <StackPanel x:Name="CheckedAssignmentsPanel" Orientation="Horizontal" Spacing="6" Visibility="Collapsed">
-                                    <TextBlock x:Name="CheckedAssignmentsCountText" Text="0" FontWeight="SemiBold" FontSize="13"/>
-                                    <TextBlock Text="items checked for assignments" FontSize="13" Opacity="0.7"/>
+                                    <TextBlock x:Name="CheckedAssignmentsCountText" Text="0"
+                                               Style="{StaticResource StatBreakdownValueTextBlockStyle}"/>
+                                    <TextBlock Text="items checked for assignments"
+                                               Style="{StaticResource StatBreakdownLabelTextBlockStyle}"/>
                                 </StackPanel>
                                 <StackPanel x:Name="JsonExportedItemsPanel" Orientation="Horizontal" Spacing="6" Visibility="Collapsed">
-                                    <TextBlock x:Name="JsonExportedItemsCountText" Text="0" FontWeight="SemiBold" FontSize="13"/>
-                                    <TextBlock Text="items exported to JSON" FontSize="13" Opacity="0.7"/>
+                                    <TextBlock x:Name="JsonExportedItemsCountText" Text="0"
+                                               Style="{StaticResource StatBreakdownValueTextBlockStyle}"/>
+                                    <TextBlock Text="items exported to JSON"
+                                               Style="{StaticResource StatBreakdownLabelTextBlockStyle}"/>
                                 </StackPanel>
                                 <StackPanel x:Name="AuditLogsPanel" Orientation="Horizontal" Spacing="6" Visibility="Collapsed">
-                                    <TextBlock x:Name="AuditLogsCountText" Text="0" FontWeight="SemiBold" FontSize="13"/>
-                                    <TextBlock Text="audit logs retrieved" FontSize="13" Opacity="0.7"/>
+                                    <TextBlock x:Name="AuditLogsCountText" Text="0"
+                                               Style="{StaticResource StatBreakdownValueTextBlockStyle}"/>
+                                    <TextBlock Text="audit logs retrieved"
+                                               Style="{StaticResource StatBreakdownLabelTextBlockStyle}"/>
                                 </StackPanel>
                                 <StackPanel x:Name="ManagedAssignmentsPanel" Orientation="Horizontal" Spacing="6" Visibility="Collapsed">
-                                    <TextBlock x:Name="ManagedAssignmentsCountText" Text="0" FontWeight="SemiBold" FontSize="13"/>
-                                    <TextBlock Text="assignments managed" FontSize="13" Opacity="0.7"/>
+                                    <TextBlock x:Name="ManagedAssignmentsCountText" Text="0"
+                                               Style="{StaticResource StatBreakdownValueTextBlockStyle}"/>
+                                    <TextBlock Text="assignments managed"
+                                               Style="{StaticResource StatBreakdownLabelTextBlockStyle}"/>
                                 </StackPanel>
                             </StackPanel>
                         </StackPanel>
