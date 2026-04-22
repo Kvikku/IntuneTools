@@ -56,10 +56,10 @@
                 </Border>
 
                 <!-- Quick Actions -->
-                <TextBlock Text="Get started"
-                           Style="{StaticResource SidePanelHeaderTextBlockStyle}"
-                           Margin="0,4,0,-8"/>
-                <Grid ColumnSpacing="16" RowSpacing="16">
+                <StackPanel>
+                    <TextBlock Text="Get started"
+                               Style="{StaticResource SidePanelHeaderTextBlockStyle}"/>
+                    <Grid ColumnSpacing="16" RowSpacing="16">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
@@ -196,6 +196,7 @@
                         </StackPanel>
                     </Button>
                 </Grid>
+                </StackPanel>
 
                 <!-- Dashboard Row: Connection + Time Saved -->
                 <Grid ColumnSpacing="16">
