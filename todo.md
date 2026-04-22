@@ -30,7 +30,7 @@ visual regression is easy to bisect.
 - [x] `Pages/SettingsPage.xaml` - special-case landing layout; adopt the
       typography tokens (`PageTitleTextBlockStyle`,
       `PageSubtitleTextBlockStyle`) and `CardBorderStyle` only.
-- [ ] `Pages/HomePage.xaml` - special-case landing layout; adopt
+- [x] `Pages/HomePage.xaml` - special-case landing layout; adopt
       `CardBorderStyle` for the hero/feature cards and switch headings
       to the shared typography styles.
 
