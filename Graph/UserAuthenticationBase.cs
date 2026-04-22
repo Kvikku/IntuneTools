@@ -48,9 +48,16 @@ internal sealed class UserAuthenticationBase
             }
             catch (MsalUiRequiredException)
             {
-                result = await _pca.AcquireTokenInteractive(scopes)
-                    .WithPrompt(Microsoft.Identity.Client.Prompt.SelectAccount)
-                    .ExecuteAsync().ConfigureAwait(false);
+                var builder = _pca.AcquireTokenInteractive(scopes)
+                    .WithPrompt(Microsoft.Identity.Client.Prompt.SelectAccount);
+
+                var hwnd = App.WindowHandle;
+                if (hwnd != IntPtr.Zero)
+                {
+                    builder = builder.WithParentActivityOrWindow(hwnd);
+                }
+
+                result = await builder.ExecuteAsync().ConfigureAwait(false);
             }
 
             SignedInAccount = result.Account;
@@ -176,9 +183,17 @@ internal sealed class UserAuthenticationBase
                 }
                 catch (MsalUiRequiredException)
                 {
-                    _cached = await _pca
+                    var builder = _pca
                         .AcquireTokenInteractive(_scopes)
-                        .WithPrompt(Microsoft.Identity.Client.Prompt.SelectAccount)
+                        .WithPrompt(Microsoft.Identity.Client.Prompt.SelectAccount);
+
+                    var hwnd = App.WindowHandle;
+                    if (hwnd != IntPtr.Zero)
+                    {
+                        builder = builder.WithParentActivityOrWindow(hwnd);
+                    }
+
+                    _cached = await builder
                         .ExecuteAsync(cancellationToken)
                         .ConfigureAwait(false);
                 }

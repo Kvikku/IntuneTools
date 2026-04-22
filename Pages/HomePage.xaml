@@ -181,6 +181,10 @@
                                                Style="{StaticResource FeatureCardTitleTextBlockStyle}"/>
                                 </StackPanel>
                             </StackPanel>
+                            <TextBlock x:Name="SignInHintText"
+                                       Text="Sign in via Settings to get started →"
+                                       Style="{StaticResource MutedCaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
                         </StackPanel>
                     </Button>
 
