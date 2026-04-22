@@ -11,31 +11,31 @@
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <Grid Margin="20">
+    <!--
+        Migrated to the unified UI standard (see docs/UI_STANDARD.md).
+        Layout contract:
+            Row 0  Header (title, subtitle, status InfoBars)
+            Row 1  Toolbar cards (search/staging)
+            Row 2  Main content (DataGrid | groups side panel | splitter | log panel)
+    -->
+    <Grid Margin="{StaticResource PageRootMargin}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <!-- Header -->
             <RowDefinition Height="Auto"/>
-            <!-- Action buttons + Options -->
             <RowDefinition Height="*"/>
-            <!-- Data grid + Side panel -->
         </Grid.RowDefinitions>
 
-        <!-- Header -->
-        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+        <!-- ===== Header ===== -->
+        <StackPanel Grid.Row="0" Margin="{StaticResource PageHeaderBottomMargin}">
             <TextBlock Text="Intune Assignments"
-                       HorizontalAlignment="Left"
-                       FontSize="38"
-                       FontWeight="Bold"/>
+                       Style="{StaticResource PageTitleTextBlockStyle}"/>
             <TextBlock Text="Assign policies and apps to groups in bulk."
-                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                       FontSize="14"
-                       Margin="0,4,0,0"/>
+                       Style="{StaticResource PageSubtitleTextBlockStyle}"/>
             <InfoBar x:Name="TenantInfoBar"
                      Severity="Informational"
                      IsClosable="False"
                      IsOpen="False"
-                     Margin="0,8,0,0"/>
+                     Margin="0,12,0,0"/>
             <!-- Operation Status Bar - provides visual feedback during bulk operations -->
             <InfoBar x:Name="OperationStatusBar"
                      Severity="Informational"
@@ -58,17 +58,14 @@
             </InfoBar>
         </StackPanel>
 
-        <!-- Toolbar Cards Row -->
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="12" Margin="0,0,0,12">
+        <!-- ===== Toolbar Cards Row ===== -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="{StaticResource PageSectionSpacing}" Margin="0,0,0,16">
 
             <!-- Search & Staging Card -->
-            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="8"
-                    Padding="12,8">
-                <StackPanel Spacing="6">
-                    <TextBlock Text="Search &amp; Staging" FontSize="12" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+            <Border Style="{StaticResource CardBorderStyle}">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Search &amp; Staging"
+                               Style="{StaticResource CardSectionLabelTextBlockStyle}"/>
                     <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                         <AutoSuggestBox x:Name="ContentSearchBox"
                                         PlaceholderText="Search by name..."
@@ -81,8 +78,8 @@
                         <AppBarButton x:Name="ContentTypesButton" Icon="Filter" Label="Content Types">
                             <AppBarButton.Flyout>
                                 <Flyout Placement="BottomEdgeAlignedLeft">
-                                    <StackPanel x:Name="OptionsPanel" Orientation="Vertical" MinWidth="300">
-                                        <TextBlock Text="Content Types" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                    <StackPanel x:Name="OptionsPanel" Orientation="Vertical" Spacing="2" MinWidth="300">
+                                        <TextBlock Text="Content Types" FontWeight="SemiBold" Margin="0,0,0,8"/>
                                         <CheckBox x:Name="OptionsAllCheckBox"
                                                   Content="Select all"
                                                   IsThreeState="False"
@@ -118,8 +115,8 @@
             </Border>
         </StackPanel>
 
-        <!-- Main Content Row -->
-        <Grid Grid.Row="2" Margin="0,0,0,20">
+        <!-- ===== Main Content Row ===== -->
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" MinWidth="300"/>
                 <!-- DataGrid -->
@@ -188,15 +185,15 @@
             <!-- Assignment Side Panel -->
             <ScrollViewer Grid.Column="1"
                           VerticalScrollBarVisibility="Auto"
-                          Margin="0,-20,12,0">
+                          Margin="0,0,12,0">
                 <StackPanel Orientation="Vertical" Spacing="4">
                     <TextBlock Text="Assign to Groups"
-                               FontSize="20"
-                               FontWeight="SemiBold"
-                               Margin="0,0,0,12"/>
+                               Style="{StaticResource SidePanelHeaderTextBlockStyle}"/>
 
                     <!-- Groups Section -->
-                    <TextBlock Text="Groups" FontSize="13" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,0,0,6"/>
+                    <TextBlock Text="Groups"
+                               Style="{StaticResource CardSectionLabelTextBlockStyle}"
+                               Margin="0,0,0,6"/>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8" Spacing="8">
                         <TextBox x:Name="GroupSearchTextBox"
                                  PlaceholderText="Search groups..."
@@ -234,12 +231,10 @@
                     <Button x:Name="AssignButton"
                             Click="AssignButton_Click"
                             HorizontalAlignment="Stretch"
-                            Style="{StaticResource AccentButtonStyle}"
-                            Height="40"
-                            FontWeight="SemiBold">
+                            Style="{StaticResource PrimaryActionButtonStyle}">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <FontIcon Glyph="&#xE8FB;" FontSize="16"/>
-                            <TextBlock Text="Configure Assignment" VerticalAlignment="Center"/>
+                            <TextBlock Text="Configure Assignment" VerticalAlignment="Center" FontWeight="SemiBold"/>
                         </StackPanel>
                     </Button>
                 </StackPanel>
@@ -253,21 +248,19 @@
                                  Background="Transparent"/>
 
             <!-- Log Console Panel -->
-            <Grid Grid.Column="3"
-                  Margin="0,-20,0,0">
+            <Grid Grid.Column="3">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
                 <TextBlock Grid.Row="0"
                            Text="Log Console"
-                           FontSize="20"
-                           FontWeight="SemiBold"
-                           Margin="0,0,0,12"/>
+                           Style="{StaticResource SidePanelHeaderTextBlockStyle}"/>
 
                 <ListView Grid.Row="1"
                           x:Name="LogConsole"
-                          SelectionMode="Extended">
+                          SelectionMode="Extended"
+                          ItemContainerStyle="{StaticResource LogListViewItemContainerStyle}">
                     <ListView.ItemTemplate>
                         <DataTemplate>
                             <Grid>
@@ -277,29 +270,18 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="{Binding TimestampText}"
-                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                           FontFamily="Consolas"
-                                           FontSize="12"
-                                           VerticalAlignment="Top"/>
+                                           Style="{StaticResource LogTimestampTextBlockStyle}"/>
                                 <TextBlock Grid.Column="1"
                                            Text="{Binding LevelIndicator}"
                                            Foreground="{Binding Foreground}"
-                                           FontSize="12"
-                                           VerticalAlignment="Top"/>
+                                           Style="{StaticResource LogLevelTextBlockStyle}"/>
                                 <TextBlock Grid.Column="2"
                                            Text="{Binding Message}"
                                            Foreground="{Binding Foreground}"
-                                           TextWrapping="Wrap"/>
+                                           Style="{StaticResource LogMessageTextBlockStyle}"/>
                             </Grid>
                         </DataTemplate>
                     </ListView.ItemTemplate>
-                    <ListView.ItemContainerStyle>
-                        <Style TargetType="ListViewItem">
-                            <Setter Property="Padding" Value="4,2"/>
-                            <Setter Property="MinHeight" Value="0"/>
-                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                        </Style>
-                    </ListView.ItemContainerStyle>
                 </ListView>
             </Grid>
         </Grid>

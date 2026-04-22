@@ -514,27 +514,30 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         }
 
         /// <summary>
-        /// Deletes a mobile application by ID.
+        /// Deletes a mobile application by ID. Throws if the deletion fails so callers
+        /// (e.g. CleanupPage's bulk-delete loop) can count the failure as an error
+        /// instead of treating it as a silent skip.
         /// </summary>
         public static async Task DeleteApplication(GraphServiceClient graphServiceClient, string appId)
         {
+            if (graphServiceClient == null)
+            {
+                throw new ArgumentNullException(nameof(graphServiceClient));
+            }
+
+            if (string.IsNullOrWhiteSpace(appId))
+            {
+                throw new InvalidOperationException("Application ID cannot be null or empty.");
+            }
+
             try
             {
-                if (graphServiceClient == null)
-                {
-                    throw new ArgumentNullException(nameof(graphServiceClient));
-                }
-
-                if (string.IsNullOrWhiteSpace(appId))
-                {
-                    throw new InvalidOperationException("Application ID cannot be null or empty.");
-                }
-
                 await graphServiceClient.DeviceAppManagement.MobileApps[appId].DeleteAsync();
             }
             catch (Exception ex)
             {
                 LogToFunctionFile(appFunction.Main, $"An error occurred while deleting application: {ex.Message}", LogLevels.Warning);
+                throw;
             }
         }
 

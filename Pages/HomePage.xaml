@@ -7,26 +7,26 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-    <Grid>
+
+    <!--
+        Migrated to the unified UI standard (see docs/UI_STANDARD.md).
+        Home is a special-case landing page (not the three-row data layout),
+        so per the standard it adopts CardBorderStyle for the hero/feature
+        cards and the shared typography styles (PageTitleTextBlockStyle,
+        PageSubtitleTextBlockStyle, SidePanelHeaderTextBlockStyle) for the
+        title and section headings.
+    -->
+    <Grid Margin="{StaticResource PageRootMargin}">
         <ScrollViewer>
-            <StackPanel Padding="40" Spacing="24">
+            <StackPanel Spacing="24">
 
                 <!-- Hero Banner -->
-                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                        BorderThickness="1"
-                        CornerRadius="12"
-                        Padding="32">
+                <Border Style="{StaticResource CardBorderStyle}">
                     <StackPanel Spacing="12">
                         <TextBlock Text="Welcome to InToolz"
-                                   FontSize="42"
-                                   FontWeight="Bold"
-                                   HorizontalAlignment="Left"/>
-                        <TextBlock TextWrapping="WrapWholeWords"
-                                   FontSize="16"
-                                   Opacity="0.85"
-                                   MaxWidth="900"
-                                   HorizontalAlignment="Left">
+                                   Style="{StaticResource PageTitleTextBlockStyle}"/>
+                        <TextBlock Style="{StaticResource PageSubtitleTextBlockStyle}"
+                                   MaxWidth="900">
                             Simplify bulk Intune management — assign, rename, clean up, and migrate configurations between tenants.
                         </TextBlock>
 
@@ -56,8 +56,10 @@
                 </Border>
 
                 <!-- Quick Actions -->
-                <TextBlock Text="Get started" FontSize="20" FontWeight="SemiBold" Margin="0,4,0,-8"/>
-                <Grid ColumnSpacing="16" RowSpacing="16">
+                <StackPanel>
+                    <TextBlock Text="Get started"
+                               Style="{StaticResource SidePanelHeaderTextBlockStyle}"/>
+                    <Grid ColumnSpacing="16" RowSpacing="16">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
@@ -194,6 +196,7 @@
                         </StackPanel>
                     </Button>
                 </Grid>
+                </StackPanel>
 
                 <!-- Dashboard Row: Connection + Time Saved -->
                 <Grid ColumnSpacing="16">
@@ -209,12 +212,14 @@
                             HorizontalContentAlignment="Stretch"
                             VerticalAlignment="Stretch"
                             Padding="20"
-                            CornerRadius="12"
+                            CornerRadius="{StaticResource CardCornerRadius}"
                             Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                             BorderThickness="1">
                         <StackPanel Spacing="10">
-                            <TextBlock Text="Connection" FontSize="20" FontWeight="SemiBold"/>
+                            <TextBlock Text="Connection"
+                                       Style="{StaticResource SidePanelHeaderTextBlockStyle}"
+                                       Margin="0"/>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="8">
                                 <Image x:Name="LoginStatusImage" Width="24" Height="24" VerticalAlignment="Center"/>
                                 <StackPanel>
@@ -227,13 +232,11 @@
 
                     <!-- Time Saved -->
                     <Border Grid.Column="1"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1"
-                            CornerRadius="12"
-                            Padding="20">
+                            Style="{StaticResource CardBorderStyle}">
                         <StackPanel Spacing="10">
-                            <TextBlock Text="Time Saved" FontSize="20" FontWeight="SemiBold"/>
+                            <TextBlock Text="Time Saved"
+                                       Style="{StaticResource SidePanelHeaderTextBlockStyle}"
+                                       Margin="0"/>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="12">
                                 <TextBlock x:Name="TimeSavedMinutesText"
                                            Text="0"
@@ -296,13 +299,11 @@
                 </Grid>
 
                 <!-- Resources -->
-                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                        BorderThickness="1"
-                        CornerRadius="12"
-                        Padding="20">
+                <Border Style="{StaticResource CardBorderStyle}">
                     <StackPanel Spacing="12">
-                        <TextBlock Text="Resources" FontSize="20" FontWeight="SemiBold"/>
+                        <TextBlock Text="Resources"
+                                   Style="{StaticResource SidePanelHeaderTextBlockStyle}"
+                                   Margin="0"/>
                         <Grid ColumnSpacing="24">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
