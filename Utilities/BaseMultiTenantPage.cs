@@ -235,11 +235,7 @@ namespace IntuneTools.Utilities
                 switch (state)
                 {
                     case OperationState.InProgress:
-                        if (isIndeterminate)
-                        {
-                            statusBarControl.ShowProgress(message);
-                        }
-                        else if (current.HasValue && total.HasValue)
+                        if (!isIndeterminate && current.HasValue && total.HasValue)
                         {
                             statusBarControl.ShowProgress(message, current.Value, total.Value);
                         }
