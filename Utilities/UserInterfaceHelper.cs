@@ -67,9 +67,9 @@ namespace IntuneTools.Utilities
 
         public static bool IsApplicationContentType(string? contentType)
         {
-            return contentType != null && 
-                   (contentType.StartsWith("App", StringComparison.OrdinalIgnoreCase) || 
-                    contentType.Equals("Application", StringComparison.OrdinalIgnoreCase));
+            return !string.IsNullOrWhiteSpace(contentType)
+                && (contentType.Equals(ContentTypes.Application, StringComparison.OrdinalIgnoreCase)
+                    || contentType.StartsWith("App - ", StringComparison.OrdinalIgnoreCase));
         }
 
         /// <summary>
