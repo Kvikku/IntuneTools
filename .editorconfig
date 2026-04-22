@@ -1,0 +1,23 @@
+root = true
+
+[*]
+indent_style = space
+charset = utf-8-bom
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.{cs,csproj,xaml}]
+indent_size = 4
+
+# C# specific
+[*.cs]
+# Sort System.* directives first and visually separate import groups.
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = true
+
+# IDE0005: Remove unnecessary using directives.
+# Only fires when <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild> is set
+# in the project file (already enabled in IntuneTools.csproj and
+# IntuneTools.Tests.csproj). Treated as a warning so new files don't quietly
+# re-introduce the boilerplate that PR #85 cleaned up.
+dotnet_diagnostic.IDE0005.severity = warning

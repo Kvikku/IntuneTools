@@ -1,6 +1,5 @@
 using CommunityToolkit.WinUI.UI.Controls;
 using Microsoft.UI.Xaml.Data;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 
 namespace IntuneTools.Utilities

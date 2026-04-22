@@ -1,6 +1,4 @@
-using IntuneTools.Utilities;
 using Microsoft.Graph.Beta.Models;
-using Xunit;
 
 namespace IntuneTools.Tests;
 

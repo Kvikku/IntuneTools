@@ -1,5 +1,3 @@
-using IntuneTools.Utilities;
-using Xunit;
 using static IntuneTools.Utilities.Variables;
 
 namespace IntuneTools.Tests;

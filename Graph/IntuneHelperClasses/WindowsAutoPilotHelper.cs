@@ -1,8 +1,5 @@
 ﻿using Microsoft.Graph;
 using Microsoft.Graph.Beta.Models.ODataErrors;
-using Microsoft.Kiota.Serialization.Json;
-using System.Text;
-using System.Text.Json;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
 {

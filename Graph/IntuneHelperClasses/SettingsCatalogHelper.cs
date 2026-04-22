@@ -1,7 +1,4 @@
 ﻿using Microsoft.Graph;
-using Microsoft.Kiota.Serialization.Json;
-using System.Text;
-using System.Text.Json;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
 {

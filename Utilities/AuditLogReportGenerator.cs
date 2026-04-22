@@ -1,6 +1,5 @@
 using IntuneTools.Pages;
 using System.Globalization;
-using System.Text;
 using System.Text.Encodings.Web;
 
 namespace IntuneTools.Utilities

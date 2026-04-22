@@ -13,6 +13,7 @@
     <EnableMsixTooling>false</EnableMsixTooling>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <Version>1.4.0.0</Version>
 	<!--<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>-->
 	<EnableDefaultPriGen>true</EnableDefaultPriGen>
@@ -30,6 +31,30 @@
 </PropertyGroup>
 
 		
+  <!-- Project-wide global usings. Single source of truth alongside <ImplicitUsings>. -->
+  <ItemGroup>
+    <!-- Project namespaces referenced from most files. -->
+    <Using Include="IntuneTools.Utilities" />
+
+    <!-- Microsoft Graph (Beta SDK is the primary surface used by this app). -->
+    <Using Include="Microsoft.Graph.Beta" />
+    <Using Include="Microsoft.Graph.Beta.Models" />
+
+    <!-- Additional BCL / Graph-adjacent namespaces used pervasively. -->
+    <Using Include="System.Collections.ObjectModel" />
+    <Using Include="System.Text" />
+    <Using Include="System.Text.Json" />
+    <Using Include="Microsoft.Kiota.Serialization.Json" />
+
+    <!-- Static helpers that are conceptually "ambient" across the app. -->
+    <Using Include="IntuneTools.Graph.DestinationUserAuthentication" Static="true" />
+    <Using Include="IntuneTools.Graph.SourceUserAuthentication" Static="true" />
+    <Using Include="IntuneTools.Utilities.HelperClass" Static="true" />
+    <Using Include="IntuneTools.Utilities.TimeSaved" Static="true" />
+    <Using Include="IntuneTools.Utilities.Variables" Static="true" />
+    <Using Include="IntuneTools.Utilities.CustomContentInfo" Static="true" />
+  </ItemGroup>
+
   <!-- Exclude nested test project from main compilation (SDK default glob picks up **/*.cs) -->
   <ItemGroup>
     <Compile Remove="IntuneTools.Tests\**" />

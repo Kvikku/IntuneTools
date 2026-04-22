@@ -1,6 +1,5 @@
 ﻿using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
-using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Runtime.InteropServices;
 
