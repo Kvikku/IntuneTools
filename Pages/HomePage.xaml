@@ -210,8 +210,7 @@
 
                             <StackPanel x:Name="TimeSavedBreakdownPanel" Spacing="4" Visibility="Collapsed">
                                 <TextBlock Text="Breakdown"
-                                           Style="{StaticResource SubsectionLabelTextBlockStyle}"
-                                           Margin="0,4,0,0"/>
+                                           Style="{StaticResource SubsectionLabelTextBlockStyle}"/>
                                 <StackPanel x:Name="RenamedItemsPanel" Orientation="Horizontal" Spacing="6" Visibility="Collapsed">
                                     <TextBlock x:Name="RenamedItemsCountText" Text="0"
                                                Style="{StaticResource StatBreakdownValueTextBlockStyle}"/>

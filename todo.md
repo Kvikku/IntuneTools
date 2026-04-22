@@ -37,7 +37,13 @@ visual regression is easy to bisect.
 ## Cross-cutting follow-ups (do as you migrate)
 
 - [x] Remove all hard-coded font sizes, weights, paddings, and corner
-      radii from page XAML once all pages are migrated.
+      radii from page XAML once all pages are migrated. *Documented
+      exceptions remain (see PR #81): icon glyphs / weights inside
+      primary action buttons, `AppBarButton` icon sizes, inline
+      `HyperlinkButton` padding, the 6 px `ProgressBar` corner radius,
+      `AuditLogPage`'s full-screen `LoadingOverlay`, the
+      `SettingsPage` "Swap" mini-label (`FontSize="11"`) and the
+      `HomePage` `VersionStatusText` body line (`FontSize="14"`).*
 - [ ] Remove the per-page duplicated `LogConsole` `ListView.ItemTemplate`
       definitions in favour of a shared `DataTemplate` resource.
 - [ ] Consider moving the `LoadingOverlay` and `OperationStatusBar`
