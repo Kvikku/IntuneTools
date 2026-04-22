@@ -44,7 +44,7 @@ visual regression is easy to bisect.
       `AuditLogPage`'s full-screen `LoadingOverlay`, the
       `SettingsPage` "Swap" mini-label (`FontSize="11"`) and the
       `HomePage` `VersionStatusText` body line (`FontSize="14"`).*
-- [ ] Remove the per-page duplicated `LogConsole` `ListView.ItemTemplate`
+- [x] Remove the per-page duplicated `LogConsole` `ListView.ItemTemplate`
       definitions in favour of a shared `DataTemplate` resource.
 - [ ] Consider moving the `LoadingOverlay` and `OperationStatusBar`
       blocks into a reusable `UserControl` so each page just declares

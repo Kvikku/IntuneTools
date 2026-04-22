@@ -124,6 +124,29 @@
         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
     </Style>
 
+    <!-- Shared item template for every page's `LogConsole` `ListView`. Bound
+         to `LogEntry` (see `Utilities/LogEntry.cs`): a fixed-width timestamp
+         column, a level glyph column, and a wrapping message column. -->
+    <DataTemplate x:Key="LogConsoleItemTemplate">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="58"/>
+                <ColumnDefinition Width="18"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="{Binding TimestampText}"
+                       Style="{StaticResource LogTimestampTextBlockStyle}"/>
+            <TextBlock Grid.Column="1"
+                       Text="{Binding LevelIndicator}"
+                       Foreground="{Binding Foreground}"
+                       Style="{StaticResource LogLevelTextBlockStyle}"/>
+            <TextBlock Grid.Column="2"
+                       Text="{Binding Message}"
+                       Foreground="{Binding Foreground}"
+                       Style="{StaticResource LogMessageTextBlockStyle}"/>
+        </Grid>
+    </DataTemplate>
+
     <!-- ===== Loading overlay =====
          Shared status text used by every data page's LoadingOverlay so the
          spinner caption looks the same everywhere. -->
