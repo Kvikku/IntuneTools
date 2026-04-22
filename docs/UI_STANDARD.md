@@ -64,8 +64,10 @@ instead of hard-coding numbers.
 | ---------------------------------- | ----------------- | ----------------------------------------- |
 | `PageTitleTextBlockStyle`          | 32 / SemiBold     | Single page title at the top              |
 | `PageSubtitleTextBlockStyle`       | 14 / Regular      | One-line description under the title      |
-| `CardSectionLabelTextBlockStyle`   | 12 / SemiBold     | Caption above a toolbar card row          |
+| `SectionTitleTextBlockStyle`       | 20 / SemiBold     | Prominent in-card section title (e.g. SettingsPage tenant cards) |
 | `SidePanelHeaderTextBlockStyle`    | 16 / SemiBold     | "Log Console", "Groups", etc.             |
+| `SubsectionLabelTextBlockStyle`    | 14 / SemiBold     | Sub-section label inside flyouts / option lists ("Prefix Format") |
+| `CardSectionLabelTextBlockStyle`   | 12 / SemiBold     | Caption above a toolbar card row          |
 
 Rules:
 
@@ -106,7 +108,9 @@ embed a `FontIcon` (`FontSize="16"`) plus a `TextBlock`, separated by a
   `ProgressBar`. Names must stay constant so `BaseDataOperationPage` can
   bind to them.
 - Long operations show the `LoadingOverlay` border with the `ProgressRing`
-  + `LoadingStatusText`. Do not invent new spinners.
+  + `LoadingStatusText`. The status `TextBlock` should use
+  `LoadingStatusTextBlockStyle` so the spinner caption is identical across
+  every data page. Do not invent new spinners.
 - Use `InfoBar` (not custom yellow rectangles) for staging-area guidance.
 
 ## 7. Side panels
@@ -149,3 +153,18 @@ When migrating an existing page to this standard:
    code-behind resolve unchanged.
 
 Track per-page progress in `todo.md` at the repo root.
+
+## 10. HomePage feature cards
+
+The HomePage "Get started" tiles are clickable `Button`s styled to look like
+cards. Use `FeatureCardButtonStyle` instead of hand-rolling the
+`Padding` / `CornerRadius` / `Background` / `BorderBrush` quartet. Inside,
+use `FeatureCardTitleTextBlockStyle` for the card title and
+`FeatureCardDescriptionTextBlockStyle` for the one-line description.
+
+For dashboard widgets, prefer `StatHeroValueTextBlockStyle` /
+`StatHeroLabelTextBlockStyle` for the big number + label pair, and
+`StatBreakdownValueTextBlockStyle` / `StatBreakdownLabelTextBlockStyle`
+for compact key/value rows. Use `MutedCaptionTextBlockStyle` for small,
+low-emphasis labels (e.g. "Tenant" above a tenant name).
+

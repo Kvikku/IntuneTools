@@ -157,9 +157,7 @@
                                       Height="50"/>
                         <TextBlock x:Name="LoadingStatusText"
                                    Text="Loading..."
-                                   HorizontalAlignment="Center"
-                                   FontSize="14"
-                                   Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                                   Style="{StaticResource LoadingStatusTextBlockStyle}"/>
                     </StackPanel>
                 </Border>
             </Grid>
