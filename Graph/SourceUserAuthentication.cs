@@ -1,5 +1,4 @@
 ﻿using Microsoft.Identity.Client;
-using System.Threading.Tasks;
 
 namespace IntuneTools.Graph;
 /// <summary>
