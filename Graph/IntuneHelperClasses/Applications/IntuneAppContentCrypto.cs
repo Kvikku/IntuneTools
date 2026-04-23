@@ -140,6 +140,16 @@ namespace IntuneTools.Graph.IntuneHelperClasses.Applications
         {
             if (source is null) throw new ArgumentNullException(nameof(source));
             if (destination is null) throw new ArgumentNullException(nameof(destination));
+            if (!source.CanSeek)
+            {
+                // We need a second pass over the ciphertext to verify the MAC
+                // before writing any plaintext. Refuse non-seekable streams
+                // up-front so callers fail fast with a clear message rather
+                // than getting a NotSupportedException mid-decrypt. Callers
+                // dealing with network streams should buffer to a temp file
+                // first (which is what the engine does).
+                throw new ArgumentException("Source stream must be seekable so the MAC can be verified before any plaintext is emitted.", nameof(source));
+            }
             if (encryptionKey is null || encryptionKey.Length != AesKeySize) throw new ArgumentException("Encryption key must be 32 bytes.", nameof(encryptionKey));
             if (hmacKey is null || hmacKey.Length != HmacKeySize) throw new ArgumentException("HMAC key must be 32 bytes.", nameof(hmacKey));
             if (bufferSize <= 0) bufferSize = 256 * 1024;

@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Graph.Beta;
@@ -113,7 +115,83 @@ namespace IntuneTools.Graph.IntuneHelperClasses.Applications
                        ?? files?.Value?.FirstOrDefault();
             if (file == null || string.IsNullOrEmpty(file.Id)) return null;
 
-            return new SourceContentReference(committedContentVersion, file.Id, file);
+            // Re-fetch the single file resource so we get the per-file
+            // fileEncryptionInfo block. Graph only includes encryption
+            // material on the item GET, not the collection GET. The Beta
+            // SDK doesn't surface fileEncryptionInfo as a typed property,
+            // so it lands in AdditionalData and we extract it manually.
+            var fileWithEncryption = await client.DeviceAppManagement.MobileApps[appId]
+                .GraphWin32LobApp.ContentVersions[committedContentVersion]
+                .Files[file.Id]
+                .GetAsync(cancellationToken: cancellationToken)
+                .ConfigureAwait(false)
+                ?? file;
+
+            var encryptionInfo = ExtractFileEncryptionInfo(fileWithEncryption);
+
+            return new SourceContentReference(committedContentVersion, file.Id, fileWithEncryption, encryptionInfo);
+        }
+
+        /// <summary>
+        /// Pulls <c>fileEncryptionInfo</c> out of <see cref="MobileAppContentFile.AdditionalData"/>.
+        /// The Beta SDK shape for <c>mobileAppContentFile</c> doesn't include
+        /// <c>fileEncryptionInfo</c> as a typed property, but Graph does
+        /// return it on the item GET (Kiota deposits it as a parsed JSON
+        /// object in <see cref="MobileAppContentFile.AdditionalData"/>).
+        /// Returns <c>null</c> if the field is missing or shaped differently
+        /// than expected; callers must treat <c>null</c> as a fatal error
+        /// (you cannot decrypt source content without the keys).
+        /// </summary>
+        internal static FileEncryptionInfo? ExtractFileEncryptionInfo(MobileAppContentFile file)
+        {
+            if (file.AdditionalData == null) return null;
+            if (!file.AdditionalData.TryGetValue("fileEncryptionInfo", out var raw) || raw == null) return null;
+
+            // Most likely shape under System.Text.Json-backed Kiota: a JsonElement.
+            if (raw is JsonElement el && el.ValueKind == JsonValueKind.Object)
+            {
+                return ParseFromJsonElement(el);
+            }
+            // Fallback shape: nested IDictionary<string, object> with already-decoded values.
+            if (raw is IDictionary<string, object?> dict)
+            {
+                return ParseFromDictionary(dict);
+            }
+            return null;
+        }
+
+        private static FileEncryptionInfo ParseFromJsonElement(JsonElement el)
+        {
+            var info = new FileEncryptionInfo
+            {
+                OdataType = "#microsoft.graph.fileEncryptionInfo",
+            };
+            if (el.TryGetProperty("encryptionKey", out var k) && k.ValueKind == JsonValueKind.String) info.EncryptionKey = Convert.FromBase64String(k.GetString()!);
+            if (el.TryGetProperty("macKey", out var mk) && mk.ValueKind == JsonValueKind.String) info.MacKey = Convert.FromBase64String(mk.GetString()!);
+            if (el.TryGetProperty("initializationVector", out var iv) && iv.ValueKind == JsonValueKind.String) info.InitializationVector = Convert.FromBase64String(iv.GetString()!);
+            if (el.TryGetProperty("mac", out var mac) && mac.ValueKind == JsonValueKind.String) info.Mac = Convert.FromBase64String(mac.GetString()!);
+            if (el.TryGetProperty("fileDigest", out var fd) && fd.ValueKind == JsonValueKind.String) info.FileDigest = Convert.FromBase64String(fd.GetString()!);
+            if (el.TryGetProperty("fileDigestAlgorithm", out var fda) && fda.ValueKind == JsonValueKind.String) info.FileDigestAlgorithm = fda.GetString();
+            if (el.TryGetProperty("profileIdentifier", out var pi) && pi.ValueKind == JsonValueKind.String) info.ProfileIdentifier = pi.GetString();
+            return info;
+        }
+
+        private static FileEncryptionInfo ParseFromDictionary(IDictionary<string, object?> d)
+        {
+            var info = new FileEncryptionInfo
+            {
+                OdataType = "#microsoft.graph.fileEncryptionInfo",
+            };
+            byte[]? AsBytes(string key) => d.TryGetValue(key, out var v) && v is string s ? Convert.FromBase64String(s) : null;
+            string? AsStr(string key) => d.TryGetValue(key, out var v) ? v as string : null;
+            info.EncryptionKey = AsBytes("encryptionKey");
+            info.MacKey = AsBytes("macKey");
+            info.InitializationVector = AsBytes("initializationVector");
+            info.Mac = AsBytes("mac");
+            info.FileDigest = AsBytes("fileDigest");
+            info.FileDigestAlgorithm = AsStr("fileDigestAlgorithm");
+            info.ProfileIdentifier = AsStr("profileIdentifier");
+            return info;
         }
     }
 }

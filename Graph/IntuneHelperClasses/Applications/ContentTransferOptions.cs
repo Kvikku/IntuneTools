@@ -52,7 +52,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses.Applications
         /// </summary>
         public string TempDirectory { get; init; } = Path.GetTempPath();
 
-        /// <summary>Number of retry attempts for transient HTTP failures (per chunk).</summary>
+        /// <summary>
+        /// Number of retry attempts for transient HTTP failures (per chunk),
+        /// after the initial PUT attempt. For example, a value of 4 allows up
+        /// to 5 total attempts for a chunk upload.
+        /// </summary>
         public int MaxChunkRetries { get; init; } = 4;
     }
 }

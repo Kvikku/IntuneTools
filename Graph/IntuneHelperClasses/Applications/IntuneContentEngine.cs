@@ -93,26 +93,67 @@ namespace IntuneTools.Graph.IntuneHelperClasses.Applications
                     $"Source content file for '{displayName}' has no azureStorageUri (cannot be downloaded).");
             }
 
+            if (sourceContent.SourceFileEncryptionInfo == null
+                || sourceContent.SourceFileEncryptionInfo.EncryptionKey == null
+                || sourceContent.SourceFileEncryptionInfo.MacKey == null)
+            {
+                // Without the source tenant's encryption keys we cannot
+                // decrypt the downloaded blob, and re-encrypting ciphertext
+                // would produce an invalid upload (and a SHA-256 digest over
+                // the wrong bytes). Fail loudly rather than corrupt the
+                // destination tenant.
+                throw new InvalidOperationException(
+                    $"Source content file for '{displayName}' did not include fileEncryptionInfo; cannot decrypt the downloaded blob.");
+            }
+
+            // The Azure Storage blob holds the *encrypted* payload — its byte
+            // count matches SizeEncrypted (which includes the 32-byte HMAC +
+            // 16-byte IV header), not the unencrypted Size. Using Size for
+            // progress / size validation produces false mismatch failures.
+            var encryptedSourceSize = sourceFile.SizeEncrypted ?? sourceFile.Size ?? 0;
+
             // Stage to disk so we never hold a multi-GB payload in memory.
-            var stagingPath = Path.Combine(
+            // Two staging files: one for the downloaded ciphertext, one for
+            // the plaintext we hand to the upload half. They are both
+            // best-effort cleaned up in the finally block.
+            var encryptedStagingPath = Path.Combine(
+                _options.TempDirectory,
+                $"intunetools-{Guid.NewGuid():N}-{handler.DownloadFileName}.enc");
+            var plaintextStagingPath = Path.Combine(
                 _options.TempDirectory,
                 $"intunetools-{Guid.NewGuid():N}-{handler.DownloadFileName}");
 
             try
             {
-                Report(progress, AppTransferPhase.Downloading, displayName, 0, sourceFile.Size ?? 0);
-                await using (var stagingFile = new FileStream(stagingPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                // 1. Download the encrypted blob from the source tenant's SAS.
+                Report(progress, AppTransferPhase.Downloading, displayName, 0, encryptedSourceSize);
+                await using (var stagingFile = new FileStream(encryptedStagingPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
                 {
                     await DownloadFromAzureBlobAsync(
                         sourceFile.AzureStorageUri!,
                         stagingFile,
-                        sourceFile.Size ?? 0,
-                        bytes => Report(progress, AppTransferPhase.Downloading, displayName, bytes, sourceFile.Size ?? 0),
+                        encryptedSourceSize,
+                        bytes => Report(progress, AppTransferPhase.Downloading, displayName, bytes, encryptedSourceSize),
                         cancellationToken).ConfigureAwait(false);
                 }
 
-                // POST the metadata to the destination tenant first: we need an
-                // app id before we can request a content version.
+                // 2. Decrypt the downloaded blob to a plaintext staging file
+                //    using the source tenant's keys. The MAC is verified
+                //    before any plaintext is emitted (see IntuneAppContentCrypto).
+                await using (var encIn = new FileStream(encryptedStagingPath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                await using (var plainOut = new FileStream(plaintextStagingPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                {
+                    await IntuneAppContentCrypto.DecryptStreamAsync(
+                        encIn,
+                        plainOut,
+                        sourceContent.SourceFileEncryptionInfo.EncryptionKey!,
+                        sourceContent.SourceFileEncryptionInfo.MacKey!,
+                        _options.StreamBufferBytes,
+                        cancellationToken).ConfigureAwait(false);
+                }
+
+                // 3. POST the metadata to the destination tenant first: we
+                //    need an app id before we can request a content version.
                 Report(progress, AppTransferPhase.CreatingDestinationApp, displayName);
                 var clone = handler.PrepareForClone(sourceApp);
                 var imported = await destinationClient.DeviceAppManagement.MobileApps.PostAsync(clone, cancellationToken: cancellationToken).ConfigureAwait(false);
@@ -121,12 +162,15 @@ namespace IntuneTools.Graph.IntuneHelperClasses.Applications
                     throw new InvalidOperationException($"Destination tenant accepted the POST for '{displayName}' but returned no Id.");
                 }
 
+                // 4. Re-encrypt the plaintext staging file with fresh keys
+                //    and upload through the destination tenant's content
+                //    upload protocol.
                 await UploadContentForExistingAppAsync(
                     destinationClient,
                     handler,
                     imported.Id,
                     displayName,
-                    stagingPath,
+                    plaintextStagingPath,
                     sourceFile.Name ?? handler.DownloadFileName,
                     progress,
                     cancellationToken).ConfigureAwait(false);
@@ -136,7 +180,8 @@ namespace IntuneTools.Graph.IntuneHelperClasses.Applications
             }
             finally
             {
-                TryDeleteStagingFile(stagingPath);
+                TryDeleteStagingFile(encryptedStagingPath);
+                TryDeleteStagingFile(plaintextStagingPath);
             }
         }
 

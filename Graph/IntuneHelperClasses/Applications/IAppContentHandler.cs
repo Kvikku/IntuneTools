@@ -89,10 +89,16 @@ namespace IntuneTools.Graph.IntuneHelperClasses.Applications
     /// <summary>
     /// What the engine needs to know about the source content before it can
     /// download it: the file metadata (azureStorageUri + size + name) plus
-    /// the IDs needed if we have to re-fetch the file (e.g. for SAS renewal).
+    /// the IDs needed if we have to re-fetch the file (e.g. for SAS renewal),
+    /// plus the source-tenant <see cref="FileEncryptionInfo"/> so the engine
+    /// can decrypt the downloaded ciphertext before re-encrypting it for the
+    /// destination tenant. Intune blob payloads in Azure Storage are
+    /// encrypted-at-rest with the keys the source tenant committed; the
+    /// engine cannot re-encrypt the content without first decrypting it.
     /// </summary>
     internal sealed record SourceContentReference(
         string ContentVersionId,
         string FileId,
-        MobileAppContentFile File);
+        MobileAppContentFile File,
+        FileEncryptionInfo? SourceFileEncryptionInfo);
 }
