@@ -74,9 +74,31 @@ item before starting work so we can scope and discuss.
 
 ## Already on the README roadmap (prioritise these)
 
-- [ ] **Import applications** — _in progress_ (initial cut: clone
-      no-binary apps such as web links, store-sourced apps, and
-      curated suite apps; LOB / Win32 / MSI binary upload to follow).
+- [ ] **Import applications** — _phased rollout_
+  - [x] **Phase 0** — shared content engine + handler registry in
+        `Graph/IntuneHelperClasses/Applications/` (`IAppContentHandler`,
+        `AppContentHandlerRegistry`, `IntuneContentEngine`,
+        `IntuneAppContentCrypto`). New app type = a new handler file, no
+        engine changes.
+  - [ ] **Phase 1** — `win32LobApp` end-to-end
+    - [x] Tenant-to-tenant clone via the engine (download → decrypt →
+          re-encrypt → block-blob upload → commit → patch
+          `committedContentVersion`). Recognise tenant-bound types
+          (Apple VPP, Managed Google Play, WinGet manifest references) as
+          `ManualHandover` so they're never silently skipped.
+    - [ ] Local-file `.intunewin` import (reuses the engine's upload half;
+          adds a small WinUI form for the metadata the user would otherwise
+          type into the Intune portal).
+  - [ ] **Phase 2** — macOS PKG (`macOSPkgApp`) and DMG (`macOSDmgApp`)
+        handlers; validate streaming on a multi-GB DMG.
+  - [ ] **Phase 3** — remaining LOB types (iOS LOB, Android LOB, MSI,
+        AppX/MSIX) — opportunistic, one handler each.
+  - [ ] **Phase 4** — "manual hand-over" CSV/XLSX export for tenant-bound
+        types (Apple VPP, Managed Google Play, WinGet, etc.) — uses the
+        same export pattern as `JsonPage`.
+  - [ ] **Phase 5** — `mobileAppRelationships` (dependencies / supersedence)
+        — engine already exposes a post-create hook so this lands without
+        an engine refactor.
 - [ ] Delete duplicate policies/apps — detect by display name +
       settings hash, offer merge/remove.
 - [ ] Delete group assignments — bulk unassign across selected
