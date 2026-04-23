@@ -178,7 +178,7 @@ item before starting work so we can scope and discuss.
 ## Integrations
 
 - [ ] Git-backed configuration — point InToolz at a Git repo;
-      export changes commit them automatically (Intune-as-Code lite).
+      export changes and commit them automatically (Intune-as-Code lite).
 - [ ] Azure DevOps / GitHub PR integration for the JSON export
       workflow.
 - [ ] Webhook / Teams notification when scheduled jobs run.

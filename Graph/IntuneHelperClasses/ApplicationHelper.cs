@@ -594,7 +594,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             "#microsoft.graph.windowsAppX",
             "#microsoft.graph.windowsMobileMSI",
             "#microsoft.graph.windowsUniversalAppX",
-            "#microsoft.graph.microsoftStoreForBusinessApp",
             "#microsoft.graph.iosLobApp",
             "#microsoft.graph.androidLobApp",
             "#microsoft.graph.macOSLobApp",
