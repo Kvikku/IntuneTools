@@ -357,6 +357,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses.Applications
             var sasExpiry = contentFile.AzureStorageUriExpirationDateTime?.UtcDateTime;
             var blockIds = new List<string>();
 
+            // Defence in depth against a misbehaving service that hands us
+            // a perpetually-near-expiry SAS — we'd otherwise renew on every
+            // single chunk forever. Cap renewals at a generous-but-finite
+            // multiple of MaxChunkRetries.
+            int renewalsRemaining = Math.Max(8, _options.MaxChunkRetries * 4);
+
             await using var src = new FileStream(encryptedPath, FileMode.Open, FileAccess.Read, FileShare.Read);
             var buffer = new byte[_options.UploadChunkSizeBytes];
             long offset = 0;
@@ -378,6 +384,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses.Applications
                 // Renew the SAS if it's about to expire (or already has).
                 if (sasExpiry.HasValue && sasExpiry.Value - DateTime.UtcNow <= _options.SasRenewalThreshold)
                 {
+                    if (renewalsRemaining-- <= 0)
+                    {
+                        throw new InvalidOperationException(
+                            "Exceeded the maximum number of SAS renewals during a single upload — refusing to keep retrying.");
+                    }
                     contentFile = await RenewSasAsync(destinationClient, handler, appId, contentVersionId, contentFile.Id!, cancellationToken).ConfigureAwait(false);
                     sasUri = contentFile.AzureStorageUri!;
                     sasExpiry = contentFile.AzureStorageUriExpirationDateTime?.UtcDateTime;
@@ -423,7 +434,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses.Applications
         {
             var blockUri = AppendQuery(sasUri, $"comp=block&blockid={Uri.EscapeDataString(blockId)}");
 
-            for (int attempt = 0; ; attempt++)
+            // Bounded retry: on the final attempt, if it throws, we do not
+            // catch it and the exception propagates out, terminating the
+            // upload of this app. (`when (attempt < Max)` makes the catch a
+            // no-op on the last attempt rather than swallowing the failure.)
+            for (int attempt = 0; attempt <= _options.MaxChunkRetries; attempt++)
             {
                 try
                 {
@@ -443,6 +458,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses.Applications
                     await Task.Delay(delayMs, cancellationToken).ConfigureAwait(false);
                 }
             }
+
+            // Unreachable: the final iteration either returns on success or
+            // re-throws on failure (since the `when` clause is false on the
+            // last attempt). Keep an explicit throw to make that obvious to
+            // static analysers and human readers alike.
+            throw new InvalidOperationException("PutBlockAsync exited the retry loop without success — this should be unreachable.");
         }
 
         private async Task PutBlockListAsync(string sasUri, IReadOnlyList<string> blockIds, CancellationToken cancellationToken)
