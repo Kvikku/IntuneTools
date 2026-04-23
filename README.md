@@ -97,7 +97,7 @@ Version is managed through the `<Version>` property in `IntuneTools.csproj`. The
 
 ## Roadmap
 
-- [ ] Import applications
+- [ ] Import applications _(initial cut in progress: web links, store-sourced apps and curated suite apps; LOB/Win32 binary upload to follow)_
 - [ ] Delete duplicate policies/apps
 - [ ] Delete group assignments
 - [ ] Bulk add objects to groups

@@ -579,5 +579,168 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
             return content;
         }
+
+        // Application OData types that ship binary installer content (an
+        // azureStorageUri-backed mobileAppContentFile) and therefore cannot
+        // be cloned with a single POST. Cross-tenant import for these types
+        // requires downloading the installer from the source and re-uploading
+        // it through the Graph content upload protocol (encrypted chunked
+        // upload + commit), which is a substantial separate piece of work.
+        // Until that lands, the import loop below detects these and skips
+        // them with a clear log message.
+        private static readonly HashSet<string> BinaryUploadAppODataTypes = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "#microsoft.graph.win32LobApp",
+            "#microsoft.graph.windowsAppX",
+            "#microsoft.graph.windowsMobileMSI",
+            "#microsoft.graph.windowsUniversalAppX",
+            "#microsoft.graph.microsoftStoreForBusinessApp",
+            "#microsoft.graph.iosLobApp",
+            "#microsoft.graph.androidLobApp",
+            "#microsoft.graph.macOSLobApp",
+            "#microsoft.graph.macOSPkgApp",
+            "#microsoft.graph.macOSDmgApp",
+        };
+
+        // Properties that the Graph API rejects on POST because they are
+        // server-managed, navigation-only, or require a separate workflow
+        // (assignments are added afterwards, content versions need a binary
+        // upload, etc.). Keep this list aligned with the property names on
+        // MobileApp and its derived types.
+        private static readonly HashSet<string> AppPropertiesToStripOnImport = new(StringComparer.Ordinal)
+        {
+            "Id",
+            "CreatedDateTime",
+            "LastModifiedDateTime",
+            "PublishingState",
+            "UploadState",
+            "IsAssigned",
+            "DependentAppCount",
+            "SupersedingAppCount",
+            "SupersededAppCount",
+            "CommittedContentVersion",
+            "Size",
+            "Assignments",
+            "Categories",
+            "Relationships",
+            "ContentVersions",
+        };
+
+        /// <summary>
+        /// Imports (clones) the selected mobile applications from the source tenant into
+        /// the destination tenant. This first cut handles app types that do **not** require
+        /// a binary installer to be uploaded — web links, store-sourced apps (WinGet, VPP,
+        /// Android managed store) and the curated Microsoft suite apps (Office, Defender,
+        /// Edge). Apps whose OData type is listed in <see cref="BinaryUploadAppODataTypes"/>
+        /// are skipped with a warning until the chunked-content upload workflow is
+        /// implemented.
+        /// </summary>
+        public static async Task ImportMultipleApplications(
+            GraphServiceClient sourceGraphServiceClient,
+            GraphServiceClient destinationGraphServiceClient,
+            List<string> appIds,
+            bool assignments,
+            bool filter,
+            List<string> groups)
+        {
+            if (sourceGraphServiceClient == null) throw new ArgumentNullException(nameof(sourceGraphServiceClient));
+            if (destinationGraphServiceClient == null) throw new ArgumentNullException(nameof(destinationGraphServiceClient));
+            if (appIds == null) throw new ArgumentNullException(nameof(appIds));
+
+            try
+            {
+                LogToFunctionFile(appFunction.Main, " ");
+                LogToFunctionFile(appFunction.Main, $"{DateTime.Now} - Importing {appIds.Count} application(s).");
+
+                foreach (var appId in appIds)
+                {
+                    if (string.IsNullOrWhiteSpace(appId))
+                    {
+                        continue;
+                    }
+
+                    var appName = string.Empty;
+                    try
+                    {
+                        var sourceApp = await sourceGraphServiceClient.DeviceAppManagement.MobileApps[appId].GetAsync();
+                        if (sourceApp == null)
+                        {
+                            LogToFunctionFile(appFunction.Main, $"Application '{appId}' could not be retrieved from the source tenant.", LogLevels.Warning);
+                            continue;
+                        }
+
+                        appName = sourceApp.DisplayName ?? appId;
+
+                        if (!string.IsNullOrEmpty(sourceApp.OdataType) && BinaryUploadAppODataTypes.Contains(sourceApp.OdataType))
+                        {
+                            LogToFunctionFile(
+                                appFunction.Main,
+                                $"Skipping '{appName}': importing apps of type '{sourceApp.OdataType}' requires uploading installer content, which is not yet supported.",
+                                LogLevels.Warning);
+                            continue;
+                        }
+
+                        // Reflection-based clone: build a new instance of the same concrete
+                        // derived type (e.g. WebApp, OfficeSuiteApp) and copy every writable
+                        // property except the server-managed/navigation ones we strip above.
+                        var sourceType = sourceApp.GetType();
+                        var newApp = Activator.CreateInstance(sourceType) as MobileApp;
+                        if (newApp == null)
+                        {
+                            LogToFunctionFile(appFunction.Main, $"Failed to create an instance of '{sourceType.FullName}' for application '{appName}'.", LogLevels.Warning);
+                            continue;
+                        }
+
+                        foreach (var property in sourceType.GetProperties())
+                        {
+                            if (!property.CanWrite || AppPropertiesToStripOnImport.Contains(property.Name))
+                            {
+                                continue;
+                            }
+
+                            var value = property.GetValue(sourceApp);
+                            if (value != null)
+                            {
+                                property.SetValue(newApp, value);
+                            }
+                        }
+
+                        // Preserve the OData type so Graph routes the POST to the correct
+                        // derived collection (the property may have been cleared by the
+                        // strip pass above on some SDK versions).
+                        if (string.IsNullOrEmpty(newApp.OdataType))
+                        {
+                            newApp.OdataType = sourceApp.OdataType;
+                        }
+
+                        var imported = await destinationGraphServiceClient.DeviceAppManagement.MobileApps.PostAsync(newApp);
+                        if (imported == null || string.IsNullOrEmpty(imported.Id))
+                        {
+                            LogToFunctionFile(appFunction.Main, $"Application '{appName}' was posted but no response body was returned.", LogLevels.Warning);
+                            continue;
+                        }
+
+                        LogToFunctionFile(appFunction.Main, $"Successfully imported application '{imported.DisplayName}'.");
+
+                        if (assignments && groups != null && groups.Count > 0)
+                        {
+                            await AssignGroupsToApplication(imported.Id, groups, destinationGraphServiceClient);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        LogToFunctionFile(appFunction.Main, $"Failed to import application '{appName}': {ex.Message}", LogLevels.Error);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"An unexpected error occurred during the application import process: {ex.Message}", LogLevels.Error);
+            }
+            finally
+            {
+                LogToFunctionFile(appFunction.Main, $"{DateTime.Now} - Finished importing applications.");
+            }
+        }
     }
 }

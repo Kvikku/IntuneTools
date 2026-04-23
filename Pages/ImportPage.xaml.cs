@@ -11,6 +11,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using static IntuneTools.Graph.EntraHelperClasses.GroupHelperClass;
 using static IntuneTools.Graph.IntuneHelperClasses.AppleBYODEnrollmentProfileHelper;
+using static IntuneTools.Graph.IntuneHelperClasses.ApplicationHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceCompliancePolicyHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceConfigurationHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.FilterHelperClass;
@@ -87,6 +88,7 @@ namespace IntuneTools.Pages
             ["WindowsFeatureUpdate"] = ContentTypes.WindowsFeatureUpdate,
             ["WindowsQualityUpdatePolicy"] = ContentTypes.WindowsQualityUpdatePolicy,
             ["WindowsQualityUpdateProfile"] = ContentTypes.WindowsQualityUpdateProfile,
+            ["Application"] = ContentTypes.Application,
             ["Filters"] = ContentTypes.AssignmentFilter,
             ["EntraGroups"] = ContentTypes.EntraGroup,
         };
@@ -403,6 +405,11 @@ namespace IntuneTools.Pages
                 ContentTypes.WindowsQualityUpdateProfile,
                 "Windows Quality Update Profiles",
                 async (ids, grpIds) => await ImportMultipleWindowsQualityUpdateProfiles(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+
+            yield return new ImportTypeDefinition(
+                ContentTypes.Application,
+                "Applications",
+                async (ids, grpIds) => await ImportMultipleApplications(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
         }
 
         /// <summary>
