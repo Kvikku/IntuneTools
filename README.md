@@ -30,7 +30,7 @@ Import, assign, rename, clean up, and export Intune policies and profiles in bul
 | ✏️ | **Renaming** | Add a prefix to display names, update descriptions, or remove an existing prefix across many items at once |
 | 🧹 | **Cleanup** | Mass-delete Intune content with confirmation and progress tracking, including a **Find Unassigned** scan that surfaces policies and profiles with no group assignments so you can prune them in one go |
 | 📄 | **JSON Export/Import** | Export Intune content to JSON files and reimport them — great for backup and version control |
-| 🔗 | **Manage Assignments** | Inspect and remove existing group assignments from policies and configurations in bulk |
+| 🔗 | **Manage Assignments** | Inspect and remove existing group assignments from Intune content types that support assignments in bulk |
 | 📋 | **Audit Log** | Review recent Intune changes — who made them, what was done, and whether they succeeded — with time-range filters (1–30 days), a per-actor breakdown, and CSV/report export |
 
 ## Supported content types
@@ -55,7 +55,7 @@ Import, assign, rename, clean up, and export Intune policies and profiles in bul
 - macOS Shell scripts
 - Apple BYOD enrollment profiles
 - Assignment Filters
-- Entra Groups
+- Entra groups
 
 </td>
 </tr>
