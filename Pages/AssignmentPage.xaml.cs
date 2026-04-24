@@ -1,15 +1,9 @@
 using CommunityToolkit.WinUI.UI.Controls;
 using IntuneTools.Graph.IntuneHelperClasses;
-using IntuneTools.Utilities;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Linq;
-using System.Threading.Tasks;
 using static IntuneTools.Graph.EntraHelperClasses.GroupHelperClass;
 using static IntuneTools.Graph.IntuneHelperClasses.AppleBYODEnrollmentProfileHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.ApplicationHelper;

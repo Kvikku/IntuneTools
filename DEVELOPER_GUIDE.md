@@ -575,12 +575,26 @@ LogEntry.Warning("Check this");     // Orange, ⚠ prefix
 LogEntry.Error("Failed");           // Red, ✖ prefix
 ```
 
-### GlobalUsing.cs
+### Global usings
 
-Common namespaces are pre-imported globally — no need to add `using` statements for:
-- `Microsoft.Graph.Beta` and models
-- Authentication classes (`SourceUserAuthentication`, `DestinationUserAuthentication`)
-- `HelperClass`, `TimeSaved`, `Variables`, `CustomContentInfo`
+Common namespaces are pre-imported globally via `<Using Include="…" />` items
+in `IntuneTools.csproj` (and mirrored in `IntuneTools.Tests.csproj`). There is
+no longer a `Utilities/GlobalUsing.cs` file — the project file is the single
+source of truth, alongside `<ImplicitUsings>` (which already pulls in the
+SDK-default BCL set: `System`, `System.Collections.Generic`, `System.IO`,
+`System.Linq`, `System.Net.Http`, `System.Threading`, `System.Threading.Tasks`).
+
+You don't need to add `using` statements for:
+
+- `IntuneTools.Utilities`
+- `Microsoft.Graph.Beta` and `Microsoft.Graph.Beta.Models`
+- `System.Collections.ObjectModel`, `System.Text`, `System.Text.Json`
+- `Microsoft.Kiota.Serialization.Json`
+- The static helpers `HelperClass`, `TimeSaved`, `Variables`,
+  `SourceUserAuthentication`, `DestinationUserAuthentication`
+
+See `CONTRIBUTING.md` for the full convention and the `IDE0005` enforcement
+rules in `.editorconfig`.
 
 ---
 

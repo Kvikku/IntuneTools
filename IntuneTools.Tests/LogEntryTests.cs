@@ -1,6 +1,3 @@
-using IntuneTools.Utilities;
-using Xunit;
-
 namespace IntuneTools.Tests;
 
 public class LogEntryTests

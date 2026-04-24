@@ -1,6 +1,5 @@
 using Microsoft.UI;
 using Microsoft.UI.Xaml.Media;
-using System;
 
 namespace IntuneTools.Utilities
 {

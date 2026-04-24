@@ -1,15 +1,7 @@
 using IntuneTools.Graph.IntuneHelperClasses;
-using IntuneTools.Utilities;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Diagnostics;
 using Windows.Storage.Pickers;
 
 namespace IntuneTools.Pages
@@ -394,6 +386,9 @@ namespace IntuneTools.Pages
 
                 await File.WriteAllTextAsync(file.Path, html, Encoding.UTF8);
                 LogSuccess($"Exported audit report to {file.Path}");
+
+                System.Diagnostics.Process.Start(new ProcessStartInfo(file.Path) { UseShellExecute = true });
+                LogInfo("Opened report in default browser.");
             }
             catch (Exception ex)
             {
