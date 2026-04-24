@@ -12,10 +12,11 @@ This guide documents the design patterns, base classes, and reusable components 
 4. [Base Class Reference](#base-class-reference)
 5. [XAML Templates](#xaml-templates)
 6. [Adding a New Content Type](#adding-a-new-content-type)
-7. [Graph Helper Patterns](#graph-helper-patterns)
-8. [Reusable Utilities](#reusable-utilities)
-9. [Naming Conventions](#naming-conventions)
-10. [Checklist](#checklist)
+7. [Adding a New Application Type to the Import Engine](#adding-a-new-application-type-to-the-import-engine)
+8. [Graph Helper Patterns](#graph-helper-patterns)
+9. [Reusable Utilities](#reusable-utilities)
+10. [Naming Conventions](#naming-conventions)
+11. [Checklist](#checklist)
 
 ---
 
@@ -405,6 +406,52 @@ In `Utilities/RightClickMenu.cs`, add a URL template so users can look up items 
 ```
 
 After these steps, every existing page that uses `LoadAllContentTypesAsync` or `SearchAllContentTypesAsync` will automatically include the new content type.
+
+---
+
+## Adding a New Application Type to the Import Engine
+
+Application import is intentionally split between metadata-only ("cloneable") and binary-installer ("LOB-style") app types. The split is enforced by `Graph/IntuneHelperClasses/Applications/AppContentHandlerRegistry.cs` so the upload code path can never accidentally fire on a tenant-bound app type (Apple VPP, Managed Google Play, etc.).
+
+### File layout
+
+```
+Graph/IntuneHelperClasses/Applications/
+├── AppContentHandlerRegistry.cs   ← single place to register a new app type
+├── HandlingMode.cs                ← Cloneable | BinaryRoundTrip | ManualHandover
+├── IAppContentHandler.cs          ← per-type "shape" interface
+├── ApplicationCloneHelper.cs      ← shared reflection clone + property strip
+├── IntuneAppContentCrypto.cs      ← AES-256-CBC + HMAC-SHA256 streaming codec
+├── IntuneContentEngine.cs         ← transport-only: download, encrypt, upload, commit
+├── ContentTransferOptions.cs      ← chunk size, polling, SAS-renewal threshold
+├── AppTransferProgress.cs         ← IProgress<T> payload for the UI
+└── Win32LobAppContentHandler.cs   ← Phase 1 reference implementation
+```
+
+### Adding a new binary-upload app type (e.g. macOSPkgApp)
+
+1. Create `<NewType>ContentHandler.cs` next to `Win32LobAppContentHandler.cs` and implement `IAppContentHandler`.
+   - Wire each Graph operation through the SDK's per-type request builder (e.g. `MobileApps[id].GraphMacOSPkgApp.ContentVersions...`).
+   - Override `BuildContentFileMetadata` if the type uses a derived content-file model (e.g. `MacOSPkgAppFile`) and needs extra fields beyond `Name` / `Size` / `SizeEncrypted`.
+   - Set `RequiresUserMetadata = true` if the local-file import flow needs extra fields (bundle ID, install context, etc.).
+2. Register it in `AppContentHandlerRegistry.Build()` — one line.
+3. Remove the OData type from `BinaryUploadAppODataTypesPendingHandler` in `ApplicationHelper.cs`.
+4. Add a deterministic round-trip test for any new type-specific logic if you touched the engine or the crypto layer.
+
+### Adding a new tenant-bound type (e.g. a future store integration)
+
+1. Add an entry to `BuildManualHandovers()` in `AppContentHandlerRegistry.cs` with a one-line `Hint` describing what the user has to do in the destination tenant.
+2. The import loop will surface it in the manual hand-over CSV (Phase 4) automatically — no other code changes needed.
+
+### What the engine handles for you
+
+* Streaming download from the source's Azure Storage SAS URL.
+* AES-256-CBC + HMAC-SHA256 decrypt + re-encrypt without buffering multi-GB payloads in memory.
+* `azureStorageUriRequest` and `commit` polling state machines with exponential back-off and a configurable timeout.
+* Mid-flight SAS renewal via `renewUpload` when an upload outlasts the original SAS expiration.
+* Block-blob chunked upload to Azure Storage (the one leg the Graph SDK does not model).
+* `IProgress<AppTransferProgress>` callbacks for the UI.
+* Per-app `try/catch` so one failed app does not abort the batch.
 
 ---
 

@@ -1,5 +1,7 @@
-﻿using IntuneTools.Pages;
+﻿using IntuneTools.Graph.IntuneHelperClasses.Applications;
+using IntuneTools.Pages;
 using Microsoft.Graph;
+using System.Threading;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
 {
@@ -573,6 +575,174 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
 
             return content;
+        }
+
+        // Binary-installer app types that we know exist but don't yet have an
+        // <see cref="IAppContentHandler"/> for. The import loop logs a clear
+        // "not yet supported" warning instead of silently skipping. Phases 2
+        // and 3 of the application-import roadmap remove entries from this
+        // list as their handlers ship — when an entry is registered in
+        // <see cref="AppContentHandlerRegistry"/>, drop it from here too.
+        private static readonly HashSet<string> BinaryUploadAppODataTypesPendingHandler = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "#microsoft.graph.windowsAppX",
+            "#microsoft.graph.windowsMobileMSI",
+            "#microsoft.graph.windowsUniversalAppX",
+            "#microsoft.graph.iosLobApp",
+            "#microsoft.graph.androidLobApp",
+            "#microsoft.graph.macOSLobApp",
+            "#microsoft.graph.macOSPkgApp",
+            "#microsoft.graph.macOSDmgApp",
+        };
+
+        // Properties that the Graph API rejects on POST live in
+        // <see cref="ApplicationCloneHelper.StripOnImport"/> so the
+        // metadata-only clone path and the binary-upload engine share one
+        // strip-list.
+
+        /// <summary>
+        /// Imports (clones) the selected mobile applications from the source tenant into
+        /// the destination tenant. Routing is driven by
+        /// <see cref="AppContentHandlerRegistry"/>:
+        ///   * <see cref="HandlingMode.BinaryRoundTrip"/> apps (currently
+        ///     <c>win32LobApp</c>) are cloned via
+        ///     <see cref="IntuneContentEngine"/>, which downloads the
+        ///     installer from the source, decrypts/re-encrypts it, and
+        ///     uploads it through the Intune content upload protocol.
+        ///   * <see cref="HandlingMode.ManualHandover"/> apps (Apple VPP,
+        ///     Managed Google Play, WinGet manifest references, etc.) are
+        ///     skipped with a one-line "what to do" hint; Phase 4 will
+        ///     surface them in a CSV/XLSX export.
+        ///   * <see cref="HandlingMode.Cloneable"/> apps fall through to the
+        ///     existing reflection-based clone (web links, suite apps, store
+        ///     metadata).
+        /// Apps whose OData type is in
+        /// <see cref="BinaryUploadAppODataTypesPendingHandler"/> are still
+        /// skipped with a warning until their handler ships.
+        /// </summary>
+        public static async Task ImportMultipleApplications(
+            GraphServiceClient sourceGraphServiceClient,
+            GraphServiceClient destinationGraphServiceClient,
+            List<string> appIds,
+            bool assignments,
+            bool filter,
+            List<string> groups)
+        {
+            if (sourceGraphServiceClient == null) throw new ArgumentNullException(nameof(sourceGraphServiceClient));
+            if (destinationGraphServiceClient == null) throw new ArgumentNullException(nameof(destinationGraphServiceClient));
+            if (appIds == null) throw new ArgumentNullException(nameof(appIds));
+
+            var contentEngine = new IntuneContentEngine();
+
+            try
+            {
+                LogToFunctionFile(appFunction.Main, " ");
+                LogToFunctionFile(appFunction.Main, $"{DateTime.Now} - Importing {appIds.Count} application(s).");
+
+                foreach (var appId in appIds)
+                {
+                    if (string.IsNullOrWhiteSpace(appId))
+                    {
+                        continue;
+                    }
+
+                    var appName = string.Empty;
+                    try
+                    {
+                        var sourceApp = await sourceGraphServiceClient.DeviceAppManagement.MobileApps[appId].GetAsync();
+                        if (sourceApp == null)
+                        {
+                            LogToFunctionFile(appFunction.Main, $"Application '{appId}' could not be retrieved from the source tenant.", LogLevels.Warning);
+                            continue;
+                        }
+
+                        appName = sourceApp.DisplayName ?? appId;
+                        var odataType = sourceApp.OdataType ?? string.Empty;
+
+                        // Route on handling mode — this is the single
+                        // decision point for every app type.
+                        var handler = AppContentHandlerRegistry.GetHandler(odataType);
+                        if (handler != null)
+                        {
+                            // Binary round-trip via the engine.
+                            var imported = await contentEngine.CloneApplicationAsync(
+                                sourceGraphServiceClient,
+                                destinationGraphServiceClient,
+                                sourceApp,
+                                handler,
+                                progress: new Progress<AppTransferProgress>(p =>
+                                {
+                                    if (p.BytesTotal > 0)
+                                    {
+                                        LogToFunctionFile(appFunction.Main, $"[{p.AppDisplayName}] {p.Phase}: {p.BytesProcessed}/{p.BytesTotal} bytes");
+                                    }
+                                    else
+                                    {
+                                        LogToFunctionFile(appFunction.Main, $"[{p.AppDisplayName}] {p.Phase}");
+                                    }
+                                }),
+                                cancellationToken: CancellationToken.None);
+
+                            LogToFunctionFile(appFunction.Main, $"Successfully imported application '{imported.DisplayName}' (binary round-trip).");
+
+                            if (assignments && groups != null && groups.Count > 0 && !string.IsNullOrEmpty(imported.Id))
+                            {
+                                await AssignGroupsToApplication(imported.Id, groups, destinationGraphServiceClient);
+                            }
+                            continue;
+                        }
+
+                        var manualHandover = AppContentHandlerRegistry.GetManualHandover(odataType);
+                        if (manualHandover != null)
+                        {
+                            LogToFunctionFile(
+                                appFunction.Main,
+                                $"Skipping '{appName}' ({manualHandover.DisplayLabel}): tenant-bound app types cannot be cloned. {manualHandover.Hint}",
+                                LogLevels.Warning);
+                            continue;
+                        }
+
+                        if (BinaryUploadAppODataTypesPendingHandler.Contains(odataType))
+                        {
+                            LogToFunctionFile(
+                                appFunction.Main,
+                                $"Skipping '{appName}': importing apps of type '{odataType}' requires uploading installer content, which is not yet supported.",
+                                LogLevels.Warning);
+                            continue;
+                        }
+
+                        // Cloneable: legacy reflection clone path. Uses the
+                        // shared helper so the strip-list stays in one place.
+                        var newApp = ApplicationCloneHelper.Clone(sourceApp);
+
+                        var importedClone = await destinationGraphServiceClient.DeviceAppManagement.MobileApps.PostAsync(newApp);
+                        if (importedClone == null || string.IsNullOrEmpty(importedClone.Id))
+                        {
+                            LogToFunctionFile(appFunction.Main, $"Application '{appName}' was posted but no response body was returned.", LogLevels.Warning);
+                            continue;
+                        }
+
+                        LogToFunctionFile(appFunction.Main, $"Successfully imported application '{importedClone.DisplayName}'.");
+
+                        if (assignments && groups != null && groups.Count > 0)
+                        {
+                            await AssignGroupsToApplication(importedClone.Id, groups, destinationGraphServiceClient);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        LogToFunctionFile(appFunction.Main, $"Failed to import application '{appName}': {ex.Message}", LogLevels.Error);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogToFunctionFile(appFunction.Main, $"An unexpected error occurred during the application import process: {ex.Message}", LogLevels.Error);
+            }
+            finally
+            {
+                LogToFunctionFile(appFunction.Main, $"{DateTime.Now} - Finished importing applications.");
+            }
         }
     }
 }

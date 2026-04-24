@@ -97,7 +97,7 @@ Version is managed through the `<Version>` property in `IntuneTools.csproj`. The
 
 ## Roadmap
 
-- [ ] Import applications
+- [ ] Import applications _(in progress — phased rollout: Phase 0 shared content engine + handler registry **shipped**; Phase 1 `win32LobApp` tenant-to-tenant binary round-trip **shipped**; macOS PKG/DMG and the manual-handover CSV for Apple VPP / Managed Google Play / WinGet are next)_
 - [ ] Delete duplicate policies/apps
 - [ ] Delete group assignments
 - [ ] Bulk add objects to groups
