@@ -9,140 +9,138 @@
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <Grid Padding="24">
+    <!--
+        Migrated to the unified UI standard (see docs/UI_STANDARD.md).
+        Settings is a special-case landing page (not the three-row data layout),
+        so per the standard it adopts the shared title/subtitle typography tokens
+        (PageTitleTextBlockStyle / PageSubtitleTextBlockStyle), CardBorderStyle,
+        and page spacing/layout tokens such as PageRootMargin and
+        PageHeaderBottomMargin.
+    -->
+    <Grid Margin="{StaticResource PageRootMargin}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="32"/>
+            <!-- Header -->
             <RowDefinition Height="Auto"/>
+            <!-- Tenant cards -->
             <RowDefinition Height="Auto"/>
+            <!-- Footer -->
         </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
 
-        <!-- Page title -->
-        <TextBlock Grid.Row="0" Grid.ColumnSpan="3"
-                   Text="Settings"
-                   HorizontalAlignment="Center"
-                   FontSize="36"
-                   FontWeight="SemiBold"
-                   Margin="0,0,0,8"/>
+        <!-- ===== Header ===== -->
+        <StackPanel Grid.Row="0" Margin="{StaticResource PageHeaderBottomMargin}">
+            <TextBlock Text="Settings"
+                       Style="{StaticResource PageTitleTextBlockStyle}"/>
+            <TextBlock Text="Configure tenants and access."
+                       Style="{StaticResource PageSubtitleTextBlockStyle}"/>
+        </StackPanel>
 
-        <!-- Optional subtitle -->
-        <TextBlock Grid.Row="1" Grid.ColumnSpan="3"
-                   Text="Configure tenants and access"
-                   HorizontalAlignment="Center"
-                   Opacity="0.8"/>
+        <!-- ===== Tenant cards ===== -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
 
-        <!-- Source Tenant card -->
-        <Border Grid.Row="2" Grid.Column="0"
-                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                CornerRadius="8"
-                Padding="16">
-            <StackPanel Spacing="12">
-                <TextBlock Text="Source Tenant"
-                           FontSize="20"
-                           FontWeight="SemiBold"/>
+            <!-- Source Tenant card -->
+            <Border Grid.Column="0"
+                    Style="{StaticResource CardBorderStyle}">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Source Tenant"
+                               Style="{StaticResource SectionTitleTextBlockStyle}"/>
 
-                <controls:InfoBar
-                    IsOpen="True"
-                    IsClosable="False"
-                    Severity="Informational"
-                    Title="Usage"
-                    Message="Used for Cleanup, Renaming, Assignment, and as the source when exporting content." />
+                    <controls:InfoBar
+                        IsOpen="True"
+                        IsClosable="False"
+                        Severity="Informational"
+                        Title="Usage"
+                        Message="Used for Cleanup, Renaming, Assignment, and as the source when exporting content." />
 
-                <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-                    <Button x:Name="SourceLoginButton"
-                            Content="Login"
-                            Width="120"
-                            Click="SourceLoginButton_Click"/>
-                    <Button x:Name="SourceClearTokenButton"
-                            Content="Clear Token"
-                            Width="120"
-                            Click="SourceClearTokenButton_Click"/>
-                    <Button x:Name="SourceViewPermissionsButton"
-                            Content="View Permissions"
-                            Width="140"
-                            Click="SourceViewPermissionsButton_Click"/>
-                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                        <Image x:Name="SourceLoginStatusImage"
-                               Width="20"
-                               Height="20"
-                               Source="/Assets/RedCross.png"/>
-                        <TextBlock x:Name="SourceLoginStatusText"
-                                   Text="Not signed in"
-                                   VerticalAlignment="Center"
-                                   Opacity="0.8"/>
+                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                        <Button x:Name="SourceLoginButton"
+                                Content="Login"
+                                Width="120"
+                                Click="SourceLoginButton_Click"/>
+                        <Button x:Name="SourceClearTokenButton"
+                                Content="Clear Token"
+                                Width="120"
+                                Click="SourceClearTokenButton_Click"/>
+                        <Button x:Name="SourceViewPermissionsButton"
+                                Content="View Permissions"
+                                Width="140"
+                                Click="SourceViewPermissionsButton_Click"/>
+                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                            <Image x:Name="SourceLoginStatusImage"
+                                   Width="20"
+                                   Height="20"
+                                   Source="/Assets/RedCross.png"/>
+                            <TextBlock x:Name="SourceLoginStatusText"
+                                       Text="Not signed in"
+                                       VerticalAlignment="Center"
+                                       Opacity="0.8"/>
+                        </StackPanel>
                     </StackPanel>
                 </StackPanel>
-            </StackPanel>
-        </Border>
+            </Border>
 
-        <!-- Swap Tenants button (between cards) -->
-        <Button x:Name="SwapTenantsButton"
-                Grid.Row="2" Grid.Column="1"
-                Click="SwapTenantsButton_Click"
-                ToolTipService.ToolTip="Swap source and destination tenants"
-                VerticalAlignment="Center"
-                Margin="16,0">
-            <StackPanel Orientation="Vertical" Spacing="4">
-                <FontIcon Glyph="&#xE8AB;" FontSize="20"/>
-                <TextBlock Text="Swap" FontSize="11"/>
-            </StackPanel>
-        </Button>
+            <!-- Swap Tenants button (between cards) -->
+            <Button x:Name="SwapTenantsButton"
+                    Grid.Column="1"
+                    Click="SwapTenantsButton_Click"
+                    ToolTipService.ToolTip="Swap source and destination tenants"
+                    VerticalAlignment="Center"
+                    Margin="16,0">
+                <StackPanel Orientation="Vertical" Spacing="4">
+                    <FontIcon Glyph="&#xE8AB;" FontSize="20"/>
+                    <TextBlock Text="Swap" FontSize="11"/>
+                </StackPanel>
+            </Button>
 
-        <!-- Destination Tenant card -->
-        <Border Grid.Row="2" Grid.Column="2"
-                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                CornerRadius="8"
-                Padding="16">
-            <StackPanel Spacing="12">
-                <TextBlock Text="Destination Tenant"
-                           FontSize="20"
-                           FontWeight="SemiBold"/>
+            <!-- Destination Tenant card -->
+            <Border Grid.Column="2"
+                    Style="{StaticResource CardBorderStyle}">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Destination Tenant"
+                               Style="{StaticResource SectionTitleTextBlockStyle}"/>
 
-                <controls:InfoBar
-                    IsOpen="True"
-                    IsClosable="False"
-                    Severity="Informational"
-                    Title="Usage"
-                    Message="Used only as the destination when importing content." />
+                    <controls:InfoBar
+                        IsOpen="True"
+                        IsClosable="False"
+                        Severity="Informational"
+                        Title="Usage"
+                        Message="Used only as the destination when importing content." />
 
-                <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-                    <Button x:Name="DestinationLoginButton"
-                            Content="Login"
-                            Width="120"
-                            Click="DestinationLoginButton_Click"/>
-                    <Button x:Name="DestinationClearTokenButton"
-                            Content="Clear Token"
-                            Width="120"
-                            Click="DestinationClearTokenButton_Click"/>
-                    <Button x:Name="DestinationViewPermissionsButton"
-                            Content="View Permissions"
-                            Width="140"
-                            Click="DestinationViewPermissionsButton_Click"/>
-                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                        <Image x:Name="DestinationLoginStatusImage"
-                               Width="20"
-                               Height="20"
-                               Source="/Assets/RedCross.png"/>
-                        <TextBlock x:Name="DestinationLoginStatusText"
-                                   Text="Not signed in"
-                                   VerticalAlignment="Center"
-                                   Opacity="0.8"/>
+                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                        <Button x:Name="DestinationLoginButton"
+                                Content="Login"
+                                Width="120"
+                                Click="DestinationLoginButton_Click"/>
+                        <Button x:Name="DestinationClearTokenButton"
+                                Content="Clear Token"
+                                Width="120"
+                                Click="DestinationClearTokenButton_Click"/>
+                        <Button x:Name="DestinationViewPermissionsButton"
+                                Content="View Permissions"
+                                Width="140"
+                                Click="DestinationViewPermissionsButton_Click"/>
+                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                            <Image x:Name="DestinationLoginStatusImage"
+                                   Width="20"
+                                   Height="20"
+                                   Source="/Assets/RedCross.png"/>
+                            <TextBlock x:Name="DestinationLoginStatusText"
+                                       Text="Not signed in"
+                                       VerticalAlignment="Center"
+                                       Opacity="0.8"/>
+                        </StackPanel>
                     </StackPanel>
                 </StackPanel>
-            </StackPanel>
-        </Border>
+            </Border>
+        </Grid>
 
         <!-- Footer action -->
-        <StackPanel Grid.Row="3" Grid.ColumnSpan="3"
+        <StackPanel Grid.Row="2"
                     HorizontalAlignment="Center"
                     Margin="0,24,0,0">
             <Button Content="Open Log File Location"

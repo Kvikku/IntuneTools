@@ -12,64 +12,43 @@
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <Grid Margin="20">
+    <!--
+        Migrated to the unified UI standard (see docs/UI_STANDARD.md).
+        Layout contract:
+            Row 0  Header (title, subtitle, status InfoBars)
+            Row 1  Toolbar cards (search/staging + assignment actions)
+            Row 2  Main content (DataGrid | splitter | side panel)
+    -->
+    <Grid Margin="{StaticResource PageRootMargin}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <!-- Header -->
             <RowDefinition Height="Auto"/>
-            <!-- CommandBar -->
             <RowDefinition Height="*"/>
-            <!-- Data grid + Side panel -->
         </Grid.RowDefinitions>
 
-        <!-- Header -->
-        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+        <!-- ===== Header ===== -->
+        <StackPanel Grid.Row="0" Margin="{StaticResource PageHeaderBottomMargin}">
             <TextBlock Text="Manage Assignments"
-                       HorizontalAlignment="Left"
-                       FontSize="38"
-                       FontWeight="Bold"/>
+                       Style="{StaticResource PageTitleTextBlockStyle}"/>
             <TextBlock Text="View and remove group assignments from policies and configurations."
-                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                       FontSize="14"
-                       Margin="0,4,0,0"/>
+                       Style="{StaticResource PageSubtitleTextBlockStyle}"/>
             <InfoBar x:Name="TenantInfoBar"
                      Severity="Informational"
                      IsClosable="False"
                      IsOpen="False"
-                     Margin="0,8,0,0"/>
-            <!-- Operation Status Bar -->
-            <InfoBar x:Name="OperationStatusBar"
-                     Severity="Informational"
-                     IsClosable="True"
-                     IsOpen="False"
-                     Margin="0,8,0,0">
-                <InfoBar.Content>
-                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-                        <ProgressRing x:Name="OperationProgressRing"
-                                      IsActive="False"
-                                      Width="20"
-                                      Height="20"
-                                      Visibility="Collapsed"/>
-                        <ProgressBar x:Name="OperationProgressBar"
-                                     Width="200"
-                                     IsIndeterminate="False"
-                                     Visibility="Collapsed"/>
-                    </StackPanel>
-                </InfoBar.Content>
-            </InfoBar>
+                     Margin="0,12,0,0"/>
+            <!-- Operation Status Bar - shared UserControl -->
+            <utilities:OperationStatusBar x:Name="OperationStatusBar" Margin="0,8,0,0"/>
         </StackPanel>
 
-        <!-- Toolbar Cards Row -->
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="12" Margin="0,0,0,12">
+        <!-- ===== Toolbar Cards Row ===== -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="{StaticResource PageSectionSpacing}" Margin="0,0,0,16">
 
             <!-- Search & Staging Card -->
-            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="8"
-                    Padding="12,8">
-                <StackPanel Spacing="6">
-                    <TextBlock Text="Search &amp; Staging" FontSize="12" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+            <Border Style="{StaticResource CardBorderStyle}">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Search &amp; Staging"
+                               Style="{StaticResource CardSectionLabelTextBlockStyle}"/>
                     <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                         <TextBox x:Name="InputTextBox"
                                  PlaceholderText="Enter search query..."
@@ -87,13 +66,10 @@
             </Border>
 
             <!-- Assignment Actions Card -->
-            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="8"
-                    Padding="12,8">
-                <StackPanel Spacing="6">
-                    <TextBlock Text="Assignment Actions" FontSize="12" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+            <Border Style="{StaticResource CardBorderStyle}">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Assignment Actions"
+                               Style="{StaticResource CardSectionLabelTextBlockStyle}"/>
                     <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                         <AppBarButton x:Name="ViewAssignmentsButton" Label="Manage Assignments" Click="ViewAssignmentsButton_Click" ToolTipService.ToolTip="View, inspect, and remove assignments for selected items.">
                             <AppBarButton.Icon>
@@ -105,25 +81,21 @@
             </Border>
         </StackPanel>
 
-        <!-- Main Content Row -->
-        <Grid Grid.Row="2" Margin="0,0,0,20">
+        <!-- ===== Main Content Row ===== -->
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" MinWidth="300"/>
-                <!-- DataGrid -->
                 <ColumnDefinition Width="Auto"/>
-                <!-- Splitter -->
                 <ColumnDefinition Width="340" MinWidth="200"/>
-                <!-- Log panel -->
             </Grid.ColumnDefinitions>
 
-            <!-- DataGrid with loading overlay -->
+            <!-- DataGrid with InfoBar and loading overlay -->
             <Grid Grid.Column="0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <!-- InfoBar -->
                 <InfoBar Grid.Row="0"
                          IsOpen="True"
                          Severity="Informational"
@@ -132,7 +104,6 @@
                          IsClosable="True"
                          Margin="0,0,12,12"/>
 
-                <!-- DataGrid -->
                 <controls:DataGrid Grid.Row="1"
                                    x:Name="AssignmentsDataGrid"
                                    AutoGenerateColumns="False"
@@ -151,28 +122,9 @@
                     </controls:DataGrid.Columns>
                 </controls:DataGrid>
 
-                <!-- Loading Overlay -->
-                <Border Grid.RowSpan="2"
-                        x:Name="LoadingOverlay"
-                        Background="{ThemeResource SystemControlAcrylicWindowBrush}"
-                        Visibility="Collapsed"
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Stretch">
-                    <StackPanel Orientation="Vertical"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Spacing="15">
-                        <ProgressRing x:Name="LoadingProgressRing"
-                                      IsActive="True"
-                                      Width="50"
-                                      Height="50"/>
-                        <TextBlock x:Name="LoadingStatusText"
-                                   Text="Loading..."
-                                   HorizontalAlignment="Center"
-                                   FontSize="14"
-                                   Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
-                    </StackPanel>
-                </Border>
+                <!-- Loading Overlay - shared UserControl -->
+                <utilities:LoadingOverlay Grid.RowSpan="2"
+                                          x:Name="LoadingOverlay"/>
             </Grid>
 
             <!-- Resizable Splitter -->
@@ -183,54 +135,20 @@
                                  Background="Transparent"/>
 
             <!-- Log Console Panel -->
-            <Grid Grid.Column="2"
-                  Margin="0,-20,0,0">
+            <Grid Grid.Column="2">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
                 <TextBlock Grid.Row="0"
                            Text="Log Console"
-                           FontSize="20"
-                           FontWeight="SemiBold"
-                           Margin="0,0,0,12"/>
+                           Style="{StaticResource SidePanelHeaderTextBlockStyle}"/>
 
                 <ListView Grid.Row="1"
                           x:Name="LogConsole"
-                          SelectionMode="Extended">
-                    <ListView.ItemTemplate>
-                        <DataTemplate>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="58"/>
-                                    <ColumnDefinition Width="18"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="{Binding TimestampText}"
-                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                           FontFamily="Consolas"
-                                           FontSize="12"
-                                           VerticalAlignment="Top"/>
-                                <TextBlock Grid.Column="1"
-                                           Text="{Binding LevelIndicator}"
-                                           Foreground="{Binding Foreground}"
-                                           FontSize="12"
-                                           VerticalAlignment="Top"/>
-                                <TextBlock Grid.Column="2"
-                                           Text="{Binding Message}"
-                                           Foreground="{Binding Foreground}"
-                                           TextWrapping="Wrap"/>
-                            </Grid>
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
-                    <ListView.ItemContainerStyle>
-                        <Style TargetType="ListViewItem">
-                            <Setter Property="Padding" Value="4,2"/>
-                            <Setter Property="MinHeight" Value="0"/>
-                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                        </Style>
-                    </ListView.ItemContainerStyle>
-                </ListView>
+                          SelectionMode="Extended"
+                          ItemContainerStyle="{StaticResource LogListViewItemContainerStyle}"
+                          ItemTemplate="{StaticResource LogConsoleItemTemplate}"/>
             </Grid>
         </Grid>
     </Grid>
