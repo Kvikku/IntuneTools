@@ -2,7 +2,7 @@
 
 We are migrating every page in IntuneTools to a single, modern, sleek
 visual + UX standard. The standard, design tokens, and per-page migration
-checklist live in **[`docs/UI_STANDARD.md`](docs/UI_STANDARD.md)**. The
+checklist live in **[`UI_STANDARD.md`](UI_STANDARD.md)**. The
 shared styles live in **`Styles/PageStyles.xaml`**.
 
 Each page should be migrated in its own PR so reviews stay small and any
@@ -54,12 +54,12 @@ visual regression is easy to bisect.
       dispatches to them with a legacy fallback for `AuditLogPage`'s
       bespoke full-screen overlay.*
 - [ ] Add a screenshot of the migrated Renaming page to
-      `docs/UI_STANDARD.md` once the first PR ships.
+      `UI_STANDARD.md` once the first PR ships.
 
 ## How to claim a page
 
 1. Open a PR titled `UI: migrate <PageName> to unified standard`.
-2. Follow the checklist in `docs/UI_STANDARD.md` section 9.
+2. Follow the checklist in `UI_STANDARD.md` section 9.
 3. Tick the page above in the same PR.
 4. Do **not** rename `x:Name`s referenced by `BaseDataOperationPage` or
    `BaseMultiTenantPage` (see UI_STANDARD section 8).
