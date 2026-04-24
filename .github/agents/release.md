@@ -145,7 +145,7 @@ When composing or suggesting release notes, follow this structure. The "What's C
 
 ## Download
 
-As always, the app and this new update is available on the [Microsoft Store](https://apps.microsoft.com/detail/9phqrcx3gkxd).
+As always, the app and this new update are available on the [Microsoft Store](https://apps.microsoft.com/detail/9phqrcx3gkxd).
 
 ## Manual install
 If you prefer to install manually and not use the store, I've attached a zip of the packaged version of the app. Install the root certificate and run the install.ps1 to install it.
