@@ -1,6 +1,3 @@
-using IntuneTools.Utilities;
-using System.Collections.ObjectModel;
-using Xunit;
 using static IntuneTools.Utilities.Variables;
 
 namespace IntuneTools.Tests;

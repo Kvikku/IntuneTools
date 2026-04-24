@@ -7,7 +7,15 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <Platforms>x64;x86;ARM64</Platforms>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
   </PropertyGroup>
+
+  <!-- Mirror the main project's global-using policy. -->
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Using Include="IntuneTools.Utilities" />
+    <Using Include="System.Collections.ObjectModel" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />

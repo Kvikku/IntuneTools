@@ -1,16 +1,7 @@
 using IntuneTools.Graph.IntuneHelperClasses;
-using IntuneTools.Utilities;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Windows.Storage.Pickers;
 
 namespace IntuneTools.Pages
