@@ -52,7 +52,6 @@
     <Using Include="IntuneTools.Utilities.HelperClass" Static="true" />
     <Using Include="IntuneTools.Utilities.TimeSaved" Static="true" />
     <Using Include="IntuneTools.Utilities.Variables" Static="true" />
-    <Using Include="IntuneTools.Utilities.CustomContentInfo" Static="true" />
   </ItemGroup>
 
   <!-- Exclude nested test project from main compilation (SDK default glob picks up **/*.cs) -->
