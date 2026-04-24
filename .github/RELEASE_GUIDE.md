@@ -1,6 +1,25 @@
 # Release Guide
 
-## Option A: Auto-increment patch version (recommended)
+> **Copilot agent skill:** You can ask Copilot to prepare a release for you.
+> It knows the versioning scheme, which files to update, and how to trigger the pipeline.
+> See [`.github/agents/release.md`](agents/release.md) for the full agent instructions.
+
+## Versioning scheme
+
+The project uses **4-part versions**: `major.minor.patch.build` (e.g. `1.4.0.0`).
+
+| Segment | When to increment |
+|---|---|
+| **Major** | Breaking changes, major new feature sets, or significant UI overhauls |
+| **Minor** | New features or meaningful enhancements (e.g. a new page) |
+| **Patch** | Bug fixes, small improvements, dependency bumps |
+| **Build** | Always `0` (reserved) |
+
+Version is stored in two files that must stay in sync:
+- `IntuneTools.csproj` — `<Version>` element
+- `Package.appxmanifest` — `Identity … Version` attribute
+
+## Option A: Auto-increment patch version (recommended for quick fixes)
 
 1. Make sure all changes are merged to `master`
 2. Run:
@@ -11,16 +30,17 @@
 4. Go to [GitHub Releases](https://github.com/Kvikku/IntuneTools/releases) — a **draft** release will be waiting
 5. Review the release notes, edit if needed, then click **Publish release**
 
-This auto-bumps the patch version (e.g. `1.3.0.0` → `1.3.1.0`) and commits the updated version back to master.
+This auto-bumps the patch version (e.g. `1.4.0.0` → `1.4.1.0`) and commits the updated version back to master.
 
-## Option B: Specify a version (for major/minor bumps)
+## Option B: Specify a version (for minor/major bumps)
 
 1. Make sure all changes are merged to `master`
-2. Run:
+2. Bump the version in `IntuneTools.csproj` and `Package.appxmanifest`, commit, and push to `master`
+3. Run:
    ```
    gh workflow run release.yml -f version=2.0.0.0
    ```
-3. Same as steps 3-5 above
+4. Same as steps 3-5 from Option A
 
 ## What happens automatically
 
@@ -31,6 +51,10 @@ This auto-bumps the patch version (e.g. `1.3.0.0` → `1.3.1.0`) and commits the
   - "What's Changed" (auto-generated from PRs) at the top
   - Download/Manual install sections at the bottom
   - Zip artifact attached
+
+## Release notes
+
+The workflow auto-generates "What's Changed" from merged PRs. For polished releases, add a **Highlights** section above the auto-generated content summarising the most important user-facing changes in 2-4 bullet points.
 
 ## The only manual step
 
