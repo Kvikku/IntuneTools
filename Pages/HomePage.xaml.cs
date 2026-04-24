@@ -72,10 +72,13 @@ namespace IntuneTools.Pages
             {
                 UpdateImage(LoginStatusImage, "GreenCheck.png");
                 TenantNameText.Text = sourceTenantName;
+                SignInHintText.Visibility = Visibility.Collapsed;
             }
             else
             {
                 UpdateImage(LoginStatusImage, "RedCross.png");
+                TenantNameText.Text = "Not Connected";
+                SignInHintText.Visibility = Visibility.Visible;
             }
         }
 
