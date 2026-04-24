@@ -14,6 +14,7 @@
   <ItemGroup>
     <Using Include="Xunit" />
     <Using Include="IntuneTools.Utilities" />
+    <Using Include="System.Collections.ObjectModel" />
   </ItemGroup>
 
   <ItemGroup>
