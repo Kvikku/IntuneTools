@@ -27,9 +27,11 @@ Import, assign, rename, clean up, and export Intune policies and profiles in bul
 |---|---------|-------------|
 | 📥 | **Import** | Copy policies and profiles from one tenant to another via Microsoft Graph |
 | 🎯 | **Assignment** | Assign Entra groups to policies and apps in bulk, with optional assignment filters |
-| ✏️ | **Renaming** | Add prefixes/suffixes to display names and update descriptions across many items at once |
+| ✏️ | **Renaming** | Add a prefix to display names, update descriptions, or remove an existing prefix across many items at once |
 | 🧹 | **Cleanup** | Mass-delete Intune content with confirmation and progress tracking, including a **Find Unassigned** scan that surfaces policies and profiles with no group assignments so you can prune them in one go |
 | 📄 | **JSON Export/Import** | Export Intune content to JSON files and reimport them — great for backup and version control |
+| 🔗 | **Manage Assignments** | Inspect and remove existing group assignments from Intune content types that support assignments in bulk |
+| 📋 | **Audit Log** | Review recent Intune changes — who made them, what was done, and whether they succeeded — with time-range filters (1–30 days), a per-actor breakdown, and CSV/report export |
 
 ## Supported content types
 
@@ -53,6 +55,7 @@ Import, assign, rename, clean up, and export Intune policies and profiles in bul
 - macOS Shell scripts
 - Apple BYOD enrollment profiles
 - Assignment Filters
+- Entra groups
 
 </td>
 </tr>
@@ -61,8 +64,8 @@ Import, assign, rename, clean up, and export Intune policies and profiles in bul
 ## Getting started
 
 1. **Install** — grab it from the [Microsoft Store](https://apps.microsoft.com/detail/9phqrcx3gkxd) or the [Releases page](https://github.com/Kvikku/IntuneTools/releases).
-2. **Authenticate** — go to **Settings** and sign in to your **source** tenant (read-only) and **destination** tenant (read-write).
-3. **Go** — pick an operation (Import, Assignment, Renaming, Cleanup, or JSON) and let InToolz do the heavy lifting.
+2. **Authenticate** — go to **Settings** and sign in to your **source** tenant. Sign in to a **destination** tenant too if you plan to import content between tenants.
+3. **Go** — pick an operation (Assignment, Manage Assignments, Import, Cleanup, Renaming, JSON, or Audit Log) and let InToolz do the heavy lifting.
 
 For detailed walkthroughs, check out the [wiki](https://github.com/Kvikku/IntuneTools/wiki).
 
@@ -99,7 +102,6 @@ Version is managed through the `<Version>` property in `IntuneTools.csproj`. The
 
 - [ ] Import applications
 - [ ] Delete duplicate policies/apps
-- [ ] Delete group assignments
 - [ ] Bulk add objects to groups
 
 Have an idea? [Open an issue](https://github.com/Kvikku/IntuneTools/issues) — community input shapes the roadmap.
