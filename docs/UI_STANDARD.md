@@ -156,7 +156,7 @@ When migrating an existing page to this standard:
 9. Confirm the page still builds and that all `x:Name` references in the
    code-behind resolve unchanged.
 
-Track per-page progress in `todo.md` at the repo root.
+Track per-page progress in `docs/todo.md`.
 
 ## 10. HomePage feature cards
 
