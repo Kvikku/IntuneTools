@@ -26,7 +26,7 @@ The project uses **4-part versions**: `major.minor.patch.build` (e.g. `1.4.0.0`)
 - **Major** — breaking changes, major new feature sets, or significant UI overhauls.
 - **Minor** — new features or meaningful enhancements (e.g. a new page, new content-type support).
 - **Patch** — bug fixes, small improvements, dependency bumps.
-- **Build** — always `0` (reserved; the release workflow auto-increments the *patch* segment when dispatched without an explicit version).
+- **Build** — conventionally `0` and reserved for future use; when the release workflow auto-increments a version without an explicit override, it increments only the *patch* segment and preserves the existing *build* segment from `<Version>`.
 
 ---
 
@@ -52,26 +52,18 @@ Compute the next version by incrementing the appropriate segment and resetting l
 
 ### Step 2 — Bump the version in source
 
-Update **both** files so they stay in sync:
-
-1. **`IntuneTools.csproj`** — edit the `<Version>` element.
-2. **`Package.appxmanifest`** — edit the `Version` attribute on the `<Identity>` element.
-
-Example diff for a minor bump `1.4.0.0` → `1.5.0.0`:
+**`IntuneTools.csproj`** is the single source of truth for the version. Edit the `<Version>` element:
 
 ```diff
 - <Version>1.4.0.0</Version>
 + <Version>1.5.0.0</Version>
 ```
 
-```diff
-- <Identity Name="388dc4ac-a7a3-4aa3-9861-a6fd63b8a885" Publisher="CN=jorge" Version="1.4.0.0" />
-+ <Identity Name="388dc4ac-a7a3-4aa3-9861-a6fd63b8a885" Publisher="CN=jorge" Version="1.5.0.0" />
-```
+`Package.appxmanifest` is updated automatically by the `SyncAppxManifestVersion` MSBuild target during build/publish, so you do **not** need to edit it manually. If the manifest does change on disk after a local build, include it in the commit.
 
 ### Step 3 — Commit & push the version bump
 
-Commit the two changed files with the message:
+Commit the changed file(s) with the message:
 
 ```
 Bump version to <new_version>
@@ -167,9 +159,8 @@ When asked to "create a release", "bump the version", or "prepare a new version"
 - [ ] Read current version from `IntuneTools.csproj`
 - [ ] Determine release type (major / minor / patch) — ask user if unclear
 - [ ] Compute the new version number
-- [ ] Update `<Version>` in `IntuneTools.csproj`
-- [ ] Update `Version` attribute in `Package.appxmanifest`
-- [ ] Commit with message `Bump version to <version>`
+- [ ] Update `<Version>` in `IntuneTools.csproj` (source of truth; `Package.appxmanifest` is synced automatically by MSBuild)
+- [ ] Commit with message `Bump version to <version>` (include `Package.appxmanifest` if it changed on disk)
 - [ ] Push to `master`
 - [ ] Instruct the user to trigger the release workflow (`gh workflow run release.yml -f version=<version>`)
 - [ ] Remind the user to review and publish the draft release on GitHub

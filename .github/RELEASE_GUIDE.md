@@ -13,11 +13,9 @@ The project uses **4-part versions**: `major.minor.patch.build` (e.g. `1.4.0.0`)
 | **Major** | Breaking changes, major new feature sets, or significant UI overhauls |
 | **Minor** | New features or meaningful enhancements (e.g. a new page) |
 | **Patch** | Bug fixes, small improvements, dependency bumps |
-| **Build** | Always `0` (reserved) |
+| **Build** | Conventionally `0` (reserved); the workflow preserves whatever value is in `<Version>` |
 
-Version is stored in two files that must stay in sync:
-- `IntuneTools.csproj` — `<Version>` element
-- `Package.appxmanifest` — `Identity … Version` attribute
+The source of truth is `IntuneTools.csproj` (`<Version>` element). `Package.appxmanifest` is kept in sync automatically by the `SyncAppxManifestVersion` MSBuild target during build/publish.
 
 ## Option A: Auto-increment patch version (recommended for quick fixes)
 
@@ -35,7 +33,7 @@ This auto-bumps the patch version (e.g. `1.4.0.0` → `1.4.1.0`) and commits the
 ## Option B: Specify a version (for minor/major bumps)
 
 1. Make sure all changes are merged to `master`
-2. Bump the version in `IntuneTools.csproj` and `Package.appxmanifest`, commit, and push to `master`
+2. Bump `<Version>` in `IntuneTools.csproj`, commit (include `Package.appxmanifest` if it changed), and push to `master`
 3. Run:
    ```
    gh workflow run release.yml -f version=2.0.0.0
