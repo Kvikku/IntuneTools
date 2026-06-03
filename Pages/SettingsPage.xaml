@@ -109,7 +109,7 @@
                         IsClosable="False"
                         Severity="Informational"
                         Title="Usage"
-                        Message="Used as the destination when importing content. Also supports renaming and other write operations." />
+                        Message="Used only as the destination when importing content." />
 
                     <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
                         <Button x:Name="DestinationLoginButton"
