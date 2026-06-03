@@ -2,7 +2,7 @@
 
 namespace IntuneTools.Graph;
 /// <summary>
-/// Provides source-tenant (read-only) authentication against Microsoft Graph.
+/// Provides source-tenant authentication against Microsoft Graph.
 /// Thin static façade that delegates to the shared <see cref="UserAuthenticationBase"/>.
 /// </summary>
 public static class SourceUserAuthentication
@@ -20,14 +20,14 @@ public static class SourceUserAuthentication
             "RoleManagement.Read.All",
             "Application.Read.All",
             "DelegatedPermissionGrant.Read.All",
-            "DeviceManagementApps.Read.All",
-            "DeviceManagementCloudCA.Read.All",
-            "DeviceManagementConfiguration.Read.All",
-            "DeviceManagementManagedDevices.Read.All",
-            "DeviceManagementRBAC.Read.All",
-            "DeviceManagementScripts.Read.All",
-            "DeviceManagementServiceConfig.Read.All",
-            "Group.Read.All"
+            "DeviceManagementApps.ReadWrite.All",
+            "DeviceManagementCloudCA.ReadWrite.All",
+            "DeviceManagementConfiguration.ReadWrite.All",
+            "DeviceManagementManagedDevices.ReadWrite.All",
+            "DeviceManagementRBAC.ReadWrite.All",
+            "DeviceManagementScripts.ReadWrite.All",
+            "DeviceManagementServiceConfig.ReadWrite.All",
+            "Group.ReadWrite.All"
         };
 
     internal static UserAuthenticationBase _instance = new(DefaultScopes);
