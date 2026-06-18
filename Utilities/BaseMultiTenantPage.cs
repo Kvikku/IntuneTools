@@ -65,7 +65,14 @@ namespace IntuneTools.Utilities
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
+            AppLogger.RegisterUiHandler(AddLogEntry, DispatcherQueue);
             ValidateAuthenticationState();
+        }
+
+        protected override void OnNavigatedFrom(NavigationEventArgs e)
+        {
+            AppLogger.UnregisterUiHandler();
+            base.OnNavigatedFrom(e);
         }
 
         /// <summary>
@@ -317,40 +324,20 @@ namespace IntuneTools.Utilities
         #region Logging Methods
 
         /// <summary>
-        /// Adds a log entry to the log console.
+        /// Registered with AppLogger as the UI handler while this page is active.
+        /// Receives every log entry (from both page code and background helpers) and displays it.
         /// </summary>
-        /// <param name="entry">The log entry to add.</param>
-        protected void AddLogEntry(LogEntry entry)
+        private void AddLogEntry(LogEntry entry)
         {
             LogEntries.Add(entry);
             ScrollLogToEnd();
         }
 
-        /// <summary>
-        /// Logs an informational message.
-        /// </summary>
-        protected void LogInfo(string message) => AddLogEntry(LogEntry.Info(message));
-
-        /// <summary>
-        /// Logs a success message.
-        /// </summary>
-        protected void LogSuccess(string message) => AddLogEntry(LogEntry.Success(message));
-
-        /// <summary>
-        /// Logs a warning message.
-        /// </summary>
-        protected void LogWarning(string message) => AddLogEntry(LogEntry.Warning(message));
-
-        /// <summary>
-        /// Logs an error message.
-        /// </summary>
-        protected void LogError(string message) => AddLogEntry(LogEntry.Error(message));
-
-        /// <summary>
-        /// Appends a log message to the log console (backward compatibility).
-        /// Maps to LogInfo for existing code that uses this method.
-        /// </summary>
-        protected void AppendToLog(string text) => LogInfo(text);
+        protected void LogInfo(string message) => AppLogger.Info(message);
+        protected void LogSuccess(string message) => AppLogger.Success(message);
+        protected void LogWarning(string message) => AppLogger.Warning(message);
+        protected void LogError(string message) => AppLogger.Error(message);
+        protected void AppendToLog(string text) => AppLogger.Info(text);
 
         /// <summary>
         /// Scrolls the log console ListView to the end.
@@ -404,8 +391,7 @@ namespace IntuneTools.Utilities
             catch (Exception ex)
             {
                 string prefix = errorMessagePrefix ?? "Error";
-                AppendToLog($"{prefix}: {ex.Message}");
-                LogToFunctionFile(appFunction.Main, $"{prefix}: {ex.Message}");
+                AppLogger.Error($"{prefix}: {ex.Message}");
             }
             finally
             {

@@ -39,32 +39,26 @@ namespace IntuneTools.Utilities
         public static string timestampedAppFolder = string.Empty; // Mutable, so keep as is or consider property
 
 
-        public enum LogLevels
-        {
-            Info,
-            Warning,
-            Error
-        };
-
         // Use an enum for clarity and keep integer mapping stable with ComboBox order.
         public enum RenameMode
         {
             Prefix = 0,
             Description = 1,
-            RemovePrefix = 2
+            RemovePrefix = 2,
+            RemoveDescription = 3
         }
 
         public enum appFunction
         {
-            Main, // Used for most logging operations for the time being
-            Summary, // Used to log system settings upon app launch
-            Import,
-            Assignment,
-            Rename,
-            Delete,
-            FindUnassigned,
-            JsonExport,
-            AuditLog,
+            Main,           // General / page-level messages
+            Summary,        // System info logged at app startup
+            Import,         // Import operations
+            Assignment,     // Assignment operations
+            Rename,         // Rename operations
+            Delete,         // Delete operations
+            FindUnassigned, // Find Unassigned scan
+            JsonExport,     // JSON export/import operations
+            AuditLog,       // Audit log operations
             ManageAssignment,
         }
 
