@@ -78,6 +78,7 @@
                             <ComboBoxItem Content="Add Prefix"/>
                             <ComboBoxItem Content="Description"/>
                             <ComboBoxItem Content="Remove Prefix"/>
+                            <ComboBoxItem Content="Remove Description"/>
                         </ComboBox>
                         <TextBox x:Name="NewNameTextBox"
                                  PlaceholderText="Enter prefix..."

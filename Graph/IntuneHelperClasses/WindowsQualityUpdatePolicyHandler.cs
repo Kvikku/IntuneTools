@@ -391,6 +391,16 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].PatchAsync(policy);
                     LogToFunctionFile(appFunction.Main, $"Removed prefix from Windows Quality Update policy {policyID}, new name: '{name}'");
                 }
+                else if (selectedRenameMode == "RemoveDescription")
+                {
+                    var policy = new WindowsQualityUpdatePolicy
+                    {
+                        Description = string.Empty
+                    };
+
+                    await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].PatchAsync(policy);
+                    LogToFunctionFile(appFunction.Main, $"Cleared description for Windows Quality Update policy {policyID}");
+                }
             }
             catch (Exception ex)
             {

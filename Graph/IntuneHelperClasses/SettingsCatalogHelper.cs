@@ -395,6 +395,16 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].PatchAsync(policy);
                     LogToFunctionFile(appFunction.Main, $"Removed prefix from policy {policyID}, new name: {name}");
                 }
+                else if (selectedRenameMode == "RemoveDescription")
+                {
+                    var policy = new DeviceManagementConfigurationPolicy
+                    {
+                        Description = string.Empty
+                    };
+
+                    await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].PatchAsync(policy);
+                    LogToFunctionFile(appFunction.Main, $"Cleared description for Settings Catalog policy {policyID}");
+                }
             }
             catch (Exception ex)
             {

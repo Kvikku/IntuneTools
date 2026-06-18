@@ -410,6 +410,16 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileID].PatchAsync(profile);
                     LogToFunctionFile(appFunction.Main, $"Removed prefix from Windows Driver Update Profile {profileID}, new name: '{name}'");
                 }
+                else if (selectedRenameMode == "RemoveDescription")
+                {
+                    var profile = new WindowsDriverUpdateProfile
+                    {
+                        Description = string.Empty
+                    };
+
+                    await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileID].PatchAsync(profile);
+                    LogToFunctionFile(appFunction.Main, $"Cleared description for Windows Driver Update Profile {profileID}");
+                }
             }
             catch (Exception ex)
             {

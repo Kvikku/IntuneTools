@@ -442,6 +442,28 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     await graphServiceClient.DeviceManagement.DeviceConfigurations[policyID].PatchAsync(policy);
                     LogToFunctionFile(appFunction.Main, $"Removed prefix from device configuration policy {policyID}, new name: '{name}'");
                 }
+                else if (selectedRenameMode == "RemoveDescription")
+                {
+                    var existingPolicy = await graphServiceClient.DeviceManagement.DeviceConfigurations[policyID].GetAsync();
+
+                    if (existingPolicy == null)
+                    {
+                        throw new InvalidOperationException($"Policy with ID '{policyID}' not found.");
+                    }
+
+                    var policyType = existingPolicy.GetType();
+                    var policy = (DeviceConfiguration?)Activator.CreateInstance(policyType);
+
+                    if (policy == null)
+                    {
+                        throw new InvalidOperationException($"Failed to create instance of type {policyType.Name}");
+                    }
+
+                    policy.Description = string.Empty;
+
+                    await graphServiceClient.DeviceManagement.DeviceConfigurations[policyID].PatchAsync(policy);
+                    LogToFunctionFile(appFunction.Main, $"Cleared description for device configuration policy {policyID}");
+                }
             }
             catch (Exception ex)
             {

@@ -51,7 +51,8 @@ namespace IntuneTools.Utilities
         {
             Prefix = 0,
             Description = 1,
-            RemovePrefix = 2
+            RemovePrefix = 2,
+            RemoveDescription = 3
         }
 
         public enum appFunction
