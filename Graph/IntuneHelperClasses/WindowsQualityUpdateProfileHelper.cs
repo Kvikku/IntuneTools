@@ -380,6 +380,16 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileID].PatchAsync(profile);
                     LogToFunctionFile(appFunction.Main, $"Removed prefix from Windows Quality Update profile {profileID}, new name: '{name}'");
                 }
+                else if (selectedRenameMode == "RemoveDescription")
+                {
+                    var profile = new WindowsQualityUpdateProfile
+                    {
+                        Description = string.Empty
+                    };
+
+                    await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileID].PatchAsync(profile);
+                    LogToFunctionFile(appFunction.Main, $"Cleared description for Windows Quality Update profile {profileID}");
+                }
             }
             catch (Exception ex)
             {

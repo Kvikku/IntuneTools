@@ -521,6 +521,30 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].PatchAsync(profile);
                     LogToFunctionFile(appFunction.Main, $"Removed prefix from Windows Autopilot profile {profileID}, new name: '{name}'", LogLevels.Info);
                 }
+                else if (selectedRenameMode == "RemoveDescription")
+                {
+                    var existingProfile = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].GetAsync();
+
+                    if (existingProfile == null)
+                    {
+                        throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
+                    }
+
+                    if (existingProfile.OdataType?.Contains("activeDirectory", StringComparison.OrdinalIgnoreCase) == true)
+                    {
+                        LogToFunctionFile(appFunction.Main, "Active Directory Autopilot profiles is not supported yet. Skipping.", LogLevels.Warning);
+                        return;
+                    }
+
+                    var profile = new AzureADWindowsAutopilotDeploymentProfile
+                    {
+                        OdataType = existingProfile.OdataType ?? "#microsoft.graph.azureADWindowsAutopilotDeploymentProfile",
+                        Description = string.Empty,
+                    };
+
+                    await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].PatchAsync(profile);
+                    LogToFunctionFile(appFunction.Main, $"Cleared description for Windows Autopilot profile {profileID}", LogLevels.Info);
+                }
             }
             catch (Exception ex)
             {

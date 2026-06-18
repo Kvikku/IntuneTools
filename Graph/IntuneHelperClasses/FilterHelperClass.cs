@@ -278,6 +278,16 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     await graphServiceClient.DeviceManagement.AssignmentFilters[filterID].PatchAsync(filter);
                     LogToFunctionFile(appFunction.Main, $"Removed prefix from filter {filterID}, new name: '{name}'", LogLevels.Info);
                 }
+                else if (selectedRenameMode == "RemoveDescription")
+                {
+                    var filter = new DeviceAndAppManagementAssignmentFilter
+                    {
+                        Description = string.Empty
+                    };
+
+                    await graphServiceClient.DeviceManagement.AssignmentFilters[filterID].PatchAsync(filter);
+                    LogToFunctionFile(appFunction.Main, $"Cleared description for filter {filterID}", LogLevels.Info);
+                }
             }
             catch (Exception ex)
             {

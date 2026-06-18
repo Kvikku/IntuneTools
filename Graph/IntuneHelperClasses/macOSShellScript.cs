@@ -395,6 +395,16 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptID].PatchAsync(script);
                     LogToFunctionFile(appFunction.Main, $"Removed prefix from macOS shell script {scriptID}, new name: '{name}'");
                 }
+                else if (selectedRenameMode == "RemoveDescription")
+                {
+                    var script = new DeviceShellScript
+                    {
+                        Description = string.Empty
+                    };
+
+                    await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptID].PatchAsync(script);
+                    LogToFunctionFile(appFunction.Main, $"Cleared description for macOS shell script {scriptID}");
+                }
             }
             catch (Exception ex)
             {

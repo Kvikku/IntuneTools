@@ -463,6 +463,28 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileID].PatchAsync(profile);
                     LogToFunctionFile(appFunction.Main, $"Removed prefix from Apple BYOD Enrollment profile {profileID}, new name: '{name}'");
                 }
+                else if (selectedRenameMode == "RemoveDescription")
+                {
+                    var existingProfile = await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileID].GetAsync();
+
+                    if (existingProfile == null)
+                    {
+                        throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
+                    }
+
+                    var profileType = existingProfile.GetType();
+                    var profile = (AppleUserInitiatedEnrollmentProfile?)Activator.CreateInstance(profileType);
+
+                    if (profile == null)
+                    {
+                        throw new InvalidOperationException($"Failed to create instance of type {profileType.Name}");
+                    }
+
+                    profile.Description = string.Empty;
+
+                    await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileID].PatchAsync(profile);
+                    LogToFunctionFile(appFunction.Main, $"Cleared description for Apple BYOD Enrollment profile {profileID}");
+                }
             }
             catch (Exception ex)
             {

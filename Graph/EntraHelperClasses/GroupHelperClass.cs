@@ -349,6 +349,16 @@ namespace IntuneTools.Graph.EntraHelperClasses
                     await graphServiceClient.Groups[groupID].PatchAsync(group);
                     LogToFunctionFile(appFunction.Main, $"Removed prefix from group {groupID}, new name: '{name}'");
                 }
+                else if (selectedRenameMode == "RemoveDescription")
+                {
+                    var group = new Group
+                    {
+                        Description = string.Empty
+                    };
+
+                    await graphServiceClient.Groups[groupID].PatchAsync(group);
+                    LogToFunctionFile(appFunction.Main, $"Cleared description for group {groupID}");
+                }
             }
             catch (Microsoft.Graph.Beta.Models.ODataErrors.ODataError odataError)
             {
