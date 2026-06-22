@@ -349,7 +349,6 @@ namespace IntuneTools.Pages
             }
             catch (Exception ex)
             {
-                LogError($"Export failed: {ex.Message}");
                 AppLogger.Error($"CSV export failed: {ex.Message}", appFunction.AuditLog);
             }
         }
@@ -392,7 +391,6 @@ namespace IntuneTools.Pages
             }
             catch (Exception ex)
             {
-                LogError($"Report export failed: {ex.Message}");
                 AppLogger.Error($"Report export failed: {ex.Message}", appFunction.AuditLog);
             }
         }
