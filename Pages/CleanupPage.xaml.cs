@@ -221,7 +221,7 @@ namespace IntuneTools.Pages
                     var deleted = await definition.DeleteAsync(id);
                     if (deleted)
                     {
-                        LogToFunctionFile(appFunction.Main, $"Deleted {definition.DisplayName} with ID: {id}");
+                        AppLogger.Info($"Deleted {definition.DisplayName} with ID: {id}", appFunction.Delete);
                         UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
                         _deleteSuccessCount++;
                     }
@@ -230,7 +230,7 @@ namespace IntuneTools.Pages
                 catch (Exception ex)
                 {
                     _deleteErrorCount++;
-                    LogToFunctionFile(appFunction.Main, $"Error deleting {definition.DisplayName} {id}: {ex.Message}", LogLevels.Error);
+                    AppLogger.Error($"Error deleting {definition.DisplayName} {id}: {ex.Message}", appFunction.Delete);
                 }
             }
 
@@ -269,13 +269,13 @@ namespace IntuneTools.Pages
                 if (result == ContentDialogResult.Primary)
                 {
                     await DeleteWindowsAutoPilotProfileAssignments(sourceGraphServiceClient, id);
-                    LogToFunctionFile(appFunction.Main, $"Deleted assignments for Windows AutoPilot profile with ID: {id}");
+                    AppLogger.Info($"Deleted assignments for Windows AutoPilot profile with ID: {id}", appFunction.Delete);
                     await DeleteWindowsAutopilotProfile(sourceGraphServiceClient, id);
                     return true;
                 }
                 else
                 {
-                    LogToFunctionFile(appFunction.Main, $"Skipped deletion of Windows AutoPilot profile with ID: {id} as it is assigned to devices.", LogLevels.Warning);
+                    AppLogger.Warning($"Skipped deletion of Windows AutoPilot profile with ID: {id} as it is assigned to devices.", appFunction.Delete);
                     return false;
                 }
             }

@@ -1,4 +1,4 @@
-﻿using Microsoft.Graph;
+using Microsoft.Graph;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
 {
@@ -8,22 +8,18 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                LogToFunctionFile(appFunction.Main, "Searching for Windows Feature Update profiles. Search query: " + searchQuery);
+                AppLogger.Info("Searching for Windows Feature Update profiles. Search query: " + searchQuery, appFunction.Main);
 
-                // Note: The Graph API for WindowsFeatureUpdateProfile might not support filtering by name directly in the same way.
-                // Adjust the query or filter locally if needed. This example assumes direct filtering is possible or fetches all and filters locally.
-                // Let's fetch all first and then filter locally as a safer approach.
                 var allProfiles = await GetAllWindowsFeatureUpdateProfiles(graphServiceClient);
-                // Add null checks for profile and DisplayName
                 var filteredProfiles = allProfiles.Where(p => p?.DisplayName != null && p.DisplayName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)).ToList();
 
-                LogToFunctionFile(appFunction.Main, $"Found {filteredProfiles.Count} Windows Feature Update profiles matching the search query.");
+                AppLogger.Info($"Found {filteredProfiles.Count} Windows Feature Update profiles matching the search query.", appFunction.Main);
 
                 return filteredProfiles;
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for Windows Feature Update profiles: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"An error occurred while searching for Windows Feature Update profiles: {ex.Message}", appFunction.Main);
                 return new List<WindowsFeatureUpdateProfile>();
             }
         }
@@ -32,7 +28,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                LogToFunctionFile(appFunction.Main, "Retrieving all Windows Feature Update profiles.");
+                AppLogger.Info("Retrieving all Windows Feature Update profiles.", appFunction.Main);
 
                 var result = await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles.GetAsync((requestConfiguration) =>
                 {
@@ -41,7 +37,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 List<WindowsFeatureUpdateProfile> profiles = new List<WindowsFeatureUpdateProfile>();
 
-                // Add null check for result before creating iterator
                 if (result?.Value != null)
                 {
                     var pageIterator = PageIterator<WindowsFeatureUpdateProfile, WindowsFeatureUpdateProfileCollectionResponse>.CreatePageIterator(graphServiceClient, result, (profile) =>
@@ -53,16 +48,16 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }
                 else
                 {
-                    LogToFunctionFile(appFunction.Main, "No Windows Feature Update profiles found or result was null.", LogLevels.Warning);
+                    AppLogger.Warning("No Windows Feature Update profiles found or result was null.", appFunction.Main);
                 }
 
-                LogToFunctionFile(appFunction.Main, $"Found {profiles.Count} Windows Feature Update profiles.");
+                AppLogger.Info($"Found {profiles.Count} Windows Feature Update profiles.", appFunction.Main);
 
                 return profiles;
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while retrieving all Windows Feature Update profiles: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"An error occurred while retrieving all Windows Feature Update profiles: {ex.Message}", appFunction.Main);
                 return new List<WindowsFeatureUpdateProfile>();
             }
         }
@@ -70,15 +65,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                LogToFunctionFile(appFunction.Main, $"Importing {profileIDs.Count} Windows Feature Update profiles.");
-
-
-                // Note: Filters are not supported for feature updates yet
-                //if (filter)
-                //{
-                //    rtb.AppendText("Filters will be added (if applicable).\n");
-                //    WriteToImportStatusFile("Filters will be added (if applicable).");
-                //}
+                AppLogger.Info($"Importing {profileIDs.Count} Windows Feature Update profiles.", appFunction.Import);
 
                 string profileName = "";
 
@@ -86,18 +73,16 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 {
                     try
                     {
-                        // Fetch the source profile
                         var sourceProfile = await sourceGraphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileId].GetAsync();
 
                         if (sourceProfile == null)
                         {
-                            LogToFunctionFile(appFunction.Main, $"Skipping profile ID {profileId}: Not found in source tenant.");
+                            AppLogger.Info($"Skipping profile ID {profileId}: Not found in source tenant.", appFunction.Import);
                             continue;
                         }
 
                         profileName = sourceProfile.DisplayName ?? "Unnamed Profile";
 
-                        // Create the new profile object for the destination tenant
                         var newProfile = new WindowsFeatureUpdateProfile
                         {
                         };
@@ -108,7 +93,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                             if (property.Name.Equals("createdDateTime", StringComparison.OrdinalIgnoreCase) ||
                                 property.Name.Equals("lastModifiedDateTime", StringComparison.OrdinalIgnoreCase))
                             {
-                                continue; // Skip these properties
+                                continue;
                             }
 
                             var value = property.GetValue(sourceProfile);
@@ -122,30 +107,26 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         newProfile.Id = "";
                         newProfile.OdataType = "#microsoft.graph.windowsFeatureUpdateProfile";
 
-                        // Create the profile in the destination tenant
-
                         var importedProfile = await destinationGraphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles.PostAsync(newProfile);
 
-                        // Add null check for importedProfile and DisplayName
-                        LogToFunctionFile(appFunction.Main, $"Imported profile: {importedProfile?.DisplayName ?? "Unnamed Profile"} (ID: {importedProfile?.Id ?? "Unknown ID"})");
+                        AppLogger.Info($"Imported profile: {importedProfile?.DisplayName ?? "Unnamed Profile"} (ID: {importedProfile?.Id ?? "Unknown ID"})", appFunction.Import);
 
-                        // Handle assignments if requested
                         if (assignments && groups != null && groups.Any() && importedProfile?.Id != null)
                         {
-                            await AssignGroupsToSingleWindowsFeatureUpdateProfile(importedProfile.Id, groups, destinationGraphServiceClient); // Pass filter flag if needed for assignment logic
+                            await AssignGroupsToSingleWindowsFeatureUpdateProfile(importedProfile.Id, groups, destinationGraphServiceClient);
                         }
                     }
                     catch (Exception ex)
                     {
-                        LogToFunctionFile(appFunction.Main, $"Failed to import Windows Feature Update profile {profileName}: {ex.Message}", LogLevels.Error);
-                        LogToFunctionFile(appFunction.Main, $"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", LogLevels.Warning);
+                        AppLogger.Error($"Failed to import Windows Feature Update profile {profileName}: {ex.Message}", appFunction.Import);
+                        AppLogger.Warning($"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", appFunction.Import);
                     }
                 }
-                LogToFunctionFile(appFunction.Main, "Windows Feature Update profile import process finished.");
+                AppLogger.Info("Windows Feature Update profile import process finished.", appFunction.Import);
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred during the import process: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"An error occurred during the import process: {ex.Message}", appFunction.Import);
             }
         }
 
@@ -153,11 +134,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         /// Assigns groups to a single Windows Feature Update Profile.
         /// Windows Feature Update profiles can ONLY be assigned to device groups - not All Users or All Devices.
         /// </summary>
-        /// <param name="profileID">The ID of the profile to assign groups to.</param>
-        /// <param name="groupIDs">List of group IDs to assign.</param>
-        /// <param name="destinationGraphServiceClient">GraphServiceClient for the destination tenant.</param>
-        /// <param name="applyFilter">Whether to apply assignment filters.</param>
-        /// <returns>A Task representing the asynchronous assignment operation.</returns>
         public static async Task AssignGroupsToSingleWindowsFeatureUpdateProfile(string profileID, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
         {
             try
@@ -180,9 +156,8 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 var assignments = new List<WindowsFeatureUpdateProfileAssignment>();
                 var seenGroupIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-                LogToFunctionFile(appFunction.Main, $"Assigning {groupIDs.Count} groups to Windows Feature Update profile {profileID}.");
+                AppLogger.Info($"Assigning {groupIDs.Count} groups to Windows Feature Update profile {profileID}.", appFunction.Assignment);
 
-                // Step 1: Add new assignments to request body
                 foreach (var groupId in groupIDs)
                 {
                     if (string.IsNullOrWhiteSpace(groupId) || !seenGroupIds.Add(groupId))
@@ -190,21 +165,18 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         continue;
                     }
 
-                    // Check if this is All Users - Feature Update profiles cannot be assigned to All Users
                     if (groupId.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
                     {
-                        LogToFunctionFile(appFunction.Main, "Warning: Windows Feature Update profiles cannot be assigned to 'All Users'. Only device groups are supported. Skipping this assignment.", LogLevels.Warning);
+                        AppLogger.Warning("Warning: Windows Feature Update profiles cannot be assigned to 'All Users'. Only device groups are supported. Skipping this assignment.", appFunction.Assignment);
                         continue;
                     }
 
-                    // Check if this is All Devices - Feature Update profiles cannot be assigned to All Devices
                     if (groupId.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
                     {
-                        LogToFunctionFile(appFunction.Main, "Warning: Windows Feature Update profiles cannot be assigned to 'All Devices'. Only device groups are supported. Skipping this assignment.", LogLevels.Warning);
+                        AppLogger.Warning("Warning: Windows Feature Update profiles cannot be assigned to 'All Devices'. Only device groups are supported. Skipping this assignment.", appFunction.Assignment);
                         continue;
                     }
 
-                    // Regular group assignment (device groups only)
                     var assignmentTarget = new GroupAssignmentTarget
                     {
                         OdataType = "#microsoft.graph.groupAssignmentTarget",
@@ -222,7 +194,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     assignments.Add(assignment);
                 }
 
-                // Step 2: Check for existing assignments and add only if not already present
                 var existingAssignments = await destinationGraphServiceClient
                     .DeviceManagement
                     .WindowsFeatureUpdateProfiles[profileID]
@@ -233,24 +204,20 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 {
                     foreach (var existing in existingAssignments.Value)
                     {
-                        // Check the type of assignment target
                         if (existing.Target is AllLicensedUsersAssignmentTarget)
                         {
-                            // Skip All Users assignments - they shouldn't exist but handle gracefully
-                            LogToFunctionFile(appFunction.Main, $"Warning: Found existing 'All Users' assignment on Feature Update profile {profileID}. This should not exist and will be skipped.", LogLevels.Warning);
+                            AppLogger.Warning($"Warning: Found existing 'All Users' assignment on Feature Update profile {profileID}. This should not exist and will be skipped.", appFunction.Assignment);
                             continue;
                         }
                         else if (existing.Target is AllDevicesAssignmentTarget)
                         {
-                            // Skip All Devices assignments - they shouldn't exist but handle gracefully
-                            LogToFunctionFile(appFunction.Main, $"Warning: Found existing 'All Devices' assignment on Feature Update profile {profileID}. This should not exist and will be skipped.", LogLevels.Warning);
+                            AppLogger.Warning($"Warning: Found existing 'All Devices' assignment on Feature Update profile {profileID}. This should not exist and will be skipped.", appFunction.Assignment);
                             continue;
                         }
                         else if (existing.Target is GroupAssignmentTarget groupTarget)
                         {
                             var existingGroupId = groupTarget.GroupId;
 
-                            // Only add if not already in the new assignments
                             if (!string.IsNullOrWhiteSpace(existingGroupId) && seenGroupIds.Add(existingGroupId))
                             {
                                 assignments.Add(existing);
@@ -258,13 +225,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         }
                         else
                         {
-                            // Include any other assignment types (e.g., exclusions, etc.)
                             assignments.Add(existing);
                         }
                     }
                 }
 
-                // Step 3: Update the profile with the assignments
                 var requestBody = new Microsoft.Graph.Beta.DeviceManagement.WindowsFeatureUpdateProfiles.Item.Assign.AssignPostRequestBody
                 {
                     Assignments = assignments
@@ -273,21 +238,21 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 try
                 {
                     await destinationGraphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileID].Assign.PostAsync(requestBody);
-                    LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to Feature Update profile {profileID}");
+                    AppLogger.Info($"Assigned {assignments.Count} assignments to Feature Update profile {profileID}", appFunction.Assignment);
                     UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
                 }
                 catch (Exception ex)
                 {
-                    LogToFunctionFile(appFunction.Main, $"Error assigning groups to profile {profileID}: {ex.Message}", LogLevels.Error);
+                    AppLogger.Error($"Error assigning groups to profile {profileID}: {ex.Message}", appFunction.Assignment);
                 }
             }
             catch (ArgumentNullException argEx)
             {
-                LogToFunctionFile(appFunction.Main, $"Argument null exception during group assignment setup: {argEx.Message}", LogLevels.Error);
+                AppLogger.Error($"Argument null exception during group assignment setup: {argEx.Message}", appFunction.Assignment);
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while preparing assignment for profile {profileID}: {ex.Message}", LogLevels.Warning);
+                AppLogger.Warning($"An error occurred while preparing assignment for profile {profileID}: {ex.Message}", appFunction.Assignment);
             }
         }
         public static async Task DeleteWindowsFeatureUpdateProfile(GraphServiceClient graphServiceClient, string profileID)
@@ -308,7 +273,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while deleting a Windows Feature Update profile: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"An error occurred while deleting a Windows Feature Update profile: {ex.Message}", appFunction.Delete);
             }
         }
         public static async Task RenameWindowsFeatureUpdateProfile(GraphServiceClient graphServiceClient, string profileID, string newName)
@@ -332,7 +297,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 if (selectedRenameMode == "Prefix")
                 {
-                    // Look up the existing profile
                     var existingProfile = await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileID].GetAsync();
 
                     if (existingProfile == null)
@@ -348,7 +312,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileID].PatchAsync(profile);
-                    LogToFunctionFile(appFunction.Main, $"Renamed Windows Feature Update profile '{existingProfile.DisplayName}' to '{name}' (ID: {profileID})");
+                    AppLogger.Info($"Renamed Windows Feature Update profile '{existingProfile.DisplayName}' to '{name}' (ID: {profileID})", appFunction.Rename);
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
@@ -356,7 +320,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }
                 else if (selectedRenameMode == "Description")
                 {
-                    // Look up the existing profile
                     var existingProfile = await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileID].GetAsync();
 
                     if (existingProfile == null)
@@ -370,7 +333,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileID].PatchAsync(profile);
-                    LogToFunctionFile(appFunction.Main, $"Updated description for Windows Feature Update profile {profileID} to '{newName}'");
+                    AppLogger.Info($"Updated description for Windows Feature Update profile {profileID} to '{newName}'", appFunction.Rename);
                 }
                 else if (selectedRenameMode == "RemovePrefix")
                 {
@@ -389,12 +352,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileID].PatchAsync(profile);
-                    LogToFunctionFile(appFunction.Main, $"Removed prefix from Windows Feature Update profile {profileID}, new name: '{name}'");
+                    AppLogger.Info($"Removed prefix from Windows Feature Update profile {profileID}, new name: '{name}'", appFunction.Rename);
                 }
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while renaming Windows Feature Update profile: {ex.Message}", LogLevels.Warning);
+                AppLogger.Warning($"An error occurred while renaming Windows Feature Update profile: {ex.Message}", appFunction.Rename);
             }
         }
 
@@ -449,7 +412,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 if (result == null)
                 {
-                    LogToFunctionFile(appFunction.Main, $"Windows Feature Update profile {profileId} not found for export.", LogLevels.Warning);
+                    AppLogger.Warning($"Windows Feature Update profile {profileId} not found for export.", appFunction.JsonExport);
                     return null;
                 }
 
@@ -461,7 +424,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"Error exporting Windows Feature Update profile {profileId}: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"Error exporting Windows Feature Update profile {profileId}: {ex.Message}", appFunction.JsonExport);
                 return null;
             }
         }
@@ -480,7 +443,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 if (exportedProfile == null)
                 {
-                    LogToFunctionFile(appFunction.Main, "Failed to deserialize Windows Feature Update profile data from JSON.", LogLevels.Error);
+                    AppLogger.Error("Failed to deserialize Windows Feature Update profile data from JSON.", appFunction.Import);
                     return null;
                 }
 
@@ -496,13 +459,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 var imported = await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles.PostAsync(newProfile);
 
-                LogToFunctionFile(appFunction.Main, $"Imported Windows Feature Update profile: {imported?.DisplayName}");
+                AppLogger.Info($"Imported Windows Feature Update profile: {imported?.DisplayName}", appFunction.Import);
                 return imported?.DisplayName;
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"Error importing Windows Feature Update profile from JSON: {ex.Message}", LogLevels.Error);
-                LogToFunctionFile(appFunction.Main, $"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", LogLevels.Warning);
+                AppLogger.Error($"Error importing Windows Feature Update profile from JSON: {ex.Message}", appFunction.Import);
+                AppLogger.Warning($"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", appFunction.Import);
                 return null;
             }
         }
@@ -553,7 +516,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"Error getting assignment details for Windows Feature Update {profileId}: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"Error getting assignment details for Windows Feature Update {profileId}: {ex.Message}", appFunction.Main);
                 return null;
             }
         }
@@ -569,7 +532,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             };
 
             await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileId].Assign.PostAsync(requestBody);
-            LogToFunctionFile(appFunction.Main, $"Removed all assignments from Windows Feature Update profile {profileId}.");
+            AppLogger.Info($"Removed all assignments from Windows Feature Update profile {profileId}.", appFunction.Main);
         }
     }
 }

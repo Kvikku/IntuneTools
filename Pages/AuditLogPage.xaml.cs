@@ -350,7 +350,7 @@ namespace IntuneTools.Pages
             catch (Exception ex)
             {
                 LogError($"Export failed: {ex.Message}");
-                LogToFunctionFile(appFunction.Main, $"CSV export failed: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"CSV export failed: {ex.Message}", appFunction.AuditLog);
             }
         }
 
@@ -393,7 +393,7 @@ namespace IntuneTools.Pages
             catch (Exception ex)
             {
                 LogError($"Report export failed: {ex.Message}");
-                LogToFunctionFile(appFunction.Main, $"Report export failed: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"Report export failed: {ex.Message}", appFunction.AuditLog);
             }
         }
 

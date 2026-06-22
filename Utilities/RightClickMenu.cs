@@ -80,7 +80,7 @@ namespace IntuneTools.Utilities
                 }
                 catch (Exception ex)
                 {
-                    HelperClass.LogToFunctionFile(appFunction.Main, $"Copy failed to set clipboard content. {ex}", LogLevels.Error);
+                    AppLogger.Error($"Copy failed to set clipboard content. {ex}", appFunction.Main);
                     await ShowLookupErrorDialogAsync("Copy failed", "The clipboard is unavailable or blocked. Please try again.");
                 }
             };
@@ -102,14 +102,14 @@ namespace IntuneTools.Utilities
             {
                 if (lookupItem.Tag is not string url || string.IsNullOrWhiteSpace(url))
                 {
-                    HelperClass.LogToFunctionFile(appFunction.Main, "Lookup failed: empty URL.", LogLevels.Warning);
+                    AppLogger.Warning("Lookup failed: empty URL.", appFunction.Main);
                     await ShowLookupErrorDialogAsync("Lookup failed", "No URL was available for this item.");
                     return;
                 }
 
                 if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
                 {
-                    HelperClass.LogToFunctionFile(appFunction.Main, $"Lookup failed: invalid URL '{url}'.", LogLevels.Warning);
+                    AppLogger.Warning($"Lookup failed: invalid URL '{url}'.", appFunction.Main);
                     await ShowLookupErrorDialogAsync("Lookup failed", $"The lookup URL is invalid:\n{url}");
                     return;
                 }
@@ -124,7 +124,7 @@ namespace IntuneTools.Utilities
                 }
                 catch (Exception ex)
                 {
-                    HelperClass.LogToFunctionFile(appFunction.Main, $"Lookup failed to open URL '{uri.AbsoluteUri}'. {ex}", LogLevels.Error);
+                    AppLogger.Error($"Lookup failed to open URL '{uri.AbsoluteUri}'. {ex}", appFunction.Main);
                     await ShowLookupErrorDialogAsync("Lookup failed", "The lookup page could not be opened. Please try again.");
                 }
             };

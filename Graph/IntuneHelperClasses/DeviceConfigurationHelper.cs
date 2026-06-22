@@ -1,4 +1,4 @@
-﻿using Microsoft.Graph;
+using Microsoft.Graph;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
 {
@@ -8,7 +8,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                LogToFunctionFile(appFunction.Main, "Searching for device configuration policies. Search query: " + searchQuery);
+                AppLogger.Info("Searching for device configuration policies. Search query: " + searchQuery, appFunction.Main);
 
                 var result = await graphServiceClient.DeviceManagement.DeviceConfigurations
                     .GetAsync(requestConfiguration =>
@@ -27,12 +27,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 await pageIterator.IterateAsync();
 
-                LogToFunctionFile(appFunction.Main, $"Found {deviceConfigurations.Count} device configuration policies.");
+                AppLogger.Info($"Found {deviceConfigurations.Count} device configuration policies.", appFunction.Main);
                 return deviceConfigurations;
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for device configuration policies: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"An error occurred while searching for device configuration policies: {ex.Message}", appFunction.Main);
                 return new List<Microsoft.Graph.Beta.Models.DeviceConfiguration>();
             }
         }
@@ -41,7 +41,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                LogToFunctionFile(appFunction.Main, "Retrieving all device configuration policies.");
+                AppLogger.Info("Retrieving all device configuration policies.", appFunction.Main);
 
                 var result = await graphServiceClient.DeviceManagement.DeviceConfigurations
                     .GetAsync(requestConfiguration =>
@@ -59,12 +59,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 await pageIterator.IterateAsync();
 
-                LogToFunctionFile(appFunction.Main, $"Found {deviceConfigurations.Count} device configuration policies.");
+                AppLogger.Info($"Found {deviceConfigurations.Count} device configuration policies.", appFunction.Main);
                 return deviceConfigurations;
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while retrieving all device configuration policies: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"An error occurred while retrieving all device configuration policies: {ex.Message}", appFunction.Main);
                 return new List<Microsoft.Graph.Beta.Models.DeviceConfiguration>();
             }
         }
@@ -73,8 +73,8 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                LogToFunctionFile(appFunction.Main, " ");
-                LogToFunctionFile(appFunction.Main, $"{DateTime.Now.ToString()} - Importing {configurationIds.Count} Device Configuration profiles.");
+                AppLogger.Info(" ", appFunction.Import);
+                AppLogger.Info($"{DateTime.Now.ToString()} - Importing {configurationIds.Count} Device Configuration profiles.", appFunction.Import);
 
                 foreach (var configId in configurationIds)
                 {
@@ -91,7 +91,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         {
                             //MessageBox.Show("iOS Device Feature template is currently bugged in graph SDK. Handle manually until this is resolved");
                             //rtb.AppendText("iOS Device Feature template is currently bugged in graph SDK. Handle manually until this is resolved");
-                            LogToFunctionFile(appFunction.Main, originalConfig.DisplayName + " failed to import. iOS Device Feature template is currently bugged in graph SDK. Handle manually until this is resolved", LogLevels.Error);
+                            AppLogger.Error(originalConfig.DisplayName + " failed to import. iOS Device Feature template is currently bugged in graph SDK. Handle manually until this is resolved", appFunction.Import);
                             continue;
                         }
 
@@ -146,7 +146,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         var import = await destinationGraphServiceClient.DeviceManagement.DeviceConfigurations.PostAsync(deviceConfiguration);
 
-                        LogToFunctionFile(appFunction.Main, $"Successfully imported {import.DisplayName}");
+                        AppLogger.Info($"Successfully imported {import.DisplayName}", appFunction.Import);
 
                         if (assignments)
                         {
@@ -159,17 +159,17 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         // Change color of the error output text to red and then reset it for the next text entry
                         //rtb.AppendText(ex.Message + Environment.NewLine);
 
-                        LogToFunctionFile(appFunction.Main, $"Failed to import {policyName}\n", LogLevels.Error);
+                        AppLogger.Error($"Failed to import {policyName}\n", appFunction.Import);
                     }
                 }
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An unexpected error occurred during the import process: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"An unexpected error occurred during the import process: {ex.Message}", appFunction.Import);
             }
             finally
             {
-                LogToFunctionFile(appFunction.Main, $"{DateTime.Now.ToString()} - Finished importing Device Configuration profiles.");
+                AppLogger.Info($"{DateTime.Now.ToString()} - Finished importing Device Configuration profiles.", appFunction.Import);
             }
         }
 
@@ -311,17 +311,17 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 {
                     var result = await destinationGraphServiceClient.DeviceManagement.DeviceConfigurations[configId].Assign.PostAsAssignPostResponseAsync(requestBody);
 
-                    LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to device configuration {configId} with filter type {deviceAndAppManagementAssignmentFilterType}.");
+                    AppLogger.Info($"Assigned {assignments.Count} assignments to device configuration {configId} with filter type {deviceAndAppManagementAssignmentFilterType}.", appFunction.Assignment);
                     UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
                 }
                 catch (Exception ex)
                 {
-                    LogToFunctionFile(appFunction.Main, $"An error occurred while assigning groups to device configuration policy: {ex.Message}", LogLevels.Warning);
+                    AppLogger.Warning($"An error occurred while assigning groups to device configuration policy: {ex.Message}", appFunction.Assignment);
                 }
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while assigning groups to a single device configuration policy: {ex.Message}", LogLevels.Warning);
+                AppLogger.Warning($"An error occurred while assigning groups to a single device configuration policy: {ex.Message}", appFunction.Assignment);
             }
         }
         public static async Task DeleteDeviceConfigurationPolicy(GraphServiceClient graphServiceClient, string policyID)
@@ -341,7 +341,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while deleting the device configuration policy: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"An error occurred while deleting the device configuration policy: {ex.Message}", appFunction.Delete);
             }
         }
         public static async Task RenameDeviceConfigurationPolicy(GraphServiceClient graphServiceClient, string policyID, string newName)
@@ -388,7 +388,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     policy.DisplayName = name;
 
                     await graphServiceClient.DeviceManagement.DeviceConfigurations[policyID].PatchAsync(policy);
-                    LogToFunctionFile(appFunction.Main, $"Renamed device configuration policy {policyID} to {name}");
+                    AppLogger.Info($"Renamed device configuration policy {policyID} to {name}", appFunction.Rename);
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
@@ -416,7 +416,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     policy.Description = newName;
 
                     await graphServiceClient.DeviceManagement.DeviceConfigurations[policyID].PatchAsync(policy);
-                    LogToFunctionFile(appFunction.Main, $"Updated description for device configuration policy {policyID} to {newName}");
+                    AppLogger.Info($"Updated description for device configuration policy {policyID} to {newName}", appFunction.Rename);
                 }
                 else if (selectedRenameMode == "RemovePrefix")
                 {
@@ -440,12 +440,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     policy.DisplayName = name;
 
                     await graphServiceClient.DeviceManagement.DeviceConfigurations[policyID].PatchAsync(policy);
-                    LogToFunctionFile(appFunction.Main, $"Removed prefix from device configuration policy {policyID}, new name: '{name}'");
+                    AppLogger.Info($"Removed prefix from device configuration policy {policyID}, new name: '{name}'", appFunction.Rename);
                 }
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while renaming device configuration policies: {ex.Message}", LogLevels.Warning);
+                AppLogger.Warning($"An error occurred while renaming device configuration policies: {ex.Message}", appFunction.Rename);
             }
         }
 
@@ -501,7 +501,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 if (result == null)
                 {
-                    LogToFunctionFile(appFunction.Main, $"Device configuration {policyId} not found for export.", LogLevels.Warning);
+                    AppLogger.Warning($"Device configuration {policyId} not found for export.", appFunction.JsonExport);
                     return null;
                 }
 
@@ -513,7 +513,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"Error exporting device configuration {policyId}: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"Error exporting device configuration {policyId}: {ex.Message}", appFunction.JsonExport);
                 return null;
             }
         }
@@ -533,7 +533,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 if (exportedPolicy == null)
                 {
-                    LogToFunctionFile(appFunction.Main, "Failed to deserialize device configuration data from JSON.", LogLevels.Error);
+                    AppLogger.Error("Failed to deserialize device configuration data from JSON.", appFunction.Import);
                     return null;
                 }
 
@@ -541,14 +541,14 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 if (exportedPolicy.OdataType != null &&
                     exportedPolicy.OdataType.Equals("#microsoft.graph.iosDeviceFeaturesConfiguration", StringComparison.OrdinalIgnoreCase))
                 {
-                    LogToFunctionFile(appFunction.Main, $"Skipped '{exportedPolicy.DisplayName}': iOS Device Feature template is currently bugged in Graph SDK.", LogLevels.Warning);
+                    AppLogger.Warning($"Skipped '{exportedPolicy.DisplayName}': iOS Device Feature template is currently bugged in Graph SDK.", appFunction.Import);
                     return null;
                 }
 
                 var type = exportedPolicy.GetType();
                 if (type.IsAbstract)
                 {
-                    LogToFunctionFile(appFunction.Main, $"Skipped '{exportedPolicy.DisplayName}': abstract type {type.Name} cannot be imported.", LogLevels.Warning);
+                    AppLogger.Warning($"Skipped '{exportedPolicy.DisplayName}': abstract type {type.Name} cannot be imported.", appFunction.Import);
                     return null;
                 }
 
@@ -587,12 +587,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 var imported = await graphServiceClient.DeviceManagement.DeviceConfigurations.PostAsync(newPolicy);
 
-                LogToFunctionFile(appFunction.Main, $"Imported device configuration: {imported?.DisplayName}");
+                AppLogger.Info($"Imported device configuration: {imported?.DisplayName}", appFunction.Import);
                 return imported?.DisplayName;
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"Error importing device configuration from JSON: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"Error importing device configuration from JSON: {ex.Message}", appFunction.Import);
                 return null;
             }
         }
@@ -643,7 +643,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"Error getting assignment details for Device Configuration {configId}: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"Error getting assignment details for Device Configuration {configId}: {ex.Message}", appFunction.Main);
                 return null;
             }
         }
@@ -659,7 +659,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             };
 
             await graphServiceClient.DeviceManagement.DeviceConfigurations[configId].Assign.PostAsAssignPostResponseAsync(requestBody);
-            LogToFunctionFile(appFunction.Main, $"Removed all assignments from Device Configuration policy {configId}.");
+            AppLogger.Info($"Removed all assignments from Device Configuration policy {configId}.", appFunction.Main);
         }
     }
 }

@@ -44,7 +44,7 @@ namespace IntuneTools.Pages
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Version check failed: {ex.Message}");
-                LogToFunctionFile(appFunction.Main, $"Version check failed: {ex}", LogLevels.Warning);
+                AppLogger.Warning($"Version check failed: {ex}", appFunction.Main);
                 VersionStatusText.Text = "Version check failed.";
                 SetIndicatorColor(Windows.UI.Color.FromArgb(255, 128, 128, 128)); // Gray
                 VersionStatusText.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 128, 128, 128));
@@ -91,10 +91,7 @@ namespace IntuneTools.Pages
 
             var totalMinutes = TimeSaved.GetTotalTimeSavedInMinutes();
 
-            HelperClass.LogToFunctionFile(
-                appFunction.Summary,
-                $"Time saved updated. Added: {minutesAdded} minute(s). Total: {totalMinutes} minute(s).",
-                LogLevels.Info);
+            AppLogger.Info($"Time saved updated. Added: {minutesAdded} minute(s). Total: {totalMinutes} minute(s).", appFunction.Summary);
 
             LogBreakdown("Rename", numberOfItemsRenamed, secondsSavedOnRenaming);
             LogBreakdown("Assignment", numberOfItemsAssigned, secondsSavedOnAssignments);
@@ -114,10 +111,7 @@ namespace IntuneTools.Pages
         private void LogBreakdown(string label, int itemCount, int secondsPerItem)
         {
             var totalSeconds = itemCount * secondsPerItem;
-            HelperClass.LogToFunctionFile(
-                appFunction.Summary,
-                $"Time saved breakdown - {label}: {itemCount} item(s), {totalSeconds} sec ({totalSeconds / 60.0:F2} min).",
-                LogLevels.Info);
+            AppLogger.Info($"Time saved breakdown - {label}: {itemCount} item(s), {totalSeconds} sec ({totalSeconds / 60.0:F2} min).", appFunction.Summary);
         }
 
         private void UpdateTimeSavedBreakdown()

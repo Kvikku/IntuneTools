@@ -405,7 +405,7 @@ namespace IntuneTools.Pages
 
         private List<string> LogContentToImport()
         {
-            LogToFunctionFile(appFunction.Main, "Importing the following content:", LogLevels.Info);
+            AppLogger.Info("Importing the following content:", appFunction.Import);
             AppendToLog("Importing the following content:\n");
 
             List<string> contentTypes = new List<string>();
@@ -416,12 +416,12 @@ namespace IntuneTools.Pages
                 if (!contentTypes.Contains(content.ContentType))
                 {
                     contentTypes.Add(content.ContentType);
-                    LogToFunctionFile(appFunction.Main, $"- {content.ContentType}", LogLevels.Info);
+                    AppLogger.Info($"- {content.ContentType}", appFunction.Import);
                     AppendToLog($"- {content.ContentType}\n");
                 }
             }
 
-            LogToFunctionFile(appFunction.Main, "--------------------------------------------------", LogLevels.Info);
+            AppLogger.Info("--------------------------------------------------", appFunction.Import);
             AppendToLog("--------------------------------------------------\n");
             return contentTypes;
         }
@@ -431,7 +431,7 @@ namespace IntuneTools.Pages
             selectedGroupNameAndID.Clear(); // Clear previous selections
             IsGroupSelected = false; // Reset group selection status
 
-            LogToFunctionFile(appFunction.Main, "Assigning to the following groups:", LogLevels.Info);
+            AppLogger.Info("Assigning to the following groups:", appFunction.Import);
             AppendToLog("Assigning to the following groups:\n");
             if (GroupDataGrid.SelectedItems != null && GroupDataGrid.SelectedItems.Count > 0)
             {
@@ -439,7 +439,7 @@ namespace IntuneTools.Pages
                 {
                     if (selectedGroup != null && !string.IsNullOrEmpty(selectedGroup.GroupName))
                     {
-                        LogToFunctionFile(appFunction.Main, $"- {selectedGroup.GroupName}", LogLevels.Info);
+                        AppLogger.Info($"- {selectedGroup.GroupName}", appFunction.Import);
                         AppendToLog($"- {selectedGroup.GroupName}\n");
                         // Add the group name and ID to the selectedGroupNameAndID dictionary
                         if (!selectedGroupNameAndID.ContainsKey(selectedGroup.GroupName))
@@ -452,10 +452,10 @@ namespace IntuneTools.Pages
             }
             else
             {
-                LogToFunctionFile(appFunction.Main, "No groups selected for assignment.", LogLevels.Info);
+                AppLogger.Info("No groups selected for assignment.", appFunction.Import);
                 AppendToLog("No groups selected for assignment.\n");
             }
-            LogToFunctionFile(appFunction.Main, "--------------------------------------------------", LogLevels.Info);
+            AppLogger.Info("--------------------------------------------------", appFunction.Import);
             AppendToLog("--------------------------------------------------\n");
         }
 
@@ -463,7 +463,7 @@ namespace IntuneTools.Pages
         {
             IsFilterSelected = false; // Reset filter selection status
 
-            LogToFunctionFile(appFunction.Main, "Applying the following filters:", LogLevels.Info);
+            AppLogger.Info("Applying the following filters:", appFunction.Import);
             AppendToLog("Applying the following filters:\n");
             if (FilterSelectionComboBox.SelectedItem != null)
             {
@@ -472,16 +472,16 @@ namespace IntuneTools.Pages
                 SelectedFilterID = filterNameAndID.ContainsKey(selectedFilter) ? filterNameAndID[selectedFilter] : null;
                 deviceAndAppManagementAssignmentFilterType = DeviceAndAppManagementAssignmentFilterType.Include;
 
-                LogToFunctionFile(appFunction.Main, $"- {selectedFilter}", LogLevels.Info);
+                AppLogger.Info($"- {selectedFilter}", appFunction.Import);
                 AppendToLog($"- {selectedFilter}\n");
                 IsFilterSelected = true; // Set filter selection status to true if a filter is selected
             }
             else
             {
-                LogToFunctionFile(appFunction.Main, "No filter selected for assignment.", LogLevels.Info);
+                AppLogger.Info("No filter selected for assignment.", appFunction.Import);
                 AppendToLog("No filter selected for assignment.\n");
             }
-            LogToFunctionFile(appFunction.Main, "--------------------------------------------------", LogLevels.Info);
+            AppLogger.Info("--------------------------------------------------", appFunction.Import);
             AppendToLog("--------------------------------------------------\n");
         }
 
@@ -493,7 +493,7 @@ namespace IntuneTools.Pages
             // Check if there is content to import
             if (ContentList.Count == 0)
             {
-                LogToFunctionFile(appFunction.Main, "No content to import.", LogLevels.Warning);
+                AppLogger.Warning("No content to import.", appFunction.Import);
                 AppendToLog("No content to import.\n");
                 return;
             }
@@ -539,9 +539,9 @@ namespace IntuneTools.Pages
             ShowOperationProgress("Starting import...", 0, _importTotal);
 
             // Log the start of the import process
-            LogToFunctionFile(appFunction.Main, "Starting import process...", LogLevels.Info);
-            LogToFunctionFile(appFunction.Main, $"Source Tenant: {sourceTenantName}", LogLevels.Info);
-            LogToFunctionFile(appFunction.Main, $"Destination Tenant: {destinationTenantName}", LogLevels.Info);
+            AppLogger.Info("Starting import process...", appFunction.Import);
+            AppLogger.Info($"Source Tenant: {sourceTenantName}", appFunction.Import);
+            AppLogger.Info($"Destination Tenant: {destinationTenantName}", appFunction.Import);
             AppendToLog($"Source Tenant: {sourceTenantName}\n");
             AppendToLog($"Destination Tenant: {destinationTenantName}\n");
 
@@ -566,7 +566,7 @@ namespace IntuneTools.Pages
                 try
                 {
                     AppendToLog($"Importing {definition.DisplayName}...\n");
-                    LogToFunctionFile(appFunction.Main, $"Importing {definition.DisplayName}...", LogLevels.Info);
+                    AppLogger.Info($"Importing {definition.DisplayName}...", appFunction.Import);
 
                     var contentIds = GetContentIdsByType(definition.TypeKey);
                     await definition.ImportAsync(contentIds, groupIds);
@@ -577,7 +577,7 @@ namespace IntuneTools.Pages
                 catch (Exception ex)
                 {
                     AppendToLog($"Error importing {definition.DisplayName}: {ex.Message}\n");
-                    LogToFunctionFile(appFunction.Main, $"Error importing {definition.DisplayName}: {ex.Message}", LogLevels.Error);
+                    AppLogger.Error($"Error importing {definition.DisplayName}: {ex.Message}", appFunction.Import);
                     _importErrorCount++;
                 }
             }

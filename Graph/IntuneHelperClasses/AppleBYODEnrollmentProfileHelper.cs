@@ -1,4 +1,4 @@
-﻿using Microsoft.Graph;
+using Microsoft.Graph;
 using Microsoft.Graph.Beta.Models.ODataErrors;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
@@ -9,7 +9,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                LogToFunctionFile(appFunction.Main, $"Searching for Apple BYOD enrollment profile. Search query: {searchQuery}");
+                AppLogger.Info($"Searching for Apple BYOD enrollment profile. Search query: {searchQuery}", appFunction.Main);
 
                 var result = await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles.GetAsync((requestConfiguration) =>
                 {
@@ -18,7 +18,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 if (result == null || result.Value == null)
                 {
-                    LogToFunctionFile(appFunction.Main, $"Search returned null or empty result.", LogLevels.Warning);
+                    AppLogger.Warning($"Search returned null or empty result.", appFunction.Main);
                     return new List<AppleUserInitiatedEnrollmentProfile>();
                 }
 
@@ -30,13 +30,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 });
                 await pageIterator.IterateAsync();
 
-                LogToFunctionFile(appFunction.Main, $"Found {enrollmentProfiles.Count} policies.");
+                AppLogger.Info($"Found {enrollmentProfiles.Count} policies.", appFunction.Main);
 
                 return enrollmentProfiles;
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"Error occurred while searching for Apple BYOD enrollment profiles: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"Error occurred while searching for Apple BYOD enrollment profiles: {ex.Message}", appFunction.Main);
                 return new List<AppleUserInitiatedEnrollmentProfile>();
             }
         }
@@ -45,7 +45,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                LogToFunctionFile(appFunction.Main, $"Retrieving all Apple BYOD enrollment prfoiles.");
+                AppLogger.Info($"Retrieving all Apple BYOD enrollment prfoiles.", appFunction.Main);
 
                 var result = await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles.GetAsync((requestConfiguration) =>
                 {
@@ -54,7 +54,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 if (result == null || result.Value == null)
                 {
-                    LogToFunctionFile(appFunction.Main, $"Get all returned null or empty result for policies.", LogLevels.Warning);
+                    AppLogger.Warning($"Get all returned null or empty result for policies.", appFunction.Main);
                     return new List<AppleUserInitiatedEnrollmentProfile>();
                 }
 
@@ -66,13 +66,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 });
                 await pageIterator.IterateAsync();
 
-                LogToFunctionFile(appFunction.Main, $"Found {enrollmentProfiles.Count} policies.");
+                AppLogger.Info($"Found {enrollmentProfiles.Count} policies.", appFunction.Main);
 
                 return enrollmentProfiles;
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"Error occurred while retrieving Apple BYOD enrollment profiles: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"Error occurred while retrieving Apple BYOD enrollment profiles: {ex.Message}", appFunction.Main);
                 return new List<AppleUserInitiatedEnrollmentProfile>();
             }
         }
@@ -81,8 +81,8 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                LogToFunctionFile(appFunction.Main, " ");
-                LogToFunctionFile(appFunction.Main, $"{DateTime.Now.ToString()} - Importing {profileIds.Count} Apple BYOD enrollment profile(s).");
+                AppLogger.Info(" ", appFunction.Import);
+                AppLogger.Info($"{DateTime.Now.ToString()} - Importing {profileIds.Count} Apple BYOD enrollment profile(s).", appFunction.Import);
 
                 foreach (var profileId in profileIds)
                 {
@@ -96,7 +96,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         if (sourceProfile == null)
                         {
-                            LogToFunctionFile(appFunction.Main, $"Skipping profile ID {profileId}: Not found in source tenant.");
+                            AppLogger.Info($"Skipping profile ID {profileId}: Not found in source tenant.", appFunction.Import);
                             continue;
                         }
 
@@ -128,44 +128,26 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         var importedProfile = await destinationGraphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles.PostAsync(newProfile);
 
-                        LogToFunctionFile(appFunction.Main, $"Successfully imported {importedProfile.DisplayName}");
+                        AppLogger.Info($"Successfully imported {importedProfile.DisplayName}", appFunction.Import);
 
                         if (assignments && groups != null && groups.Any())
                         {
                             await AssignGroupsToSingleAppleBYODEnrollmentProfile(importedProfile.Id, groups, destinationGraphServiceClient);
                         }
-
-                        // TODO - delete this code block if not needed
-
-                        //if (importedProfile != null && !string.IsNullOrEmpty(importedProfile.Id))
-                        //{
-                        //    rtb.AppendText($"Successfully imported {importedProfile.DisplayName}\n");
-                        //    WriteToImportStatusFile($"Successfully imported {importedProfile.DisplayName}");
-
-                        //    if (assignments && groups != null && groups.Any())
-                        //    {
-                        //        await AssignGroupsToSingleAppleBYODEnrollmentProfile(importedProfile.Id, groups, destinationGraphServiceClient, filter);
-                        //    }
-                        //}
-                        //else
-                        //{
-                        //     rtb.AppendText($"Error importing {sourceProfile.DisplayName}\n");
-                        //     WriteToImportStatusFile($"Error importing {sourceProfile.DisplayName} (ID: {profileId}).");
-                        //}
                     }
                     catch (Exception ex)
                     {
-                        LogToFunctionFile(appFunction.Main, $"Failed to import {profileName}: {ex.Message}", LogLevels.Error);
+                        AppLogger.Error($"Failed to import {profileName}: {ex.Message}", appFunction.Import);
                     }
                 }
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An unexpected error occurred during the import process: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"An unexpected error occurred during the import process: {ex.Message}", appFunction.Import);
             }
             finally
             {
-                LogToFunctionFile(appFunction.Main, $" {DateTime.Now.ToString()} - Import process for Apple BYOD Enrollment profilesW completed.");
+                AppLogger.Info($" {DateTime.Now.ToString()} - Import process for Apple BYOD Enrollment profilesW completed.", appFunction.Import);
             }
         }
 
@@ -212,7 +194,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     // Check if this is All Devices - Apple BYOD Enrollment profiles cannot be assigned to All Devices
                     if (groupId.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
                     {
-                        LogToFunctionFile(appFunction.Main, $"Warning: Apple BYOD Enrollment profiles cannot be assigned to 'All Devices'. Only All Users and user groups are supported. Skipping this assignment.", LogLevels.Warning);
+                        AppLogger.Warning($"Warning: Apple BYOD Enrollment profiles cannot be assigned to 'All Devices'. Only All Users and user groups are supported. Skipping this assignment.", appFunction.Assignment);
                         continue;
                     }
 
@@ -275,7 +257,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         else if (existing.Target is AllDevicesAssignmentTarget)
                         {
                             // Skip All Devices assignments - they shouldn't exist but handle gracefully
-                            LogToFunctionFile(appFunction.Main, $"Warning: Found existing 'All Devices' assignment on Apple BYOD Enrollment profile {profileId}. This should not exist and will be skipped.", LogLevels.Warning);
+                            AppLogger.Warning($"Warning: Found existing 'All Devices' assignment on Apple BYOD Enrollment profile {profileId}. This should not exist and will be skipped.", appFunction.Assignment);
                             continue;
                         }
                         else if (existing.Target is GroupAssignmentTarget groupTarget)
@@ -324,24 +306,24 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                             ? $" with filter ID {SelectedFilterID} (Type: {deviceAndAppManagementAssignmentFilterType})"
                             : "";
 
-                        LogToFunctionFile(appFunction.Main, $"Assigned {targetType} to profile {profileId}{filterInfo}.");
+                        AppLogger.Info($"Assigned {targetType} to profile {profileId}{filterInfo}.", appFunction.Assignment);
                         UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
                     }
                     catch (ODataError odataError)
                     {
-                        LogToFunctionFile(appFunction.Main, $"Graph API error assigning to profile {profileId}: {odataError.Error?.Message}", LogLevels.Error);
+                        AppLogger.Error($"Graph API error assigning to profile {profileId}: {odataError.Error?.Message}", appFunction.Assignment);
                     }
                     catch (Exception ex)
                     {
-                        LogToFunctionFile(appFunction.Main, $"Error assigning to profile {profileId}: {ex.Message}", LogLevels.Error);
+                        AppLogger.Error($"Error assigning to profile {profileId}: {ex.Message}", appFunction.Assignment);
                     }
                 }
 
-                LogToFunctionFile(appFunction.Main, $"Completed assignment process for profile {profileId}. Total assignments processed: {assignments.Count}");
+                AppLogger.Info($"Completed assignment process for profile {profileId}. Total assignments processed: {assignments.Count}", appFunction.Assignment);
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An unexpected error occurred while preparing group assignments for profile ID {profileId}: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"An unexpected error occurred while preparing group assignments for profile ID {profileId}: {ex.Message}", appFunction.Assignment);
             }
         }
 
@@ -362,7 +344,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while deleting Apple BYOD Enrollment profiles: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"An error occurred while deleting Apple BYOD Enrollment profiles: {ex.Message}", appFunction.Delete);
             }
         }
         public static async Task RenameAppleBYODEnrollmentProfile(GraphServiceClient graphServiceClient, string profileID, string newName)
@@ -409,7 +391,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     profile.DisplayName = name;
 
                     await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileID].PatchAsync(profile);
-                    LogToFunctionFile(appFunction.Main, $"Renamed Apple BYOD Enrollment profile with ID {profileID} to '{name}'.");
+                    AppLogger.Info($"Renamed Apple BYOD Enrollment profile with ID {profileID} to '{name}'.", appFunction.Rename);
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
@@ -437,7 +419,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     profile.Description = newName;
 
                     await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileID].PatchAsync(profile);
-                    LogToFunctionFile(appFunction.Main, $"Updated description for Apple BYOD Enrollment profile {profileID} to '{newName}'.");
+                    AppLogger.Info($"Updated description for Apple BYOD Enrollment profile {profileID} to '{newName}'.", appFunction.Rename);
                 }
                 else if (selectedRenameMode == "RemovePrefix")
                 {
@@ -461,12 +443,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     profile.DisplayName = name;
 
                     await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileID].PatchAsync(profile);
-                    LogToFunctionFile(appFunction.Main, $"Removed prefix from Apple BYOD Enrollment profile {profileID}, new name: '{name}'");
+                    AppLogger.Info($"Removed prefix from Apple BYOD Enrollment profile {profileID}, new name: '{name}'", appFunction.Rename);
                 }
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while renaming Apple BYOD Enrollment profiles: {ex.Message}", LogLevels.Warning);
+                AppLogger.Warning($"An error occurred while renaming Apple BYOD Enrollment profiles: {ex.Message}", appFunction.Rename);
             }
         }
 
@@ -521,7 +503,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 if (result == null)
                 {
-                    LogToFunctionFile(appFunction.Main, $"Apple BYOD enrollment profile {profileId} not found for export.", LogLevels.Warning);
+                    AppLogger.Warning($"Apple BYOD enrollment profile {profileId} not found for export.", appFunction.JsonExport);
                     return null;
                 }
 
@@ -533,7 +515,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"Error exporting Apple BYOD enrollment profile {profileId}: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"Error exporting Apple BYOD enrollment profile {profileId}: {ex.Message}", appFunction.JsonExport);
                 return null;
             }
         }
@@ -552,7 +534,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 if (exported == null)
                 {
-                    LogToFunctionFile(appFunction.Main, "Failed to deserialize Apple BYOD enrollment profile data from JSON.", LogLevels.Error);
+                    AppLogger.Error("Failed to deserialize Apple BYOD enrollment profile data from JSON.", appFunction.Import);
                     return null;
                 }
 
@@ -572,12 +554,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 var imported = await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles.PostAsync(newProfile);
 
-                LogToFunctionFile(appFunction.Main, $"Imported Apple BYOD enrollment profile: {imported?.DisplayName}");
+                AppLogger.Info($"Imported Apple BYOD enrollment profile: {imported?.DisplayName}", appFunction.Import);
                 return imported?.DisplayName;
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"Error importing Apple BYOD enrollment profile from JSON: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"Error importing Apple BYOD enrollment profile from JSON: {ex.Message}", appFunction.Import);
                 return null;
             }
         }
@@ -628,7 +610,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"Error getting assignment details for Apple BYOD Profile {profileId}: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"Error getting assignment details for Apple BYOD Profile {profileId}: {ex.Message}", appFunction.Main);
                 return null;
             }
         }
@@ -654,7 +636,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     .Assignments.WithUrl(result.OdataNextLink).GetAsync();
             }
 
-            LogToFunctionFile(appFunction.Main, $"Removed all assignments from Apple BYOD Enrollment Profile {profileId}.");
+            AppLogger.Info($"Removed all assignments from Apple BYOD Enrollment Profile {profileId}.", appFunction.Main);
         }
     }
 }

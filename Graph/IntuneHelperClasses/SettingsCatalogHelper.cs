@@ -1,4 +1,4 @@
-﻿using Microsoft.Graph;
+using Microsoft.Graph;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
 {
@@ -29,7 +29,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                LogToFunctionFile(appFunction.Main, "Searching for settings catalog policies. Search query: " + searchQuery);
+                AppLogger.Info("Searching for settings catalog policies. Search query: " + searchQuery, appFunction.Main);
 
                 var result = await graphServiceClient.DeviceManagement.ConfigurationPolicies.GetAsync((requestConfiguration) =>
                 {
@@ -44,13 +44,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 });
                 await pageIterator.IterateAsync();
 
-                LogToFunctionFile(appFunction.Main, $"Found {configurationPolicies.Count} settings catalog policies.");
+                AppLogger.Info($"Found {configurationPolicies.Count} settings catalog policies.", appFunction.Main);
 
                 return configurationPolicies;
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for settings catalog policies: {ex.Message}", LogLevels.Warning);
+                AppLogger.Warning($"An error occurred while searching for settings catalog policies: {ex.Message}", appFunction.Main);
                 return new List<DeviceManagementConfigurationPolicy>();
             }
         }
@@ -59,7 +59,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                LogToFunctionFile(appFunction.Main, "Retrieving all settings catalog policies.");
+                AppLogger.Info("Retrieving all settings catalog policies.", appFunction.Main);
 
                 var result = await graphServiceClient.DeviceManagement.ConfigurationPolicies.GetAsync((requestConfiguration) =>
                 {
@@ -74,13 +74,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 });
                 await pageIterator.IterateAsync();
 
-                LogToFunctionFile(appFunction.Main, $"Found {configurationPolicies.Count} settings catalog policies.");
+                AppLogger.Info($"Found {configurationPolicies.Count} settings catalog policies.", appFunction.Main);
 
                 return configurationPolicies;
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while retrieving all settings catalog policies: {ex.Message}", LogLevels.Warning);
+                AppLogger.Warning($"An error occurred while retrieving all settings catalog policies: {ex.Message}", appFunction.Main);
                 return new List<DeviceManagementConfigurationPolicy>();
             }
         }
@@ -90,7 +90,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             try
             {
 
-                LogToFunctionFile(appFunction.Main, $"Importing {policies.Count} settings catalog policies.");
+                AppLogger.Info($"Importing {policies.Count} settings catalog policies.", appFunction.Import);
 
                 foreach (var policy in policies)
                 {
@@ -117,7 +117,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         var import = await destinationGraphServiceClient.DeviceManagement.ConfigurationPolicies.PostAsync(newPolicy);
 
-                        LogToFunctionFile(appFunction.Main, $"Imported policy: {import.Name}");
+                        AppLogger.Info($"Imported policy: {import.Name}", appFunction.Import);
 
                         if (assignments)
                         {
@@ -126,13 +126,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     }
                     catch (Exception ex)
                     {
-                        LogToFunctionFile(appFunction.Main, $"An error occurred while importing settings catalog policy '{policyName}': {ex.Message}", LogLevels.Warning);
+                        AppLogger.Warning($"An error occurred while importing settings catalog policy '{policyName}': {ex.Message}", appFunction.Import);
                     }
                 }
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred during settings catalog import: {ex.Message}", LogLevels.Warning);
+                AppLogger.Warning($"An error occurred during settings catalog import: {ex.Message}", appFunction.Import);
             }
         }
 
@@ -284,17 +284,17 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         .Assign
                         .PostAsAssignPostResponseAsync(requestBody);
 
-                    LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to policy {policyID} with filter type {deviceAndAppManagementAssignmentFilterType}.");
+                    AppLogger.Info($"Assigned {assignments.Count} assignments to policy {policyID} with filter type {deviceAndAppManagementAssignmentFilterType}.", appFunction.Assignment);
                     UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
                 }
                 catch (Exception ex)
                 {
-                    LogToFunctionFile(appFunction.Main, $"An error occurred while assigning groups to settings catalog policy: {ex.Message}", LogLevels.Warning);
+                    AppLogger.Warning($"An error occurred while assigning groups to settings catalog policy: {ex.Message}", appFunction.Assignment);
                 }
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while assigning groups to settings catalog policy: {ex.Message}", LogLevels.Warning);
+                AppLogger.Warning($"An error occurred while assigning groups to settings catalog policy: {ex.Message}", appFunction.Assignment);
             }
         }
 
@@ -315,7 +315,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while deleting settings catalog policy: {ex.Message}", LogLevels.Warning);
+                AppLogger.Warning($"An error occurred while deleting settings catalog policy: {ex.Message}", appFunction.Delete);
             }
         }
 
@@ -351,7 +351,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].PatchAsync(policy);
-                    LogToFunctionFile(appFunction.Main, $"Renamed policy {policyID} to {name}");
+                    AppLogger.Info($"Renamed policy {policyID} to {name}", appFunction.Rename);
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
@@ -368,7 +368,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].PatchAsync(policy);
-                    LogToFunctionFile(appFunction.Main, $"Updated description for {policyID} to {newName}");
+                    AppLogger.Info($"Updated description for {policyID} to {newName}", appFunction.Rename);
                 }
                 else if (selectedRenameMode == "RemovePrefix")
                 {
@@ -376,13 +376,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                     if (existingPolicy == null)
                     {
-                        LogToFunctionFile(appFunction.Main, $"Unable to remove prefix: policy with ID {policyID} was not found.", LogLevels.Warning);
+                        AppLogger.Warning($"Unable to remove prefix: policy with ID {policyID} was not found.", appFunction.Rename);
                         return;
                     }
 
                     if (string.IsNullOrWhiteSpace(existingPolicy.Name))
                     {
-                        LogToFunctionFile(appFunction.Main, $"Unable to remove prefix from policy {policyID}: policy name is null or empty.", LogLevels.Warning);
+                        AppLogger.Warning($"Unable to remove prefix from policy {policyID}: policy name is null or empty.", appFunction.Rename);
                         return;
                     }
                     var name = RemovePrefixFromPolicyName(existingPolicy.Name);
@@ -393,12 +393,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].PatchAsync(policy);
-                    LogToFunctionFile(appFunction.Main, $"Removed prefix from policy {policyID}, new name: {name}");
+                    AppLogger.Info($"Removed prefix from policy {policyID}, new name: {name}", appFunction.Rename);
                 }
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while renaming settings catalog policies: {ex.Message}", LogLevels.Warning);
+                AppLogger.Warning($"An error occurred while renaming settings catalog policies: {ex.Message}", appFunction.Rename);
             }
         }
 
@@ -457,7 +457,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 if (result == null)
                 {
-                    LogToFunctionFile(appFunction.Main, $"Policy {policyId} not found for export.", LogLevels.Warning);
+                    AppLogger.Warning($"Policy {policyId} not found for export.", appFunction.JsonExport);
                     return null;
                 }
 
@@ -469,7 +469,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"Error exporting settings catalog policy {policyId}: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"Error exporting settings catalog policy {policyId}: {ex.Message}", appFunction.JsonExport);
                 return null;
             }
         }
@@ -489,7 +489,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 if (exportedPolicy == null)
                 {
-                    LogToFunctionFile(appFunction.Main, "Failed to deserialize policy data from JSON.", LogLevels.Error);
+                    AppLogger.Error("Failed to deserialize policy data from JSON.", appFunction.Import);
                     return null;
                 }
 
@@ -507,12 +507,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 var imported = await graphServiceClient.DeviceManagement.ConfigurationPolicies.PostAsync(newPolicy);
 
-                LogToFunctionFile(appFunction.Main, $"Imported settings catalog policy: {imported?.Name}");
+                AppLogger.Info($"Imported settings catalog policy: {imported?.Name}", appFunction.Import);
                 return imported?.Name;
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"Error importing settings catalog policy from JSON: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"Error importing settings catalog policy from JSON: {ex.Message}", appFunction.Import);
                 return null;
             }
         }
@@ -563,7 +563,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"Error getting assignment details for Settings Catalog {policyId}: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"Error getting assignment details for Settings Catalog {policyId}: {ex.Message}", appFunction.Main);
                 return null;
             }
         }
@@ -579,7 +579,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             };
 
             await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyId].Assign.PostAsAssignPostResponseAsync(requestBody);
-            LogToFunctionFile(appFunction.Main, $"Removed all assignments from Settings Catalog policy {policyId}.");
+            AppLogger.Info($"Removed all assignments from Settings Catalog policy {policyId}.", appFunction.Main);
         }
     }
 }

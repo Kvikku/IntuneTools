@@ -1,4 +1,4 @@
-﻿using Microsoft.Graph;
+using Microsoft.Graph;
 using Microsoft.Graph.Beta.Models.ODataErrors;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
@@ -12,7 +12,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                LogToFunctionFile(appFunction.Main, $"Searching for {PolicyType} policies. Search query: {searchQuery}");
+                AppLogger.Info($"Searching for {PolicyType} policies. Search query: {searchQuery}", appFunction.Main);
 
                 // Assignment filters don't have a direct filter on DisplayName in the same way,
                 // so we get all and filter locally, or adjust if a specific filter query is needed.
@@ -28,7 +28,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 if (result == null || result.Value == null)
                 {
-                    LogToFunctionFile(appFunction.Main, $"Search returned null or empty result for {PolicyType} policies.");
+                    AppLogger.Info($"Search returned null or empty result for {PolicyType} policies.", appFunction.Main);
                     return new List<DeviceAndAppManagementAssignmentFilter>();
                 }
 
@@ -45,20 +45,20 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 // assignmentFilters = assignmentFilters.Where(f => f.DisplayName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)).ToList();
 
 
-                LogToFunctionFile(appFunction.Main, $"Found {assignmentFilters.Count} {PolicyType} policies matching the search query.");
+                AppLogger.Info($"Found {assignmentFilters.Count} {PolicyType} policies matching the search query.", appFunction.Main);
 
                 return assignmentFilters;
             }
             catch (ODataError odataError) when (odataError.ResponseStatusCode == 400) // Handle potential filter query issues
             {
-                LogToFunctionFile(appFunction.Main, $"Server-side filtering might not be supported or the query is invalid for {PolicyType}. Trying client-side filtering. Error: {odataError.Error?.Message}", LogLevels.Error);
+                AppLogger.Error($"Server-side filtering might not be supported or the query is invalid for {PolicyType}. Trying client-side filtering. Error: {odataError.Error?.Message}", appFunction.Main);
                 // Fallback: Get all and filter client-side
                 var allFilters = await GetAllAssignmentFilters(graphServiceClient);
                 return allFilters.Where(f => f.DisplayName != null && f.DisplayName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)).ToList();
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for {PolicyType} policies: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"An error occurred while searching for {PolicyType} policies: {ex.Message}", appFunction.Main);
                 return new List<DeviceAndAppManagementAssignmentFilter>();
             }
         }
@@ -95,7 +95,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             catch (Exception ex)
             {
                 // Handle exceptions (e.g., log the error)
-                LogToFunctionFile(appFunction.Main, $"An error occurred while getting assignment filters: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"An error occurred while getting assignment filters: {ex.Message}", appFunction.Main);
             }
 
             // Add filter name and ID to the dictionary
@@ -114,8 +114,8 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                LogToFunctionFile(appFunction.Main, " ");
-                LogToFunctionFile(appFunction.Main, $"{DateTime.Now.ToString()} - Importing {filterIds.Count} Assignment filters.");
+                AppLogger.Info(" ", appFunction.Import);
+                AppLogger.Info($"{DateTime.Now.ToString()} - Importing {filterIds.Count} Assignment filters.", appFunction.Import);
 
 
                 foreach (var filterId in filterIds)
@@ -128,7 +128,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         if (sourceFilter == null)
                         {
-                            LogToFunctionFile(appFunction.Main, $"Skipping filter ID {filterId}: Not found in source tenant.");
+                            AppLogger.Info($"Skipping filter ID {filterId}: Not found in source tenant.", appFunction.Import);
                             continue;
                         }
 
@@ -151,21 +151,21 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         var importedFilter = await destinationGraphServiceClient.DeviceManagement.AssignmentFilters.PostAsync(newFilter);
 
-                        LogToFunctionFile(appFunction.Main, $"Successfully imported {importedFilter.DisplayName}\n");
+                        AppLogger.Info($"Successfully imported {importedFilter.DisplayName}\n", appFunction.Import);
                     }
                     catch (Exception ex)
                     {
-                        LogToFunctionFile(appFunction.Main, $"Failed to import {filterName}: {ex.Message}", LogLevels.Error);
+                        AppLogger.Error($"Failed to import {filterName}: {ex.Message}", appFunction.Import);
                     }
                 }
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An unexpected error occurred during the import process: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"An unexpected error occurred during the import process: {ex.Message}", appFunction.Import);
             }
             finally
             {
-                LogToFunctionFile(appFunction.Main, $"{DateTime.Now.ToString()} - Finished importing {filterIds.Count} Assignment filters.");
+                AppLogger.Info($"{DateTime.Now.ToString()} - Finished importing {filterIds.Count} Assignment filters.", appFunction.Import);
             }
         }
         public static async Task<bool> DeleteAssignmentFilter(GraphServiceClient graphServiceClient, string filterID)
@@ -189,12 +189,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (ODataError odataError)
             {
-                LogToFunctionFile(appFunction.Main, $"OData error deleting assignment filter {filterID}: {odataError.Error?.Message}", LogLevels.Error);
+                AppLogger.Error($"OData error deleting assignment filter {filterID}: {odataError.Error?.Message}", appFunction.Delete);
                 return false;
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"Error deleting assignment filter {filterID}: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"Error deleting assignment filter {filterID}: {ex.Message}", appFunction.Delete);
                 return false;
             }
         }
@@ -235,7 +235,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.AssignmentFilters[filterID].PatchAsync(filter);
-                    LogToFunctionFile(appFunction.Main, $"Successfully renamed filter with ID '{filterID}' to '{name}'.", LogLevels.Info);
+                    AppLogger.Info($"Successfully renamed filter with ID '{filterID}' to '{name}'.", appFunction.Rename);
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
@@ -257,7 +257,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.AssignmentFilters[filterID].PatchAsync(filter);
-                    LogToFunctionFile(appFunction.Main, $"Updated description for filter {filterID} to '{newName}'.", LogLevels.Info);
+                    AppLogger.Info($"Updated description for filter {filterID} to '{newName}'.", appFunction.Rename);
                 }
                 else if (selectedRenameMode == "RemovePrefix")
                 {
@@ -276,12 +276,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.AssignmentFilters[filterID].PatchAsync(filter);
-                    LogToFunctionFile(appFunction.Main, $"Removed prefix from filter {filterID}, new name: '{name}'", LogLevels.Info);
+                    AppLogger.Info($"Removed prefix from filter {filterID}, new name: '{name}'", appFunction.Rename);
                 }
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while renaming assignment filter: {ex.Message}", LogLevels.Warning);
+                AppLogger.Warning($"An error occurred while renaming assignment filter: {ex.Message}", appFunction.Rename);
             }
         }
 
@@ -336,7 +336,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 if (result == null)
                 {
-                    LogToFunctionFile(appFunction.Main, $"Assignment filter {filterId} not found for export.", LogLevels.Warning);
+                    AppLogger.Warning($"Assignment filter {filterId} not found for export.", appFunction.JsonExport);
                     return null;
                 }
 
@@ -348,7 +348,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"Error exporting assignment filter {filterId}: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"Error exporting assignment filter {filterId}: {ex.Message}", appFunction.JsonExport);
                 return null;
             }
         }
@@ -367,7 +367,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 if (exported == null)
                 {
-                    LogToFunctionFile(appFunction.Main, "Failed to deserialize assignment filter data from JSON.", LogLevels.Error);
+                    AppLogger.Error("Failed to deserialize assignment filter data from JSON.", appFunction.Import);
                     return null;
                 }
 
@@ -382,12 +382,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 var imported = await graphServiceClient.DeviceManagement.AssignmentFilters.PostAsync(newFilter);
 
-                LogToFunctionFile(appFunction.Main, $"Imported assignment filter: {imported?.DisplayName}");
+                AppLogger.Info($"Imported assignment filter: {imported?.DisplayName}", appFunction.Import);
                 return imported?.DisplayName;
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"Error importing assignment filter from JSON: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"Error importing assignment filter from JSON: {ex.Message}", appFunction.Import);
                 return null;
             }
         }
