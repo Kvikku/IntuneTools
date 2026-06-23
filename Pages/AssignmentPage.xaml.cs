@@ -1109,6 +1109,23 @@ namespace IntuneTools.Pages
         }
 
 
+        private async void ExportCsvButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (AssignmentList.Count == 0)
+            {
+                AppendToLog("Nothing to export — the list is empty.");
+                return;
+            }
+            try
+            {
+                await CsvExporter.ExportContentListAsync(AssignmentList, "Assignments");
+            }
+            catch (Exception ex)
+            {
+                AppendToLog($"Export failed: {ex.Message}");
+            }
+        }
+
         #endregion
     }
 }

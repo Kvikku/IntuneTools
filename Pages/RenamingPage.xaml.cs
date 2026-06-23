@@ -601,6 +601,23 @@ namespace IntuneTools.Pages
             await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
         }
 
+        private async void ExportCsvButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (ContentList.Count == 0)
+            {
+                LogInfo("Nothing to export — the list is empty.");
+                return;
+            }
+            try
+            {
+                await CsvExporter.ExportContentListAsync(ContentList, "Renaming");
+            }
+            catch (Exception ex)
+            {
+                LogWarning($"Export failed: {ex.Message}");
+            }
+        }
+
         #endregion
     }
 }
