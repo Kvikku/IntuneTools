@@ -252,7 +252,7 @@ namespace IntuneTools.Pages
             return selectedRenameMode switch
             {
                 "Prefix" => await PreparePrefixRename(contentIDs, newName),
-                "RemovePrefix" => await PrepareRemovePrefixRename(contentIDs),
+                "RemovePrefix" => await PrepareRemovePrefixRename(contentIDs, newName),
                 "Description" => await PrepareDescriptionUpdate(newName),
                 _ => null
             };
@@ -285,15 +285,19 @@ namespace IntuneTools.Pages
             return confirmed ? prefix : null;
         }
 
-        private async Task<string?> PrepareRemovePrefixRename(List<string> contentIDs)
+        private async Task<string?> PrepareRemovePrefixRename(List<string> contentIDs, string prefixToRemove)
         {
+            // Store the freeform prefix so ApplyPrefixRemoval in each helper can access it.
+            // Empty string means fall back to bracket auto-detect.
+            selectedRemovePrefixString = prefixToRemove.Trim();
+
             var previewNames = contentIDs
                 .Select(id => CustomContentList.FirstOrDefault(c => c.ContentId == id))
                 .Where(c => c != null)
                 .Select(c => new
                 {
                     Original = c!.ContentName,
-                    NewName = RemovePrefixFromPolicyName(c.ContentName)
+                    NewName = ApplyPrefixRemoval(c.ContentName)
                 })
                 .ToList();
 
@@ -306,19 +310,24 @@ namespace IntuneTools.Pages
             var itemsWithPrefixes = previewNames.Where(p => p.Original != p.NewName).ToList();
             if (itemsWithPrefixes.Count == 0)
             {
-                LogWarning("No items have prefixes to remove.");
+                var hint = string.IsNullOrEmpty(selectedRemovePrefixString)
+                    ? "No items have bracket-style prefixes to remove."
+                    : $"No items start with \"{selectedRemovePrefixString}\".";
+                LogWarning(hint);
                 return null;
             }
 
             var previewText = string.Join("\n", itemsWithPrefixes.Take(10).Select(p => $"{p.Original}  →  {p.NewName}"));
             if (itemsWithPrefixes.Count > 10)
-            {
                 previewText += $"\n... and {itemsWithPrefixes.Count - 10} more items";
-            }
+
+            var modeDescription = string.IsNullOrEmpty(selectedRemovePrefixString)
+                ? "bracket-style prefix"
+                : $"\"{selectedRemovePrefixString}\"";
 
             var confirmed = await ShowConfirmationDialog(
                 "Confirm Removing Prefixes",
-                $"The following {itemsWithPrefixes.Count} item(s) will have their prefixes removed:\n\n{previewText}",
+                $"Remove {modeDescription} from {itemsWithPrefixes.Count} item(s):\n\n{previewText}",
                 "Remove Prefixes");
 
             return confirmed ? "__REMOVE_PREFIX__" : null;
@@ -572,16 +581,16 @@ namespace IntuneTools.Pages
 
             if (PrefixButton is null || NewNameTextBox is null) return;
 
-            var needsTextInput = selectionMode != RenameMode.RemovePrefix;
             var needsPrefixSymbol = selectionMode == RenameMode.Prefix;
 
             PrefixButton.Visibility = needsPrefixSymbol ? Visibility.Visible : Visibility.Collapsed;
-            NewNameTextBox.IsEnabled = needsTextInput;
+            NewNameTextBox.IsEnabled = true;
             NewNameTextBox.PlaceholderText = selectionMode switch
             {
                 RenameMode.Prefix => "Enter prefix...",
                 RenameMode.Description => "Enter description...",
-                _ => "Not required"
+                RenameMode.RemovePrefix => "Enter prefix to remove (leave blank for bracket auto-detect)...",
+                _ => string.Empty
             };
         }
 

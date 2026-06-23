@@ -268,7 +268,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         throw new InvalidOperationException($"Filter with ID '{filterID}' not found.");
                     }
 
-                    var name = RemovePrefixFromPolicyName(existingFilter.DisplayName);
+                    var name = ApplyPrefixRemoval(existingFilter.DisplayName);
 
                     var filter = new DeviceAndAppManagementAssignmentFilter
                     {

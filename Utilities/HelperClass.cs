@@ -434,6 +434,33 @@ namespace IntuneTools.Utilities
         }
 
         /// <summary>
+        /// Removes an exact prefix string from the start of a policy name (case-sensitive).
+        /// Trims any leading whitespace left after removal.
+        /// </summary>
+        public static string RemoveExactPrefixFromPolicyName(string policyName, string prefix)
+        {
+            if (string.IsNullOrWhiteSpace(policyName) || string.IsNullOrEmpty(prefix))
+                return policyName;
+
+            policyName = policyName.Trim();
+            if (policyName.StartsWith(prefix, StringComparison.Ordinal))
+            {
+                var result = policyName[prefix.Length..].TrimStart();
+                return string.IsNullOrWhiteSpace(result) ? policyName : result;
+            }
+
+            return policyName;
+        }
+
+        /// <summary>
+        /// Dispatches to freeform or bracket-style prefix removal based on selectedRemovePrefixString.
+        /// </summary>
+        public static string ApplyPrefixRemoval(string policyName) =>
+            string.IsNullOrEmpty(selectedRemovePrefixString)
+                ? RemovePrefixFromPolicyName(policyName)
+                : RemoveExactPrefixFromPolicyName(policyName, selectedRemovePrefixString);
+
+        /// <summary>
         /// Removes any bracket-style prefix from a policy name.
         /// Handles (prefix), [prefix], and {prefix} formats.
         /// </summary>

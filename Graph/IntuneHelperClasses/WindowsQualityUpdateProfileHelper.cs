@@ -370,7 +370,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
                     }
 
-                    var name = RemovePrefixFromPolicyName(existingProfile.DisplayName);
+                    var name = ApplyPrefixRemoval(existingProfile.DisplayName);
 
                     var profile = new WindowsQualityUpdateProfile
                     {

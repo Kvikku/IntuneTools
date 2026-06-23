@@ -359,7 +359,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         throw new InvalidOperationException($"Script with ID '{scriptID}' not found.");
                     }
 
-                    var name = RemovePrefixFromPolicyName(existingScript.DisplayName);
+                    var name = ApplyPrefixRemoval(existingScript.DisplayName);
 
                     var script = new DeviceHealthScript
                     {

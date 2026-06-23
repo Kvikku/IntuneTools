@@ -385,7 +385,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         LogToFunctionFile(appFunction.Main, $"Unable to remove prefix from policy {policyID}: policy name is null or empty.", LogLevels.Warning);
                         return;
                     }
-                    var name = RemovePrefixFromPolicyName(existingPolicy.Name);
+                    var name = ApplyPrefixRemoval(existingPolicy.Name);
 
                     var policy = new DeviceManagementConfigurationPolicy
                     {

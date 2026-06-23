@@ -470,7 +470,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }
                 else if (selectedRenameMode == "RemovePrefix")
                 {
-                    var name = RemovePrefixFromPolicyName(existingApp.DisplayName);
+                    var name = ApplyPrefixRemoval(existingApp.DisplayName);
 
                     var app = new MobileApp
                     {

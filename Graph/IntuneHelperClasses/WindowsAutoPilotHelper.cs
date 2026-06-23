@@ -510,7 +510,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         return;
                     }
 
-                    var name = RemovePrefixFromPolicyName(existingProfile.DisplayName);
+                    var name = ApplyPrefixRemoval(existingProfile.DisplayName);
 
                     var profile = new AzureADWindowsAutopilotDeploymentProfile
                     {

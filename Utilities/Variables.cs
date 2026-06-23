@@ -69,6 +69,7 @@ namespace IntuneTools.Utilities
         }
 
         public static string selectedRenameMode = "Prefix"; // Default rename mode
+        public static string selectedRemovePrefixString = string.Empty; // Freeform prefix to remove (empty = bracket auto-detect)
 
         // Group variables
         public static bool IsGroupSelected = false;

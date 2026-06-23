@@ -339,7 +339,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
                         throw new InvalidOperationException($"Group with ID '{groupID}' not found.");
                     }
 
-                    var name = RemovePrefixFromPolicyName(existingGroup.DisplayName);
+                    var name = ApplyPrefixRemoval(existingGroup.DisplayName);
 
                     var group = new Group
                     {

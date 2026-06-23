@@ -381,7 +381,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         throw new InvalidOperationException($"Policy with ID '{policyID}' not found.");
                     }
 
-                    var name = RemovePrefixFromPolicyName(existingPolicy.DisplayName);
+                    var name = ApplyPrefixRemoval(existingPolicy.DisplayName);
 
                     var policy = new WindowsQualityUpdatePolicy
                     {
