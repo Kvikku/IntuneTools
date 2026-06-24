@@ -253,16 +253,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }
 
                 // Step 3: Post assignments individually (AutoPilot profiles require individual posts)
-                int successCount = 0;
                 bool hasFailures = false;
                 foreach (var assignment in assignments)
                 {
                     // Skip existing assignments that were already posted
                     if (!string.IsNullOrEmpty(assignment.Id))
-                    {
-                        successCount++;
                         continue;
-                    }
 
                     try
                     {
@@ -271,8 +267,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                             .WindowsAutopilotDeploymentProfiles[profileID]
                             .Assignments
                             .PostAsync(assignment);
-
-                        successCount++;
 
                         UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
                     }
@@ -283,7 +277,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     }
                 }
 
-                AppLogger.Info($"Assigned '{contentName}' to {successCount} group(s).", appFunction.Assignment);
                 if (hasFailures)
                     throw new Exception($"One or more group assignments failed for '{contentName}'. See log for details.");
             }

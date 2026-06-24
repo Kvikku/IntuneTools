@@ -352,7 +352,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         .PostAsync(requestBody);
                 }, maxRetries: 5, baseDelaySeconds: 2);
 
-                AppLogger.Info($"Assigned '{contentName}' to {assignments.Count} group(s).", appFunction.Assignment);
                 UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
             }
             catch (Exception ex)

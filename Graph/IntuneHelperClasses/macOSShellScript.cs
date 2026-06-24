@@ -254,7 +254,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 try
                 {
                     await destinationGraphServiceClient.DeviceManagement.DeviceShellScripts[scriptId].Assign.PostAsync(requestBody);
-                    AppLogger.Info($"Assigned '{contentName}' to {assignments.Count} group(s).", appFunction.Assignment);
                     UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
 
                     // Note: Filters are not directly supported in the Assign action for shell scripts

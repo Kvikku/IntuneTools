@@ -305,7 +305,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 {
                     var result = await destinationGraphServiceClient.DeviceManagement.DeviceConfigurations[configId].Assign.PostAsAssignPostResponseAsync(requestBody);
 
-                    AppLogger.Info($"Assigned '{contentName}' to {assignments.Count} group(s).", appFunction.Assignment);
                     UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
                 }
                 catch (Exception ex)

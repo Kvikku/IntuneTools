@@ -303,7 +303,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     }
                 }
 
-                AppLogger.Info($"Assigned '{contentName}' to {assignments.Count} group(s).", appFunction.Assignment);
                 if (hasFailures)
                     throw new Exception($"One or more group assignments failed for '{contentName}'. See log for details.");
             }
