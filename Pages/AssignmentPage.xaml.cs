@@ -264,7 +264,7 @@ namespace IntuneTools.Pages
                 var bulkResult = await bulkWarning.ShowAsync();
                 if (bulkResult != ContentDialogResult.Primary)
                 {
-                    AppendToLog("Bulk assignment cancelled by user.");
+                    AppLogger.UiOnly("Bulk assignment cancelled by user.");
                     return;
                 }
             }
@@ -273,8 +273,8 @@ namespace IntuneTools.Pages
             var selectedGroups = GroupDataGrid.SelectedItems?.Cast<AssignmentGroupInfo>().ToList();
             if (selectedGroups == null || selectedGroups.Count == 0)
             {
-                AppendToLog("No groups selected for assignment.");
-                AppendToLog("Please select at least one group and try again.");
+                AppLogger.UiOnly("No groups selected for assignment.");
+                AppLogger.UiOnly("Please select at least one group and try again.");
                 return;
             }
 
@@ -297,7 +297,7 @@ namespace IntuneTools.Pages
 
             if (deploymentOptions == false)
             {
-                AppendToLog("Assignment cancelled by user during deployment options selection.");
+                AppLogger.UiOnly("Assignment cancelled by user during deployment options selection.");
                 return;
             }
 
@@ -331,7 +331,7 @@ namespace IntuneTools.Pages
             var result = await confirmDialog.ShowAsync();
             if (result != ContentDialogResult.Primary)
             {
-                AppendToLog("Assignment cancelled by user.");
+                AppLogger.UiOnly("Assignment cancelled by user.");
                 return;
             }
 
@@ -339,7 +339,7 @@ namespace IntuneTools.Pages
             ShowLoading("Assigning content to groups...");
             try
             {
-                AppendToLog($"Starting assignment of {content.Count} item(s) to {selectedGroups.Count} group(s)...");
+                AppLogger.UiOnly($"Starting assignment of {content.Count} item(s) to {selectedGroups.Count} group(s)...");
                 AppLogger.Info($"Assignment operation started ({content.Count} item(s)) — see Assignment.log for details.", appFunction.Main);
 
                 // Initialize progress tracking
@@ -365,14 +365,14 @@ namespace IntuneTools.Pages
                         _assignSuccessCount++;
                         foreach (var group in selectedGroups)
                         {
-                            AppendToLog($"Assigning '{item.Value.ContentName}' to group '{group.GroupName}'.");
+                            AppLogger.UiOnly($"Assigning '{item.Value.ContentName}' to group '{group.GroupName}'.");
                             successCount++;
                         }
                     }
                     catch (Exception ex)
                     {
                         _assignErrorCount++;
-                        AppendToLog($"Failed to assign '{item.Value.ContentName}' (ID: {item.Key}): {ex.Message}");
+                        LogError($"Failed to assign '{item.Value.ContentName}': {ex.Message}");
                         failureCount++;
                     }
                 }
@@ -420,12 +420,12 @@ namespace IntuneTools.Pages
             var selectedContentTypes = GetSelectedContentTypes().ToList();
             if (selectedContentTypes.Count == 0)
             {
-                AppendToLog("No content types selected.");
-                AppendToLog("Please select at least one content type and try again.");
+                AppLogger.UiOnly("No content types selected.");
+                AppLogger.UiOnly("Please select at least one content type and try again.");
                 return;
             }
 
-            AppendToLog("Listing all content.");
+            AppLogger.UiOnly("Listing all content.");
             ShowLoading("Loading assignment data...");
             try
             {
@@ -441,11 +441,11 @@ namespace IntuneTools.Pages
                             {
                                 AssignmentList.Add(item);
                             }
-                            AppendToLog($"Loaded {items.Count()} {op.DisplayNamePlural}.");
+                            AppLogger.UiOnly($"Loaded {items.Count()} {op.DisplayNamePlural}.");
                         }
                         catch (Exception ex)
                         {
-                            AppendToLog($"Failed loading {op.DisplayNamePlural}: {ex.Message}");
+                            AppLogger.UiOnly($"Failed loading {op.DisplayNamePlural}: {ex.Message}");
                         }
                     }
                 }
@@ -477,7 +477,7 @@ namespace IntuneTools.Pages
                 content[item.ContentId] = item;
             }
 
-            AppendToLog($"Gathered {content.Count} items from DataGrid.");
+            AppLogger.UiOnly($"Gathered {content.Count} items from DataGrid.");
             return content;
         }
 
@@ -491,17 +491,17 @@ namespace IntuneTools.Pages
                 if (Enum.TryParse(intent, out InstallIntent parsedIntent))
                 {
                     _selectedInstallIntent = parsedIntent;
-                    AppendToLog($"Intent: {_selectedInstallIntent}");
+                    AppLogger.UiOnly($"Intent: {_selectedInstallIntent}");
                 }
                 else
                 {
-                    AppendToLog($"Warning: Could not parse assignment intent '{intent}'. Defaulting to 'Required'.");
+                    AppLogger.UiOnly($"Warning: Could not parse assignment intent '{intent}'. Defaulting to 'Required'.");
                     _selectedInstallIntent = InstallIntent.Required;
                 }
             }
             else
             {
-                AppendToLog("Warning: No assignment intent selected. Defaulting to 'Required'.");
+                AppLogger.UiOnly("Warning: No assignment intent selected. Defaulting to 'Required'.");
                 _selectedInstallIntent = InstallIntent.Required;
             }
         }
@@ -598,7 +598,7 @@ namespace IntuneTools.Pages
                 {
                     AssignmentList.Add(item);
                 }
-                AppendToLog("Search cleared. Displaying all items.");
+                AppLogger.UiOnly("Search cleared. Displaying all items.");
             }
             else
             {
@@ -614,7 +614,7 @@ namespace IntuneTools.Pages
                 {
                     AssignmentList.Add(item);
                 }
-                AppendToLog($"Search for '{query}' found {filtered.Count} item(s).");
+                AppLogger.UiOnly($"Search for '{query}' found {filtered.Count} item(s).");
             }
         }
 
@@ -646,11 +646,11 @@ namespace IntuneTools.Pages
                     AssignmentList.Remove(item);
                     _allAssignments.Remove(item);
                 }
-                AppendToLog($"Removed {selectedItems.Count} selected item(s).");
+                AppLogger.UiOnly($"Removed {selectedItems.Count} selected item(s).");
             }
             else
             {
-                AppendToLog("No items selected to remove.");
+                AppLogger.UiOnly("No items selected to remove.");
             }
         }
 
@@ -658,7 +658,7 @@ namespace IntuneTools.Pages
         {
             if (AssignmentList.Count == 0)
             {
-                AppendToLog("The list is already empty.");
+                AppLogger.UiOnly("The list is already empty.");
                 return;
             }
 
@@ -678,11 +678,11 @@ namespace IntuneTools.Pages
                 var count = AssignmentList.Count;
                 AssignmentList.Clear();
                 _allAssignments.Clear();
-                AppendToLog($"Removed all {count} items from the list.");
+                AppLogger.UiOnly($"Removed all {count} items from the list.");
             }
             else
             {
-                AppendToLog("Operation to remove all items was cancelled.");
+                AppLogger.UiOnly("Operation to remove all items was cancelled.");
             }
         }
 
@@ -761,7 +761,7 @@ namespace IntuneTools.Pages
             }
             _selectedFilterMode = "Include";
             IsFilterSelected = !string.IsNullOrWhiteSpace(SelectedFilterID);
-            AppendToLog("Assignment filter enabled.");
+            AppLogger.UiOnly("Assignment filter enabled.");
         }
 
         private void FilterExpander_Collapsed(Expander sender, ExpanderCollapsedEventArgs args)
@@ -778,7 +778,7 @@ namespace IntuneTools.Pages
             SelectedFilterID = null;
             IsFilterSelected = false;
             deviceAndAppManagementAssignmentFilterType = DeviceAndAppManagementAssignmentFilterType.None;
-            AppendToLog("Assignment filter disabled.");
+            AppLogger.UiOnly("Assignment filter disabled.");
         }
 
         private void FilterModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -787,7 +787,7 @@ namespace IntuneTools.Pages
             if (sender is ComboBox cb && cb.SelectedItem is ComboBoxItem item)
             {
                 _selectedFilterMode = item.Content?.ToString() ?? "Include";
-                AppendToLog($"Filter mode set to '{_selectedFilterMode}'.");
+                AppLogger.UiOnly($"Filter mode set to '{_selectedFilterMode}'.");
             }
         }
 
@@ -803,7 +803,7 @@ namespace IntuneTools.Pages
         {
             _uiInitialized = true; // UI now safe for logging
             AutoCheckAllOptions();
-            AppendToLog("Assignment page loaded.");
+            AppLogger.UiOnly("Assignment page loaded.");
         }
 
         private void AutoCheckAllOptions()
@@ -898,7 +898,7 @@ namespace IntuneTools.Pages
             string sortProperty = binding?.Path?.Path;
             if (string.IsNullOrEmpty(sortProperty))
             {
-                AppendToLog("Sorting error: Unable to determine property name from column binding.");
+                AppLogger.UiOnly("Sorting error: Unable to determine property name from column binding.");
                 return;
             }
 
@@ -906,7 +906,7 @@ namespace IntuneTools.Pages
             var propInfo = typeof(CustomContentInfo).GetProperty(sortProperty);
             if (propInfo == null)
             {
-                AppendToLog($"Sorting error: Property '{sortProperty}' not found on AssignmentInfo.");
+                AppLogger.UiOnly($"Sorting error: Property '{sortProperty}' not found on AssignmentInfo.");
                 return;
             }
 
@@ -933,7 +933,7 @@ namespace IntuneTools.Pages
             }
             catch (Exception ex)
             {
-                AppendToLog($"Sorting error: {ex.Message}");
+                AppLogger.UiOnly($"Sorting error: {ex.Message}");
                 return;
             }
 
@@ -1000,11 +1000,11 @@ namespace IntuneTools.Pages
 
 
                     // Log the selected options
-                    AppendToLog("Application Deployment Options Configured:");
-                    AppendToLog($" - Intent: {_selectedInstallIntent}");
-                    AppendToLog($" - Group Mode: {_selectedDeploymentMode}");
-                    AppendToLog($" - Notifications: {_selectedNotificationSetting}");
-                    AppendToLog($" - Delivery Opt: {_selectedDeliveryOptimizationPriority}");
+                    AppLogger.UiOnly("Application Deployment Options Configured:");
+                    AppLogger.UiOnly($" - Intent: {_selectedInstallIntent}");
+                    AppLogger.UiOnly($" - Group Mode: {_selectedDeploymentMode}");
+                    AppLogger.UiOnly($" - Notifications: {_selectedNotificationSetting}");
+                    AppLogger.UiOnly($" - Delivery Opt: {_selectedDeliveryOptimizationPriority}");
 
                     return true;
                 }
@@ -1021,7 +1021,7 @@ namespace IntuneTools.Pages
             }
             catch (Exception ex)
             {
-                AppendToLog($"Error showing app options dialog: {ex.Message}");
+                AppLogger.UiOnly($"Error showing app options dialog: {ex.Message}");
                 return false;
             }
         }
@@ -1042,7 +1042,7 @@ namespace IntuneTools.Pages
             string sortProperty = binding?.Path?.Path;
             if (string.IsNullOrEmpty(sortProperty))
             {
-                AppendToLog("Sorting error: Unable to determine property name from column binding.");
+                AppLogger.UiOnly("Sorting error: Unable to determine property name from column binding.");
                 return;
             }
 
@@ -1050,7 +1050,7 @@ namespace IntuneTools.Pages
             var propInfo = typeof(AssignmentGroupInfo).GetProperty(sortProperty);
             if (propInfo == null)
             {
-                AppendToLog($"Sorting error: Property '{sortProperty}' not found on AssignmentGroupInfo.");
+                AppLogger.UiOnly($"Sorting error: Property '{sortProperty}' not found on AssignmentGroupInfo.");
                 return;
             }
 
@@ -1077,7 +1077,7 @@ namespace IntuneTools.Pages
             }
             catch (Exception ex)
             {
-                AppendToLog($"Sorting error: {ex.Message}");
+                AppLogger.UiOnly($"Sorting error: {ex.Message}");
                 return;
             }
 

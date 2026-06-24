@@ -106,8 +106,7 @@ namespace IntuneTools.Pages
             FindUnassignedButton.IsEnabled = true;
         }
 
-        // Convenience method for logging - calls base class AppendToLog
-        private void AppendToDetailsRichTextBlock(string text) => AppendToLog(text);
+        private void AppendToDetailsRichTextBlock(string text) => AppLogger.UiOnly(text);
 
         private appFunction _pageLogFunction = appFunction.Main;
         protected override appFunction PageLogFunction => _pageLogFunction;
@@ -130,7 +129,8 @@ namespace IntuneTools.Pages
 
             if (_deleteTotal == 0)
             {
-                AppendToDetailsRichTextBlock("No content to delete.");
+                AppLogger.UiOnly("No content to delete.");
+                _pageLogFunction = appFunction.Main;
                 return;
             }
 
@@ -253,7 +253,7 @@ namespace IntuneTools.Pages
 
             if (isAssigned == null)
             {
-                AppendToDetailsRichTextBlock($"Failed to check assignments for '{name}'. Skipping deletion to be safe.");
+                AppLogger.Warning($"Failed to check assignments for '{name}'. Skipping deletion to be safe.", appFunction.Delete);
                 return false;
             }
 
@@ -436,7 +436,7 @@ namespace IntuneTools.Pages
                         UpdateTotalTimeSaved(secondsSavedOnFindingUnassigned, appFunction.FindUnassigned);
                         if (hasAssignments == null)
                         {
-                            AppendToDetailsRichTextBlock($"Failed to check assignments for '{item.ContentName}'. Skipping to be safe.");
+                            AppLogger.Warning($"Failed to check assignments for '{item.ContentName}'. Skipping to be safe.", appFunction.FindUnassigned);
                         }
                         else if (!hasAssignments.Value)
                         {
@@ -450,13 +450,13 @@ namespace IntuneTools.Pages
                 }
 
                 CleanupDataGrid.ItemsSource = ContentList;
-                AppendToDetailsRichTextBlock($"Found {ContentList.Count} unassigned item(s) out of {totalItems} total.");
+                AppLogger.Info($"Found {ContentList.Count} unassigned item(s) out of {totalItems} total.", appFunction.FindUnassigned);
                 ShowOperationSuccess($"Found {ContentList.Count} unassigned item(s)");
                 AppLogger.Info($"Find Unassigned scan completed — {ContentList.Count} unassigned item(s) found.", appFunction.Main);
             }
             catch (Exception ex)
             {
-                AppendToDetailsRichTextBlock($"Error finding unassigned content: {ex.Message}");
+                AppLogger.Error($"Error finding unassigned content: {ex.Message}", appFunction.FindUnassigned);
                 ShowOperationError($"Error: {ex.Message}");
             }
             finally
