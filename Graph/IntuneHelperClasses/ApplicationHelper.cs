@@ -9,8 +9,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                AppLogger.Info("Retrieving all Mobile Apps.", appFunction.Main);
-
                 var result = await graphServiceClient.DeviceAppManagement.MobileApps.GetAsync();
 
                 List<MobileApp> mobileApps = new List<MobileApp>();
@@ -23,11 +21,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         return true;
                     });
                     await pageIterator.IterateAsync();
-                    AppLogger.Info($"Found {mobileApps.Count} Mobile Apps.", appFunction.Main);
-                }
-                else
-                {
-                    AppLogger.Info("No Mobile Apps found or the result was null.", appFunction.Main);
                 }
 
 
@@ -58,8 +51,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                AppLogger.Info($"Searching for Mobile Apps containing '{searchQuery}'.", appFunction.Main);
-
                 var result = await graphServiceClient.DeviceAppManagement.MobileApps.GetAsync((requestConfiguration) =>
                 {
                     requestConfiguration.QueryParameters.Filter = $"contains(displayName, '{searchQuery}')";
@@ -75,11 +66,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         return true;
                     });
                     await pageIterator.IterateAsync();
-                    AppLogger.Info($"Found {mobileApps.Count} Mobile Apps matching '{searchQuery}'.", appFunction.Main);
-                }
-                else
-                {
-                    AppLogger.Info($"No Mobile Apps found matching '{searchQuery}' or the result was null.", appFunction.Main);
                 }
 
                 return mobileApps;
@@ -143,7 +129,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
             try
             {
-                await AssignGroupsToApplication(appInfo.Value.ContentId, groups, graphServiceClient, assignmentSettings);
+                await AssignGroupsToApplication(appInfo.Value.ContentId, appInfo.Value.ContentName, groups, graphServiceClient, assignmentSettings);
             }
             catch (Exception ex)
             {
@@ -193,7 +179,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             };
         }
 
-        public static async Task AssignGroupsToApplication(string appId, List<string> groupIds, GraphServiceClient graphServiceClient, MobileAppAssignmentSettings? assignmentSettings = null)
+        public static async Task AssignGroupsToApplication(string appId, string contentName, List<string> groupIds, GraphServiceClient graphServiceClient, MobileAppAssignmentSettings? assignmentSettings = null)
         {
             try
             {
@@ -366,12 +352,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         .PostAsync(requestBody);
                 }, maxRetries: 5, baseDelaySeconds: 2);
 
-                AppLogger.Info($"Assigned {assignments.Count} assignments to application {appId} with filter type {deviceAndAppManagementAssignmentFilterType}.", appFunction.Assignment);
+                AppLogger.Info($"Assigned '{contentName}' to {assignments.Count} group(s).", appFunction.Assignment);
                 UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
             }
             catch (Exception ex)
             {
                 AppLogger.Warning($"An error occurred while assigning groups to application: {ex.Message}", appFunction.Assignment);
+                throw;
             }
         }
 

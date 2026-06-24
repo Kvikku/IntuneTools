@@ -8,13 +8,8 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                AppLogger.Info("Searching for Windows Feature Update profiles. Search query: " + searchQuery, appFunction.Main);
-
                 var allProfiles = await GetAllWindowsFeatureUpdateProfiles(graphServiceClient);
                 var filteredProfiles = allProfiles.Where(p => p?.DisplayName != null && p.DisplayName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)).ToList();
-
-                AppLogger.Info($"Found {filteredProfiles.Count} Windows Feature Update profiles matching the search query.", appFunction.Main);
-
                 return filteredProfiles;
             }
             catch (Exception ex)
@@ -28,8 +23,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                AppLogger.Info("Retrieving all Windows Feature Update profiles.", appFunction.Main);
-
                 var result = await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles.GetAsync((requestConfiguration) =>
                 {
                     //requestConfiguration.QueryParameters.Top = 1000; // Adjust as needed
@@ -46,13 +39,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     });
                     await pageIterator.IterateAsync();
                 }
-                else
-                {
-                    AppLogger.Warning("No Windows Feature Update profiles found or result was null.", appFunction.Main);
-                }
-
-                AppLogger.Info($"Found {profiles.Count} Windows Feature Update profiles.", appFunction.Main);
-
                 return profiles;
             }
             catch (Exception ex)
@@ -113,7 +99,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         if (assignments && groups != null && groups.Any() && importedProfile?.Id != null)
                         {
-                            await AssignGroupsToSingleWindowsFeatureUpdateProfile(importedProfile.Id, groups, destinationGraphServiceClient);
+                            await AssignGroupsToSingleWindowsFeatureUpdateProfile(importedProfile.Id, importedProfile.DisplayName ?? string.Empty, groups, destinationGraphServiceClient);
                         }
                     }
                     catch (Exception ex)
@@ -134,7 +120,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         /// Assigns groups to a single Windows Feature Update Profile.
         /// Windows Feature Update profiles can ONLY be assigned to device groups - not All Users or All Devices.
         /// </summary>
-        public static async Task AssignGroupsToSingleWindowsFeatureUpdateProfile(string profileID, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
+        public static async Task AssignGroupsToSingleWindowsFeatureUpdateProfile(string profileID, string contentName, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
         {
             try
             {
@@ -238,21 +224,23 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 try
                 {
                     await destinationGraphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileID].Assign.PostAsync(requestBody);
-                    AppLogger.Info($"Assigned {assignments.Count} assignments to Feature Update profile {profileID}", appFunction.Assignment);
+                    AppLogger.Info($"Assigned '{contentName}' to {assignments.Count} group(s).", appFunction.Assignment);
                     UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
                 }
                 catch (Exception ex)
                 {
                     AppLogger.Error($"Error assigning groups to profile {profileID}: {ex.Message}", appFunction.Assignment);
+                    throw;
                 }
             }
             catch (ArgumentNullException argEx)
             {
                 AppLogger.Error($"Argument null exception during group assignment setup: {argEx.Message}", appFunction.Assignment);
+                throw;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Warning($"An error occurred while preparing assignment for profile {profileID}: {ex.Message}", appFunction.Assignment);
+                throw;
             }
         }
         public static async Task DeleteWindowsFeatureUpdateProfile(GraphServiceClient graphServiceClient, string profileID)
@@ -516,7 +504,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                AppLogger.Error($"Error getting assignment details for Windows Feature Update {profileId}: {ex.Message}", appFunction.Main);
+                AppLogger.Error($"Error getting assignment details for Windows Feature Update {profileId}: {ex.Message}", appFunction.ManageAssignment);
                 return null;
             }
         }
@@ -532,7 +520,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             };
 
             await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileId].Assign.PostAsync(requestBody);
-            AppLogger.Info($"Removed all assignments from Windows Feature Update profile {profileId}.", appFunction.Main);
+            AppLogger.Info($"Removed all assignments from Windows Feature Update profile {profileId}.", appFunction.ManageAssignment);
         }
     }
 }

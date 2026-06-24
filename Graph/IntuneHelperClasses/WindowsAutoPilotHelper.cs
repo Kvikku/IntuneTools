@@ -9,8 +9,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                AppLogger.Info("Searching for Windows AutoPilot profiles. Search query: " + searchQuery, appFunction.Main);
-
                 var result = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles.GetAsync((requestConfiguration) =>
                 {
                     requestConfiguration.QueryParameters.Filter = $"contains(displayName,'{searchQuery}')";
@@ -23,8 +21,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     return true;
                 });
                 await pageIterator.IterateAsync();
-
-                AppLogger.Info($"Found {profiles.Count} Windows AutoPilot profiles.", appFunction.Main);
 
                 return profiles;
             }
@@ -39,8 +35,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                AppLogger.Info("Retrieving all Windows AutoPilot profiles.", appFunction.Main);
-
                 var result = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles.GetAsync((requestConfiguration) =>
                 {
                     requestConfiguration.QueryParameters.Top = 1000;
@@ -53,8 +47,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     return true;
                 });
                 await pageIterator.IterateAsync();
-
-                AppLogger.Info($"Found {profiles.Count} Windows AutoPilot profiles.", appFunction.Main);
 
                 return profiles;
             }
@@ -128,7 +120,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                             AppLogger.Info($"Imported profile: {requestBody.DisplayName}", appFunction.Import);
                             if (assignments)
                             {
-                                await AssignGroupsToSingleWindowsAutoPilotProfile(import.Id, groups, destinationGraphServiceClient);
+                                await AssignGroupsToSingleWindowsAutoPilotProfile(import.Id, requestBody.DisplayName ?? string.Empty, groups, destinationGraphServiceClient);
                             }
                         }
                     }
@@ -144,7 +136,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task AssignGroupsToSingleWindowsAutoPilotProfile(string profileID, List<string> groupID, GraphServiceClient destinationGraphServiceClient)
+        public static async Task AssignGroupsToSingleWindowsAutoPilotProfile(string profileID, string contentName, List<string> groupID, GraphServiceClient destinationGraphServiceClient)
         {
             try
             {
@@ -262,6 +254,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 // Step 3: Post assignments individually (AutoPilot profiles require individual posts)
                 int successCount = 0;
+                bool hasFailures = false;
                 foreach (var assignment in assignments)
                 {
                     // Skip existing assignments that were already posted
@@ -281,27 +274,22 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         successCount++;
 
-                        string targetType = assignment.Target switch
-                        {
-                            AllDevicesAssignmentTarget => "All Devices",
-                            GroupAssignmentTarget gt => $"group {gt.GroupId}",
-                            _ => "unknown target"
-                        };
-
-                        AppLogger.Info($"Assigned {targetType} to AutoPilot profile {profileID}.", appFunction.Assignment);
                         UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
                     }
                     catch (Exception ex)
                     {
-                        AppLogger.Error($"Error assigning to profile {profileID}: {ex.Message}", appFunction.Assignment);
+                        AppLogger.Error($"Error assigning '{contentName}': {ex.Message}", appFunction.Assignment);
+                        hasFailures = true;
                     }
                 }
 
-                AppLogger.Info($"Assigned {successCount} of {assignments.Count} assignments to AutoPilot profile {profileID}.", appFunction.Assignment);
+                AppLogger.Info($"Assigned '{contentName}' to {successCount} group(s).", appFunction.Assignment);
+                if (hasFailures)
+                    throw new Exception($"One or more group assignments failed for '{contentName}'. See log for details.");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Warning($"An error occurred while assigning groups to a single Windows AutoPilot profile: {ex.Message}", appFunction.Assignment);
+                throw;
             }
         }
 
@@ -677,7 +665,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                AppLogger.Error($"Error getting assignment details for Windows AutoPilot Profile {profileId}: {ex.Message}", appFunction.Main);
+                AppLogger.Error($"Error getting assignment details for Windows AutoPilot Profile {profileId}: {ex.Message}", appFunction.ManageAssignment);
                 return null;
             }
         }
@@ -706,7 +694,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     .Assignments.WithUrl(result.OdataNextLink).GetAsync();
             }
 
-            AppLogger.Info($"Removed all assignments from Windows AutoPilot Profile {profileId}.", appFunction.Main);
+            AppLogger.Info($"Removed all assignments from Windows AutoPilot Profile {profileId}.", appFunction.ManageAssignment);
         }
     }
 }

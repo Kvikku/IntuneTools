@@ -8,8 +8,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                AppLogger.Info("Searching for macOS shell scripts. Search query: " + searchQuery, appFunction.Main);
-
                 // Note: The Graph API for DeviceShellScript might not support filtering by name directly in the same way.
                 // This might require fetching all and filtering locally, or adjusting the query if supported.
                 // For now, let's assume a similar filter structure, but this might need adjustment.
@@ -28,8 +26,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 });
                 await pageIterator.IterateAsync();
 
-                AppLogger.Info($"Found {shellScripts.Count} macOS shell scripts matching the search.", appFunction.Main);
-
                 return shellScripts;
             }
             catch (Exception ex)
@@ -43,8 +39,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                AppLogger.Info("Retrieving all macOS shell scripts.", appFunction.Main);
-
                 var result = await graphServiceClient.DeviceManagement.DeviceShellScripts.GetAsync((requestConfiguration) =>
                 {
                     requestConfiguration.QueryParameters.Top = 1000; // Adjust as needed
@@ -57,8 +51,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     return true;
                 });
                 await pageIterator.IterateAsync();
-
-                AppLogger.Info($"Found {shellScripts.Count} macOS shell scripts.", appFunction.Main);
 
                 return shellScripts;
             }
@@ -113,7 +105,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                             if (assignments && groups != null && groups.Any())
                             {
                                 // Shell script assignments use a different structure
-                                await AssignGroupsToSingleShellScriptmacOS(importResult.Id, groups, destinationGraphServiceClient); // Pass filter bool if needed for assignment logic
+                                await AssignGroupsToSingleShellScriptmacOS(importResult.Id, importResult.DisplayName ?? string.Empty, groups, destinationGraphServiceClient);
                             }
                         }
                         else
@@ -137,7 +129,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
 
         // Note: Assignment structure for Shell Scripts is different from Configuration Policies
-        public static async Task AssignGroupsToSingleShellScriptmacOS(string scriptId, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
+        public static async Task AssignGroupsToSingleShellScriptmacOS(string scriptId, string contentName, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
         {
             try
             {
@@ -262,7 +254,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 try
                 {
                     await destinationGraphServiceClient.DeviceManagement.DeviceShellScripts[scriptId].Assign.PostAsync(requestBody);
-                    AppLogger.Info($"Assigned {assignments.Count} assignments to macOS shell script {scriptId}.", appFunction.Assignment);
+                    AppLogger.Info($"Assigned '{contentName}' to {assignments.Count} group(s).", appFunction.Assignment);
                     UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
 
                     // Note: Filters are not directly supported in the Assign action for shell scripts
@@ -275,11 +267,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 catch (Exception ex)
                 {
                     AppLogger.Warning($"An error occurred while assigning groups to macOS shell script: {ex.Message}", appFunction.Assignment);
+                    throw;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Warning($"An error occurred while assigning groups to macOS shell script: {ex.Message}", appFunction.Assignment);
+                throw;
             }
         }
         public static async Task DeleteMacosShellScript(GraphServiceClient graphServiceClient, string profileID)
@@ -559,7 +552,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                AppLogger.Error($"Error getting assignment details for macOS Shell Script {scriptId}: {ex.Message}", appFunction.Main);
+                AppLogger.Error($"Error getting assignment details for macOS Shell Script {scriptId}: {ex.Message}", appFunction.ManageAssignment);
                 return null;
             }
         }
@@ -575,7 +568,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             };
 
             await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptId].Assign.PostAsync(requestBody);
-            AppLogger.Info($"Removed all assignments from macOS Shell Script {scriptId}.", appFunction.Main);
+            AppLogger.Info($"Removed all assignments from macOS Shell Script {scriptId}.", appFunction.ManageAssignment);
         }
     }
 }

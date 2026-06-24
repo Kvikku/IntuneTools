@@ -8,8 +8,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                AppLogger.Info("Searching for PowerShell scripts. Search query: " + searchQuery, appFunction.Main);
-
                 var result = await graphServiceClient.DeviceManagement.DeviceManagementScripts.GetAsync((requestConfiguration) =>
                 {
                     requestConfiguration.QueryParameters.Filter = $"contains(displayName,'{searchQuery}')";
@@ -22,8 +20,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     return true;
                 });
                 await pageIterator.IterateAsync();
-
-                AppLogger.Info($"Found {scripts.Count} PowerShell scripts.", appFunction.Main);
 
                 return scripts;
             }
@@ -38,8 +34,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                AppLogger.Info("Retrieving all PowerShell scripts.", appFunction.Main);
-
                 var result = await graphServiceClient.DeviceManagement.DeviceManagementScripts.GetAsync((requestConfiguration) =>
                 {
                     requestConfiguration.QueryParameters.Top = 1000;
@@ -52,8 +46,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     return true;
                 });
                 await pageIterator.IterateAsync();
-
-                AppLogger.Info($"Found {scripts.Count} PowerShell scripts.", appFunction.Main);
 
                 return scripts;
             }
@@ -96,7 +88,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         if (assignments)
                         {
-                            await AssignGroupsToSinglePowerShellScript(import.Id, groups, destinationGraphServiceClient);
+                            await AssignGroupsToSinglePowerShellScript(import.Id, requestBody.DisplayName ?? string.Empty, groups, destinationGraphServiceClient);
                         }
                     }
                     catch (Exception ex)
@@ -111,7 +103,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task AssignGroupsToSinglePowerShellScript(string scriptID, List<string> groupID, GraphServiceClient destinationGraphServiceClient)
+        public static async Task AssignGroupsToSinglePowerShellScript(string scriptID, string contentName, List<string> groupID, GraphServiceClient destinationGraphServiceClient)
         {
             try
             {
@@ -248,17 +240,18 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 try
                 {
                     await destinationGraphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].Assign.PostAsync(requestBody);
-                    AppLogger.Info($"Assigned {assignments.Count} assignments to script {scriptID} with filter type {deviceAndAppManagementAssignmentFilterType}.", appFunction.Assignment);
+                    AppLogger.Info($"Assigned '{contentName}' to {assignments.Count} group(s).", appFunction.Assignment);
                     UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
                 }
                 catch (Exception ex)
                 {
                     AppLogger.Warning($"An error occurred while assigning groups to PowerShell script: {ex.Message}", appFunction.Assignment);
+                    throw;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Warning($"An error occurred while assigning groups to a single PowerShell script: {ex.Message}", appFunction.Assignment);
+                throw;
             }
         }
         public static async Task DeletePowerShellScript(GraphServiceClient graphServiceClient, string scriptID)
@@ -525,7 +518,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                AppLogger.Error($"Error getting assignment details for PowerShell Script {scriptId}: {ex.Message}", appFunction.Main);
+                AppLogger.Error($"Error getting assignment details for PowerShell Script {scriptId}: {ex.Message}", appFunction.ManageAssignment);
                 return null;
             }
         }
@@ -541,7 +534,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             };
 
             await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptId].Assign.PostAsync(requestBody);
-            AppLogger.Info($"Removed all assignments from PowerShell Script {scriptId}.", appFunction.Main);
+            AppLogger.Info($"Removed all assignments from PowerShell Script {scriptId}.", appFunction.ManageAssignment);
         }
     }
 }

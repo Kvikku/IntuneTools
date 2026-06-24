@@ -9,8 +9,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             // This method retrieves all the device compliance policies from Intune and returns them as a list of DeviceManagementCompliancePolicy objects
             try
             {
-                AppLogger.Info("Retrieving all device compliance policies.", appFunction.Main);
-
                 var result = await graphServiceClient.DeviceManagement.DeviceCompliancePolicies.GetAsync((requestConfiguration) =>
                 {
                     requestConfiguration.QueryParameters.Top = 1000;
@@ -30,8 +28,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 });
                 // start the iteration
                 await pageIterator.IterateAsync();
-
-                AppLogger.Info($"Found {compliancePolicies.Count} device compliance policies.", appFunction.Main);
 
                 // return the list of policies
                 return compliancePolicies;
@@ -54,8 +50,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             // This method searches the Intune device compliance policies for a specific query and returns the results as a list of DeviceManagementCompliancePolicy objects
             try
             {
-                AppLogger.Info("Searching for device compliance policies. Search query: " + searchQuery, appFunction.Main);
-
                 var result = await graphServiceClient.DeviceManagement.DeviceCompliancePolicies.GetAsync();
 
 
@@ -70,15 +64,10 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 await pageIterator.IterateAsync();
 
 
-                AppLogger.Info($"Found {compliancePolicies.Count} device compliance policies.", appFunction.Main);
-
                 // Filter the collected policies based on the searchQuery - Graph API does not allow for server side filtering
                 var filteredPolicies = compliancePolicies
                     .Where(policy => policy.DisplayName != null && policy.DisplayName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
                     .ToList();
-
-                AppLogger.Info($"Filtered policies count: {filteredPolicies.Count}", appFunction.Main);
-
 
                 // return the list of policies
                 return filteredPolicies;
@@ -203,7 +192,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         if (assignments)
                         {
-                            await AssignGroupsToSingleDeviceCompliance(import.Id, groups, destinationGraphServiceClient);
+                            await AssignGroupsToSingleDeviceCompliance(import.Id, import.DisplayName ?? string.Empty, groups, destinationGraphServiceClient);
                         }
                     }
                     catch (Exception ex)
@@ -222,7 +211,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task AssignGroupsToSingleDeviceCompliance(string policyID, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
+        public static async Task AssignGroupsToSingleDeviceCompliance(string policyID, string contentName, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
         {
             try
             {
@@ -356,17 +345,18 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 try
                 {
                     await destinationGraphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyID].Assign.PostAsync(requestBody);
-                    AppLogger.Info($"Assigned {assignments.Count} assignments to policy {policyID} with filter type {deviceAndAppManagementAssignmentFilterType}.", appFunction.Assignment);
+                    AppLogger.Info($"Assigned '{contentName}' to {assignments.Count} group(s).", appFunction.Assignment);
                     UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
                 }
                 catch (Exception ex)
                 {
                     AppLogger.Warning($"An error occurred while assigning groups to device compliance policy: {ex.Message}", appFunction.Assignment);
+                    throw;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Warning($"An error occurred while assigning groups to device compliance policy: {ex.Message}", appFunction.Assignment);
+                throw;
             }
         }
 
@@ -754,7 +744,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                AppLogger.Error($"Error getting assignment details for Device Compliance {policyId}: {ex.Message}", appFunction.Main);
+                AppLogger.Error($"Error getting assignment details for Device Compliance {policyId}: {ex.Message}", appFunction.ManageAssignment);
                 return null;
             }
         }
@@ -770,7 +760,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             };
 
             await graphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyId].Assign.PostAsync(requestBody);
-            AppLogger.Info($"Removed all assignments from Device Compliance policy {policyId}.", appFunction.Main);
+            AppLogger.Info($"Removed all assignments from Device Compliance policy {policyId}.", appFunction.ManageAssignment);
         }
     }
 

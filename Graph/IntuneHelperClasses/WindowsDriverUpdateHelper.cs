@@ -11,8 +11,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                AppLogger.Info("Searching for Windows Driver Update Profiles. Search query: " + searchQuery, appFunction.Main);
-
                 var result = await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles.GetAsync();
 
                 List<WindowsDriverUpdateProfile> driverProfiles = new List<WindowsDriverUpdateProfile>();
@@ -29,11 +27,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     });
                     await pageIterator.IterateAsync();
 
-                    AppLogger.Info($"Found {driverProfiles.Count} Windows Driver Update Profiles matching the search query.", appFunction.Main);
-                }
-                else
-                {
-                    AppLogger.Error("No Windows Driver Update Profiles found matching the search query or the result was null.", appFunction.Main);
                 }
 
 
@@ -53,8 +46,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                AppLogger.Info("Retrieving all Windows Driver Update Profiles.", appFunction.Main);
-
                 var result = await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles.GetAsync();
 
                 List<WindowsDriverUpdateProfile> driverProfiles = new List<WindowsDriverUpdateProfile>();
@@ -67,11 +58,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         return true;
                     });
                     await pageIterator.IterateAsync();
-                    AppLogger.Info($"Found {driverProfiles.Count} Windows Driver Update Profiles.", appFunction.Main);
-                }
-                else
-                {
-                    AppLogger.Info("No Windows Driver Update Profiles found or the result was null.", appFunction.Main);
                 }
 
                 return driverProfiles;
@@ -122,7 +108,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         if (assignments && importResult?.Id != null)
                         {
-                            await AssignGroupsToSingleDriverProfile(importResult.Id, groups, destinationGraphServiceClient);
+                            await AssignGroupsToSingleDriverProfile(importResult.Id, importResult.DisplayName ?? string.Empty, groups, destinationGraphServiceClient);
                         }
                     }
                     catch (Exception ex)
@@ -146,7 +132,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         /// Assigns groups to a single Windows Driver Update Profile.
         /// Windows Driver Update profiles can ONLY be assigned to device groups - not All Users or All Devices.
         /// </summary>
-        public static async Task AssignGroupsToSingleDriverProfile(string profileID, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
+        public static async Task AssignGroupsToSingleDriverProfile(string profileID, string contentName, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
         {
             try
             {
@@ -251,25 +237,28 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 try
                 {
                     await destinationGraphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileID].Assign.PostAsync(requestBody);
-                    AppLogger.Info($"Assigned {assignments.Count} assignments to driver profile {profileID}. Filter: {SelectedFilterID ?? "None"}", appFunction.Assignment);
+                    AppLogger.Info($"Assigned '{contentName}' to {assignments.Count} group(s).", appFunction.Assignment);
                     UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
                 }
                 catch (ServiceException svcex)
                 {
                     AppLogger.Error($"Graph API error assigning groups to profile {profileID}: {svcex.Message}", appFunction.Assignment);
+                    throw;
                 }
                 catch (Exception ex)
                 {
                     AppLogger.Error($"Error assigning groups to profile {profileID}: {ex.Message}", appFunction.Assignment);
+                    throw;
                 }
             }
             catch (ArgumentNullException argEx)
             {
                 AppLogger.Error($"Argument null exception during group assignment setup: {argEx.Message}", appFunction.Assignment);
+                throw;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Warning($"An unexpected error occurred while preparing group assignments for a driver profile: {ex.Message}", appFunction.Assignment);
+                throw;
             }
         }
         public static async Task DeleteDriverProfile(GraphServiceClient graphServiceClient, string profileID)
@@ -539,7 +528,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                AppLogger.Error($"Error getting assignment details for Windows Driver Update {profileId}: {ex.Message}", appFunction.Main);
+                AppLogger.Error($"Error getting assignment details for Windows Driver Update {profileId}: {ex.Message}", appFunction.ManageAssignment);
                 return null;
             }
         }
@@ -555,7 +544,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             };
 
             await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileId].Assign.PostAsync(requestBody);
-            AppLogger.Info($"Removed all assignments from Windows Driver Update profile {profileId}.", appFunction.Main);
+            AppLogger.Info($"Removed all assignments from Windows Driver Update profile {profileId}.", appFunction.ManageAssignment);
         }
     }
 }

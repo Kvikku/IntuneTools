@@ -48,7 +48,7 @@ namespace IntuneTools.Pages
         /// <param name="AssignAsync">Async function that performs the assignment operation.</param>
         private record AssignTypeDefinition(
             string ContentTypeDisplayName,
-            Func<string, List<string>, GraphServiceClient, Task> AssignAsync);
+            Func<string, string, List<string>, GraphServiceClient, Task> AssignAsync);
 
         public static ObservableCollection<CustomContentInfo> AssignmentList { get; } = new();
         public ObservableCollection<AssignmentGroupInfo> GroupList { get; } = new();
@@ -125,6 +125,8 @@ namespace IntuneTools.Pages
             RightClickMenu.AttachDataGridContextMenu(AppDataGrid);
         }
 
+        protected override appFunction PageLogFunction => appFunction.Assignment;
+
         protected override string[] GetManagedControlNames() => new[]
         {
             "ContentSearchBox", "ListAllButton", "RemoveSelectedButton", "RemoveAllButton",
@@ -144,51 +146,51 @@ namespace IntuneTools.Pages
         {
             yield return new AssignTypeDefinition(
                 "Device Compliance Policy",
-                async (id, groups, client) => await AssignGroupsToSingleDeviceCompliance(id, groups, client));
+                async (id, name, groups, client) => await AssignGroupsToSingleDeviceCompliance(id, name, groups, client));
 
             yield return new AssignTypeDefinition(
                 "Settings Catalog",
-                async (id, groups, client) => await AssignGroupsToSingleSettingsCatalog(id, groups, client));
+                async (id, name, groups, client) => await AssignGroupsToSingleSettingsCatalog(id, name, groups, client));
 
             yield return new AssignTypeDefinition(
                 "Device Configuration Policy",
-                async (id, groups, client) => await AssignGroupsToSingleDeviceConfiguration(id, groups, client));
+                async (id, name, groups, client) => await AssignGroupsToSingleDeviceConfiguration(id, name, groups, client));
 
             yield return new AssignTypeDefinition(
                 "MacOS Shell Script",
-                async (id, groups, client) => await AssignGroupsToSingleShellScriptmacOS(id, groups, client));
+                async (id, name, groups, client) => await AssignGroupsToSingleShellScriptmacOS(id, name, groups, client));
 
             yield return new AssignTypeDefinition(
                 "PowerShell Script",
-                async (id, groups, client) => await AssignGroupsToSinglePowerShellScript(id, groups, client));
+                async (id, name, groups, client) => await AssignGroupsToSinglePowerShellScript(id, name, groups, client));
 
             yield return new AssignTypeDefinition(
                 "Proactive Remediation",
-                async (id, groups, client) => await AssignGroupsToSingleProactiveRemediation(id, groups, client));
+                async (id, name, groups, client) => await AssignGroupsToSingleProactiveRemediation(id, name, groups, client));
 
             yield return new AssignTypeDefinition(
                 "Windows AutoPilot Profile",
-                async (id, groups, client) => await AssignGroupsToSingleWindowsAutoPilotProfile(id, groups, client));
+                async (id, name, groups, client) => await AssignGroupsToSingleWindowsAutoPilotProfile(id, name, groups, client));
 
             yield return new AssignTypeDefinition(
                 "Windows Driver Update",
-                async (id, groups, client) => await AssignGroupsToSingleDriverProfile(id, groups, client));
+                async (id, name, groups, client) => await AssignGroupsToSingleDriverProfile(id, name, groups, client));
 
             yield return new AssignTypeDefinition(
                 "Windows Feature Update",
-                async (id, groups, client) => await AssignGroupsToSingleWindowsFeatureUpdateProfile(id, groups, client));
+                async (id, name, groups, client) => await AssignGroupsToSingleWindowsFeatureUpdateProfile(id, name, groups, client));
 
             yield return new AssignTypeDefinition(
                 "Windows Quality Update Policy",
-                async (id, groups, client) => await AssignGroupsToSingleWindowsQualityUpdatePolicy(id, groups, client));
+                async (id, name, groups, client) => await AssignGroupsToSingleWindowsQualityUpdatePolicy(id, name, groups, client));
 
             yield return new AssignTypeDefinition(
                 "Windows Quality Update Profile",
-                async (id, groups, client) => await AssignGroupsToSingleWindowsQualityUpdateProfile(id, groups, client));
+                async (id, name, groups, client) => await AssignGroupsToSingleWindowsQualityUpdateProfile(id, name, groups, client));
 
             yield return new AssignTypeDefinition(
                 "Apple BYOD Enrollment Profile",
-                async (id, groups, client) => await AssignGroupsToSingleAppleBYODEnrollmentProfile(id, groups, client));
+                async (id, name, groups, client) => await AssignGroupsToSingleAppleBYODEnrollmentProfile(id, name, groups, client));
         }
 
         /// <summary>
@@ -215,7 +217,7 @@ namespace IntuneTools.Pages
 
             if (definition != null)
             {
-                await definition.AssignAsync(item.ContentId, groupList, graphServiceClient);
+                await definition.AssignAsync(item.ContentId, item.ContentName, groupList, graphServiceClient);
                 return true;
             }
 
@@ -284,7 +286,8 @@ namespace IntuneTools.Pages
                 groupList.Add(group.GroupId);
             }
 
-            // Log the filter
+            var groupNames = string.Join(", ", selectedGroups.Select(g => g.GroupName));
+            AppendToLog($"Groups being assigned to: {groupNames}");
             AppendToLog("Filter: " + _selectedFilterName);
 
 
@@ -337,6 +340,7 @@ namespace IntuneTools.Pages
             try
             {
                 AppendToLog($"Starting assignment of {content.Count} item(s) to {selectedGroups.Count} group(s)...");
+                AppLogger.Info($"Assignment operation started ({content.Count} item(s)) — see Assignment.log for details.", appFunction.Main);
 
                 // Initialize progress tracking
                 _assignTotal = content.Count;

@@ -8,8 +8,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                AppLogger.Info("Searching for device configuration policies. Search query: " + searchQuery, appFunction.Main);
-
                 var result = await graphServiceClient.DeviceManagement.DeviceConfigurations
                     .GetAsync(requestConfiguration =>
                     {
@@ -27,7 +25,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 await pageIterator.IterateAsync();
 
-                AppLogger.Info($"Found {deviceConfigurations.Count} device configuration policies.", appFunction.Main);
                 return deviceConfigurations;
             }
             catch (Exception ex)
@@ -41,8 +38,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                AppLogger.Info("Retrieving all device configuration policies.", appFunction.Main);
-
                 var result = await graphServiceClient.DeviceManagement.DeviceConfigurations
                     .GetAsync(requestConfiguration =>
                     {
@@ -59,7 +54,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 await pageIterator.IterateAsync();
 
-                AppLogger.Info($"Found {deviceConfigurations.Count} device configuration policies.", appFunction.Main);
                 return deviceConfigurations;
             }
             catch (Exception ex)
@@ -150,7 +144,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         if (assignments)
                         {
-                            await AssignGroupsToSingleDeviceConfiguration(import.Id, groups, destinationGraphServiceClient);
+                            await AssignGroupsToSingleDeviceConfiguration(import.Id, import.DisplayName ?? string.Empty, groups, destinationGraphServiceClient);
                         }
                     }
                     catch (Exception ex)
@@ -173,7 +167,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task AssignGroupsToSingleDeviceConfiguration(string configId, List<string> groupIds, GraphServiceClient destinationGraphServiceClient)
+        public static async Task AssignGroupsToSingleDeviceConfiguration(string configId, string contentName, List<string> groupIds, GraphServiceClient destinationGraphServiceClient)
         {
             try
             {
@@ -311,17 +305,18 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 {
                     var result = await destinationGraphServiceClient.DeviceManagement.DeviceConfigurations[configId].Assign.PostAsAssignPostResponseAsync(requestBody);
 
-                    AppLogger.Info($"Assigned {assignments.Count} assignments to device configuration {configId} with filter type {deviceAndAppManagementAssignmentFilterType}.", appFunction.Assignment);
+                    AppLogger.Info($"Assigned '{contentName}' to {assignments.Count} group(s).", appFunction.Assignment);
                     UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
                 }
                 catch (Exception ex)
                 {
                     AppLogger.Warning($"An error occurred while assigning groups to device configuration policy: {ex.Message}", appFunction.Assignment);
+                    throw;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Warning($"An error occurred while assigning groups to a single device configuration policy: {ex.Message}", appFunction.Assignment);
+                throw;
             }
         }
         public static async Task DeleteDeviceConfigurationPolicy(GraphServiceClient graphServiceClient, string policyID)
@@ -643,7 +638,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                AppLogger.Error($"Error getting assignment details for Device Configuration {configId}: {ex.Message}", appFunction.Main);
+                AppLogger.Error($"Error getting assignment details for Device Configuration {configId}: {ex.Message}", appFunction.ManageAssignment);
                 return null;
             }
         }
@@ -659,7 +654,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             };
 
             await graphServiceClient.DeviceManagement.DeviceConfigurations[configId].Assign.PostAsAssignPostResponseAsync(requestBody);
-            AppLogger.Info($"Removed all assignments from Device Configuration policy {configId}.", appFunction.Main);
+            AppLogger.Info($"Removed all assignments from Device Configuration policy {configId}.", appFunction.ManageAssignment);
         }
     }
 }

@@ -9,18 +9,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                AppLogger.Info($"Searching for Apple BYOD enrollment profile. Search query: {searchQuery}", appFunction.Main);
-
                 var result = await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles.GetAsync((requestConfiguration) =>
                 {
                     requestConfiguration.QueryParameters.Filter = $"contains(DisplayName,'{searchQuery}')";
                 });
 
                 if (result == null || result.Value == null)
-                {
-                    AppLogger.Warning($"Search returned null or empty result.", appFunction.Main);
                     return new List<AppleUserInitiatedEnrollmentProfile>();
-                }
 
                 List<AppleUserInitiatedEnrollmentProfile> enrollmentProfiles = new List<AppleUserInitiatedEnrollmentProfile>();
                 var pageIterator = PageIterator<AppleUserInitiatedEnrollmentProfile, AppleUserInitiatedEnrollmentProfileCollectionResponse>.CreatePageIterator(graphServiceClient, result, (profile) =>
@@ -29,8 +24,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     return true;
                 });
                 await pageIterator.IterateAsync();
-
-                AppLogger.Info($"Found {enrollmentProfiles.Count} policies.", appFunction.Main);
 
                 return enrollmentProfiles;
             }
@@ -45,18 +38,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                AppLogger.Info($"Retrieving all Apple BYOD enrollment prfoiles.", appFunction.Main);
-
                 var result = await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles.GetAsync((requestConfiguration) =>
                 {
                     requestConfiguration.QueryParameters.Top = 999;
                 });
 
                 if (result == null || result.Value == null)
-                {
-                    AppLogger.Warning($"Get all returned null or empty result for policies.", appFunction.Main);
                     return new List<AppleUserInitiatedEnrollmentProfile>();
-                }
 
                 List<AppleUserInitiatedEnrollmentProfile> enrollmentProfiles = new List<AppleUserInitiatedEnrollmentProfile>();
                 var pageIterator = PageIterator<AppleUserInitiatedEnrollmentProfile, AppleUserInitiatedEnrollmentProfileCollectionResponse>.CreatePageIterator(graphServiceClient, result, (profile) =>
@@ -65,8 +53,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     return true;
                 });
                 await pageIterator.IterateAsync();
-
-                AppLogger.Info($"Found {enrollmentProfiles.Count} policies.", appFunction.Main);
 
                 return enrollmentProfiles;
             }
@@ -132,7 +118,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         if (assignments && groups != null && groups.Any())
                         {
-                            await AssignGroupsToSingleAppleBYODEnrollmentProfile(importedProfile.Id, groups, destinationGraphServiceClient);
+                            await AssignGroupsToSingleAppleBYODEnrollmentProfile(importedProfile.Id, importedProfile.DisplayName ?? string.Empty, groups, destinationGraphServiceClient);
                         }
                     }
                     catch (Exception ex)
@@ -160,7 +146,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         /// <param name="destinationGraphServiceClient">GraphServiceClient for the destination tenant.</param>
         /// <param name="applyFilter">Whether to apply assignment filters.</param>
         /// <returns>A Task representing the asynchronous assignment operation.</returns>
-        public static async Task AssignGroupsToSingleAppleBYODEnrollmentProfile(string profileId, List<string> groupIds, GraphServiceClient destinationGraphServiceClient)
+        public static async Task AssignGroupsToSingleAppleBYODEnrollmentProfile(string profileId, string contentName, List<string> groupIds, GraphServiceClient destinationGraphServiceClient)
         {
             try
             {
@@ -279,6 +265,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }
 
                 // Step 3: Post assignments individually (Apple enrollment profiles don't support batch assign)
+                bool hasFailures = false;
                 foreach (var assignment in assignments)
                 {
                     // Skip existing assignments that were already posted
@@ -302,28 +289,27 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                             _ => "unknown target"
                         };
 
-                        string filterInfo = !string.IsNullOrEmpty(SelectedFilterID)
-                            ? $" with filter ID {SelectedFilterID} (Type: {deviceAndAppManagementAssignmentFilterType})"
-                            : "";
-
-                        AppLogger.Info($"Assigned {targetType} to profile {profileId}{filterInfo}.", appFunction.Assignment);
                         UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
                     }
                     catch (ODataError odataError)
                     {
-                        AppLogger.Error($"Graph API error assigning to profile {profileId}: {odataError.Error?.Message}", appFunction.Assignment);
+                        AppLogger.Error($"Graph API error assigning '{contentName}': {odataError.Error?.Message}", appFunction.Assignment);
+                        hasFailures = true;
                     }
                     catch (Exception ex)
                     {
-                        AppLogger.Error($"Error assigning to profile {profileId}: {ex.Message}", appFunction.Assignment);
+                        AppLogger.Error($"Error assigning '{contentName}': {ex.Message}", appFunction.Assignment);
+                        hasFailures = true;
                     }
                 }
 
-                AppLogger.Info($"Completed assignment process for profile {profileId}. Total assignments processed: {assignments.Count}", appFunction.Assignment);
+                AppLogger.Info($"Assigned '{contentName}' to {assignments.Count} group(s).", appFunction.Assignment);
+                if (hasFailures)
+                    throw new Exception($"One or more group assignments failed for '{contentName}'. See log for details.");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Error($"An unexpected error occurred while preparing group assignments for profile ID {profileId}: {ex.Message}", appFunction.Assignment);
+                throw;
             }
         }
 
@@ -610,7 +596,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                AppLogger.Error($"Error getting assignment details for Apple BYOD Profile {profileId}: {ex.Message}", appFunction.Main);
+                AppLogger.Error($"Error getting assignment details for Apple BYOD Profile {profileId}: {ex.Message}", appFunction.ManageAssignment);
                 return null;
             }
         }
@@ -636,7 +622,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     .Assignments.WithUrl(result.OdataNextLink).GetAsync();
             }
 
-            AppLogger.Info($"Removed all assignments from Apple BYOD Enrollment Profile {profileId}.", appFunction.Main);
+            AppLogger.Info($"Removed all assignments from Apple BYOD Enrollment Profile {profileId}.", appFunction.ManageAssignment);
         }
     }
 }

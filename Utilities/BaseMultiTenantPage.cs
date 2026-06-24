@@ -333,11 +333,17 @@ namespace IntuneTools.Utilities
             ScrollLogToEnd();
         }
 
-        protected void LogInfo(string message) => AppLogger.Info(message);
-        protected void LogSuccess(string message) => AppLogger.Success(message);
-        protected void LogWarning(string message) => AppLogger.Warning(message);
-        protected void LogError(string message) => AppLogger.Error(message);
-        protected void AppendToLog(string text) => AppLogger.Info(text);
+        /// <summary>
+        /// Override in a page subclass to route AppendToLog/LogXxx calls to the correct log file.
+        /// Defaults to Main for app-wide events (auth, startup, navigation).
+        /// </summary>
+        protected virtual appFunction PageLogFunction => appFunction.Main;
+
+        protected void LogInfo(string message) => AppLogger.Info(message, PageLogFunction);
+        protected void LogSuccess(string message) => AppLogger.Success(message, PageLogFunction);
+        protected void LogWarning(string message) => AppLogger.Warning(message, PageLogFunction);
+        protected void LogError(string message) => AppLogger.Error(message, PageLogFunction);
+        protected void AppendToLog(string text) => AppLogger.Info(text, PageLogFunction);
 
         /// <summary>
         /// Scrolls the log console ListView to the end.

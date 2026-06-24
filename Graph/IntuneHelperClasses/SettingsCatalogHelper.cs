@@ -29,8 +29,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                AppLogger.Info("Searching for settings catalog policies. Search query: " + searchQuery, appFunction.Main);
-
                 var result = await graphServiceClient.DeviceManagement.ConfigurationPolicies.GetAsync((requestConfiguration) =>
                 {
                     requestConfiguration.QueryParameters.Filter = $"contains(Name,'{searchQuery}')";
@@ -43,8 +41,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     return true;
                 });
                 await pageIterator.IterateAsync();
-
-                AppLogger.Info($"Found {configurationPolicies.Count} settings catalog policies.", appFunction.Main);
 
                 return configurationPolicies;
             }
@@ -59,8 +55,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                AppLogger.Info("Retrieving all settings catalog policies.", appFunction.Main);
-
                 var result = await graphServiceClient.DeviceManagement.ConfigurationPolicies.GetAsync((requestConfiguration) =>
                 {
                     requestConfiguration.QueryParameters.Top = 1000;
@@ -73,8 +67,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     return true;
                 });
                 await pageIterator.IterateAsync();
-
-                AppLogger.Info($"Found {configurationPolicies.Count} settings catalog policies.", appFunction.Main);
 
                 return configurationPolicies;
             }
@@ -121,7 +113,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         if (assignments)
                         {
-                            await AssignGroupsToSingleSettingsCatalog(import.Id, groups, destinationGraphServiceClient);
+                            await AssignGroupsToSingleSettingsCatalog(import.Id, import.Name ?? string.Empty, groups, destinationGraphServiceClient);
                         }
                     }
                     catch (Exception ex)
@@ -136,7 +128,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
         }
 
-        public static async Task AssignGroupsToSingleSettingsCatalog(string policyID, List<string> groupID, GraphServiceClient _graphServiceClient)
+        public static async Task AssignGroupsToSingleSettingsCatalog(string policyID, string contentName, List<string> groupID, GraphServiceClient _graphServiceClient)
         {
             try
             {
@@ -284,17 +276,18 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         .Assign
                         .PostAsAssignPostResponseAsync(requestBody);
 
-                    AppLogger.Info($"Assigned {assignments.Count} assignments to policy {policyID} with filter type {deviceAndAppManagementAssignmentFilterType}.", appFunction.Assignment);
+                    AppLogger.Info($"Assigned '{contentName}' to {assignments.Count} group(s).", appFunction.Assignment);
                     UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
                 }
                 catch (Exception ex)
                 {
                     AppLogger.Warning($"An error occurred while assigning groups to settings catalog policy: {ex.Message}", appFunction.Assignment);
+                    throw;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Warning($"An error occurred while assigning groups to settings catalog policy: {ex.Message}", appFunction.Assignment);
+                throw;
             }
         }
 
@@ -563,7 +556,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                AppLogger.Error($"Error getting assignment details for Settings Catalog {policyId}: {ex.Message}", appFunction.Main);
+                AppLogger.Error($"Error getting assignment details for Settings Catalog {policyId}: {ex.Message}", appFunction.ManageAssignment);
                 return null;
             }
         }
@@ -579,7 +572,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             };
 
             await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyId].Assign.PostAsAssignPostResponseAsync(requestBody);
-            AppLogger.Info($"Removed all assignments from Settings Catalog policy {policyId}.", appFunction.Main);
+            AppLogger.Info($"Removed all assignments from Settings Catalog policy {policyId}.", appFunction.ManageAssignment);
         }
     }
 }
