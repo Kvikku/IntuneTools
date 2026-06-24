@@ -122,6 +122,7 @@ namespace IntuneTools.Pages
             _deleteCurrent = 0;
             _deleteSuccessCount = 0;
             _deleteErrorCount = 0;
+            AppLogger.Info($"Delete operation started ({_deleteTotal} item(s)) — see Delete.log for details.", appFunction.Main);
 
             if (_deleteTotal == 0)
             {
@@ -390,6 +391,7 @@ namespace IntuneTools.Pages
             DeleteButton.IsEnabled = false;
             ClearSelectedButton.IsEnabled = false;
             ClearAllButton.IsEnabled = false;
+            AppLogger.Info("Find Unassigned scan started — see FindUnassigned.log for details.", appFunction.Main);
             AppendToDetailsRichTextBlock("Loading all assignable content types. This may take a while...");
             try
             {

@@ -323,6 +323,7 @@ namespace IntuneTools.Pages
                 int totalWithData = 0;
                 int filesWritten = 0;
                 ShowOperationProgress("Exporting to folder...", 0, totalItems);
+                AppLogger.Info($"JSON Export operation started ({totalItems} item(s)) — see JsonExport.log for details.", appFunction.Main);
                 AppLogger.Info($"JSON Export: Starting export of {totalItems} item(s) to '{folder.Path}'.", appFunction.JsonExport);
 
                 foreach (var group in itemsByType)
@@ -585,6 +586,7 @@ namespace IntuneTools.Pages
             var failedItems = new List<(string Name, string Type, string Reason)>();
 
             ShowOperationProgress("Importing to tenant...", 0, total);
+            AppLogger.Info($"JSON Import operation started ({total} item(s)) — see Import.log for details.", appFunction.Main);
             AppLogger.Info($"JSON Import: Starting import of {total} item(s) to {destinationTenantName}.", appFunction.Import);
             AppendToDetailsRichTextBlock($"Starting import of {total} item(s) to {destinationTenantName}...");
 

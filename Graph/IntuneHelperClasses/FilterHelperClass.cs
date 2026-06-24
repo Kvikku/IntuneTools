@@ -12,8 +12,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                AppLogger.Info($"Searching for {PolicyType} policies. Search query: {searchQuery}", appFunction.Main);
-
                 // Assignment filters don't have a direct filter on DisplayName in the same way,
                 // so we get all and filter locally, or adjust if a specific filter query is needed.
                 // For simplicity, getting all and filtering locally for now.
@@ -27,10 +25,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
 
                 if (result == null || result.Value == null)
-                {
-                    AppLogger.Info($"Search returned null or empty result for {PolicyType} policies.", appFunction.Main);
                     return new List<DeviceAndAppManagementAssignmentFilter>();
-                }
 
                 List<DeviceAndAppManagementAssignmentFilter> assignmentFilters = new List<DeviceAndAppManagementAssignmentFilter>();
                 var pageIterator = PageIterator<DeviceAndAppManagementAssignmentFilter, DeviceAndAppManagementAssignmentFilterCollectionResponse>.CreatePageIterator(graphServiceClient, result, (filter) =>
@@ -44,8 +39,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 // If server-side filter doesn't work as expected, filter client-side:
                 // assignmentFilters = assignmentFilters.Where(f => f.DisplayName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)).ToList();
 
-
-                AppLogger.Info($"Found {assignmentFilters.Count} {PolicyType} policies matching the search query.", appFunction.Main);
 
                 return assignmentFilters;
             }

@@ -13,7 +13,6 @@ namespace IntuneTools.Graph.EntraHelperClasses
 
             try
             {
-                AppLogger.Info("Getting all groups in the tenant", appFunction.Main);
                 var result = await graphServiceClient.Groups.GetAsync((requestConfiguration) =>
                 {
                     requestConfiguration.QueryParameters.Count = true;
@@ -31,7 +30,6 @@ namespace IntuneTools.Graph.EntraHelperClasses
                 });
                 // start the iteration
                 await pageIterator.IterateAsync();
-                AppLogger.Info($"Found {groups.Count} groups in the tenant", appFunction.Main);
 
                 // Add virtual groups for All Users and All Devices
                 var allUsersGroup = new Group
@@ -53,8 +51,6 @@ namespace IntuneTools.Graph.EntraHelperClasses
                 // Insert virtual groups at the beginning of the list for easier access
                 groups.Insert(0, allUsersGroup);
                 groups.Insert(1, allDevicesGroup);
-
-                AppLogger.Info($"Added virtual groups. Total groups: {groups.Count}", appFunction.Main);
 
                 // Populate the groupNameAndID dictionary with group names and IDs
                 foreach (var group in groups)
@@ -85,8 +81,6 @@ namespace IntuneTools.Graph.EntraHelperClasses
 
             try
             {
-                AppLogger.Info("Searching for groups. Search query: " + searchQuery, appFunction.Main);
-
                 var result = await graphServiceClient.Groups.GetAsync((requestConfiguration) =>
                 {
                     requestConfiguration.QueryParameters.Search = "\"displayName:" + searchQuery + "\"";
@@ -103,7 +97,6 @@ namespace IntuneTools.Graph.EntraHelperClasses
                 });
                 // start the iteration
                 await pageIterator.IterateAsync();
-                AppLogger.Info($"Found {groups.Count} groups in the tenant", appFunction.Main);
 
                 // Populate the groupNameAndID dictionary with group names and IDs
                 foreach (var group in groups)

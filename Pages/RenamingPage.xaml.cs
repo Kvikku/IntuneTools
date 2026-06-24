@@ -159,6 +159,7 @@ namespace IntuneTools.Pages
             try
             {
                 InitializeProgressTracking(totalItems);
+                AppLogger.Info($"Rename operation started ({totalItems} item(s)) — see Rename.log for details.", appFunction.Main);
                 ShowOperationProgress("Preparing to rename items...", 0, _renameTotal);
 
                 foreach (var definition in GetRenameTypeRegistry())

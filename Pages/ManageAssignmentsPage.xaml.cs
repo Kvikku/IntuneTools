@@ -415,6 +415,7 @@ namespace IntuneTools.Pages
             _removeSuccessCount = 0;
             _removeErrorCount = 0;
 
+            AppLogger.Info($"Manage Assignments operation started ({_removeTotal} item(s)) — see ManageAssignment.log for details.", appFunction.Main);
             ShowOperationProgress("Removing assignments...", 0, _removeTotal);
 
             foreach (var definition in GetRemoveAssignmentRegistry())

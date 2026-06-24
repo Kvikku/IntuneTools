@@ -525,6 +525,7 @@ namespace IntuneTools.Pages
             ShowOperationProgress("Starting import...", 0, _importTotal);
 
             // Log the start of the import process
+            AppLogger.Info($"Import operation started — see Import.log for details.", appFunction.Main);
             AppLogger.Info("Starting import process...", appFunction.Import);
             AppLogger.Info($"Source Tenant: {sourceTenantName}", appFunction.Import);
             AppLogger.Info($"Destination Tenant: {destinationTenantName}", appFunction.Import);
