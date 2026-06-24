@@ -276,17 +276,15 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     throw new ArgumentNullException(nameof(profileID), "Profile ID cannot be null or empty.");
                 }
 
-                AppLogger.Info($"Attempting to delete Windows Driver Update Profile with ID: {profileID}", appFunction.Delete);
                 await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileID].DeleteAsync();
-                AppLogger.Info($"Successfully deleted Windows Driver Update Profile with ID: {profileID}", appFunction.Delete);
             }
             catch (ServiceException svcex) when (svcex.ResponseStatusCode == (int)System.Net.HttpStatusCode.NotFound)
             {
-                AppLogger.Warning($"Windows Driver Update Profile with ID {profileID} not found. It might have already been deleted. Details: {svcex.Message}", appFunction.Delete);
+                AppLogger.Warning($"Windows Driver Update Profile with ID '{profileID}' not found — may have already been deleted.", appFunction.Delete);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Error($"An error occurred while deleting Windows Driver Update Profile with ID: {profileID}: {ex.Message}", appFunction.Delete);
+                throw;
             }
         }
         public static async Task RenameDriverProfile(GraphServiceClient graphServiceClient, string profileID, string newName)

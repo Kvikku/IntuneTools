@@ -274,9 +274,9 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }
                 await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].DeleteAsync();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Error($"An error occurred while deleting PowerShell scripts: {ex.Message}", appFunction.Delete);
+                throw;
             }
         }
         public static async Task RenamePowerShellScript(GraphServiceClient graphServiceClient, string scriptID, string newName)

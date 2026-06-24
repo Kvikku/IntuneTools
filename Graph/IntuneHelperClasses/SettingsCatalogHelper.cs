@@ -309,9 +309,9 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }
                 await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].DeleteAsync();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Warning($"An error occurred while deleting settings catalog policy: {ex.Message}", appFunction.Delete);
+                throw;
             }
         }
 

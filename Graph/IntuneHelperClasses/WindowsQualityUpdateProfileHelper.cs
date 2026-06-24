@@ -283,9 +283,9 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileID].DeleteAsync();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Error($"An error occurred while deleting a Windows Quality Update profile: {ex.Message}", appFunction.Delete);
+                throw;
             }
         }
         public static async Task RenameWindowsQualityUpdateProfile(GraphServiceClient graphServiceClient, string profileID, string newName)

@@ -109,6 +109,9 @@ namespace IntuneTools.Pages
         // Convenience method for logging - calls base class AppendToLog
         private void AppendToDetailsRichTextBlock(string text) => AppendToLog(text);
 
+        private appFunction _pageLogFunction = appFunction.Main;
+        protected override appFunction PageLogFunction => _pageLogFunction;
+
         #endregion
 
         #region Core Operations
@@ -123,6 +126,7 @@ namespace IntuneTools.Pages
             _deleteSuccessCount = 0;
             _deleteErrorCount = 0;
             AppLogger.Info($"Delete operation started ({_deleteTotal} item(s)) — see Delete.log for details.", appFunction.Main);
+            _pageLogFunction = appFunction.Delete;
 
             if (_deleteTotal == 0)
             {
@@ -157,6 +161,7 @@ namespace IntuneTools.Pages
 
             AppendToDetailsRichTextBlock("Content deletion completed.");
             AppLogger.Info($"Delete operation completed — {_deleteSuccessCount} succeeded, {_deleteErrorCount} failed.", appFunction.Main);
+            _pageLogFunction = appFunction.Main;
         }
 
         /// <summary>
@@ -218,12 +223,13 @@ namespace IntuneTools.Pages
             {
                 _deleteCurrent++;
                 ShowOperationProgress($"Deleting {definition.DisplayName}", _deleteCurrent, _deleteTotal);
+                var name = ContentList.FirstOrDefault(c => c.ContentId == id)?.ContentName ?? id;
                 try
                 {
                     var deleted = await definition.DeleteAsync(id);
                     if (deleted)
                     {
-                        AppLogger.Info($"Deleted {definition.DisplayName} with ID: {id}", appFunction.Delete);
+                        AppLogger.Info($"Deleted '{name}' successfully.", appFunction.Delete);
                         UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
                         _deleteSuccessCount++;
                     }
@@ -232,13 +238,8 @@ namespace IntuneTools.Pages
                 catch (Exception ex)
                 {
                     _deleteErrorCount++;
-                    AppLogger.Error($"Error deleting {definition.DisplayName} {id}: {ex.Message}", appFunction.Delete);
+                    AppLogger.Error($"Failed to delete '{name}': {ex.Message}", appFunction.Delete);
                 }
-            }
-
-            if (ids.Count > 0)
-            {
-                AppendToDetailsRichTextBlock($"Processed {ids.Count} {definition.DisplayName}(s).");
             }
         }
 
@@ -247,11 +248,12 @@ namespace IntuneTools.Pages
         /// </summary>
         private async Task<bool> HandleAutoPilotProfileDeletion(string id)
         {
+            var name = ContentList.FirstOrDefault(c => c.ContentId == id)?.ContentName ?? id;
             var isAssigned = await CheckIfAutoPilotProfileHasAssignments(sourceGraphServiceClient, id);
 
             if (isAssigned == null)
             {
-                AppendToDetailsRichTextBlock($"Failed to check assignments for AutoPilot profile {id}. Skipping deletion to be safe.");
+                AppendToDetailsRichTextBlock($"Failed to check assignments for '{name}'. Skipping deletion to be safe.");
                 return false;
             }
 
@@ -260,7 +262,7 @@ namespace IntuneTools.Pages
                 var dialog = new ContentDialog
                 {
                     Title = "Delete AutoPilot Profile",
-                    Content = $"The Windows AutoPilot profile with ID: {id} is assigned to devices. Do you want to delete the assignments before deleting the profile?",
+                    Content = $"'{name}' is assigned to devices. Do you want to delete the assignments before deleting the profile?",
                     PrimaryButtonText = "Delete Assignments",
                     SecondaryButtonText = "Cancel",
                     DefaultButton = ContentDialogButton.Secondary,
@@ -271,13 +273,13 @@ namespace IntuneTools.Pages
                 if (result == ContentDialogResult.Primary)
                 {
                     await DeleteWindowsAutoPilotProfileAssignments(sourceGraphServiceClient, id);
-                    AppLogger.Info($"Deleted assignments for Windows AutoPilot profile with ID: {id}", appFunction.Delete);
+                    AppLogger.Info($"Deleted assignments for '{name}'.", appFunction.Delete);
                     await DeleteWindowsAutopilotProfile(sourceGraphServiceClient, id);
                     return true;
                 }
                 else
                 {
-                    AppLogger.Warning($"Skipped deletion of Windows AutoPilot profile with ID: {id} as it is assigned to devices.", appFunction.Delete);
+                    AppLogger.Warning($"Skipped deletion of '{name}' — profile is assigned to devices.", appFunction.Delete);
                     return false;
                 }
             }
@@ -393,6 +395,7 @@ namespace IntuneTools.Pages
             ClearSelectedButton.IsEnabled = false;
             ClearAllButton.IsEnabled = false;
             AppLogger.Info("Find Unassigned scan started — see FindUnassigned.log for details.", appFunction.Main);
+            _pageLogFunction = appFunction.FindUnassigned;
             AppendToDetailsRichTextBlock("Loading all assignable content types. This may take a while...");
             try
             {
@@ -458,6 +461,7 @@ namespace IntuneTools.Pages
             }
             finally
             {
+                _pageLogFunction = appFunction.Main;
                 HideLoading();
                 DeleteButton.IsEnabled = true;
                 ClearSelectedButton.IsEnabled = true;

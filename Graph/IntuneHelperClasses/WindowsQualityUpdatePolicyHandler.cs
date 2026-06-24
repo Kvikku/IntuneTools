@@ -292,9 +292,9 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].DeleteAsync();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Error($"An error occurred while deleting a Windows Quality Update policy: {ex.Message}", appFunction.Delete);
+                throw;
             }
         }
 

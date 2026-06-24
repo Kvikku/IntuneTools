@@ -178,15 +178,9 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 await graphServiceClient.DeviceManagement.AssignmentFilters[filterID].DeleteAsync();
                 return true;
             }
-            catch (ODataError odataError)
+            catch (Exception)
             {
-                AppLogger.Error($"OData error deleting assignment filter {filterID}: {odataError.Error?.Message}", appFunction.Delete);
-                return false;
-            }
-            catch (Exception ex)
-            {
-                AppLogger.Error($"Error deleting assignment filter {filterID}: {ex.Message}", appFunction.Delete);
-                return false;
+                throw;
             }
         }
         public static async Task RenameAssignmentFilter(GraphServiceClient graphServiceClient, string filterID, string newName)

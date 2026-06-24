@@ -294,9 +294,9 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }
                 await graphServiceClient.DeviceManagement.DeviceShellScripts[profileID].DeleteAsync();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Error($"An error occurred while deleting macOS shell script: {ex.Message}", appFunction.Delete);
+                throw;
             }
         }
         public static async Task RenameMacOSShellScript(GraphServiceClient graphServiceClient, string scriptID, string newName)

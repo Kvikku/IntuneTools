@@ -258,10 +258,11 @@ namespace IntuneTools.Graph.EntraHelperClasses
                 {
                     AppLogger.Error("An OData error occurred while deleting a security group. Check the permissions and try again.", appFunction.Delete);
                 }
+                throw;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Error($"An error occurred while deleting a security group: {ex.Message}", appFunction.Delete);
+                throw;
             }
         }
         public static async Task RenameGroup(GraphServiceClient graphServiceClient, string groupID, string newName)

@@ -407,9 +407,9 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }
                 await graphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyID].DeleteAsync();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Error($"An error occurred while deleting device compliance policy with ID '{policyID}': {ex.Message}", appFunction.Delete);
+                throw;
             }
         }
 
