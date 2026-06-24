@@ -570,7 +570,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 if (result == null)
                 {
-                    AppLogger.Warning($"Device compliance policy {policyId} not found for export.", appFunction.Main);
+                    AppLogger.Warning($"Device compliance policy {policyId} not found for export.", appFunction.JsonExport);
                     return null;
                 }
 
@@ -582,7 +582,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                AppLogger.Error($"Error exporting device compliance policy {policyId}: {ex.Message}", appFunction.Main);
+                AppLogger.Error($"Error exporting device compliance policy {policyId}: {ex.Message}", appFunction.JsonExport);
                 return null;
             }
         }
