@@ -323,7 +323,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileID].PatchAsync(profile);
-                    AppLogger.Info($"Successfully renamed Windows Driver Update Profile from '{existingProfile.DisplayName}' to '{name}'", appFunction.Rename);
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
@@ -344,7 +343,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileID].PatchAsync(profile);
-                    AppLogger.Info($"Updated description for Windows Driver Update Profile {profileID} to '{newName}'", appFunction.Rename);
                 }
                 else if (selectedRenameMode == "RemovePrefix")
                 {
@@ -363,12 +361,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileID].PatchAsync(profile);
-                    AppLogger.Info($"Removed prefix from Windows Driver Update Profile {profileID}, new name: '{name}'", appFunction.Rename);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Warning($"An error occurred while renaming Windows Driver Update Profile: {ex.Message}", appFunction.Rename);
+                throw;
             }
         }
 

@@ -374,7 +374,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     profile.DisplayName = name;
 
                     await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileID].PatchAsync(profile);
-                    AppLogger.Info($"Renamed Apple BYOD Enrollment profile with ID {profileID} to '{name}'.", appFunction.Rename);
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
@@ -402,7 +401,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     profile.Description = newName;
 
                     await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileID].PatchAsync(profile);
-                    AppLogger.Info($"Updated description for Apple BYOD Enrollment profile {profileID} to '{newName}'.", appFunction.Rename);
                 }
                 else if (selectedRenameMode == "RemovePrefix")
                 {
@@ -426,12 +424,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     profile.DisplayName = name;
 
                     await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileID].PatchAsync(profile);
-                    AppLogger.Info($"Removed prefix from Apple BYOD Enrollment profile {profileID}, new name: '{name}'", appFunction.Rename);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Warning($"An error occurred while renaming Apple BYOD Enrollment profiles: {ex.Message}", appFunction.Rename);
+                throw;
             }
         }
 

@@ -302,7 +302,6 @@ namespace IntuneTools.Graph.EntraHelperClasses
                     };
 
                     await graphServiceClient.Groups[groupID].PatchAsync(group);
-                    AppLogger.Info($"Successfully renamed group {groupID} to '{name}'", appFunction.Rename);
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
@@ -324,7 +323,6 @@ namespace IntuneTools.Graph.EntraHelperClasses
                     };
 
                     await graphServiceClient.Groups[groupID].PatchAsync(group);
-                    AppLogger.Info($"Updated description for group {groupID} to '{newName}'", appFunction.Rename);
                 }
                 else if (selectedRenameMode == "RemovePrefix")
                 {
@@ -343,7 +341,6 @@ namespace IntuneTools.Graph.EntraHelperClasses
                     };
 
                     await graphServiceClient.Groups[groupID].PatchAsync(group);
-                    AppLogger.Info($"Removed prefix from group {groupID}, new name: '{name}'", appFunction.Rename);
                 }
             }
             catch (Microsoft.Graph.Beta.Models.ODataErrors.ODataError odataError)
@@ -357,10 +354,11 @@ namespace IntuneTools.Graph.EntraHelperClasses
                 {
                     AppLogger.Error("An OData error occurred while renaming the group. Check the permissions and try again.", appFunction.Rename);
                 }
+                throw;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Warning($"An error occurred while renaming group: {ex.Message}", appFunction.Rename);
+                throw;
             }
         }
 

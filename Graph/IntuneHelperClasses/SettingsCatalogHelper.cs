@@ -347,7 +347,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].PatchAsync(policy);
-                    AppLogger.Info($"Renamed policy {policyID} to {name}", appFunction.Rename);
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
@@ -364,7 +363,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].PatchAsync(policy);
-                    AppLogger.Info($"Updated description for {policyID} to {newName}", appFunction.Rename);
                 }
                 else if (selectedRenameMode == "RemovePrefix")
                 {
@@ -389,12 +387,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].PatchAsync(policy);
-                    AppLogger.Info($"Removed prefix from policy {policyID}, new name: {name}", appFunction.Rename);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Warning($"An error occurred while renaming settings catalog policies: {ex.Message}", appFunction.Rename);
+                throw;
             }
         }
 

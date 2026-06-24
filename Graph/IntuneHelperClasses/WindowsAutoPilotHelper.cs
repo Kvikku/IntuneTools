@@ -451,7 +451,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].PatchAsync(profile);
                     }
 
-                    AppLogger.Info($"Renamed Windows Autopilot profile '{existingProfile.DisplayName}' to '{name}'", appFunction.Rename);
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
@@ -480,7 +479,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].PatchAsync(profile);
-                    AppLogger.Info($"Updated description for Windows Autopilot profile {profileID} to '{newName}'", appFunction.Rename);
                 }
                 else if (selectedRenameMode == "RemovePrefix")
                 {
@@ -506,12 +504,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].PatchAsync(profile);
-                    AppLogger.Info($"Removed prefix from Windows Autopilot profile {profileID}, new name: '{name}'", appFunction.Rename);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Warning($"An error occurred while renaming Windows Autopilot profiles: {ex.Message}", appFunction.Rename);
+                throw;
             }
         }
 

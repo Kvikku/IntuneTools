@@ -438,7 +438,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceAppManagement.MobileApps[appId].PatchAsync(app);
-                    AppLogger.Info($"Renamed application {appId} to '{name}'", appFunction.Rename);
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
@@ -453,7 +452,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceAppManagement.MobileApps[appId].PatchAsync(app);
-                    AppLogger.Info($"Updated description for application {appId} to '{newName}'", appFunction.Rename);
                 }
                 else if (selectedRenameMode == "RemovePrefix")
                 {
@@ -466,12 +464,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceAppManagement.MobileApps[appId].PatchAsync(app);
-                    AppLogger.Info($"Removed prefix from application {appId}, new name: '{name}'", appFunction.Rename);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Warning($"An error occurred while renaming applications: {ex.Message}", appFunction.Rename);
+                throw;
             }
         }
 

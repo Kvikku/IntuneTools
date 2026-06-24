@@ -220,7 +220,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.AssignmentFilters[filterID].PatchAsync(filter);
-                    AppLogger.Info($"Successfully renamed filter with ID '{filterID}' to '{name}'.", appFunction.Rename);
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
@@ -242,7 +241,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.AssignmentFilters[filterID].PatchAsync(filter);
-                    AppLogger.Info($"Updated description for filter {filterID} to '{newName}'.", appFunction.Rename);
                 }
                 else if (selectedRenameMode == "RemovePrefix")
                 {
@@ -261,12 +259,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.AssignmentFilters[filterID].PatchAsync(filter);
-                    AppLogger.Info($"Removed prefix from filter {filterID}, new name: '{name}'", appFunction.Rename);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Warning($"An error occurred while renaming assignment filter: {ex.Message}", appFunction.Rename);
+                throw;
             }
         }
 

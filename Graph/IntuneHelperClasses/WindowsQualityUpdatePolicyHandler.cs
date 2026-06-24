@@ -335,7 +335,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].PatchAsync(policy);
-                    AppLogger.Info($"Successfully renamed Windows Quality Update policy {policyID} to '{name}'", appFunction.Rename);
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
@@ -357,7 +356,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].PatchAsync(policy);
-                    AppLogger.Info($"Updated description for Windows Quality Update policy {policyID} to '{newName}'", appFunction.Rename);
                 }
                 else if (selectedRenameMode == "RemovePrefix")
                 {
@@ -376,12 +374,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].PatchAsync(policy);
-                    AppLogger.Info($"Removed prefix from Windows Quality Update policy {policyID}, new name: '{name}'", appFunction.Rename);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Warning($"An error occurred while renaming Windows Quality Update policy: {ex.Message}", appFunction.Rename);
+                throw;
             }
         }
 

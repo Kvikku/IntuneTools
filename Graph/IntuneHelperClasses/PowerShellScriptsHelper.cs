@@ -316,7 +316,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].PatchAsync(script);
-                    AppLogger.Info($"Renamed Powershell script {scriptID} to {name}", appFunction.Rename);
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
@@ -338,7 +337,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].PatchAsync(script);
-                    AppLogger.Info($"Updated description for Powershell script {scriptID} to {newName}", appFunction.Rename);
                 }
                 else if (selectedRenameMode == "RemovePrefix")
                 {
@@ -357,12 +355,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].PatchAsync(script);
-                    AppLogger.Info($"Removed prefix from PowerShell script {scriptID}, new name: '{name}'", appFunction.Rename);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Warning($"An error occurred while renaming PowerShell scripts: {ex.Message}", appFunction.Rename);
+                throw;
             }
         }
 

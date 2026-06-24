@@ -78,6 +78,8 @@ namespace IntuneTools.Pages
 
         #region Base Class Overrides
 
+        protected override appFunction PageLogFunction => appFunction.Rename;
+
         protected override void ShowLoading(string message = "Loading data from Microsoft Graph...")
         {
             base.ShowLoading(message);
@@ -99,16 +101,16 @@ namespace IntuneTools.Pages
         private async Task ListAllOrchestrator(GraphServiceClient graphServiceClient)
         {
             ShowLoading("Loading data from Microsoft Graph...");
-            LogInfo("Starting to load all content. This could take a while...");
+            AppLogger.UiOnly("Starting to load all content. This could take a while...");
             try
             {
                 CustomContentList.Clear();
-                await LoadAllContentTypesAsync(graphServiceClient, LogInfo);
+                await LoadAllContentTypesAsync(graphServiceClient, AppLogger.UiOnly);
                 RenamingDataGrid.ItemsSource = CustomContentList;
             }
             catch (Exception ex)
             {
-                LogError($"Error during loading: {ex.Message}");
+                AppLogger.UiOnly($"Error during loading: {ex.Message}");
             }
             finally
             {
@@ -119,16 +121,16 @@ namespace IntuneTools.Pages
         private async Task SearchOrchestrator(GraphServiceClient graphServiceClient, string searchQuery)
         {
             ShowLoading("Searching content in Microsoft Graph...");
-            LogInfo($"Searching for content matching '{searchQuery}'. This may take a while...");
+            AppLogger.UiOnly($"Searching for content matching '{searchQuery}'. This may take a while...");
             try
             {
                 CustomContentList.Clear();
-                await SearchAllContentTypesAsync(graphServiceClient, searchQuery, LogInfo);
+                await SearchAllContentTypesAsync(graphServiceClient, searchQuery, AppLogger.UiOnly);
                 RenamingDataGrid.ItemsSource = CustomContentList;
             }
             catch (Exception ex)
             {
-                LogError($"Error during search: {ex.Message}");
+                AppLogger.UiOnly($"Error during search: {ex.Message}");
             }
             finally
             {
@@ -199,20 +201,20 @@ namespace IntuneTools.Pages
             {
                 _renameCurrent++;
                 ShowOperationProgress($"Renaming {contentTypeName}", _renameCurrent, _renameTotal);
+                var name = id;
                 try
                 {
-                    string? displayName = getDisplayName != null ? await getDisplayName(id) : null;
+                    if (getDisplayName != null)
+                        name = await getDisplayName(id) ?? id;
                     await renameAction(id, prefix);
-
-                    var logName = displayName ?? $"ID '{id}'";
-                    LogSuccess($"Updated {contentTypeName} '{logName}' with '{prefix}'.");
+                    LogSuccess($"Renamed '{name}' successfully.");
                     UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
                     _renameSuccessCount++;
                 }
                 catch (Exception ex)
                 {
                     _renameErrorCount++;
-                    LogError($"Error renaming {contentTypeName} with ID {id}: {ex.Message}");
+                    LogError($"Failed to rename '{name}': {ex.Message}");
                 }
             }
         }
@@ -477,7 +479,7 @@ namespace IntuneTools.Pages
             {
                 ShowOperationError($"Completed with {_renameErrorCount} error(s). {_renameSuccessCount} items renamed successfully.");
             }
-            LogSuccess($"Renamed {_renameSuccessCount} items with '{operationText}'.");
+            LogSuccess($"Rename completed — {_renameSuccessCount} succeeded, {_renameErrorCount} failed.");
             AppLogger.Info($"Rename operation completed — {_renameSuccessCount} succeeded, {_renameErrorCount} failed.", appFunction.Main);
         }
 

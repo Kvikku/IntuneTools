@@ -343,7 +343,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     script.DisplayName = name;
 
                     await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptID].PatchAsync(script);
-                    AppLogger.Info($"Renamed macOS shell script '{existingScript.DisplayName}' to '{name}' (ID: {scriptID})", appFunction.Rename);
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
@@ -371,7 +370,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     script.Description = newName;
 
                     await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptID].PatchAsync(script);
-                    AppLogger.Info($"Updated description for macOS shell script {scriptID} to '{newName}'", appFunction.Rename);
                 }
                 else if (selectedRenameMode == "RemovePrefix")
                 {
@@ -390,12 +388,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptID].PatchAsync(script);
-                    AppLogger.Info($"Removed prefix from macOS shell script {scriptID}, new name: '{name}'", appFunction.Rename);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Warning($"An error occurred while renaming macOS shell scripts: {ex.Message}", appFunction.Rename);
+                throw;
             }
         }
 

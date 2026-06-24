@@ -301,7 +301,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileID].PatchAsync(profile);
-                    AppLogger.Info($"Renamed Windows Feature Update profile '{existingProfile.DisplayName}' to '{name}' (ID: {profileID})", appFunction.Rename);
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
@@ -322,7 +321,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileID].PatchAsync(profile);
-                    AppLogger.Info($"Updated description for Windows Feature Update profile {profileID} to '{newName}'", appFunction.Rename);
                 }
                 else if (selectedRenameMode == "RemovePrefix")
                 {
@@ -341,12 +339,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileID].PatchAsync(profile);
-                    AppLogger.Info($"Removed prefix from Windows Feature Update profile {profileID}, new name: '{name}'", appFunction.Rename);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Warning($"An error occurred while renaming Windows Feature Update profile: {ex.Message}", appFunction.Rename);
+                throw;
             }
         }
 

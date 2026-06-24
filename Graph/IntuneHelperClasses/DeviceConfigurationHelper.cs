@@ -377,7 +377,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     policy.DisplayName = name;
 
                     await graphServiceClient.DeviceManagement.DeviceConfigurations[policyID].PatchAsync(policy);
-                    AppLogger.Info($"Renamed device configuration policy {policyID} to {name}", appFunction.Rename);
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
@@ -405,7 +404,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     policy.Description = newName;
 
                     await graphServiceClient.DeviceManagement.DeviceConfigurations[policyID].PatchAsync(policy);
-                    AppLogger.Info($"Updated description for device configuration policy {policyID} to {newName}", appFunction.Rename);
                 }
                 else if (selectedRenameMode == "RemovePrefix")
                 {
@@ -429,12 +427,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     policy.DisplayName = name;
 
                     await graphServiceClient.DeviceManagement.DeviceConfigurations[policyID].PatchAsync(policy);
-                    AppLogger.Info($"Removed prefix from device configuration policy {policyID}, new name: '{name}'", appFunction.Rename);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Warning($"An error occurred while renaming device configuration policies: {ex.Message}", appFunction.Rename);
+                throw;
             }
         }
 
