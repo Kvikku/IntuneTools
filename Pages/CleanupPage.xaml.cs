@@ -445,7 +445,7 @@ namespace IntuneTools.Pages
                     }
                     else
                     {
-                        AppendToDetailsRichTextBlock($"No assignment check available for type '{item.ContentType}'. Skipping.");
+                        // No assignment check for this type — silently skip
                     }
                 }
 
