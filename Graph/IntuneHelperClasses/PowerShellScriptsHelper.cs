@@ -62,8 +62,10 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             {
                 AppLogger.Info($"Importing {scripts.Count} PowerShell scripts.", appFunction.Import);
 
+                bool hasFailures = false;
                 foreach (var script in scripts)
                 {
+                    var scriptName = script;
                     try
                     {
                         var result = await sourceGraphServiceClient.DeviceManagement.DeviceManagementScripts[script].GetAsync();
@@ -82,9 +84,10 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         }
 
                         requestBody.Id = "";
+                        scriptName = requestBody.DisplayName ?? script;
 
                         var import = await destinationGraphServiceClient.DeviceManagement.DeviceManagementScripts.PostAsync(requestBody);
-                        AppLogger.Info($"Imported script: {requestBody.DisplayName}", appFunction.Import);
+                        AppLogger.Info($"Imported '{requestBody.DisplayName}' successfully.", appFunction.Import);
 
                         if (assignments)
                         {
@@ -93,13 +96,16 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     }
                     catch (Exception ex)
                     {
-                        AppLogger.Error($"Error importing script {script}: {ex.Message}", appFunction.Import);
+                        AppLogger.Error($"Failed to import '{scriptName}': {ex.Message}", appFunction.Import);
+                        hasFailures = true;
                     }
                 }
+                if (hasFailures)
+                    throw new Exception("One or more PowerShell scripts failed to import. See Import.log for details.");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Error($"An error occurred during the import process: {ex.Message}", appFunction.Import);
+                throw;
             }
         }
 

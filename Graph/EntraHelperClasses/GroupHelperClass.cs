@@ -133,14 +133,13 @@ namespace IntuneTools.Graph.EntraHelperClasses
 
             try
             {
-                AppLogger.Info(" ", appFunction.Import);
-                AppLogger.Info($"{DateTime.Now.ToString()} - Importing {groupIds.Count} Security groups.", appFunction.Import);
+                AppLogger.Info($"Importing {groupIds.Count} Security groups.", appFunction.Import);
 
-
+                bool hasFailures = false;
                 foreach (var groupId in groupIds)
                 {
                     Group? sourceGroup = null;
-                    var groupName = ""; // Initialize group name for logging
+                    var groupName = groupId;
                     try
                     {
                         // Get the group from the source tenant
@@ -209,18 +208,21 @@ namespace IntuneTools.Graph.EntraHelperClasses
 
                         // Create the group in the destination tenant
                         var importedGroup = await destinationGraphServiceClient.Groups.PostAsync(newGroup);
-                        AppLogger.Info($"Successfully imported {groupName}", appFunction.Import);
+                        AppLogger.Info($"Imported '{groupName}' successfully.", appFunction.Import);
 
                     }
                     catch (Exception ex)
                     {
-                        AppLogger.Error($"Failed to import {groupName}: {ex.Message}", appFunction.Import);
+                        AppLogger.Error($"Failed to import '{groupName}': {ex.Message}", appFunction.Import);
+                        hasFailures = true;
                     }
                 }
+                if (hasFailures)
+                    throw new Exception("One or more groups failed to import. See Import.log for details.");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Error($"An unexpected error occurred during the import process: {ex.Message}", appFunction.Import);
+                throw;
             }
             finally
             {

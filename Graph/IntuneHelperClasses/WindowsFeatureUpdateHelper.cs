@@ -53,10 +53,10 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             {
                 AppLogger.Info($"Importing {profileIDs.Count} Windows Feature Update profiles.", appFunction.Import);
 
-                string profileName = "";
-
+                bool hasFailures = false;
                 foreach (var profileId in profileIDs)
                 {
+                    var profileName = profileId;
                     try
                     {
                         var sourceProfile = await sourceGraphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileId].GetAsync();
@@ -95,7 +95,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         var importedProfile = await destinationGraphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles.PostAsync(newProfile);
 
-                        AppLogger.Info($"Imported profile: {importedProfile?.DisplayName ?? "Unnamed Profile"} (ID: {importedProfile?.Id ?? "Unknown ID"})", appFunction.Import);
+                        AppLogger.Info($"Imported '{importedProfile?.DisplayName ?? "Unnamed Profile"}' successfully.", appFunction.Import);
 
                         if (assignments && groups != null && groups.Any() && importedProfile?.Id != null)
                         {
@@ -104,15 +104,17 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     }
                     catch (Exception ex)
                     {
-                        AppLogger.Error($"Failed to import Windows Feature Update profile {profileName}: {ex.Message}", appFunction.Import);
-                        AppLogger.Warning($"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", appFunction.Import);
+                        AppLogger.Error($"Failed to import '{profileName}': {ex.Message}", appFunction.Import);
+                        AppLogger.Warning("This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active.", appFunction.Import);
+                        hasFailures = true;
                     }
                 }
-                AppLogger.Info("Windows Feature Update profile import process finished.", appFunction.Import);
+                if (hasFailures)
+                    throw new Exception("One or more Windows Feature Update profiles failed to import. See Import.log for details.");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Error($"An error occurred during the import process: {ex.Message}", appFunction.Import);
+                throw;
             }
         }
 

@@ -52,10 +52,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             try
             {
                 AppLogger.Info($"Importing {profileIDs.Count} Windows Quality Update profiles.", appFunction.Import);
-                string profileName = "";
 
+                bool hasFailures = false;
                 foreach (var profileId in profileIDs)
                 {
+                    var profileName = profileId;
                     try
                     {
                         var sourceProfile = await sourceGraphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileId].GetAsync();
@@ -100,7 +101,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         var importedProfile = await destinationGraphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles.PostAsync(newPolicy);
 
-                        AppLogger.Info($"Imported profile: {importedProfile?.DisplayName ?? "Unnamed Profile"} (ID: {importedProfile?.Id ?? "Unknown ID"})", appFunction.Import);
+                        AppLogger.Info($"Imported '{importedProfile?.DisplayName ?? "Unnamed Profile"}' successfully.", appFunction.Import);
 
                         if (assignments && groups != null && groups.Any() && importedProfile?.Id != null)
                         {
@@ -109,17 +110,17 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     }
                     catch (Exception ex)
                     {
-                        AppLogger.Error($"Error importing profile {profileName}: {ex.Message}", appFunction.Import);
-                        AppLogger.Warning("There is currently a known bug with importing Windows Quality Update profiles. " +
-                                                "This will be fixed in a future release. " +
-                                                "For now, please manually assign the groups to the imported profiles.", appFunction.Import);
+                        AppLogger.Error($"Failed to import '{profileName}': {ex.Message}", appFunction.Import);
+                        AppLogger.Warning("There is currently a known bug with importing Windows Quality Update profiles. This will be fixed in a future release. For now, please manually assign the groups to the imported profiles.", appFunction.Import);
+                        hasFailures = true;
                     }
                 }
-                AppLogger.Info("Windows Quality Update profile import process finished.", appFunction.Import);
+                if (hasFailures)
+                    throw new Exception("One or more Windows Quality Update profiles failed to import. See Import.log for details.");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Error($"An error occurred during the import process: {ex.Message}", appFunction.Import);
+                throw;
             }
         }
 

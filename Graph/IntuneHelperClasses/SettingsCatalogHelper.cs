@@ -84,9 +84,10 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 AppLogger.Info($"Importing {policies.Count} settings catalog policies.", appFunction.Import);
 
+                bool hasFailures = false;
                 foreach (var policy in policies)
                 {
-                    var policyName = "";
+                    var policyName = policy;
                     try
                     {
                         var result = await sourceGraphServiceClient.DeviceManagement.ConfigurationPolicies[policy].GetAsync((requestConfiguration) =>
@@ -105,11 +106,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                             Assignments = new List<DeviceManagementConfigurationPolicyAssignment>()
                         };
 
-                        policyName = newPolicy.Name;
+                        policyName = newPolicy.Name ?? policy;
 
                         var import = await destinationGraphServiceClient.DeviceManagement.ConfigurationPolicies.PostAsync(newPolicy);
 
-                        AppLogger.Info($"Imported policy: {import.Name}", appFunction.Import);
+                        AppLogger.Info($"Imported '{import.Name}' successfully.", appFunction.Import);
 
                         if (assignments)
                         {
@@ -118,13 +119,16 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     }
                     catch (Exception ex)
                     {
-                        AppLogger.Warning($"An error occurred while importing settings catalog policy '{policyName}': {ex.Message}", appFunction.Import);
+                        AppLogger.Error($"Failed to import '{policyName}': {ex.Message}", appFunction.Import);
+                        hasFailures = true;
                     }
                 }
+                if (hasFailures)
+                    throw new Exception("One or more settings catalog policies failed to import. See Import.log for details.");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Warning($"An error occurred during settings catalog import: {ex.Message}", appFunction.Import);
+                throw;
             }
         }
 

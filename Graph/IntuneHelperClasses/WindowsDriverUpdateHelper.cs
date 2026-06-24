@@ -77,9 +77,10 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             try
             {
                 AppLogger.Info($"Importing {profileIds.Count} Windows Driver Update Profiles.", appFunction.Import);
+                bool hasFailures = false;
                 foreach (var profileId in profileIds)
                 {
-                    var profileName = "";
+                    var profileName = profileId;
                     try
                     {
                         var sourceProfile = await sourceGraphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileId].GetAsync();
@@ -104,7 +105,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
 
                         var importResult = await destinationGraphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles.PostAsync(newProfile);
-                        AppLogger.Info($"Imported profile: {importResult?.DisplayName ?? "Unknown"}", appFunction.Import);
+                        AppLogger.Info($"Imported '{importResult?.DisplayName ?? "Unknown"}' successfully.", appFunction.Import);
 
                         if (assignments && importResult?.Id != null)
                         {
@@ -113,16 +114,17 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     }
                     catch (Exception ex)
                     {
-                        AppLogger.Error($"Failed to import Windows Driver Update policy {profileName}: {ex.Message}", appFunction.Import);
-                        AppLogger.Warning($"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", appFunction.Import);
+                        AppLogger.Error($"Failed to import '{profileName}': {ex.Message}", appFunction.Import);
+                        AppLogger.Warning("This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active.", appFunction.Import);
+                        hasFailures = true;
                     }
                 }
-                AppLogger.Info("Windows Driver Update policy import process finished.", appFunction.Import);
+                if (hasFailures)
+                    throw new Exception("One or more Windows Driver Update profiles failed to import. See Import.log for details.");
             }
-
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Warning($"An error occurred during the driver profile import process: {ex.Message}", appFunction.Import);
+                throw;
             }
         }
 

@@ -67,14 +67,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                AppLogger.Info(" ", appFunction.Import);
-                AppLogger.Info($"{DateTime.Now.ToString()} - Importing {profileIds.Count} Apple BYOD enrollment profile(s).", appFunction.Import);
+                AppLogger.Info($"Importing {profileIds.Count} Apple BYOD enrollment profile(s).", appFunction.Import);
 
+                bool hasFailures = false;
                 foreach (var profileId in profileIds)
                 {
-                    // FIX: Declare sourceProfile outside the try block to be accessible in catch
                     AppleUserInitiatedEnrollmentProfile? sourceProfile = null;
-                    var profileName = string.Empty;
+                    var profileName = profileId;
 
                     try
                     {
@@ -114,7 +113,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         var importedProfile = await destinationGraphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles.PostAsync(newProfile);
 
-                        AppLogger.Info($"Successfully imported {importedProfile.DisplayName}", appFunction.Import);
+                        AppLogger.Info($"Imported '{importedProfile.DisplayName}' successfully.", appFunction.Import);
 
                         if (assignments && groups != null && groups.Any())
                         {
@@ -123,17 +122,16 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     }
                     catch (Exception ex)
                     {
-                        AppLogger.Error($"Failed to import {profileName}: {ex.Message}", appFunction.Import);
+                        AppLogger.Error($"Failed to import '{profileName}': {ex.Message}", appFunction.Import);
+                        hasFailures = true;
                     }
                 }
+                if (hasFailures)
+                    throw new Exception("One or more Apple BYOD enrollment profiles failed to import. See Import.log for details.");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Error($"An unexpected error occurred during the import process: {ex.Message}", appFunction.Import);
-            }
-            finally
-            {
-                AppLogger.Info($" {DateTime.Now.ToString()} - Import process for Apple BYOD Enrollment profilesW completed.", appFunction.Import);
+                throw;
             }
         }
 

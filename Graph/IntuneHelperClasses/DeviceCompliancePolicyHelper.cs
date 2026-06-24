@@ -89,12 +89,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                AppLogger.Info(" ", appFunction.Import);
-                AppLogger.Info($"{DateTime.Now.ToString()} - Importing {policies.Count} Device Compliance policies.", appFunction.Import);
+                AppLogger.Info($"Importing {policies.Count} Device Compliance policies.", appFunction.Import);
 
+                bool hasFailures = false;
                 foreach (var policy in policies)
                 {
-                    var policyName = string.Empty;
+                    var policyName = policy;
                     try
                     {
                         var result = await sourceGraphServiceClient.DeviceManagement.DeviceCompliancePolicies[policy].GetAsync((requestConfiguration) =>
@@ -188,7 +188,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
 
                         var import = await destinationGraphServiceClient.DeviceManagement.DeviceCompliancePolicies.PostAsync(deviceCompliancePolicy);
-                        AppLogger.Info($"Successfully imported {import.DisplayName}", appFunction.Import);
+                        AppLogger.Info($"Imported '{import.DisplayName}' successfully.", appFunction.Import);
 
                         if (assignments)
                         {
@@ -197,17 +197,16 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     }
                     catch (Exception ex)
                     {
-                        AppLogger.Error($"Failed to import {policyName}: {ex.Message}", appFunction.Import);
+                        AppLogger.Error($"Failed to import '{policyName}': {ex.Message}", appFunction.Import);
+                        hasFailures = true;
                     }
                 }
+                if (hasFailures)
+                    throw new Exception("One or more device compliance policies failed to import. See Import.log for details.");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Error($"An unexpected error occurred during the import process: {ex.Message}", appFunction.Import);
-            }
-            finally
-            {
-                AppLogger.Info($"{DateTime.Now.ToString()} - Finished importing Device Compliance policies.", appFunction.Import);
+                throw;
             }
         }
 

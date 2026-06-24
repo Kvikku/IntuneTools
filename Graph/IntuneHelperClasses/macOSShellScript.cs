@@ -66,12 +66,14 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             {
                 AppLogger.Info($"Importing {scriptIDs.Count} macOS shell scripts.", appFunction.Import);
 
+                bool hasFailures = false;
                 foreach (var scriptId in scriptIDs)
                 {
+                    DeviceShellScript? sourceScript = null;
                     try
                     {
                         // Get the full script object, including script content
-                        var sourceScript = await sourceGraphServiceClient.DeviceManagement.DeviceShellScripts[scriptId].GetAsync();
+                        sourceScript = await sourceGraphServiceClient.DeviceManagement.DeviceShellScripts[scriptId].GetAsync();
 
 
                         if (sourceScript == null)
@@ -100,7 +102,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         if (importResult != null)
                         {
-                            AppLogger.Info($"Imported script: {importResult.DisplayName} (ID: {importResult.Id})", appFunction.Import);
+                            AppLogger.Info($"Imported '{importResult.DisplayName}' successfully.", appFunction.Import);
 
                             if (assignments && groups != null && groups.Any())
                             {
@@ -110,20 +112,23 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         }
                         else
                         {
-                            AppLogger.Info($"Failed to import script: {sourceScript.DisplayName} (ID: {scriptId}). Result was null.", appFunction.Import);
+                            AppLogger.Error($"Failed to import '{sourceScript.DisplayName}': import returned null.", appFunction.Import);
+                            hasFailures = true;
                         }
 
                     }
                     catch (Exception ex)
                     {
-                        AppLogger.Error($"Failed to import script  (ID: {scriptId}): {ex.Message}", appFunction.Import);
+                        AppLogger.Error($"Failed to import '{sourceScript?.DisplayName ?? scriptId}': {ex.Message}", appFunction.Import);
+                        hasFailures = true;
                     }
                 }
-                AppLogger.Info("macOS shell script import process finished.", appFunction.Import);
+                if (hasFailures)
+                    throw new Exception("One or more macOS shell scripts failed to import. See Import.log for details.");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Error($"An error occurred during the macOS shell script import process: {ex.Message}", appFunction.Import);
+                throw;
             }
         }
 

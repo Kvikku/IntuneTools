@@ -107,14 +107,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                AppLogger.Info(" ", appFunction.Import);
-                AppLogger.Info($"{DateTime.Now.ToString()} - Importing {filterIds.Count} Assignment filters.", appFunction.Import);
+                AppLogger.Info($"Importing {filterIds.Count} Assignment filters.", appFunction.Import);
 
-
+                bool hasFailures = false;
                 foreach (var filterId in filterIds)
                 {
                     DeviceAndAppManagementAssignmentFilter? sourceFilter = null;
-                    var filterName = string.Empty;
+                    var filterName = filterId;
                     try
                     {
                         sourceFilter = await sourceGraphServiceClient.DeviceManagement.AssignmentFilters[filterId].GetAsync();
@@ -144,21 +143,20 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         var importedFilter = await destinationGraphServiceClient.DeviceManagement.AssignmentFilters.PostAsync(newFilter);
 
-                        AppLogger.Info($"Successfully imported {importedFilter.DisplayName}\n", appFunction.Import);
+                        AppLogger.Info($"Imported '{importedFilter.DisplayName}' successfully.", appFunction.Import);
                     }
                     catch (Exception ex)
                     {
-                        AppLogger.Error($"Failed to import {filterName}: {ex.Message}", appFunction.Import);
+                        AppLogger.Error($"Failed to import '{filterName}': {ex.Message}", appFunction.Import);
+                        hasFailures = true;
                     }
                 }
+                if (hasFailures)
+                    throw new Exception("One or more assignment filters failed to import. See Import.log for details.");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Error($"An unexpected error occurred during the import process: {ex.Message}", appFunction.Import);
-            }
-            finally
-            {
-                AppLogger.Info($"{DateTime.Now.ToString()} - Finished importing {filterIds.Count} Assignment filters.", appFunction.Import);
+                throw;
             }
         }
         public static async Task<bool> DeleteAssignmentFilter(GraphServiceClient graphServiceClient, string filterID)

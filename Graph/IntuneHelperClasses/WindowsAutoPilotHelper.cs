@@ -61,11 +61,14 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             try
             {
                 AppLogger.Info($"Importing {profiles.Count} Windows AutoPilot profiles.", appFunction.Import);
+                bool hasFailures = false;
                 foreach (var profile in profiles)
                 {
+                    var profileName = profile;
                     try
                     {
                         var result = await sourceGraphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profile].GetAsync();
+                        profileName = result.DisplayName ?? profile;
 
                         // Check what Autopilot profile it is
 
@@ -117,7 +120,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                                 }
                             }
                             var import = await destinationGraphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles.PostAsync(requestBody);
-                            AppLogger.Info($"Imported profile: {requestBody.DisplayName}", appFunction.Import);
+                            AppLogger.Info($"Imported '{requestBody.DisplayName}' successfully.", appFunction.Import);
                             if (assignments)
                             {
                                 await AssignGroupsToSingleWindowsAutoPilotProfile(import.Id, requestBody.DisplayName ?? string.Empty, groups, destinationGraphServiceClient);
@@ -126,13 +129,16 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     }
                     catch (Exception ex)
                     {
-                        AppLogger.Error($"Error importing profile {profile}: {ex.Message}", appFunction.Import);
+                        AppLogger.Error($"Failed to import '{profileName}': {ex.Message}", appFunction.Import);
+                        hasFailures = true;
                     }
                 }
+                if (hasFailures)
+                    throw new Exception("One or more Windows AutoPilot profiles failed to import. See Import.log for details.");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Error($"An error occurred during the import process: {ex.Message}", appFunction.Import);
+                throw;
             }
         }
 

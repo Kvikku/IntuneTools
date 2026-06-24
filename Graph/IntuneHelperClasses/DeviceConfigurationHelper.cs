@@ -67,12 +67,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                AppLogger.Info(" ", appFunction.Import);
-                AppLogger.Info($"{DateTime.Now.ToString()} - Importing {configurationIds.Count} Device Configuration profiles.", appFunction.Import);
+                AppLogger.Info($"Importing {configurationIds.Count} Device Configuration profiles.", appFunction.Import);
 
+                bool hasFailures = false;
                 foreach (var configId in configurationIds)
                 {
-                    var policyName = "";
+                    var policyName = configId;
                     try
                     {
                         var originalConfig = await sourceGraphServiceClient.DeviceManagement.DeviceConfigurations[configId].GetAsync(requestConfiguration =>
@@ -140,7 +140,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         var import = await destinationGraphServiceClient.DeviceManagement.DeviceConfigurations.PostAsync(deviceConfiguration);
 
-                        AppLogger.Info($"Successfully imported {import.DisplayName}", appFunction.Import);
+                        AppLogger.Info($"Imported '{import.DisplayName}' successfully.", appFunction.Import);
 
                         if (assignments)
                         {
@@ -149,21 +149,16 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     }
                     catch (Exception ex)
                     {
-                        //HandleException(ex, $"Error importing device configuration {configId}",false);
-                        // Change color of the error output text to red and then reset it for the next text entry
-                        //rtb.AppendText(ex.Message + Environment.NewLine);
-
-                        AppLogger.Error($"Failed to import {policyName}\n", appFunction.Import);
+                        AppLogger.Error($"Failed to import '{policyName}': {ex.Message}", appFunction.Import);
+                        hasFailures = true;
                     }
                 }
+                if (hasFailures)
+                    throw new Exception("One or more device configuration profiles failed to import. See Import.log for details.");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Error($"An unexpected error occurred during the import process: {ex.Message}", appFunction.Import);
-            }
-            finally
-            {
-                AppLogger.Info($"{DateTime.Now.ToString()} - Finished importing Device Configuration profiles.", appFunction.Import);
+                throw;
             }
         }
 

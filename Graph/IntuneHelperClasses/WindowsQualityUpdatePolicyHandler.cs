@@ -57,10 +57,10 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             {
                 AppLogger.Info($"Importing {policyIDs.Count} Windows Quality Update policies.", appFunction.Import);
 
-                string profileName = "";
-
+                bool hasFailures = false;
                 foreach (var policyId in policyIDs)
                 {
+                    var profileName = policyId;
                     try
                     {
                         // Fetch the source policy
@@ -110,7 +110,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         var importedPolicy = await destinationGraphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies.PostAsync(newPolicy);
 
                         // Add null check for importedPolicy and DisplayName
-                        AppLogger.Info($"Imported policy: {importedPolicy?.DisplayName ?? "Unnamed Policy"} (ID: {importedPolicy?.Id ?? "Unknown ID"})", appFunction.Import);
+                        AppLogger.Info($"Imported '{importedPolicy?.DisplayName ?? "Unnamed Policy"}' successfully.", appFunction.Import);
 
                         // Handle assignments if requested
                         if (assignments && groups != null && groups.Any() && importedPolicy?.Id != null)
@@ -120,16 +120,17 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     }
                     catch (Exception ex)
                     {
-                        //rtb.AppendText($"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active\n");
-                        AppLogger.Error($"Failed to import Windows Quality Update policy {profileName}: {ex.Message}", appFunction.Import);
-                        AppLogger.Warning($"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", appFunction.Import);
+                        AppLogger.Error($"Failed to import '{profileName}': {ex.Message}", appFunction.Import);
+                        AppLogger.Warning("This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active.", appFunction.Import);
+                        hasFailures = true;
                     }
                 }
-                AppLogger.Info("Windows Quality Update policy import process finished.", appFunction.Import);
+                if (hasFailures)
+                    throw new Exception("One or more Windows Quality Update policies failed to import. See Import.log for details.");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Error($"An error occurred during the import process: {ex.Message}", appFunction.Import);
+                throw;
             }
         }
 
