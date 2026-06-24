@@ -167,7 +167,7 @@ namespace IntuneTools.Pages
                 }
 
                 // Load all selected content types using the registry
-                await LoadContentTypesAsync(graphServiceClient, selectedContentTypes, AppendToLog);
+                await LoadContentTypesAsync(graphServiceClient, selectedContentTypes);
 
                 // Clean up content platform value (operating system names) in ContentList
                 foreach (var content in ContentList)
@@ -204,7 +204,7 @@ namespace IntuneTools.Pages
                 }
 
                 // Search all selected content types using the registry
-                await SearchContentTypesAsync(graphServiceClient, searchQuery, selectedContentTypes, AppendToLog);
+                await SearchContentTypesAsync(graphServiceClient, searchQuery, selectedContentTypes);
 
                 // Clean up content platform value (operating system names) in ContentList
                 foreach (var content in ContentList)

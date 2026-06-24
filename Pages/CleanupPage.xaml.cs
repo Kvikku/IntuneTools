@@ -167,7 +167,7 @@ namespace IntuneTools.Pages
             try
             {
                 ContentList.Clear();
-                await LoadContentTypesAsync(graphServiceClient, SupportedContentTypes, AppendToDetailsRichTextBlock);
+                await LoadContentTypesAsync(graphServiceClient, SupportedContentTypes);
                 CleanupDataGrid.ItemsSource = ContentList;
             }
             catch (Exception ex)
@@ -190,7 +190,7 @@ namespace IntuneTools.Pages
             try
             {
                 ContentList.Clear();
-                await SearchContentTypesAsync(graphServiceClient, searchQuery, SupportedContentTypes, AppendToDetailsRichTextBlock);
+                await SearchContentTypesAsync(graphServiceClient, searchQuery, SupportedContentTypes);
                 CleanupDataGrid.ItemsSource = ContentList;
             }
             catch (Exception ex)
@@ -395,7 +395,7 @@ namespace IntuneTools.Pages
             {
                 // Load into a temporary list so items don't appear in the grid before being checked
                 ContentList.Clear();
-                await LoadContentTypesAsync(graphServiceClient, AssignableContentTypes, AppendToDetailsRichTextBlock);
+                await LoadContentTypesAsync(graphServiceClient, AssignableContentTypes);
                 var allItems = ContentList.ToList();
                 ContentList.Clear();
 

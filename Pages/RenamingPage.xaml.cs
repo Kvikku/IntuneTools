@@ -103,7 +103,7 @@ namespace IntuneTools.Pages
             try
             {
                 CustomContentList.Clear();
-                await LoadAllContentTypesAsync(graphServiceClient, LogInfo);
+                await LoadAllContentTypesAsync(graphServiceClient);
                 RenamingDataGrid.ItemsSource = CustomContentList;
             }
             catch (Exception ex)
@@ -123,7 +123,7 @@ namespace IntuneTools.Pages
             try
             {
                 CustomContentList.Clear();
-                await SearchAllContentTypesAsync(graphServiceClient, searchQuery, LogInfo);
+                await SearchAllContentTypesAsync(graphServiceClient, searchQuery);
                 RenamingDataGrid.ItemsSource = CustomContentList;
             }
             catch (Exception ex)
