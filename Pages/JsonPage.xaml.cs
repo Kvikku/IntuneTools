@@ -182,7 +182,7 @@ namespace IntuneTools.Pages
             SearchButton.IsEnabled = true;
         }
 
-        private void AppendToDetailsRichTextBlock(string text) => AppendToLog(text);
+        private void AppendToDetailsRichTextBlock(string text) => AppLogger.UiOnly(text);
 
         #endregion
 
