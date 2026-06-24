@@ -170,16 +170,16 @@ namespace IntuneTools.Pages
         private async Task ListAllOrchestrator(GraphServiceClient graphServiceClient)
         {
             ShowLoading("Loading data from Microsoft Graph...");
-            AppendToDetailsRichTextBlock("Starting to load all content. This could take a while...");
+            AppLogger.UiOnly("Starting to load all content. This could take a while...");
             try
             {
                 ContentList.Clear();
-                await LoadContentTypesAsync(graphServiceClient, SupportedContentTypes, AppendToDetailsRichTextBlock);
+                await LoadContentTypesAsync(graphServiceClient, SupportedContentTypes, AppLogger.UiOnly);
                 CleanupDataGrid.ItemsSource = ContentList;
             }
             catch (Exception ex)
             {
-                AppendToDetailsRichTextBlock($"Error during loading: {ex.Message}");
+                AppLogger.UiOnly($"Error during loading: {ex.Message}");
             }
             finally
             {
@@ -193,16 +193,16 @@ namespace IntuneTools.Pages
         private async Task SearchOrchestrator(GraphServiceClient graphServiceClient, string searchQuery)
         {
             ShowLoading("Searching content in Microsoft Graph...");
-            AppendToDetailsRichTextBlock($"Searching for content matching '{searchQuery}'. This may take a while...");
+            AppLogger.UiOnly($"Searching for content matching '{searchQuery}'. This may take a while...");
             try
             {
                 ContentList.Clear();
-                await SearchContentTypesAsync(graphServiceClient, searchQuery, SupportedContentTypes, AppendToDetailsRichTextBlock);
+                await SearchContentTypesAsync(graphServiceClient, searchQuery, SupportedContentTypes, AppLogger.UiOnly);
                 CleanupDataGrid.ItemsSource = ContentList;
             }
             catch (Exception ex)
             {
-                AppendToDetailsRichTextBlock($"Error during search: {ex.Message}");
+                AppLogger.UiOnly($"Error during search: {ex.Message}");
             }
             finally
             {
@@ -396,12 +396,12 @@ namespace IntuneTools.Pages
             ClearAllButton.IsEnabled = false;
             AppLogger.Info("Find Unassigned scan started — see FindUnassigned.log for details.", appFunction.Main);
             _pageLogFunction = appFunction.FindUnassigned;
-            AppendToDetailsRichTextBlock("Loading all assignable content types. This may take a while...");
+            AppLogger.UiOnly("Loading all assignable content types. This may take a while...");
             try
             {
                 // Load into a temporary list so items don't appear in the grid before being checked
                 ContentList.Clear();
-                await LoadContentTypesAsync(graphServiceClient, AssignableContentTypes, AppendToDetailsRichTextBlock);
+                await LoadContentTypesAsync(graphServiceClient, AssignableContentTypes, AppLogger.UiOnly);
                 var allItems = ContentList.ToList();
                 ContentList.Clear();
 

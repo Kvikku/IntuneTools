@@ -49,6 +49,9 @@ namespace IntuneTools.Utilities
         public static void Error(string message, appFunction function = appFunction.Main)
             => Log(LogLevel.Error, message, function);
 
+        public static void UiOnly(string message)
+            => PushToUi(new LogEntry(LogLevel.Info, message));
+
         private static void PushToUi(LogEntry entry)
         {
             if (_uiHandler == null) return;
