@@ -385,6 +385,7 @@ namespace IntuneTools.Pages
 
                 ShowOperationSuccess($"Exported {totalItems} items ({totalWithData} with full data) across {filesWritten} file(s) to '{folder.Name}'");
                 AppLogger.Info($"JSON Export: Completed. {totalItems} items ({totalWithData} with full data) across {filesWritten} file(s) to '{folder.Path}'.", appFunction.JsonExport);
+                AppLogger.Info($"JSON Export operation completed — {totalWithData} item(s) exported across {filesWritten} file(s).", appFunction.Main);
                 AppendToDetailsRichTextBlock($"Export complete. {filesWritten} file(s) written to '{folder.Path}'.");
 
                 for (int i = 0; i < totalItems; i++)
@@ -645,6 +646,7 @@ namespace IntuneTools.Pages
             }
 
             AppendToDetailsRichTextBlock("Import to tenant finished.");
+            AppLogger.Info($"JSON Import operation completed — {successCount} succeeded, {errorCount} failed.", appFunction.Main);
 
             // Show summary of failed items
             if (failedItems.Count > 0)

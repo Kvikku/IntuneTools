@@ -576,6 +576,7 @@ namespace IntuneTools.Pages
             }
 
             AppendToLog("Import process finished.\n");
+            AppLogger.Info($"Import operation completed — {_importSuccessCount} succeeded, {_importErrorCount} failed.", appFunction.Main);
         }
 
         #endregion

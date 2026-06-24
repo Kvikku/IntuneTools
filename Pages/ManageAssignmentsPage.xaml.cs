@@ -458,6 +458,7 @@ namespace IntuneTools.Pages
             {
                 ShowOperationError($"Completed with {_removeErrorCount} error(s). {_removeSuccessCount} item(s) processed successfully.");
             }
+            AppLogger.Info($"Manage Assignments operation completed — {_removeSuccessCount} succeeded, {_removeErrorCount} failed.", appFunction.Main);
         }
 
         #endregion

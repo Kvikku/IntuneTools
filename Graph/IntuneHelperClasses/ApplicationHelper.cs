@@ -123,7 +123,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
             if (!supportedTypes.Contains(appType))
             {
-                AppLogger.Info("The selected app type is not supported for deployment yet. Skipping", appFunction.Main);
+                AppLogger.Info("The selected app type is not supported for deployment yet. Skipping", appFunction.Assignment);
                 return;
             }
 
@@ -133,7 +133,8 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                AppLogger.Error($"An error occurred while preparing application of type '{appInfo.Value.ContentPlatform}' for assignment: {ex.Message}", appFunction.Main);
+                AppLogger.Error($"An error occurred while preparing application of type '{appInfo.Value.ContentPlatform}' for assignment: {ex.Message}", appFunction.Assignment);
+                throw;
             }
         }
 

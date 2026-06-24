@@ -379,6 +379,7 @@ namespace IntuneTools.Pages
 
 
                 AppendToLog($"Assignment completed: {successCount} successful, {failureCount} failed.");
+                AppLogger.Info($"Assignment operation completed — {successCount} succeeded, {failureCount} failed.", appFunction.Main);
 
                 // Show final status
                 if (_assignErrorCount == 0)

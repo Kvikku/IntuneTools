@@ -478,6 +478,7 @@ namespace IntuneTools.Pages
                 ShowOperationError($"Completed with {_renameErrorCount} error(s). {_renameSuccessCount} items renamed successfully.");
             }
             LogSuccess($"Renamed {_renameSuccessCount} items with '{operationText}'.");
+            AppLogger.Info($"Rename operation completed — {_renameSuccessCount} succeeded, {_renameErrorCount} failed.", appFunction.Main);
         }
 
         #endregion

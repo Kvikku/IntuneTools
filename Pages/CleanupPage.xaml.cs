@@ -156,6 +156,7 @@ namespace IntuneTools.Pages
             }
 
             AppendToDetailsRichTextBlock("Content deletion completed.");
+            AppLogger.Info($"Delete operation completed — {_deleteSuccessCount} succeeded, {_deleteErrorCount} failed.", appFunction.Main);
         }
 
         /// <summary>
@@ -448,6 +449,7 @@ namespace IntuneTools.Pages
                 CleanupDataGrid.ItemsSource = ContentList;
                 AppendToDetailsRichTextBlock($"Found {ContentList.Count} unassigned item(s) out of {totalItems} total.");
                 ShowOperationSuccess($"Found {ContentList.Count} unassigned item(s)");
+                AppLogger.Info($"Find Unassigned scan completed — {ContentList.Count} unassigned item(s) found.", appFunction.Main);
             }
             catch (Exception ex)
             {
