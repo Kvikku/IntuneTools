@@ -645,7 +645,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             };
 
             await graphServiceClient.DeviceManagement.DeviceConfigurations[configId].Assign.PostAsAssignPostResponseAsync(requestBody);
-            AppLogger.Info($"Removed all assignments from Device Configuration policy {configId}.", appFunction.ManageAssignment);
         }
     }
 }

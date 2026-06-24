@@ -566,7 +566,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             };
 
             await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyId].Assign.PostAsync(requestBody);
-            AppLogger.Info($"Removed all assignments from Windows Quality Update Policy {policyId}.", appFunction.ManageAssignment);
         }
     }
 }

@@ -616,7 +616,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     .Assignments.WithUrl(result.OdataNextLink).GetAsync();
             }
 
-            AppLogger.Info($"Removed all assignments from Apple BYOD Enrollment Profile {profileId}.", appFunction.ManageAssignment);
         }
     }
 }

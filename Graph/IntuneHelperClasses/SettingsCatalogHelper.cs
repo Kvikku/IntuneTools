@@ -572,7 +572,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             };
 
             await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyId].Assign.PostAsAssignPostResponseAsync(requestBody);
-            AppLogger.Info($"Removed all assignments from Settings Catalog policy {policyId}.", appFunction.ManageAssignment);
         }
     }
 }

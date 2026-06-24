@@ -81,6 +81,8 @@ namespace IntuneTools.Pages
 
         protected override string UnauthenticatedMessage => "You must authenticate with a tenant before managing assignments.";
 
+        protected override appFunction PageLogFunction => appFunction.ManageAssignment;
+
         protected override IEnumerable<string> GetManagedControlNames() => new[]
         {
             "InputTextBox", "SearchButton", "ListAllButton", "ViewAssignmentsButton",
@@ -264,16 +266,16 @@ namespace IntuneTools.Pages
         private async Task ListAllOrchestrator(GraphServiceClient graphServiceClient)
         {
             ShowLoading("Loading assignable content from Microsoft Graph...");
-            AppendToLog("Starting to load all assignable content types. This could take a while...");
+            AppLogger.UiOnly("Starting to load all assignable content types. This could take a while...");
             try
             {
                 ContentList.Clear();
-                await LoadContentTypesAsync(graphServiceClient, AssignableContentTypes, AppendToLog);
+                await LoadContentTypesAsync(graphServiceClient, AssignableContentTypes, AppLogger.UiOnly);
                 AssignmentsDataGrid.ItemsSource = ContentList;
             }
             catch (Exception ex)
             {
-                AppendToLog($"Error during loading: {ex.Message}");
+                AppLogger.UiOnly($"Error during loading: {ex.Message}");
             }
             finally
             {
@@ -287,16 +289,16 @@ namespace IntuneTools.Pages
         private async Task SearchOrchestrator(GraphServiceClient graphServiceClient, string searchQuery)
         {
             ShowLoading("Searching content in Microsoft Graph...");
-            AppendToLog($"Searching for content matching '{searchQuery}'. This may take a while...");
+            AppLogger.UiOnly($"Searching for content matching '{searchQuery}'. This may take a while...");
             try
             {
                 ContentList.Clear();
-                await SearchContentTypesAsync(graphServiceClient, searchQuery, AssignableContentTypes, AppendToLog);
+                await SearchContentTypesAsync(graphServiceClient, searchQuery, AssignableContentTypes, AppLogger.UiOnly);
                 AssignmentsDataGrid.ItemsSource = ContentList;
             }
             catch (Exception ex)
             {
-                AppendToLog($"Error during search: {ex.Message}");
+                AppLogger.UiOnly($"Error during search: {ex.Message}");
             }
             finally
             {
@@ -445,7 +447,7 @@ namespace IntuneTools.Pages
                     catch (Exception ex)
                     {
                         _removeErrorCount++;
-                        LogError($"Error removing assignments from '{item.ContentName}': {ex.Message}");
+                        LogError($"Failed to remove assignments from '{item.ContentName}': {ex.Message}");
                     }
                 }
             }
@@ -883,7 +885,7 @@ namespace IntuneTools.Pages
             ContentList.Clear();
             AssignmentsDataGrid.ItemsSource = null;
             AssignmentsDataGrid.ItemsSource = ContentList;
-            AppendToLog("All items cleared from the list.");
+            AppLogger.UiOnly("All items cleared from the list.");
         }
 
         private void ClearSelectedButton_Click(object sender, RoutedEventArgs e)
@@ -891,7 +893,7 @@ namespace IntuneTools.Pages
             var selectedItems = AssignmentsDataGrid.SelectedItems?.Cast<CustomContentInfo>().ToList();
             if (selectedItems == null || selectedItems.Count == 0)
             {
-                AppendToLog("No items selected to clear.");
+                AppLogger.UiOnly("No items selected to clear.");
                 return;
             }
             foreach (var item in selectedItems)
@@ -900,7 +902,7 @@ namespace IntuneTools.Pages
             }
             AssignmentsDataGrid.ItemsSource = null;
             AssignmentsDataGrid.ItemsSource = ContentList;
-            AppendToLog($"Cleared {selectedItems.Count} selected item(s) from the list.");
+            AppLogger.UiOnly($"Cleared {selectedItems.Count} selected item(s) from the list.");
         }
 
         private void AssignmentsDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
@@ -918,7 +920,7 @@ namespace IntuneTools.Pages
             var searchQuery = InputTextBox.Text.Trim();
             if (string.IsNullOrWhiteSpace(searchQuery))
             {
-                AppendToLog("Please enter a search query.");
+                AppLogger.UiOnly("Please enter a search query.");
                 return;
             }
             await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
@@ -929,7 +931,7 @@ namespace IntuneTools.Pages
             var selectedItems = AssignmentsDataGrid.SelectedItems?.Cast<CustomContentInfo>().ToList();
             if (selectedItems == null || selectedItems.Count == 0)
             {
-                AppendToLog("No items selected. Please select one or more items to view their assignments.");
+                AppLogger.UiOnly("No items selected. Please select one or more items to view their assignments.");
                 return;
             }
 

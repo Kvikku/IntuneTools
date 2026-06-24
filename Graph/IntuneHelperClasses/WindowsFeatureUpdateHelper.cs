@@ -518,7 +518,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             };
 
             await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileId].Assign.PostAsync(requestBody);
-            AppLogger.Info($"Removed all assignments from Windows Feature Update profile {profileId}.", appFunction.ManageAssignment);
         }
     }
 }

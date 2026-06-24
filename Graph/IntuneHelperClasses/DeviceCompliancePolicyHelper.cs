@@ -755,7 +755,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             };
 
             await graphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyId].Assign.PostAsync(requestBody);
-            AppLogger.Info($"Removed all assignments from Device Compliance policy {policyId}.", appFunction.ManageAssignment);
         }
     }
 

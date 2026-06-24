@@ -536,7 +536,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             };
 
             await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptId].Assign.PostAsync(requestBody);
-            AppLogger.Info($"Removed all assignments from PowerShell Script {scriptId}.", appFunction.ManageAssignment);
         }
     }
 }

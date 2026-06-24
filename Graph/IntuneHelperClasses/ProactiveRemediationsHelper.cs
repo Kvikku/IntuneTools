@@ -544,7 +544,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             };
 
             await graphServiceClient.DeviceManagement.DeviceHealthScripts[scriptId].Assign.PostAsync(requestBody);
-            AppLogger.Info($"Removed all assignments from Proactive Remediation script {scriptId}.", appFunction.ManageAssignment);
         }
     }
 }

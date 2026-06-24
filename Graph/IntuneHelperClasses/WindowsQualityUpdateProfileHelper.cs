@@ -556,7 +556,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             };
 
             await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileId].Assign.PostAsync(requestBody);
-            AppLogger.Info($"Removed all assignments from Windows Quality Update Profile {profileId}.", appFunction.ManageAssignment);
         }
     }
 }

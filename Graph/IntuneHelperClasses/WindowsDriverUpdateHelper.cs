@@ -540,7 +540,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             };
 
             await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileId].Assign.PostAsync(requestBody);
-            AppLogger.Info($"Removed all assignments from Windows Driver Update profile {profileId}.", appFunction.ManageAssignment);
         }
     }
 }

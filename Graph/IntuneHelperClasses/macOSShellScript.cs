@@ -569,7 +569,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             };
 
             await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptId].Assign.PostAsync(requestBody);
-            AppLogger.Info($"Removed all assignments from macOS Shell Script {scriptId}.", appFunction.ManageAssignment);
         }
     }
 }
