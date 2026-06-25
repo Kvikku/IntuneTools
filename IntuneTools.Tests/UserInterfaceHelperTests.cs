@@ -94,28 +94,23 @@ public class UserInterfaceHelperTests : IDisposable
     {
         var ids = new List<string> { "id-1", "id-2", "id-3" };
         var processedIds = new List<string>();
-        var logMessages = new List<string>();
 
         var count = await UserInterfaceHelper.ExecuteBatchOperationAsync(
             ids,
             id => { processedIds.Add(id); return Task.CompletedTask; },
             "Policy",
             "Deleted",
-            msg => logMessages.Add(msg),
             10,
             appFunction.Delete);
 
         Assert.Equal(3, count);
         Assert.Equal(ids, processedIds);
-        Assert.Equal(3, logMessages.Count);
-        Assert.All(logMessages, msg => Assert.Contains("Deleted", msg));
     }
 
     [Fact]
     public async Task ExecuteBatchOperationAsync_PartialFailure_ContinuesAndReportsErrors()
     {
         var ids = new List<string> { "id-1", "id-2", "id-3" };
-        var logMessages = new List<string>();
         var callCount = 0;
 
         var count = await UserInterfaceHelper.ExecuteBatchOperationAsync(
@@ -128,13 +123,11 @@ public class UserInterfaceHelperTests : IDisposable
             },
             "Policy",
             "Renamed",
-            msg => logMessages.Add(msg),
             20,
             appFunction.Rename);
 
         Assert.Equal(2, count); // 2 succeeded
         Assert.Equal(3, callCount); // all 3 were attempted
-        Assert.Contains(logMessages, m => m.Contains("Error") && m.Contains("id-2"));
     }
 
     [Fact]
@@ -145,7 +138,6 @@ public class UserInterfaceHelperTests : IDisposable
             _ => Task.CompletedTask,
             "Policy",
             "Deleted",
-            _ => { },
             10,
             appFunction.Delete);
 

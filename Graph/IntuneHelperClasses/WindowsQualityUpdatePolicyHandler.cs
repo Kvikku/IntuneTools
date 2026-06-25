@@ -1,4 +1,4 @@
-﻿using Microsoft.Graph;
+using Microsoft.Graph;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
 {
@@ -10,20 +10,14 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                LogToFunctionFile(appFunction.Main, "Searching for Windows Quality Update policies. Search query: " + searchQuery);
-
                 // Fetch all first and then filter locally as a safer approach.
                 var allPolicies = await GetAllWindowsQualityUpdatePolicies(graphServiceClient);
-                // Add null checks for policy and DisplayName
                 var filteredPolicies = allPolicies.Where(p => p?.DisplayName != null && p.DisplayName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)).ToList();
-
-                LogToFunctionFile(appFunction.Main, $"Found {filteredPolicies.Count} Windows Quality Update policies matching the search query.");
-
                 return filteredPolicies;
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for Windows Quality Update policies: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"An error occurred while searching for Windows Quality Update policies: {ex.Message}", appFunction.Main);
                 return new List<WindowsQualityUpdatePolicy>();
             }
         }
@@ -32,8 +26,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                LogToFunctionFile(appFunction.Main, "Retrieving all Windows Quality Update policies.");
-
                 var result = await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies.GetAsync((requestConfiguration) =>
                 {
                     //requestConfiguration.QueryParameters.Top = 1000; // Adjust as needed
@@ -51,18 +43,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     });
                     await pageIterator.IterateAsync();
                 }
-                else
-                {
-                    LogToFunctionFile(appFunction.Main, "No Windows Quality Update policies found or result was null.", LogLevels.Warning);
-                }
-
-                LogToFunctionFile(appFunction.Main, $"Found {policies.Count} Windows Quality Update policies.");
-
                 return policies;
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while retrieving all Windows Quality Update policies: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"An error occurred while retrieving all Windows Quality Update policies: {ex.Message}", appFunction.Main);
                 return new List<WindowsQualityUpdatePolicy>();
             }
         }
@@ -70,12 +55,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                LogToFunctionFile(appFunction.Main, $"Importing {policyIDs.Count} Windows Quality Update policies.");
+                AppLogger.Info($"Importing {policyIDs.Count} Windows Quality Update policies.", appFunction.Import);
 
-                string profileName = "";
-
+                bool hasFailures = false;
                 foreach (var policyId in policyIDs)
                 {
+                    var profileName = policyId;
                     try
                     {
                         // Fetch the source policy
@@ -83,7 +68,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         if (sourcePolicy == null)
                         {
-                            LogToFunctionFile(appFunction.Main, $"Skipping policy ID {policyId}: Not found in source tenant.");
+                            AppLogger.Info($"Skipping policy ID {policyId}: Not found in source tenant.", appFunction.Import);
                             continue;
                         }
 
@@ -125,26 +110,27 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         var importedPolicy = await destinationGraphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies.PostAsync(newPolicy);
 
                         // Add null check for importedPolicy and DisplayName
-                        LogToFunctionFile(appFunction.Main, $"Imported policy: {importedPolicy?.DisplayName ?? "Unnamed Policy"} (ID: {importedPolicy?.Id ?? "Unknown ID"})");
+                        AppLogger.Info($"Imported '{importedPolicy?.DisplayName ?? "Unnamed Policy"}' successfully.", appFunction.Import);
 
                         // Handle assignments if requested
                         if (assignments && groups != null && groups.Any() && importedPolicy?.Id != null)
                         {
-                            await AssignGroupsToSingleWindowsQualityUpdatePolicy(importedPolicy.Id, groups, destinationGraphServiceClient);
+                            await AssignGroupsToSingleWindowsQualityUpdatePolicy(importedPolicy.Id, importedPolicy.DisplayName ?? string.Empty, groups, destinationGraphServiceClient);
                         }
                     }
                     catch (Exception ex)
                     {
-                        //rtb.AppendText($"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active\n");
-                        LogToFunctionFile(appFunction.Main, $"Failed to import Windows Quality Update policy {profileName}: {ex.Message}", LogLevels.Error);
-                        LogToFunctionFile(appFunction.Main, $"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", LogLevels.Warning);
+                        AppLogger.Error($"Failed to import '{profileName}': {ex.Message}", appFunction.Import);
+                        AppLogger.Warning("This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active.", appFunction.Import);
+                        hasFailures = true;
                     }
                 }
-                LogToFunctionFile(appFunction.Main, "Windows Quality Update policy import process finished.");
+                if (hasFailures)
+                    throw new Exception("One or more Windows Quality Update policies failed to import. See Import.log for details.");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred during the import process: {ex.Message}", LogLevels.Error);
+                throw;
             }
         }
 
@@ -157,7 +143,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         /// <param name="destinationGraphServiceClient">GraphServiceClient for the destination tenant.</param>
         /// <param name="applyFilter">Whether to apply assignment filters.</param>
         /// <returns>A Task representing the asynchronous assignment operation.</returns>
-        public static async Task AssignGroupsToSingleWindowsQualityUpdatePolicy(string policyID, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
+        public static async Task AssignGroupsToSingleWindowsQualityUpdatePolicy(string policyID, string contentName, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
         {
             try
             {
@@ -179,7 +165,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 var assignments = new List<WindowsQualityUpdatePolicyAssignment>();
                 var seenGroupIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-                LogToFunctionFile(appFunction.Main, $"Assigning {groupIDs.Count} groups to Windows Quality Update policy {policyID}.");
+                AppLogger.Info($"Assigning {groupIDs.Count} groups to Windows Quality Update policy {policyID}.", appFunction.Assignment);
 
                 // Step 1: Add new assignments to request body
                 foreach (var groupId in groupIDs)
@@ -192,14 +178,14 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     // Check if this is All Users - Quality Update policies cannot be assigned to All Users
                     if (groupId.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
                     {
-                        LogToFunctionFile(appFunction.Main, "Warning: Windows Quality Update policies cannot be assigned to 'All Users'. Only device groups are supported. Skipping this assignment.", LogLevels.Warning);
+                        AppLogger.Warning("Warning: Windows Quality Update policies cannot be assigned to 'All Users'. Only device groups are supported. Skipping this assignment.", appFunction.Assignment);
                         continue;
                     }
 
                     // Check if this is All Devices - Quality Update policies cannot be assigned to All Devices
                     if (groupId.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
                     {
-                        LogToFunctionFile(appFunction.Main, "Warning: Windows Quality Update policies cannot be assigned to 'All Devices'. Only device groups are supported. Skipping this assignment.", LogLevels.Warning);
+                        AppLogger.Warning("Warning: Windows Quality Update policies cannot be assigned to 'All Devices'. Only device groups are supported. Skipping this assignment.", appFunction.Assignment);
                         continue;
                     }
 
@@ -236,13 +222,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         if (existing.Target is AllLicensedUsersAssignmentTarget)
                         {
                             // Skip All Users assignments - they shouldn't exist but handle gracefully
-                            LogToFunctionFile(appFunction.Main, $"Warning: Found existing 'All Users' assignment on Quality Update policy {policyID}. This should not exist and will be skipped.", LogLevels.Warning);
+                            AppLogger.Warning($"Warning: Found existing 'All Users' assignment on Quality Update policy {policyID}. This should not exist and will be skipped.", appFunction.Assignment);
                             continue;
                         }
                         else if (existing.Target is AllDevicesAssignmentTarget)
                         {
                             // Skip All Devices assignments - they shouldn't exist but handle gracefully
-                            LogToFunctionFile(appFunction.Main, $"Warning: Found existing 'All Devices' assignment on Quality Update policy {policyID}. This should not exist and will be skipped.", LogLevels.Warning);
+                            AppLogger.Warning($"Warning: Found existing 'All Devices' assignment on Quality Update policy {policyID}. This should not exist and will be skipped.", appFunction.Assignment);
                             continue;
                         }
                         else if (existing.Target is GroupAssignmentTarget groupTarget)
@@ -272,21 +258,22 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 try
                 {
                     await destinationGraphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].Assign.PostAsync(requestBody);
-                    LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to Quality Update policy {policyID}.");
                     UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
                 }
                 catch (Exception ex)
                 {
-                    LogToFunctionFile(appFunction.Main, $"Error assigning groups to policy {policyID}: {ex.Message}", LogLevels.Error);
+                    AppLogger.Error($"Error assigning groups to policy {policyID}: {ex.Message}", appFunction.Assignment);
+                    throw;
                 }
             }
             catch (ArgumentNullException argEx)
             {
-                LogToFunctionFile(appFunction.Main, $"Argument null exception during group assignment setup: {argEx.Message}", LogLevels.Error);
+                AppLogger.Error($"Argument null exception during group assignment setup: {argEx.Message}", appFunction.Assignment);
+                throw;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while preparing assignment for policy {policyID}: {ex.Message}", LogLevels.Warning);
+                throw;
             }
         }
         public static async Task DeleteWindowsQualityUpdatePolicy(GraphServiceClient graphServiceClient, string policyID)
@@ -305,9 +292,9 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].DeleteAsync();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while deleting a Windows Quality Update policy: {ex.Message}", LogLevels.Error);
+                throw;
             }
         }
 
@@ -348,7 +335,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].PatchAsync(policy);
-                    LogToFunctionFile(appFunction.Main, $"Successfully renamed Windows Quality Update policy {policyID} to '{name}'");
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
@@ -370,7 +356,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].PatchAsync(policy);
-                    LogToFunctionFile(appFunction.Main, $"Updated description for Windows Quality Update policy {policyID} to '{newName}'");
                 }
                 else if (selectedRenameMode == "RemovePrefix")
                 {
@@ -389,12 +374,21 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].PatchAsync(policy);
-                    LogToFunctionFile(appFunction.Main, $"Removed prefix from Windows Quality Update policy {policyID}, new name: '{name}'");
+                }
+                else if (selectedRenameMode == "RemoveDescription")
+                {
+                    var policy = new WindowsQualityUpdatePolicy
+                    {
+                        Description = string.Empty
+                    };
+
+                    await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].PatchAsync(policy);
+                    AppLogger.Info($"Cleared description for Windows Quality Update policy {policyID}", appFunction.Main);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while renaming Windows Quality Update policy: {ex.Message}", LogLevels.Warning);
+                throw;
             }
         }
 
@@ -449,7 +443,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 if (result == null)
                 {
-                    LogToFunctionFile(appFunction.Main, $"Windows Quality Update policy {policyId} not found for export.", LogLevels.Warning);
+                    AppLogger.Warning($"Windows Quality Update policy {policyId} not found for export.", appFunction.JsonExport);
                     return null;
                 }
 
@@ -461,7 +455,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"Error exporting Windows Quality Update policy {policyId}: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"Error exporting Windows Quality Update policy {policyId}: {ex.Message}", appFunction.JsonExport);
                 return null;
             }
         }
@@ -480,7 +474,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 if (exportedPolicy == null)
                 {
-                    LogToFunctionFile(appFunction.Main, "Failed to deserialize Windows Quality Update policy data from JSON.", LogLevels.Error);
+                    AppLogger.Error("Failed to deserialize Windows Quality Update policy data from JSON.", appFunction.Import);
                     return null;
                 }
 
@@ -509,13 +503,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 var imported = await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies.PostAsync(newPolicy);
 
-                LogToFunctionFile(appFunction.Main, $"Imported Windows Quality Update policy: {imported?.DisplayName}");
+                AppLogger.Info($"Imported Windows Quality Update policy: {imported?.DisplayName}", appFunction.Import);
                 return imported?.DisplayName;
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"Error importing Windows Quality Update policy from JSON: {ex.Message}", LogLevels.Error);
-                LogToFunctionFile(appFunction.Main, $"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", LogLevels.Warning);
+                AppLogger.Error($"Error importing Windows Quality Update policy from JSON: {ex.Message}", appFunction.Import);
+                AppLogger.Warning($"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", appFunction.Import);
                 return null;
             }
         }
@@ -566,7 +560,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"Error getting assignment details for Windows Quality Update Policy {policyId}: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"Error getting assignment details for Windows Quality Update Policy {policyId}: {ex.Message}", appFunction.ManageAssignment);
                 return null;
             }
         }
@@ -582,7 +576,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             };
 
             await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyId].Assign.PostAsync(requestBody);
-            LogToFunctionFile(appFunction.Main, $"Removed all assignments from Windows Quality Update Policy {policyId}.");
         }
     }
 }

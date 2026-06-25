@@ -60,6 +60,8 @@
                         <AppBarButton x:Name="ClearAllButton" Icon="Clear" Label="Clear All" Click="ClearAllButton_Click" ToolTipService.ToolTip="Clear all items from staging area."/>
                         <AppBarSeparator/>
                         <AppBarButton x:Name="ClearLogButton" Icon="Delete" Label="Clear Log" Click="ClearLogButton_Click" ToolTipService.ToolTip="Clear the log console."/>
+                        <AppBarSeparator/>
+                        <AppBarButton x:Name="ExportCsvButton" Icon="Save" Label="Export CSV" Click="ExportCsvButton_Click" ToolTipService.ToolTip="Export the current list to a CSV file."/>
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -78,6 +80,7 @@
                             <ComboBoxItem Content="Add Prefix"/>
                             <ComboBoxItem Content="Description"/>
                             <ComboBoxItem Content="Remove Prefix"/>
+                            <ComboBoxItem Content="Remove Description"/>
                         </ComboBox>
                         <TextBox x:Name="NewNameTextBox"
                                  PlaceholderText="Enter prefix..."

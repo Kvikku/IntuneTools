@@ -96,12 +96,12 @@ namespace IntuneTools.Pages
                     Variables.destinationTenantName = tenantName ?? string.Empty;
                 }
 
-                LogToFunctionFile(appFunction.Main, $"{tenantLabel} Tenant Name: {tenantName}");
+                AppLogger.Info($"{tenantLabel} Tenant Name: {tenantName}", appFunction.Main);
                 UpdateTenantStatusUI(isSource, isSignedIn: true, tenantName);
             }
             else
             {
-                LogToFunctionFile(appFunction.Main, $"Failed to authenticate to {tenantLabel.ToLower()} tenant.");
+                AppLogger.Info($"Failed to authenticate to {tenantLabel.ToLower()} tenant.", appFunction.Main);
 
                 if (isSource)
                     Variables.sourceTenantName = string.Empty;
@@ -142,12 +142,12 @@ namespace IntuneTools.Pages
                     }
 
                     UpdateTenantStatusUI(isSource, isSignedIn: false, tenantName: null);
-                    LogToFunctionFile(appFunction.Main, $"{tenantLabel} token/session cleared.");
+                    AppLogger.Info($"{tenantLabel} token/session cleared.", appFunction.Main);
                 }
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"Failed to clear {tenantLabel.ToLower()} token: {ex.Message}");
+                AppLogger.Info($"Failed to clear {tenantLabel.ToLower()} token: {ex.Message}", appFunction.Main);
             }
         }
 
@@ -175,8 +175,7 @@ namespace IntuneTools.Pages
             // Update UI to reflect the swap
             RefreshLoginStatusUI();
 
-            LogToFunctionFile(appFunction.Main, 
-                $"Swapped tenants. Source is now '{sourceTenantName}', Destination is now '{destinationTenantName}'.");
+            AppLogger.Info($"Swapped tenants. Source is now '{sourceTenantName}', Destination is now '{destinationTenantName}'.", appFunction.Main);
         }
 
         #endregion
@@ -209,7 +208,7 @@ namespace IntuneTools.Pages
             }
             else
             {
-                LogToFunctionFile(appFunction.Main, $"Invalid log file folder path: {folderToOpen}");
+                AppLogger.Info($"Invalid log file folder path: {folderToOpen}", appFunction.Main);
             }
         }
 

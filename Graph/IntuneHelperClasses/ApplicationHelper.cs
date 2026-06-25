@@ -9,8 +9,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                LogToFunctionFile(appFunction.Main, "Retrieving all Mobile Apps.");
-
                 var result = await graphServiceClient.DeviceAppManagement.MobileApps.GetAsync();
 
                 List<MobileApp> mobileApps = new List<MobileApp>();
@@ -23,11 +21,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         return true;
                     });
                     await pageIterator.IterateAsync();
-                    LogToFunctionFile(appFunction.Main, $"Found {mobileApps.Count} Mobile Apps.");
-                }
-                else
-                {
-                    LogToFunctionFile(appFunction.Main, "No Mobile Apps found or the result was null.");
                 }
 
 
@@ -49,7 +42,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while retrieving all Mobile Apps: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"An error occurred while retrieving all Mobile Apps: {ex.Message}", appFunction.Main);
                 return new List<MobileApp>();
             }
         }
@@ -58,8 +51,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                LogToFunctionFile(appFunction.Main, $"Searching for Mobile Apps containing '{searchQuery}'.");
-
                 var result = await graphServiceClient.DeviceAppManagement.MobileApps.GetAsync((requestConfiguration) =>
                 {
                     requestConfiguration.QueryParameters.Filter = $"contains(displayName, '{searchQuery}')";
@@ -75,18 +66,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         return true;
                     });
                     await pageIterator.IterateAsync();
-                    LogToFunctionFile(appFunction.Main, $"Found {mobileApps.Count} Mobile Apps matching '{searchQuery}'.");
-                }
-                else
-                {
-                    LogToFunctionFile(appFunction.Main, $"No Mobile Apps found matching '{searchQuery}' or the result was null.");
                 }
 
                 return mobileApps;
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for Mobile Apps with query '{searchQuery}': {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"An error occurred while searching for Mobile Apps with query '{searchQuery}': {ex.Message}", appFunction.Main);
                 return new List<MobileApp>();
             }
         }
@@ -137,17 +123,18 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
             if (!supportedTypes.Contains(appType))
             {
-                LogToFunctionFile(appFunction.Main, "The selected app type is not supported for deployment yet. Skipping");
+                AppLogger.Info("The selected app type is not supported for deployment yet. Skipping", appFunction.Assignment);
                 return;
             }
 
             try
             {
-                await AssignGroupsToApplication(appInfo.Value.ContentId, groups, graphServiceClient, assignmentSettings);
+                await AssignGroupsToApplication(appInfo.Value.ContentId, appInfo.Value.ContentName, groups, graphServiceClient, assignmentSettings);
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while preparing application of type '{appInfo.Value.ContentPlatform}' for assignment: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"An error occurred while preparing application of type '{appInfo.Value.ContentPlatform}' for assignment: {ex.Message}", appFunction.Assignment);
+                throw;
             }
         }
 
@@ -193,7 +180,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             };
         }
 
-        public static async Task AssignGroupsToApplication(string appId, List<string> groupIds, GraphServiceClient graphServiceClient, MobileAppAssignmentSettings? assignmentSettings = null)
+        public static async Task AssignGroupsToApplication(string appId, string contentName, List<string> groupIds, GraphServiceClient graphServiceClient, MobileAppAssignmentSettings? assignmentSettings = null)
         {
             try
             {
@@ -301,7 +288,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     if (assignment.Intent == InstallIntent.Available || assignment.Target.OdataType == "#microsoft.graph.allDevicesAssignmentTarget")
                     {
                         // Not supported
-                        LogToFunctionFile(appFunction.Main, "Assignment settings for 'Available' intent to 'All Devices virtual group' is not supported.");
+                        AppLogger.Info("Assignment settings for 'Available' intent to 'All Devices virtual group' is not supported.", appFunction.Assignment);
                     }
                 }
 
@@ -366,12 +353,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         .PostAsync(requestBody);
                 }, maxRetries: 5, baseDelaySeconds: 2);
 
-                LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to application {appId} with filter type {deviceAndAppManagementAssignmentFilterType}.");
                 UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while assigning groups to application: {ex.Message}", LogLevels.Warning);
+                AppLogger.Warning($"An error occurred while assigning groups to application: {ex.Message}", appFunction.Assignment);
+                throw;
             }
         }
 
@@ -393,7 +380,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                     // Calculate delay with exponential backoff
                     var delaySeconds = baseDelaySeconds * Math.Pow(2, attempt);
-                    LogToFunctionFile(appFunction.Main, $"Rate limited (429). Retrying in {delaySeconds} seconds... (Attempt {attempt + 1}/{maxRetries})", LogLevels.Warning);
+                    AppLogger.Warning($"Rate limited (429). Retrying in {delaySeconds} seconds... (Attempt {attempt + 1}/{maxRetries})", appFunction.Main);
                     await Task.Delay(TimeSpan.FromSeconds(delaySeconds));
                 }
             }
@@ -436,7 +423,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 if (string.IsNullOrWhiteSpace(existingApp.OdataType) || !supportedRenameTypes.Contains(existingApp.OdataType))
                 {
-                    LogToFunctionFile(appFunction.Main, $"Rename/description updates are not supported for app type '{existingApp.OdataType ?? "Unknown"}'.", LogLevels.Warning);
+                    AppLogger.Warning($"Rename/description updates are not supported for app type '{existingApp.OdataType ?? "Unknown"}'.", appFunction.Rename);
                     return;
                 }
 
@@ -451,7 +438,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceAppManagement.MobileApps[appId].PatchAsync(app);
-                    LogToFunctionFile(appFunction.Main, $"Renamed application {appId} to '{name}'");
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
@@ -466,7 +452,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceAppManagement.MobileApps[appId].PatchAsync(app);
-                    LogToFunctionFile(appFunction.Main, $"Updated description for application {appId} to '{newName}'");
                 }
                 else if (selectedRenameMode == "RemovePrefix")
                 {
@@ -479,12 +464,22 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceAppManagement.MobileApps[appId].PatchAsync(app);
-                    LogToFunctionFile(appFunction.Main, $"Removed prefix from application {appId}, new name: '{name}'");
+                }
+                else if (selectedRenameMode == "RemoveDescription")
+                {
+                    var app = new MobileApp
+                    {
+                        OdataType = existingApp.OdataType,
+                        Description = string.Empty
+                    };
+
+                    await graphServiceClient.DeviceAppManagement.MobileApps[appId].PatchAsync(app);
+                    AppLogger.Info($"Cleared description for application {appId}", appFunction.Main);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while renaming applications: {ex.Message}", LogLevels.Warning);
+                throw;
             }
         }
 
@@ -531,7 +526,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while deleting application '{appId}': {ex.Message}", LogLevels.Warning);
+                AppLogger.Warning($"An error occurred while deleting application '{appId}': {ex.Message}", appFunction.Delete);
                 throw;
             }
         }

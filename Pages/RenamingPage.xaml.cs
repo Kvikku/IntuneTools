@@ -67,11 +67,13 @@ namespace IntuneTools.Pages
 
         protected override string UnauthenticatedMessage => "You must authenticate with a tenant before using renaming features.";
 
+        protected override appFunction PageLogFunction => appFunction.Rename;
+
         protected override IEnumerable<string> GetManagedControlNames() => new[]
         {
             "SearchQueryTextBox", "SearchButton", "ListAllButton", "ClearSelectedButton",
             "ClearAllButton", "NewNameTextBox", "PrefixButton", "RenameButton",
-            "RenamingDataGrid", "ClearLogButton", "RenameModeComboBox"
+            "RenamingDataGrid", "ClearLogButton", "RenameModeComboBox", "ExportCsvButton"
         };
 
         #endregion
@@ -103,7 +105,7 @@ namespace IntuneTools.Pages
             try
             {
                 CustomContentList.Clear();
-                await LoadAllContentTypesAsync(graphServiceClient, LogInfo);
+                await LoadAllContentTypesAsync(graphServiceClient);
                 RenamingDataGrid.ItemsSource = CustomContentList;
             }
             catch (Exception ex)
@@ -123,7 +125,7 @@ namespace IntuneTools.Pages
             try
             {
                 CustomContentList.Clear();
-                await SearchAllContentTypesAsync(graphServiceClient, searchQuery, LogInfo);
+                await SearchAllContentTypesAsync(graphServiceClient, searchQuery);
                 RenamingDataGrid.ItemsSource = CustomContentList;
             }
             catch (Exception ex)
@@ -227,7 +229,7 @@ namespace IntuneTools.Pages
                 return false;
             }
 
-            if (selectedRenameMode != "RemovePrefix" && string.IsNullOrWhiteSpace(newName))
+            if (selectedRenameMode != "RemovePrefix" && selectedRenameMode != "RemoveDescription" && string.IsNullOrWhiteSpace(newName))
             {
                 LogWarning("New name cannot be empty.");
                 return false;
@@ -254,6 +256,7 @@ namespace IntuneTools.Pages
                 "Prefix" => await PreparePrefixRename(contentIDs, newName),
                 "RemovePrefix" => await PrepareRemovePrefixRename(contentIDs, newName),
                 "Description" => await PrepareDescriptionUpdate(newName),
+                "RemoveDescription" => await PrepareRemoveDescriptionUpdate(),
                 _ => null
             };
         }
@@ -341,6 +344,16 @@ namespace IntuneTools.Pages
                 "Update");
 
             return confirmed ? newDescription : null;
+        }
+
+        private async Task<string?> PrepareRemoveDescriptionUpdate()
+        {
+            var confirmed = await ShowConfirmationDialog(
+                "Confirm removing descriptions",
+                "The descriptions of all selected items will be cleared. Proceed?",
+                "Remove Descriptions");
+
+            return confirmed ? "__REMOVE_DESCRIPTION__" : null;
         }
 
         /// <summary>
@@ -463,7 +476,7 @@ namespace IntuneTools.Pages
         private RenameMode GetSelectedRenameMode()
         {
             var index = RenameModeComboBox?.SelectedIndex ?? 0;
-            if (index < 0 || index > 2) index = 0;
+            if (index < 0 || index > 3) index = 0;
             return (RenameMode)index;
         }
 
@@ -535,7 +548,7 @@ namespace IntuneTools.Pages
 
             string newName = NewNameTextBox.Text.Trim();
 
-            if (renameMode != RenameMode.RemovePrefix && string.IsNullOrEmpty(newName))
+            if (renameMode != RenameMode.RemovePrefix && renameMode != RenameMode.RemoveDescription && string.IsNullOrEmpty(newName))
             {
                 LogWarning("Please enter a new name.");
                 return;
@@ -608,6 +621,25 @@ namespace IntuneTools.Pages
                 return;
             }
             await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
+        }
+
+        private async void ExportCsvButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (ContentList.Count == 0)
+            {
+                LogWarning("Nothing to export — the list is empty.");
+                return;
+            }
+            try
+            {
+                var savedPath = await CsvExporter.ExportContentListAsync(ContentList, "Renaming");
+                if (savedPath != null)
+                    ShowOperationSuccess($"Exported {ContentList.Count} items to CSV.", savedPath);
+            }
+            catch (Exception ex)
+            {
+                LogError($"CSV export failed: {ex.Message}");
+            }
         }
 
         #endregion

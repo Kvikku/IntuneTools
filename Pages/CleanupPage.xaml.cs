@@ -80,10 +80,12 @@ namespace IntuneTools.Pages
 
         protected override string UnauthenticatedMessage => "You must authenticate with a tenant before using cleanup features.";
 
+        protected override appFunction PageLogFunction => appFunction.Delete;
+
         protected override IEnumerable<string> GetManagedControlNames() => new[]
         {
             "InputTextBox", "SearchButton", "ListAllButton", "FindUnassignedButton",
-            "ClearSelectedButton", "ClearAllButton", "DeleteButton", "CleanupDataGrid", "ClearLogButton"
+            "ClearSelectedButton", "ClearAllButton", "DeleteButton", "CleanupDataGrid", "ClearLogButton", "ExportCsvButton"
         };
 
         #endregion
@@ -125,7 +127,7 @@ namespace IntuneTools.Pages
 
             if (_deleteTotal == 0)
             {
-                AppendToDetailsRichTextBlock("No content to delete.");
+                LogWarning("No content to delete.");
                 return;
             }
 
@@ -167,12 +169,12 @@ namespace IntuneTools.Pages
             try
             {
                 ContentList.Clear();
-                await LoadContentTypesAsync(graphServiceClient, SupportedContentTypes, AppendToDetailsRichTextBlock);
+                await LoadContentTypesAsync(graphServiceClient, SupportedContentTypes);
                 CleanupDataGrid.ItemsSource = ContentList;
             }
             catch (Exception ex)
             {
-                AppendToDetailsRichTextBlock($"Error during loading: {ex.Message}");
+                LogError($"Error during loading: {ex.Message}");
             }
             finally
             {
@@ -190,12 +192,12 @@ namespace IntuneTools.Pages
             try
             {
                 ContentList.Clear();
-                await SearchContentTypesAsync(graphServiceClient, searchQuery, SupportedContentTypes, AppendToDetailsRichTextBlock);
+                await SearchContentTypesAsync(graphServiceClient, searchQuery, SupportedContentTypes);
                 CleanupDataGrid.ItemsSource = ContentList;
             }
             catch (Exception ex)
             {
-                AppendToDetailsRichTextBlock($"Error during search: {ex.Message}");
+                LogError($"Error during search: {ex.Message}");
             }
             finally
             {
@@ -221,7 +223,7 @@ namespace IntuneTools.Pages
                     var deleted = await definition.DeleteAsync(id);
                     if (deleted)
                     {
-                        LogToFunctionFile(appFunction.Main, $"Deleted {definition.DisplayName} with ID: {id}");
+                        AppLogger.Info($"Deleted {definition.DisplayName} with ID: {id}", appFunction.Delete);
                         UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
                         _deleteSuccessCount++;
                     }
@@ -230,7 +232,7 @@ namespace IntuneTools.Pages
                 catch (Exception ex)
                 {
                     _deleteErrorCount++;
-                    LogToFunctionFile(appFunction.Main, $"Error deleting {definition.DisplayName} {id}: {ex.Message}", LogLevels.Error);
+                    AppLogger.Error($"Error deleting {definition.DisplayName} {id}: {ex.Message}", appFunction.Delete);
                 }
             }
 
@@ -269,13 +271,13 @@ namespace IntuneTools.Pages
                 if (result == ContentDialogResult.Primary)
                 {
                     await DeleteWindowsAutoPilotProfileAssignments(sourceGraphServiceClient, id);
-                    LogToFunctionFile(appFunction.Main, $"Deleted assignments for Windows AutoPilot profile with ID: {id}");
+                    AppLogger.Info($"Deleted assignments for Windows AutoPilot profile with ID: {id}", appFunction.Delete);
                     await DeleteWindowsAutopilotProfile(sourceGraphServiceClient, id);
                     return true;
                 }
                 else
                 {
-                    LogToFunctionFile(appFunction.Main, $"Skipped deletion of Windows AutoPilot profile with ID: {id} as it is assigned to devices.", LogLevels.Warning);
+                    AppLogger.Warning($"Skipped deletion of Windows AutoPilot profile with ID: {id} as it is assigned to devices.", appFunction.Delete);
                     return false;
                 }
             }
@@ -395,7 +397,7 @@ namespace IntuneTools.Pages
             {
                 // Load into a temporary list so items don't appear in the grid before being checked
                 ContentList.Clear();
-                await LoadContentTypesAsync(graphServiceClient, AssignableContentTypes, AppendToDetailsRichTextBlock);
+                await LoadContentTypesAsync(graphServiceClient, AssignableContentTypes);
                 var allItems = ContentList.ToList();
                 ContentList.Clear();
 
@@ -558,6 +560,25 @@ namespace IntuneTools.Pages
                 return;
             }
             await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
+        }
+
+        private async void ExportCsvButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (ContentList.Count == 0)
+            {
+                LogWarning("Nothing to export — the list is empty.");
+                return;
+            }
+            try
+            {
+                var savedPath = await CsvExporter.ExportContentListAsync(ContentList, "Cleanup");
+                if (savedPath != null)
+                    ShowOperationSuccess($"Exported {ContentList.Count} items to CSV.", savedPath);
+            }
+            catch (Exception ex)
+            {
+                LogError($"CSV export failed: {ex.Message}");
+            }
         }
 
         #endregion

@@ -1,4 +1,4 @@
-﻿using Microsoft.Graph;
+using Microsoft.Graph;
 
 namespace IntuneTools.Graph.EntraHelperClasses
 {
@@ -8,12 +8,12 @@ namespace IntuneTools.Graph.EntraHelperClasses
         {
             // This method gets all the groups in the tenant and returns them as a list of Group objects
 
-            // clear the dictionary
+            // Replace instances so any in-flight reader keeps its reference to the old dict
             groupNameAndID.Clear();
+            groupIDAndName = new System.Collections.Concurrent.ConcurrentDictionary<string, string>(System.StringComparer.OrdinalIgnoreCase);
 
             try
             {
-                LogToFunctionFile(appFunction.Main, "Getting all groups in the tenant");
                 var result = await graphServiceClient.Groups.GetAsync((requestConfiguration) =>
                 {
                     requestConfiguration.QueryParameters.Count = true;
@@ -31,7 +31,6 @@ namespace IntuneTools.Graph.EntraHelperClasses
                 });
                 // start the iteration
                 await pageIterator.IterateAsync();
-                LogToFunctionFile(appFunction.Main, $"Found {groups.Count} groups in the tenant");
 
                 // Add virtual groups for All Users and All Devices
                 var allUsersGroup = new Group
@@ -54,14 +53,13 @@ namespace IntuneTools.Graph.EntraHelperClasses
                 groups.Insert(0, allUsersGroup);
                 groups.Insert(1, allDevicesGroup);
 
-                LogToFunctionFile(appFunction.Main, $"Added virtual groups. Total groups: {groups.Count}");
-
                 // Populate the groupNameAndID dictionary with group names and IDs
                 foreach (var group in groups)
                 {
                     if (!string.IsNullOrEmpty(group.DisplayName) && !string.IsNullOrEmpty(group.Id))
                     {
                         groupNameAndID[group.DisplayName] = group.Id;
+                        groupIDAndName[group.Id] = group.DisplayName;
                     }
                 }
 
@@ -71,7 +69,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
             catch (Microsoft.Graph.Beta.Models.ODataErrors.ODataError me)
             {
                 // Log the error message
-                LogToFunctionFile(appFunction.Main, $"ODataError retrieving all groups: {me.Message}", LogLevels.Warning);
+                AppLogger.Warning($"ODataError retrieving all groups: {me.Message}", appFunction.Main);
                 return null;
             }
         }
@@ -80,13 +78,12 @@ namespace IntuneTools.Graph.EntraHelperClasses
         {
             // This method searches for groups in the tenant based on a search query and returns the results as a list of Group objects
 
-            // clear the dictionary
+            // Replace instances so any in-flight reader keeps its reference to the old dict
             groupNameAndID.Clear();
+            groupIDAndName = new System.Collections.Concurrent.ConcurrentDictionary<string, string>(System.StringComparer.OrdinalIgnoreCase);
 
             try
             {
-                LogToFunctionFile(appFunction.Main, "Searching for groups. Search query: " + searchQuery);
-
                 var result = await graphServiceClient.Groups.GetAsync((requestConfiguration) =>
                 {
                     requestConfiguration.QueryParameters.Search = "\"displayName:" + searchQuery + "\"";
@@ -103,7 +100,6 @@ namespace IntuneTools.Graph.EntraHelperClasses
                 });
                 // start the iteration
                 await pageIterator.IterateAsync();
-                LogToFunctionFile(appFunction.Main, $"Found {groups.Count} groups in the tenant");
 
                 // Populate the groupNameAndID dictionary with group names and IDs
                 foreach (var group in groups)
@@ -111,6 +107,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
                     if (!string.IsNullOrEmpty(group.DisplayName) && !string.IsNullOrEmpty(group.Id))
                     {
                         groupNameAndID[group.DisplayName] = group.Id;
+                        groupIDAndName[group.Id] = group.DisplayName;
                     }
                 }
 
@@ -120,7 +117,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
             catch (Microsoft.Graph.Beta.Models.ODataErrors.ODataError me)
             {
                 // Log the error message
-                LogToFunctionFile(appFunction.Main, $"ODataError searching for groups: {me.Message}", LogLevels.Warning);
+                AppLogger.Warning($"ODataError searching for groups: {me.Message}", appFunction.Main);
                 return null;
             }
         }
@@ -133,21 +130,20 @@ namespace IntuneTools.Graph.EntraHelperClasses
             // Basic null checks for arguments
             if (sourceGraphServiceClient == null || destinationGraphServiceClient == null || groupIds == null)
             {
-                LogToFunctionFile(appFunction.Main, "ImportMultipleGroups called with null arguments.");
+                AppLogger.Info("ImportMultipleGroups called with null arguments.", appFunction.Import);
                 return;
             }
 
 
             try
             {
-                LogToFunctionFile(appFunction.Main, " ");
-                LogToFunctionFile(appFunction.Main, $"{DateTime.Now.ToString()} - Importing {groupIds.Count} Security groups.");
+                AppLogger.Info($"Importing {groupIds.Count} Security groups.", appFunction.Import);
 
-
+                bool hasFailures = false;
                 foreach (var groupId in groupIds)
                 {
                     Group? sourceGroup = null;
-                    var groupName = ""; // Initialize group name for logging
+                    var groupName = groupId;
                     try
                     {
                         // Get the group from the source tenant
@@ -158,7 +154,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
 
                         if (sourceGroup == null)
                         {
-                            LogToFunctionFile(appFunction.Main, $"Skipping {ItemType} ID {groupId}: Not found in source tenant.");
+                            AppLogger.Info($"Skipping {ItemType} ID {groupId}: Not found in source tenant.", appFunction.Import);
                             continue;
                         }
 
@@ -200,7 +196,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
                         {
                             if (string.IsNullOrWhiteSpace(sourceGroup.MembershipRule))
                             {
-                                LogToFunctionFile(appFunction.Main, $"Skipping Dynamic {ItemType} '{sourceGroup.DisplayName}' (ID: {groupId}): Missing membership rule.");
+                                AppLogger.Info($"Skipping Dynamic {ItemType} '{sourceGroup.DisplayName}' (ID: {groupId}): Missing membership rule.", appFunction.Import);
                                 continue; // Cannot create dynamic group without a rule
                             }
                             newGroup.GroupTypes = new List<string> { "DynamicMembership" };
@@ -216,22 +212,25 @@ namespace IntuneTools.Graph.EntraHelperClasses
 
                         // Create the group in the destination tenant
                         var importedGroup = await destinationGraphServiceClient.Groups.PostAsync(newGroup);
-                        LogToFunctionFile(appFunction.Main, $"Successfully imported {groupName}");
+                        AppLogger.Info($"Imported '{groupName}' successfully.", appFunction.Import);
 
                     }
                     catch (Exception ex)
                     {
-                        LogToFunctionFile(appFunction.Main, $"Failed to import {groupName}: {ex.Message}", LogLevels.Error);
+                        AppLogger.Error($"Failed to import '{groupName}': {ex.Message}", appFunction.Import);
+                        hasFailures = true;
                     }
                 }
+                if (hasFailures)
+                    throw new Exception("One or more groups failed to import. See Import.log for details.");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                LogToFunctionFile(appFunction.Main, $"An unexpected error occurred during the import process: {ex.Message}", LogLevels.Error);
+                throw;
             }
             finally
             {
-                LogToFunctionFile(appFunction.Main, $"{DateTime.Now.ToString()} - Finished importing Security groups.");
+                AppLogger.Info($"{DateTime.Now.ToString()} - Finished importing Security groups.", appFunction.Import);
             }
         }
         public static async Task DeleteSecurityGroup(GraphServiceClient graphServiceClient, string groupId)
@@ -256,17 +255,18 @@ namespace IntuneTools.Graph.EntraHelperClasses
             {
                 if (string.Equals(odataError?.Error?.Message, "Insufficient privileges to complete the operation.", StringComparison.OrdinalIgnoreCase))
                 {
-                    LogToFunctionFile(appFunction.Main, "Insufficient privileges to delete the security group.", LogLevels.Error);
-                    LogToFunctionFile(appFunction.Main, "Please double check that the Microsoft Graph command line tools app has permissions to delete security groups.", LogLevels.Warning);
+                    AppLogger.Error("Insufficient privileges to delete the security group.", appFunction.Delete);
+                    AppLogger.Warning("Please double check that the Microsoft Graph command line tools app has permissions to delete security groups.", appFunction.Delete);
                 }
                 else
                 {
-                    LogToFunctionFile(appFunction.Main, "An OData error occurred while deleting a security group. Check the permissions and try again.", LogLevels.Error);
+                    AppLogger.Error("An OData error occurred while deleting a security group. Check the permissions and try again.", appFunction.Delete);
                 }
+                throw;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while deleting a security group: {ex.Message}", LogLevels.Error);
+                throw;
             }
         }
         public static async Task RenameGroup(GraphServiceClient graphServiceClient, string groupID, string newName)
@@ -306,7 +306,6 @@ namespace IntuneTools.Graph.EntraHelperClasses
                     };
 
                     await graphServiceClient.Groups[groupID].PatchAsync(group);
-                    LogToFunctionFile(appFunction.Main, $"Successfully renamed group {groupID} to '{name}'");
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
@@ -328,7 +327,6 @@ namespace IntuneTools.Graph.EntraHelperClasses
                     };
 
                     await graphServiceClient.Groups[groupID].PatchAsync(group);
-                    LogToFunctionFile(appFunction.Main, $"Updated description for group {groupID} to '{newName}'");
                 }
                 else if (selectedRenameMode == "RemovePrefix")
                 {
@@ -347,24 +345,34 @@ namespace IntuneTools.Graph.EntraHelperClasses
                     };
 
                     await graphServiceClient.Groups[groupID].PatchAsync(group);
-                    LogToFunctionFile(appFunction.Main, $"Removed prefix from group {groupID}, new name: '{name}'");
+                }
+                else if (selectedRenameMode == "RemoveDescription")
+                {
+                    var group = new Group
+                    {
+                        Description = string.Empty
+                    };
+
+                    await graphServiceClient.Groups[groupID].PatchAsync(group);
+                    AppLogger.Info($"Cleared description for group {groupID}", appFunction.Main);
                 }
             }
             catch (Microsoft.Graph.Beta.Models.ODataErrors.ODataError odataError)
             {
                 if (string.Equals(odataError?.Error?.Message, "Insufficient privileges to complete the operation.", StringComparison.OrdinalIgnoreCase))
                 {
-                    LogToFunctionFile(appFunction.Main, "Insufficient privileges to rename the group.", LogLevels.Error);
-                    LogToFunctionFile(appFunction.Main, "Please double check that the Microsoft Graph command line tools app has permissions to rename groups.", LogLevels.Warning);
+                    AppLogger.Error("Insufficient privileges to rename the group.", appFunction.Rename);
+                    AppLogger.Warning("Please double check that the Microsoft Graph command line tools app has permissions to rename groups.", appFunction.Rename);
                 }
                 else
                 {
-                    LogToFunctionFile(appFunction.Main, "An OData error occurred while renaming the group. Check the permissions and try again.", LogLevels.Error);
+                    AppLogger.Error("An OData error occurred while renaming the group. Check the permissions and try again.", appFunction.Rename);
                 }
+                throw;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while renaming group: {ex.Message}", LogLevels.Warning);
+                throw;
             }
         }
 
@@ -406,6 +414,53 @@ namespace IntuneTools.Graph.EntraHelperClasses
             }
 
             return content;
+        }
+
+        /// <summary>
+        /// Resolves a list of group IDs to their display names.
+        /// Checks the session cache first; falls back to individual Graph API calls for any misses.
+        /// Falls back to the raw ID if resolution fails.
+        /// </summary>
+        public static async Task<Dictionary<string, string>> ResolveGroupNamesAsync(
+            GraphServiceClient graphServiceClient,
+            IEnumerable<string> groupIds)
+        {
+            var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var misses = new List<string>();
+
+            foreach (var id in groupIds)
+            {
+                if (groupIDAndName.TryGetValue(id, out var cached))
+                    result[id] = cached;
+                else
+                    misses.Add(id);
+            }
+
+            foreach (var id in misses)
+            {
+                try
+                {
+                    var group = await graphServiceClient.Groups[id].GetAsync(config =>
+                        config.QueryParameters.Select = new[] { "displayName" });
+
+                    if (group?.DisplayName != null)
+                    {
+                        result[id] = group.DisplayName;
+                        groupIDAndName[id] = group.DisplayName;
+                    }
+                    else
+                    {
+                        result[id] = id; // fall back to ID without caching — allows retry next session
+                    }
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.Warning($"Failed to resolve group name for ID '{id}': {ex.Message}", appFunction.Main);
+                    result[id] = id;
+                }
+            }
+
+            return result;
         }
     }
 }
