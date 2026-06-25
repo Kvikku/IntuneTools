@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using System.Diagnostics;
 
 namespace IntuneTools.Utilities
 {
@@ -57,6 +58,7 @@ namespace IntuneTools.Utilities
         public void Hide()
         {
             StatusBar.IsOpen = false;
+            StatusBar.ActionButton = null;
 
             ProgressRing.IsActive = false;
             ProgressRing.Visibility = Visibility.Collapsed;
@@ -82,11 +84,15 @@ namespace IntuneTools.Utilities
                 case OperationState.Error:
                     StatusBar.Severity = InfoBarSeverity.Error;
                     StatusBar.Title = "Operation Failed";
+                    StatusBar.ActionButton = CreateOpenLogsButton();
                     break;
                 default:
                     StatusBar.IsOpen = false;
                     return;
             }
+
+            if (state != OperationState.Error)
+                StatusBar.ActionButton = null;
 
             string displayMessage = message;
             if (current.HasValue && total.HasValue && total.Value > 0)
@@ -113,6 +119,22 @@ namespace IntuneTools.Utilities
             }
 
             StatusBar.IsOpen = true;
+        }
+
+        private static HyperlinkButton? CreateOpenLogsButton()
+        {
+            var folder = timestampedAppFolder;
+            if (string.IsNullOrEmpty(folder) || !Directory.Exists(folder))
+                return null;
+
+            var button = new HyperlinkButton { Content = "Open logs" };
+            button.Click += (_, _) => Process.Start(new ProcessStartInfo
+            {
+                FileName = "explorer.exe",
+                Arguments = folder,
+                UseShellExecute = true
+            });
+            return button;
         }
     }
 }
