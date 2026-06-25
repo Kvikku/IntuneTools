@@ -747,7 +747,7 @@ namespace IntuneTools.Pages
         {
             if (ContentList.Count == 0)
             {
-                AppendToDetailsRichTextBlock("Nothing to export — the list is empty.");
+                LogWarning("Nothing to export — the list is empty.");
                 return;
             }
             try
@@ -756,7 +756,7 @@ namespace IntuneTools.Pages
             }
             catch (Exception ex)
             {
-                AppendToDetailsRichTextBlock($"Export failed: {ex.Message}");
+                LogError($"CSV export failed: {ex.Message}");
             }
         }
 

@@ -1118,7 +1118,7 @@ namespace IntuneTools.Pages
         {
             if (AssignmentList.Count == 0)
             {
-                AppendToLog("Nothing to export — the list is empty.");
+                LogWarning("Nothing to export — the list is empty.");
                 return;
             }
             try
@@ -1127,7 +1127,7 @@ namespace IntuneTools.Pages
             }
             catch (Exception ex)
             {
-                AppendToLog($"Export failed: {ex.Message}");
+                LogError($"CSV export failed: {ex.Message}");
             }
         }
 

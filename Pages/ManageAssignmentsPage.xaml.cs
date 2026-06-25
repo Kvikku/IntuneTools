@@ -908,7 +908,7 @@ namespace IntuneTools.Pages
         {
             if (ContentList.Count == 0)
             {
-                AppendToLog("Nothing to export — the list is empty.");
+                LogWarning("Nothing to export — the list is empty.");
                 return;
             }
 
@@ -936,8 +936,9 @@ namespace IntuneTools.Pages
                             .Where(a => !string.IsNullOrEmpty(a.GroupId))
                             .Select(a => a.GroupId!));
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        LogWarning($"Could not fetch assignments for '{item.ContentName}': {ex.Message}");
                         rows.Add((item, Enumerable.Empty<AssignmentInfo>()));
                     }
                 }
@@ -950,7 +951,7 @@ namespace IntuneTools.Pages
             }
             catch (Exception ex)
             {
-                AppendToLog($"Export failed: {ex.Message}");
+                LogError($"CSV export failed: {ex.Message}");
             }
             finally
             {

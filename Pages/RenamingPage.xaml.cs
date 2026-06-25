@@ -616,7 +616,7 @@ namespace IntuneTools.Pages
         {
             if (ContentList.Count == 0)
             {
-                LogInfo("Nothing to export — the list is empty.");
+                LogWarning("Nothing to export — the list is empty.");
                 return;
             }
             try
@@ -625,7 +625,7 @@ namespace IntuneTools.Pages
             }
             catch (Exception ex)
             {
-                LogWarning($"Export failed: {ex.Message}");
+                LogError($"CSV export failed: {ex.Message}");
             }
         }
 
