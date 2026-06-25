@@ -658,7 +658,7 @@ namespace IntuneTools.Pages
 
             var toSelect = new List<DuplicateContentInfo>();
             foreach (var group in DuplicateContentList
-                .GroupBy(i => (Name: i.ContentName?.Trim().ToUpperInvariant(), Type: i.ContentType))
+                .GroupBy(i => (Name: i.ContentName?.Trim().ToUpperInvariant(), Type: i.ContentType, Platform: i.ContentPlatform?.Trim() ?? string.Empty))
                 .Where(g => g.Count() >= 2))
             {
                 toSelect.AddRange(group
@@ -684,7 +684,7 @@ namespace IntuneTools.Pages
 
             var toSelect = new List<DuplicateContentInfo>();
             foreach (var group in DuplicateContentList
-                .GroupBy(i => (Name: i.ContentName?.Trim().ToUpperInvariant(), Type: i.ContentType))
+                .GroupBy(i => (Name: i.ContentName?.Trim().ToUpperInvariant(), Type: i.ContentType, Platform: i.ContentPlatform?.Trim() ?? string.Empty))
                 .Where(g => g.Count() >= 2 && g.Any(i => i.HasAssignments == true)))
             {
                 toSelect.AddRange(group.Where(i => i.HasAssignments == false));
@@ -811,8 +811,8 @@ namespace IntuneTools.Pages
                     .Where(i => !string.IsNullOrWhiteSpace(i.ContentName) && !string.IsNullOrWhiteSpace(i.ContentType))
                     .GroupBy(i => (
                         Name: i.ContentName!.Trim().ToUpperInvariant(),
-                        Type: UserInterfaceHelper.IsApplicationContentType(i.ContentType!)
-                            ? ContentTypes.Application : i.ContentType!))
+                        Type: i.ContentType!,
+                        Platform: i.ContentPlatform?.Trim() ?? string.Empty))
                     .Where(g => g.Count() >= 2)
                     .ToList();
 
