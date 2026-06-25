@@ -9,8 +9,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             // This method retrieves all the device compliance policies from Intune and returns them as a list of DeviceManagementCompliancePolicy objects
             try
             {
-                LogToFunctionFile(appFunction.Main, "Retrieving all device compliance policies.");
-
                 var result = await graphServiceClient.DeviceManagement.DeviceCompliancePolicies.GetAsync((requestConfiguration) =>
                 {
                     requestConfiguration.QueryParameters.Top = 1000;
@@ -31,18 +29,16 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 // start the iteration
                 await pageIterator.IterateAsync();
 
-                LogToFunctionFile(appFunction.Main, $"Found {compliancePolicies.Count} device compliance policies.");
-
                 // return the list of policies
                 return compliancePolicies;
             }
             catch (Microsoft.Graph.Beta.Models.ODataErrors.ODataError me)
             {
-                LogToFunctionFile(appFunction.Main, $"ODataError retrieving device compliance policies: {me.Message}", LogLevels.Warning);
+                AppLogger.Warning($"ODataError retrieving device compliance policies: {me.Message}", appFunction.Main);
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An unexpected error occurred while retrieving device compliance policies: {ex.Message}", LogLevels.Warning);
+                AppLogger.Warning($"An unexpected error occurred while retrieving device compliance policies: {ex.Message}", appFunction.Main);
             }
 
             // Return an empty list if an exception occurs
@@ -54,8 +50,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             // This method searches the Intune device compliance policies for a specific query and returns the results as a list of DeviceManagementCompliancePolicy objects
             try
             {
-                LogToFunctionFile(appFunction.Main, "Searching for device compliance policies. Search query: " + searchQuery);
-
                 var result = await graphServiceClient.DeviceManagement.DeviceCompliancePolicies.GetAsync();
 
 
@@ -70,26 +64,21 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 await pageIterator.IterateAsync();
 
 
-                LogToFunctionFile(appFunction.Main, $"Found {compliancePolicies.Count} device compliance policies.");
-
-                // Filter the collected policies based on the searchQuery - Graph API does not allow for server side filtering 
+                // Filter the collected policies based on the searchQuery - Graph API does not allow for server side filtering
                 var filteredPolicies = compliancePolicies
                     .Where(policy => policy.DisplayName != null && policy.DisplayName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
                     .ToList();
-
-                LogToFunctionFile(appFunction.Main, $"Filtered policies count: {filteredPolicies.Count}");
-
 
                 // return the list of policies
                 return filteredPolicies;
             }
             catch (Microsoft.Graph.Beta.Models.ODataErrors.ODataError me)
             {
-                LogToFunctionFile(appFunction.Main, $"ODataError searching for device compliance policies: {me.Message}", LogLevels.Warning);
+                AppLogger.Warning($"ODataError searching for device compliance policies: {me.Message}", appFunction.Main);
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An unexpected error occurred while searching for device compliance policies: {ex.Message}", LogLevels.Warning);
+                AppLogger.Warning($"An unexpected error occurred while searching for device compliance policies: {ex.Message}", appFunction.Main);
             }
 
             // Return an empty list if an exception occurs
@@ -100,12 +89,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                LogToFunctionFile(appFunction.Main, " ");
-                LogToFunctionFile(appFunction.Main, $"{DateTime.Now.ToString()} - Importing {policies.Count} Device Compliance policies.");
+                AppLogger.Info($"Importing {policies.Count} Device Compliance policies.", appFunction.Import);
 
+                bool hasFailures = false;
                 foreach (var policy in policies)
                 {
-                    var policyName = string.Empty;
+                    var policyName = policy;
                     try
                     {
                         var result = await sourceGraphServiceClient.DeviceManagement.DeviceCompliancePolicies[policy].GetAsync((requestConfiguration) =>
@@ -199,30 +188,29 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
 
                         var import = await destinationGraphServiceClient.DeviceManagement.DeviceCompliancePolicies.PostAsync(deviceCompliancePolicy);
-                        LogToFunctionFile(appFunction.Main, $"Successfully imported {import.DisplayName}");
+                        AppLogger.Info($"Imported '{import.DisplayName}' successfully.", appFunction.Import);
 
                         if (assignments)
                         {
-                            await AssignGroupsToSingleDeviceCompliance(import.Id, groups, destinationGraphServiceClient);
+                            await AssignGroupsToSingleDeviceCompliance(import.Id, import.DisplayName ?? string.Empty, groups, destinationGraphServiceClient);
                         }
                     }
                     catch (Exception ex)
                     {
-                        LogToFunctionFile(appFunction.Main, $"Failed to import {policyName}: {ex.Message}", LogLevels.Error);
+                        AppLogger.Error($"Failed to import '{policyName}': {ex.Message}", appFunction.Import);
+                        hasFailures = true;
                     }
                 }
+                if (hasFailures)
+                    throw new Exception("One or more device compliance policies failed to import. See Import.log for details.");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                LogToFunctionFile(appFunction.Main, $"An unexpected error occurred during the import process: {ex.Message}", LogLevels.Error);
-            }
-            finally
-            {
-                LogToFunctionFile(appFunction.Main, $"{DateTime.Now.ToString()} - Finished importing Device Compliance policies.");
+                throw;
             }
         }
 
-        public static async Task AssignGroupsToSingleDeviceCompliance(string policyID, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
+        public static async Task AssignGroupsToSingleDeviceCompliance(string policyID, string contentName, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
         {
             try
             {
@@ -356,17 +344,17 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 try
                 {
                     await destinationGraphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyID].Assign.PostAsync(requestBody);
-                    LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to policy {policyID} with filter type {deviceAndAppManagementAssignmentFilterType}.");
                     UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
                 }
                 catch (Exception ex)
                 {
-                    LogToFunctionFile(appFunction.Main, $"An error occurred while assigning groups to device compliance policy: {ex.Message}", LogLevels.Warning);
+                    AppLogger.Warning($"An error occurred while assigning groups to device compliance policy: {ex.Message}", appFunction.Assignment);
+                    throw;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while assigning groups to device compliance policy: {ex.Message}", LogLevels.Warning);
+                throw;
             }
         }
 
@@ -419,9 +407,9 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }
                 await graphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyID].DeleteAsync();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while deleting device compliance policy with ID '{policyID}': {ex.Message}", LogLevels.Error);
+                throw;
             }
         }
 
@@ -469,7 +457,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     policy.DisplayName = name;
 
                     await graphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyID].PatchAsync(policy);
-                    LogToFunctionFile(appFunction.Main, $"Renamed device compliance policy {policyID} to '{name}'", LogLevels.Info);
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
@@ -497,7 +484,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     policy.Description = newName;
 
                     await graphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyID].PatchAsync(policy);
-                    LogToFunctionFile(appFunction.Main, $"Updated description for {policyID} to {newName}");
                 }
                 else if (selectedRenameMode == "RemovePrefix")
                 {
@@ -521,7 +507,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     policy.DisplayName = name;
 
                     await graphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyID].PatchAsync(policy);
-                    LogToFunctionFile(appFunction.Main, $"Removed prefix from device compliance policy {policyID}, new name: '{name}'");
                 }
                 else if (selectedRenameMode == "RemoveDescription")
                 {
@@ -546,9 +531,9 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     LogToFunctionFile(appFunction.Main, $"Cleared description for device compliance policy {policyID}");
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while renaming device compliance policies: {ex.Message}", LogLevels.Warning);
+                throw;
             }
         }
 
@@ -607,7 +592,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 if (result == null)
                 {
-                    LogToFunctionFile(appFunction.Main, $"Device compliance policy {policyId} not found for export.", LogLevels.Warning);
+                    AppLogger.Warning($"Device compliance policy {policyId} not found for export.", appFunction.JsonExport);
                     return null;
                 }
 
@@ -619,7 +604,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"Error exporting device compliance policy {policyId}: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"Error exporting device compliance policy {policyId}: {ex.Message}", appFunction.JsonExport);
                 return null;
             }
         }
@@ -638,7 +623,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 if (exportedPolicy == null)
                 {
-                    LogToFunctionFile(appFunction.Main, "Failed to deserialize device compliance policy data from JSON.", LogLevels.Error);
+                    AppLogger.Error("Failed to deserialize device compliance policy data from JSON.", appFunction.Import);
                     return null;
                 }
 
@@ -720,12 +705,12 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 var imported = await graphServiceClient.DeviceManagement.DeviceCompliancePolicies.PostAsync(newPolicy);
 
-                LogToFunctionFile(appFunction.Main, $"Imported device compliance policy: {imported?.DisplayName}");
+                AppLogger.Info($"Imported device compliance policy: {imported?.DisplayName}", appFunction.Import);
                 return imported?.DisplayName;
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"Error importing device compliance policy from JSON: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"Error importing device compliance policy from JSON: {ex.Message}", appFunction.Import);
                 return null;
             }
         }
@@ -776,7 +761,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"Error getting assignment details for Device Compliance {policyId}: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"Error getting assignment details for Device Compliance {policyId}: {ex.Message}", appFunction.ManageAssignment);
                 return null;
             }
         }
@@ -792,7 +777,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             };
 
             await graphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyId].Assign.PostAsync(requestBody);
-            LogToFunctionFile(appFunction.Main, $"Removed all assignments from Device Compliance policy {policyId}.");
         }
     }
 

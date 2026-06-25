@@ -196,5 +196,10 @@
              Query="/ns:Package/ns:Identity/@Version"
              Value="$(Version)"
              Namespaces="&lt;Namespace Prefix='ns' Uri='http://schemas.microsoft.com/appx/manifest/foundation/windows10'/&gt;" />
+    <XmlPoke XmlInputPath="$(MSBuildProjectDirectory)\..\IntuneToolsPackaged\Package.appxmanifest"
+             Query="/ns:Package/ns:Identity/@Version"
+             Value="$(Version)"
+             Namespaces="&lt;Namespace Prefix='ns' Uri='http://schemas.microsoft.com/appx/manifest/foundation/windows10'/&gt;"
+             Condition="Exists('$(MSBuildProjectDirectory)\..\IntuneToolsPackaged\Package.appxmanifest')" />
   </Target>
 </Project>

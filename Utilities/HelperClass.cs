@@ -16,84 +16,35 @@ namespace IntuneTools.Utilities
             return fullPath;
         }
 
-        public static void LogToFunctionFile(appFunction function, string message, LogLevels level = LogLevels.Info)
-        {
-            if (string.IsNullOrWhiteSpace(timestampedAppFolder))
-            {
-                timestampedAppFolder = CreateTimestampedAppFolder();
-            }
-
-            var logFilePath = Path.Combine(timestampedAppFolder, $"{function}.log");
-            var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-            var logEntry = $"{timestamp} - [{level}] - {message}";
-
-            try
-            {
-                if (!File.Exists(logFilePath))
-                {
-                    using (File.Create(logFilePath))
-                    {
-                    }
-                }
-
-                using (StreamWriter writer = new StreamWriter(logFilePath, true))
-                {
-                    writer.WriteLine(logEntry);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error writing to {function} log file: {ex.Message}");
-            }
-        }
 
 
         public static void LogApplicationStart()
         {
-            // Log the application start time
-            LogToFunctionFile(appFunction.Summary, "Application started", LogLevels.Info);
-
-            // Note: Machine name and user name are intentionally omitted to avoid logging PII.
-
-            // Log the OS version
-            LogToFunctionFile(appFunction.Summary, $"OS Version: {Environment.OSVersion}", LogLevels.Info);
-
-            // Log the .NET version
-            LogToFunctionFile(appFunction.Summary, $".NET Version: {Environment.Version}", LogLevels.Info);
-
-            // Log the CPU name
-            LogToFunctionFile(appFunction.Summary, $"CPU Name: {Environment.GetEnvironmentVariable("PROCESSOR_IDENTIFIER")}", LogLevels.Info);
-
-            // Log the system's processor count
-            LogToFunctionFile(appFunction.Summary, $"Processor Count: {Environment.ProcessorCount}", LogLevels.Info);
-
-            // Log the system's memory usage
-            LogToFunctionFile(appFunction.Summary, $"Memory Usage: {GC.GetTotalMemory(false)} bytes", LogLevels.Info);
-
-            // Log this app version
-            LogToFunctionFile(appFunction.Summary, $"App Version: {appVersion}", LogLevels.Info);
+            AppLogger.Info("Application started", appFunction.Summary);
+            AppLogger.Info($"OS Version: {Environment.OSVersion}", appFunction.Summary);
+            AppLogger.Info($".NET Version: {Environment.Version}", appFunction.Summary);
+            AppLogger.Info($"CPU Name: {Environment.GetEnvironmentVariable("PROCESSOR_IDENTIFIER")}", appFunction.Summary);
+            AppLogger.Info($"Processor Count: {Environment.ProcessorCount}", appFunction.Summary);
+            AppLogger.Info($"Memory Usage: {GC.GetTotalMemory(false)} bytes", appFunction.Summary);
+            AppLogger.Info($"App Version: {appVersion}", appFunction.Summary);
 
             using var process = System.Diagnostics.Process.GetCurrentProcess();
 
-            LogToFunctionFile(appFunction.Summary, $"App Base Directory: {AppContext.BaseDirectory}", LogLevels.Info);
-            LogToFunctionFile(appFunction.Summary, $"Process ID: {process.Id}", LogLevels.Info);
-            LogToFunctionFile(appFunction.Summary, $"Process Name: {process.ProcessName}", LogLevels.Info);
-            LogToFunctionFile(appFunction.Summary, $"Working Set: {process.WorkingSet64} bytes", LogLevels.Info);
-            LogToFunctionFile(appFunction.Summary, $"OS Architecture: {RuntimeInformation.OSArchitecture}", LogLevels.Info);
-            LogToFunctionFile(appFunction.Summary, $"Process Architecture: {RuntimeInformation.ProcessArchitecture}", LogLevels.Info);
-            LogToFunctionFile(appFunction.Summary, $"Current Culture: {CultureInfo.CurrentCulture}", LogLevels.Info);
-            LogToFunctionFile(appFunction.Summary, $"Current UI Culture: {CultureInfo.CurrentUICulture}", LogLevels.Info);
+            AppLogger.Info($"App Base Directory: {AppContext.BaseDirectory}", appFunction.Summary);
+            AppLogger.Info($"Process ID: {process.Id}", appFunction.Summary);
+            AppLogger.Info($"Process Name: {process.ProcessName}", appFunction.Summary);
+            AppLogger.Info($"Working Set: {process.WorkingSet64} bytes", appFunction.Summary);
+            AppLogger.Info($"OS Architecture: {RuntimeInformation.OSArchitecture}", appFunction.Summary);
+            AppLogger.Info($"Process Architecture: {RuntimeInformation.ProcessArchitecture}", appFunction.Summary);
+            AppLogger.Info($"Current Culture: {CultureInfo.CurrentCulture}", appFunction.Summary);
+            AppLogger.Info($"Current UI Culture: {CultureInfo.CurrentUICulture}", appFunction.Summary);
 
-            // Build the UTC offset string safely
             var offset = TimeZoneInfo.Local.BaseUtcOffset;
             var sign = offset < TimeSpan.Zero ? "-" : "+";
             var offsetText = $"{sign}{offset.Duration():hh\\:mm}";
-
-            LogToFunctionFile(appFunction.Summary,
-                $"Time Zone: {TimeZoneInfo.Local.StandardName} (UTC{offsetText})",
-                LogLevels.Info);
-            LogToFunctionFile(appFunction.Summary, $"System Uptime: {TimeSpan.FromMilliseconds(Environment.TickCount64)}", LogLevels.Info);
-            LogToFunctionFile(appFunction.Summary, $"Command Line Args Count: {Environment.GetCommandLineArgs().Length}", LogLevels.Info);
+            AppLogger.Info($"Time Zone: {TimeZoneInfo.Local.StandardName} (UTC{offsetText})", appFunction.Summary);
+            AppLogger.Info($"System Uptime: {TimeSpan.FromMilliseconds(Environment.TickCount64)}", appFunction.Summary);
+            AppLogger.Info($"Command Line Args Count: {Environment.GetCommandLineArgs().Length}", appFunction.Summary);
         }
 
 
@@ -107,7 +58,7 @@ namespace IntuneTools.Utilities
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"Failed to update image source. Image: {image.Name}, FileName: {imageFileName}, Error: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"Failed to update image source. Image: {image.Name}, FileName: {imageFileName}, Error: {ex.Message}");
             }
         }
 
