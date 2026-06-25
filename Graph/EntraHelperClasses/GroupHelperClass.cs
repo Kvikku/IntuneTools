@@ -309,7 +309,21 @@ namespace IntuneTools.Graph.EntraHelperClasses
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
+                    var existingGroup = await graphServiceClient.Groups[groupID].GetAsync();
 
+                    if (existingGroup == null)
+                    {
+                        throw new InvalidOperationException($"Group with ID '{groupID}' not found.");
+                    }
+
+                    var name = FindSuffixInPolicyName(existingGroup.DisplayName ?? string.Empty, newName);
+
+                    var group = new Group
+                    {
+                        DisplayName = name,
+                    };
+
+                    await graphServiceClient.Groups[groupID].PatchAsync(group);
                 }
                 else if (selectedRenameMode == "Description")
                 {
@@ -337,7 +351,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
                         throw new InvalidOperationException($"Group with ID '{groupID}' not found.");
                     }
 
-                    var name = RemovePrefixFromPolicyName(existingGroup.DisplayName);
+                    var name = ApplyPrefixRemoval(existingGroup.DisplayName);
 
                     var group = new Group
                     {
@@ -355,6 +369,42 @@ namespace IntuneTools.Graph.EntraHelperClasses
 
                     await graphServiceClient.Groups[groupID].PatchAsync(group);
                     AppLogger.Info($"Cleared description for group {groupID}", appFunction.Main);
+                }
+                else if (selectedRenameMode == "RemoveSuffix")
+                {
+                    var existingGroup = await graphServiceClient.Groups[groupID].GetAsync();
+
+                    if (existingGroup == null)
+                    {
+                        throw new InvalidOperationException($"Group with ID '{groupID}' not found.");
+                    }
+
+                    var name = ApplySuffixRemoval(existingGroup.DisplayName);
+
+                    var group = new Group
+                    {
+                        DisplayName = name
+                    };
+
+                    await graphServiceClient.Groups[groupID].PatchAsync(group);
+                }
+                else if (selectedRenameMode == "FindAndReplace")
+                {
+                    var existingGroup = await graphServiceClient.Groups[groupID].GetAsync();
+
+                    if (existingGroup == null)
+                    {
+                        throw new InvalidOperationException($"Group with ID '{groupID}' not found.");
+                    }
+
+                    var name = ApplyFindAndReplace(existingGroup.DisplayName);
+
+                    var group = new Group
+                    {
+                        DisplayName = name
+                    };
+
+                    await graphServiceClient.Groups[groupID].PatchAsync(group);
                 }
             }
             catch (Microsoft.Graph.Beta.Models.ODataErrors.ODataError odataError)

@@ -319,7 +319,21 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
+                    var existingScript = await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].GetAsync();
 
+                    if (existingScript == null)
+                    {
+                        throw new InvalidOperationException($"Script with ID '{scriptID}' not found.");
+                    }
+
+                    var name = FindSuffixInPolicyName(existingScript.DisplayName ?? string.Empty, newName);
+
+                    var script = new DeviceManagementScript
+                    {
+                        DisplayName = name,
+                    };
+
+                    await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].PatchAsync(script);
                 }
                 else if (selectedRenameMode == "Description")
                 {
@@ -347,7 +361,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         throw new InvalidOperationException($"Script with ID '{scriptID}' not found.");
                     }
 
-                    var name = RemovePrefixFromPolicyName(existingScript.DisplayName);
+                    var name = ApplyPrefixRemoval(existingScript.DisplayName);
 
                     var script = new DeviceManagementScript
                     {
@@ -365,6 +379,42 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                     await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].PatchAsync(script);
                     AppLogger.Info($"Cleared description for PowerShell script {scriptID}", appFunction.Main);
+                }
+                else if (selectedRenameMode == "RemoveSuffix")
+                {
+                    var existingScript = await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].GetAsync();
+
+                    if (existingScript == null)
+                    {
+                        throw new InvalidOperationException($"Script with ID '{scriptID}' not found.");
+                    }
+
+                    var name = ApplySuffixRemoval(existingScript.DisplayName);
+
+                    var script = new DeviceManagementScript
+                    {
+                        DisplayName = name
+                    };
+
+                    await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].PatchAsync(script);
+                }
+                else if (selectedRenameMode == "FindAndReplace")
+                {
+                    var existingScript = await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].GetAsync();
+
+                    if (existingScript == null)
+                    {
+                        throw new InvalidOperationException($"Script with ID '{scriptID}' not found.");
+                    }
+
+                    var name = ApplyFindAndReplace(existingScript.DisplayName);
+
+                    var script = new DeviceManagementScript
+                    {
+                        DisplayName = name
+                    };
+
+                    await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].PatchAsync(script);
                 }
             }
             catch (Exception)

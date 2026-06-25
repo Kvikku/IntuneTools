@@ -441,7 +441,15 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
+                    var name = FindSuffixInPolicyName(existingApp.DisplayName ?? string.Empty, newName);
 
+                    var app = new MobileApp
+                    {
+                        OdataType = existingApp.OdataType,
+                        DisplayName = name,
+                    };
+
+                    await graphServiceClient.DeviceAppManagement.MobileApps[appId].PatchAsync(app);
                 }
                 else if (selectedRenameMode == "Description")
                 {
@@ -455,7 +463,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }
                 else if (selectedRenameMode == "RemovePrefix")
                 {
-                    var name = RemovePrefixFromPolicyName(existingApp.DisplayName);
+                    var name = ApplyPrefixRemoval(existingApp.DisplayName);
 
                     var app = new MobileApp
                     {
@@ -475,6 +483,30 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                     await graphServiceClient.DeviceAppManagement.MobileApps[appId].PatchAsync(app);
                     AppLogger.Info($"Cleared description for application {appId}", appFunction.Main);
+                }
+                else if (selectedRenameMode == "RemoveSuffix")
+                {
+                    var name = ApplySuffixRemoval(existingApp.DisplayName);
+
+                    var app = new MobileApp
+                    {
+                        OdataType = existingApp.OdataType,
+                        DisplayName = name
+                    };
+
+                    await graphServiceClient.DeviceAppManagement.MobileApps[appId].PatchAsync(app);
+                }
+                else if (selectedRenameMode == "FindAndReplace")
+                {
+                    var name = ApplyFindAndReplace(existingApp.DisplayName);
+
+                    var app = new MobileApp
+                    {
+                        OdataType = existingApp.OdataType,
+                        DisplayName = name
+                    };
+
+                    await graphServiceClient.DeviceAppManagement.MobileApps[appId].PatchAsync(app);
                 }
             }
             catch (Exception)
