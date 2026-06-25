@@ -9,13 +9,13 @@ namespace IntuneTools.Utilities
         /// Exports a standard content list (Name, Type, Platform, Description, ID) to a CSV file
         /// chosen by the user via a FileSavePicker.
         /// </summary>
-        public static async Task ExportContentListAsync(
+        public static async Task<string?> ExportContentListAsync(
             IEnumerable<CustomContentInfo> items,
             string pageName)
         {
             var file = await PickSaveFileAsync($"{pageName}_{DateTime.Now:yyyyMMdd_HHmmss}");
             if (file == null)
-                return;
+                return null;
 
             var csv = new StringBuilder();
             csv.AppendLine("Name,Type,Platform,Description,ID");
@@ -31,6 +31,7 @@ namespace IntuneTools.Utilities
             }
 
             await File.WriteAllTextAsync(file.Path, csv.ToString(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+            return file.Path;
         }
 
         /// <summary>
@@ -38,14 +39,14 @@ namespace IntuneTools.Utilities
         /// Items with no assignments are exported as a single row with empty assignment columns.
         /// Group IDs are substituted with display names from the provided lookup.
         /// </summary>
-        public static async Task ExportWithAssignmentsAsync(
+        public static async Task<string?> ExportWithAssignmentsAsync(
             IEnumerable<(CustomContentInfo Content, IEnumerable<AssignmentInfo> Assignments)> items,
             Dictionary<string, string> groupNames,
             string pageName)
         {
             var file = await PickSaveFileAsync($"{pageName}_{DateTime.Now:yyyyMMdd_HHmmss}");
             if (file == null)
-                return;
+                return null;
 
             var csv = new StringBuilder();
             csv.AppendLine("Name,Type,Platform,Assignment Target,Target Group,Filter ID,Filter Type,ID");
@@ -82,6 +83,7 @@ namespace IntuneTools.Utilities
             }
 
             await File.WriteAllTextAsync(file.Path, csv.ToString(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+            return file.Path;
         }
 
         private static string ResolveTargetGroup(AssignmentInfo assignment, Dictionary<string, string> groupNames)

@@ -45,6 +45,14 @@ namespace IntuneTools.Utilities
         }
 
         /// <summary>
+        /// Shows operation success status with a "Show in folder" button that highlights the exported file.
+        /// </summary>
+        public void ShowSuccess(string message, string filePath)
+        {
+            UpdateStatus(OperationState.Success, message, null, null, isIndeterminate: false, CreateShowInFolderButton(filePath));
+        }
+
+        /// <summary>
         /// Shows operation error status.
         /// </summary>
         public void ShowError(string message)
@@ -69,7 +77,7 @@ namespace IntuneTools.Utilities
             ProgressBar.Value = 0;
         }
 
-        private void UpdateStatus(OperationState state, string message, int? current, int? total, bool isIndeterminate)
+        private void UpdateStatus(OperationState state, string message, int? current, int? total, bool isIndeterminate, HyperlinkButton? actionButton = null)
         {
             switch (state)
             {
@@ -84,15 +92,13 @@ namespace IntuneTools.Utilities
                 case OperationState.Error:
                     StatusBar.Severity = InfoBarSeverity.Error;
                     StatusBar.Title = "Operation Failed";
-                    StatusBar.ActionButton = CreateOpenLogsButton();
                     break;
                 default:
                     StatusBar.IsOpen = false;
                     return;
             }
 
-            if (state != OperationState.Error)
-                StatusBar.ActionButton = null;
+            StatusBar.ActionButton = state == OperationState.Error ? CreateOpenLogsButton() : actionButton;
 
             string displayMessage = message;
             if (current.HasValue && total.HasValue && total.Value > 0)
@@ -132,6 +138,21 @@ namespace IntuneTools.Utilities
             {
                 FileName = "explorer.exe",
                 Arguments = folder,
+                UseShellExecute = true
+            });
+            return button;
+        }
+
+        private static HyperlinkButton? CreateShowInFolderButton(string? filePath)
+        {
+            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+                return null;
+
+            var button = new HyperlinkButton { Content = "Show in folder" };
+            button.Click += (_, _) => System.Diagnostics.Process.Start(new ProcessStartInfo
+            {
+                FileName = "explorer.exe",
+                Arguments = $"/select,\"{filePath}\"",
                 UseShellExecute = true
             });
             return button;

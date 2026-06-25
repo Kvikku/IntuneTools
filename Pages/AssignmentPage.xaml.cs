@@ -1123,7 +1123,9 @@ namespace IntuneTools.Pages
             }
             try
             {
-                await CsvExporter.ExportContentListAsync(AssignmentList, "Assignments");
+                var savedPath = await CsvExporter.ExportContentListAsync(AssignmentList, "Assignments");
+                if (savedPath != null)
+                    ShowOperationSuccess($"Exported {AssignmentList.Count} items to CSV.", savedPath);
             }
             catch (Exception ex)
             {

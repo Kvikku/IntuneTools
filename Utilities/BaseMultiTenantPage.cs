@@ -201,6 +201,19 @@ namespace IntuneTools.Utilities
         }
 
         /// <summary>
+        /// Shows operation success status with a "Show in folder" button pointing to the exported file.
+        /// </summary>
+        protected void ShowOperationSuccess(string message, string filePath)
+        {
+            if (FindName("OperationStatusBar") is OperationStatusBar statusBarControl)
+            {
+                statusBarControl.ShowSuccess(message, filePath);
+                return;
+            }
+            ShowOperationSuccess(message);
+        }
+
+        /// <summary>
         /// Shows operation error status.
         /// </summary>
         /// <param name="message">Error message to display</param>

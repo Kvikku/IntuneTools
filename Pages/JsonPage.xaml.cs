@@ -752,7 +752,9 @@ namespace IntuneTools.Pages
             }
             try
             {
-                await CsvExporter.ExportContentListAsync(ContentList, "Json");
+                var savedPath = await CsvExporter.ExportContentListAsync(ContentList, "Json");
+                if (savedPath != null)
+                    ShowOperationSuccess($"Exported {ContentList.Count} items to CSV.", savedPath);
             }
             catch (Exception ex)
             {

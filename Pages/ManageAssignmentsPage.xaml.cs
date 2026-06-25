@@ -947,7 +947,9 @@ namespace IntuneTools.Pages
                     ? await GroupHelperClass.ResolveGroupNamesAsync(sourceGraphServiceClient, allGroupIds.Distinct(StringComparer.OrdinalIgnoreCase).ToList())
                     : new Dictionary<string, string>();
 
-                await CsvExporter.ExportWithAssignmentsAsync(rows, groupNames, "ManageAssignments");
+                var savedPath = await CsvExporter.ExportWithAssignmentsAsync(rows, groupNames, "ManageAssignments");
+                if (savedPath != null)
+                    ShowOperationSuccess($"Exported {rows.Count} items to CSV.", savedPath);
             }
             catch (Exception ex)
             {
