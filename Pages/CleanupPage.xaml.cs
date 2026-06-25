@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using CommunityToolkit.WinUI.UI.Controls;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -27,6 +28,9 @@ namespace IntuneTools.Pages
     public sealed partial class CleanupPage : BaseDataOperationPage
     {
         #region Fields & Types
+
+        // Duplicate detection results
+        private readonly ObservableCollection<DuplicateContentInfo> DuplicateContentList = new();
 
         // Progress tracking for delete operations
         private int _deleteTotal;
@@ -75,7 +79,9 @@ namespace IntuneTools.Pages
         {
             InitializeComponent();
             RightClickMenu.AttachDataGridContextMenu(CleanupDataGrid);
+            RightClickMenu.AttachDataGridContextMenu(DuplicatesDataGrid);
             LogConsole.ItemsSource = LogEntries;
+            DuplicatesDataGrid.ItemsSource = DuplicateContentList;
         }
 
         protected override string UnauthenticatedMessage => "You must authenticate with a tenant before using cleanup features.";
@@ -85,7 +91,9 @@ namespace IntuneTools.Pages
         protected override IEnumerable<string> GetManagedControlNames() => new[]
         {
             "InputTextBox", "SearchButton", "ListAllButton", "FindUnassignedButton",
-            "ClearSelectedButton", "ClearAllButton", "DeleteButton", "CleanupDataGrid", "ClearLogButton", "ExportCsvButton"
+            "ClearSelectedButton", "ClearAllButton", "DeleteButton", "CleanupDataGrid", "ClearLogButton", "ExportCsvButton",
+            "ScanDuplicatesButton", "AutoSelectOlderButton", "ClearDuplicateSelectionButton",
+            "DeleteDuplicatesButton", "DuplicatesDataGrid", "DuplicatesClearLogButton", "DuplicatesExportCsvButton"
         };
 
         #endregion
@@ -582,7 +590,65 @@ namespace IntuneTools.Pages
         }
 
         #endregion
+
+        #region Mode Selector
+
+        private void CleanupModeSegmented_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (DeletePanel is null || DuplicatesPanel is null) return;
+
+            var isDuplicates = CleanupModeSegmented.SelectedIndex == 1;
+            DeletePanel.Visibility = isDuplicates ? Visibility.Collapsed : Visibility.Visible;
+            DuplicatesPanel.Visibility = isDuplicates ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        #endregion
+
+        #region Duplicate Detection
+
+        private async void ScanDuplicatesButton_Click(object sender, RoutedEventArgs e)
+        {
+            // TODO: implement duplicate scan
+            await Task.CompletedTask;
+        }
+
+        private void AutoSelectOlderButton_Click(object sender, RoutedEventArgs e)
+        {
+            // TODO: auto-select the older item in each duplicate pair
+        }
+
+        private void ClearDuplicateSelectionButton_Click(object sender, RoutedEventArgs e)
+        {
+            var selected = DuplicatesDataGrid.SelectedItems?.Cast<DuplicateContentInfo>().ToList();
+            if (selected == null || selected.Count == 0)
+            {
+                LogWarning("No items selected to clear.");
+                return;
+            }
+            foreach (var item in selected)
+                DuplicateContentList.Remove(item);
+        }
+
+        private async void DeleteDuplicatesButton_Click(object sender, RoutedEventArgs e)
+        {
+            // TODO: implement deletion of selected duplicates
+            await Task.CompletedTask;
+        }
+
+        private async void DuplicatesExportCsvButton_Click(object sender, RoutedEventArgs e)
+        {
+            // TODO: implement CSV export for duplicates list
+            await Task.CompletedTask;
+        }
+
+        private void DuplicatesDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
+        {
+            HandleDataGridSorting(sender, e);
+        }
+
+        #endregion
     }
 }
+
 
 
