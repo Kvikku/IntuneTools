@@ -344,7 +344,24 @@ namespace IntuneTools.Pages
                         if (sourceGraphServiceClient != null && !string.IsNullOrEmpty(c.ContentId)
                             && JsonContentTypeOperations.TryGetValue(contentType, out var ops))
                         {
-                            policyData = await ops.Export(sourceGraphServiceClient, c.ContentId);
+                            try
+                            {
+                                policyData = await ops.Export(sourceGraphServiceClient, c.ContentId);
+                            }
+                            catch (Exception ex)
+                            {
+                                AppLogger.Error($"Failed to retrieve data for '{c.ContentName}': {ex.Message}", appFunction.JsonExport);
+                            }
+                        }
+
+                        if (policyData.HasValue)
+                        {
+                            AppLogger.Info($"Exported '{c.ContentName}' ({contentType}).", appFunction.JsonExport);
+                            totalWithData++;
+                        }
+                        else
+                        {
+                            AppLogger.Warning($"No data retrieved for '{c.ContentName}' ({contentType}) — exported as metadata only.", appFunction.JsonExport);
                         }
 
                         // Cache fetched policy data so Import-to-Tenant works in the same session
@@ -352,8 +369,6 @@ namespace IntuneTools.Pages
                         {
                             _policyDataCache[c.ContentId!] = policyData.Value;
                         }
-
-                        if (policyData.HasValue) totalWithData++;
 
                         items.Add(new JsonExportItem
                         {
