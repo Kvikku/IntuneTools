@@ -82,6 +82,8 @@ namespace IntuneTools.Pages
 
         protected override string UnauthenticatedMessage => "You must authenticate with a tenant before managing assignments.";
 
+        protected override appFunction PageLogFunction => appFunction.ManageAssignment;
+
         protected override IEnumerable<string> GetManagedControlNames() => new[]
         {
             "InputTextBox", "SearchButton", "ListAllButton", "ViewAssignmentsButton",

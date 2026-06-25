@@ -80,6 +80,8 @@ namespace IntuneTools.Pages
 
         protected override string UnauthenticatedMessage => "You must authenticate with a tenant before using cleanup features.";
 
+        protected override appFunction PageLogFunction => appFunction.Delete;
+
         protected override IEnumerable<string> GetManagedControlNames() => new[]
         {
             "InputTextBox", "SearchButton", "ListAllButton", "FindUnassignedButton",

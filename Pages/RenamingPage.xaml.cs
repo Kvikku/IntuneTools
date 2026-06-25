@@ -67,6 +67,8 @@ namespace IntuneTools.Pages
 
         protected override string UnauthenticatedMessage => "You must authenticate with a tenant before using renaming features.";
 
+        protected override appFunction PageLogFunction => appFunction.Rename;
+
         protected override IEnumerable<string> GetManagedControlNames() => new[]
         {
             "SearchQueryTextBox", "SearchButton", "ListAllButton", "ClearSelectedButton",
