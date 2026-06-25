@@ -328,7 +328,21 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
+                    var existingProfile = await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileID].GetAsync();
 
+                    if (existingProfile == null)
+                    {
+                        throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
+                    }
+
+                    var name = FindSuffixInPolicyName(existingProfile.DisplayName ?? string.Empty, newName);
+
+                    var profile = new WindowsQualityUpdateProfile
+                    {
+                        DisplayName = name,
+                    };
+
+                    await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileID].PatchAsync(profile);
                 }
                 else if (selectedRenameMode == "Description")
                 {
@@ -374,6 +388,42 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                     await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileID].PatchAsync(profile);
                     AppLogger.Info($"Cleared description for Windows Quality Update profile {profileID}", appFunction.Main);
+                }
+                else if (selectedRenameMode == "RemoveSuffix")
+                {
+                    var existingProfile = await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileID].GetAsync();
+
+                    if (existingProfile == null)
+                    {
+                        throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
+                    }
+
+                    var name = ApplySuffixRemoval(existingProfile.DisplayName);
+
+                    var profile = new WindowsQualityUpdateProfile
+                    {
+                        DisplayName = name
+                    };
+
+                    await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileID].PatchAsync(profile);
+                }
+                else if (selectedRenameMode == "FindAndReplace")
+                {
+                    var existingProfile = await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileID].GetAsync();
+
+                    if (existingProfile == null)
+                    {
+                        throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
+                    }
+
+                    var name = ApplyFindAndReplace(existingProfile.DisplayName);
+
+                    var profile = new WindowsQualityUpdateProfile
+                    {
+                        DisplayName = name
+                    };
+
+                    await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileID].PatchAsync(profile);
                 }
             }
             catch (Exception)

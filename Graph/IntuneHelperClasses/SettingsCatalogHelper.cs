@@ -350,7 +350,28 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
+                    var existingPolicy = await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].GetAsync();
 
+                    if (existingPolicy == null)
+                    {
+                        AppLogger.Warning($"Unable to add suffix: policy with ID {policyID} was not found.", appFunction.Rename);
+                        return;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(existingPolicy.Name))
+                    {
+                        AppLogger.Warning($"Unable to add suffix to policy {policyID}: policy name is null or empty.", appFunction.Rename);
+                        return;
+                    }
+
+                    var name = FindSuffixInPolicyName(existingPolicy.Name, newName);
+
+                    var policy = new DeviceManagementConfigurationPolicy
+                    {
+                        Name = name
+                    };
+
+                    await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].PatchAsync(policy);
                 }
                 else if (selectedRenameMode == "Description")
                 {
@@ -397,6 +418,56 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                     await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].PatchAsync(policy);
                     AppLogger.Info($"Cleared description for Settings Catalog policy {policyID}", appFunction.Main);
+                }
+                else if (selectedRenameMode == "RemoveSuffix")
+                {
+                    var existingPolicy = await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].GetAsync();
+
+                    if (existingPolicy == null)
+                    {
+                        AppLogger.Warning($"Unable to remove suffix: policy with ID {policyID} was not found.", appFunction.Rename);
+                        return;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(existingPolicy.Name))
+                    {
+                        AppLogger.Warning($"Unable to remove suffix from policy {policyID}: policy name is null or empty.", appFunction.Rename);
+                        return;
+                    }
+
+                    var name = ApplySuffixRemoval(existingPolicy.Name);
+
+                    var policy = new DeviceManagementConfigurationPolicy
+                    {
+                        Name = name
+                    };
+
+                    await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].PatchAsync(policy);
+                }
+                else if (selectedRenameMode == "FindAndReplace")
+                {
+                    var existingPolicy = await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].GetAsync();
+
+                    if (existingPolicy == null)
+                    {
+                        AppLogger.Warning($"Unable to apply find & replace: policy with ID {policyID} was not found.", appFunction.Rename);
+                        return;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(existingPolicy.Name))
+                    {
+                        AppLogger.Warning($"Unable to apply find & replace to policy {policyID}: policy name is null or empty.", appFunction.Rename);
+                        return;
+                    }
+
+                    var name = ApplyFindAndReplace(existingPolicy.Name);
+
+                    var policy = new DeviceManagementConfigurationPolicy
+                    {
+                        Name = name
+                    };
+
+                    await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].PatchAsync(policy);
                 }
             }
             catch (Exception)

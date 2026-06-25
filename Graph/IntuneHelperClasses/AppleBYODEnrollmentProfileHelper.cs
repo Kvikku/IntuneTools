@@ -377,7 +377,26 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
+                    var existingProfile = await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileID].GetAsync();
 
+                    if (existingProfile == null)
+                    {
+                        throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
+                    }
+
+                    var name = FindSuffixInPolicyName(existingProfile.DisplayName ?? string.Empty, newName);
+
+                    var profileType = existingProfile.GetType();
+                    var profile = (AppleUserInitiatedEnrollmentProfile?)Activator.CreateInstance(profileType);
+
+                    if (profile == null)
+                    {
+                        throw new InvalidOperationException($"Failed to create instance of type {profileType.Name}");
+                    }
+
+                    profile.DisplayName = name;
+
+                    await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileID].PatchAsync(profile);
                 }
                 else if (selectedRenameMode == "Description")
                 {
@@ -446,6 +465,52 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                     await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileID].PatchAsync(profile);
                     AppLogger.Info($"Cleared description for Apple BYOD Enrollment profile {profileID}", appFunction.Main);
+                }
+                else if (selectedRenameMode == "RemoveSuffix")
+                {
+                    var existingProfile = await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileID].GetAsync();
+
+                    if (existingProfile == null)
+                    {
+                        throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
+                    }
+
+                    var name = ApplySuffixRemoval(existingProfile.DisplayName);
+
+                    var profileType = existingProfile.GetType();
+                    var profile = (AppleUserInitiatedEnrollmentProfile?)Activator.CreateInstance(profileType);
+
+                    if (profile == null)
+                    {
+                        throw new InvalidOperationException($"Failed to create instance of type {profileType.Name}");
+                    }
+
+                    profile.DisplayName = name;
+
+                    await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileID].PatchAsync(profile);
+                }
+                else if (selectedRenameMode == "FindAndReplace")
+                {
+                    var existingProfile = await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileID].GetAsync();
+
+                    if (existingProfile == null)
+                    {
+                        throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
+                    }
+
+                    var name = ApplyFindAndReplace(existingProfile.DisplayName);
+
+                    var profileType = existingProfile.GetType();
+                    var profile = (AppleUserInitiatedEnrollmentProfile?)Activator.CreateInstance(profileType);
+
+                    if (profile == null)
+                    {
+                        throw new InvalidOperationException($"Failed to create instance of type {profileType.Name}");
+                    }
+
+                    profile.DisplayName = name;
+
+                    await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileID].PatchAsync(profile);
                 }
             }
             catch (Exception)

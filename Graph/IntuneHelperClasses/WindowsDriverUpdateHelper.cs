@@ -326,7 +326,21 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
+                    var existingProfile = await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileID].GetAsync();
 
+                    if (existingProfile == null)
+                    {
+                        throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
+                    }
+
+                    var name = FindSuffixInPolicyName(existingProfile.DisplayName ?? string.Empty, newName);
+
+                    var profile = new WindowsDriverUpdateProfile
+                    {
+                        DisplayName = name,
+                    };
+
+                    await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileID].PatchAsync(profile);
                 }
                 else if (selectedRenameMode == "Description")
                 {
@@ -371,6 +385,42 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                     await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileID].PatchAsync(profile);
                     AppLogger.Info($"Cleared description for Windows Driver Update Profile {profileID}", appFunction.Main);
+                }
+                else if (selectedRenameMode == "RemoveSuffix")
+                {
+                    var existingProfile = await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileID].GetAsync();
+
+                    if (existingProfile == null)
+                    {
+                        throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
+                    }
+
+                    var name = ApplySuffixRemoval(existingProfile.DisplayName);
+
+                    var profile = new WindowsDriverUpdateProfile
+                    {
+                        DisplayName = name
+                    };
+
+                    await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileID].PatchAsync(profile);
+                }
+                else if (selectedRenameMode == "FindAndReplace")
+                {
+                    var existingProfile = await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileID].GetAsync();
+
+                    if (existingProfile == null)
+                    {
+                        throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
+                    }
+
+                    var name = ApplyFindAndReplace(existingProfile.DisplayName);
+
+                    var profile = new WindowsDriverUpdateProfile
+                    {
+                        DisplayName = name
+                    };
+
+                    await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileID].PatchAsync(profile);
                 }
             }
             catch (Exception)

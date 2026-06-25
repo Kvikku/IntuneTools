@@ -44,9 +44,12 @@ namespace IntuneTools.Utilities
         public enum RenameMode
         {
             Prefix = 0,
-            Description = 1,
-            RemovePrefix = 2,
-            RemoveDescription = 3
+            Suffix = 1,
+            FindAndReplace = 2,
+            Description = 3,
+            RemovePrefix = 4,
+            RemoveSuffix = 5,
+            RemoveDescription = 6
         }
 
         public enum appFunction
@@ -65,6 +68,9 @@ namespace IntuneTools.Utilities
 
         public static string selectedRenameMode = "Prefix"; // Default rename mode
         public static string selectedRemovePrefixString = string.Empty; // Freeform prefix to remove (empty = bracket auto-detect)
+        public static string selectedRemoveSuffixString = string.Empty; // Suffix to strip from the end of names
+        public static string selectedFindString = string.Empty;         // Find & Replace: text to search for
+        public static string selectedReplaceString = string.Empty;      // Find & Replace: replacement text (empty = delete)
 
         // Group variables
         public static bool IsGroupSelected = false;
