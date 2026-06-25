@@ -86,7 +86,7 @@ namespace IntuneTools.Pages
         {
             "InputTextBox", "SearchButton", "ListAllButton", "ViewAssignmentsButton",
             "ClearSelectedButton", "ClearAllButton",
-            "AssignmentsDataGrid", "ClearLogButton"
+            "AssignmentsDataGrid", "ClearLogButton", "ExportCsvButton"
         };
 
         #endregion

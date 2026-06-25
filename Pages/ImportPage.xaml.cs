@@ -106,7 +106,7 @@ namespace IntuneTools.Pages
             "SearchQueryTextBox", "Search", "ListAll", "ClearSelected", "ClearAll",
             "ContentTypesButton", "GroupsCheckBox", "FiltersCheckBox", "ContentDataGrid",
             "Import", "FilterSelectionComboBox", "GroupSearchTextBox", "NewButton1",
-            "NewButton2", "GroupDataGrid", "ClearLogButton"
+            "NewButton2", "GroupDataGrid", "ClearLogButton", "ExportCsvButton"
         };
 
         private void LoadFilterOptions()

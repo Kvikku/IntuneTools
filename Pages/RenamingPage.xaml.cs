@@ -71,7 +71,7 @@ namespace IntuneTools.Pages
         {
             "SearchQueryTextBox", "SearchButton", "ListAllButton", "ClearSelectedButton",
             "ClearAllButton", "NewNameTextBox", "PrefixButton", "RenameButton",
-            "RenamingDataGrid", "ClearLogButton", "RenameModeComboBox"
+            "RenamingDataGrid", "ClearLogButton", "RenameModeComboBox", "ExportCsvButton"
         };
 
         #endregion

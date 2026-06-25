@@ -124,7 +124,7 @@ namespace IntuneTools.Pages
         protected override IEnumerable<string> GetManagedControlNames() => new[]
         {
             "InputTextBox", "SearchButton", "ListAllButton",
-            "ClearSelectedButton", "ClearAllButton", "ClearLogButton"
+            "ClearSelectedButton", "ClearAllButton", "ClearLogButton", "ExportCsvButton"
         };
 
         /// <summary>

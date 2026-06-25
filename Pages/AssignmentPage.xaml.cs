@@ -132,7 +132,7 @@ namespace IntuneTools.Pages
             "ContentSearchBox", "ListAllButton", "RemoveSelectedButton", "RemoveAllButton",
             "AssignButton", "GroupSearchTextBox", "GroupSearchButton", "GroupListAllButton",
             "AppDataGrid", "GroupDataGrid", "FilterExpander", "FilterSelectionComboBox",
-            "FilterModeComboBox", "OptionsAllCheckBox", "ClearLogButton", "ContentTypesButton"
+            "FilterModeComboBox", "OptionsAllCheckBox", "ClearLogButton", "ContentTypesButton", "ExportCsvButton"
         };
 
         #endregion
