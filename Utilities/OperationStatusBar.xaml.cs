@@ -1,4 +1,4 @@
-using Microsoft.UI.Xaml;
+﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System.Diagnostics;
 
@@ -128,7 +128,7 @@ namespace IntuneTools.Utilities
                 return null;
 
             var button = new HyperlinkButton { Content = "Open logs" };
-            button.Click += (_, _) => Process.Start(new ProcessStartInfo
+            button.Click += (_, _) => System.Diagnostics.Process.Start(new ProcessStartInfo
             {
                 FileName = "explorer.exe",
                 Arguments = folder,
