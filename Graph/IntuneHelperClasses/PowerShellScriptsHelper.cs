@@ -364,7 +364,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.DeviceManagementScripts[scriptID].PatchAsync(script);
-                    LogToFunctionFile(appFunction.Main, $"Cleared description for PowerShell script {scriptID}");
+                    AppLogger.Info($"Cleared description for PowerShell script {scriptID}", appFunction.Main);
                 }
             }
             catch (Exception)

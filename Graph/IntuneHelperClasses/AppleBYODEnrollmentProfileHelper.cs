@@ -445,7 +445,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     profile.Description = string.Empty;
 
                     await graphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[profileID].PatchAsync(profile);
-                    LogToFunctionFile(appFunction.Main, $"Cleared description for Apple BYOD Enrollment profile {profileID}");
+                    AppLogger.Info($"Cleared description for Apple BYOD Enrollment profile {profileID}", appFunction.Main);
                 }
             }
             catch (Exception)

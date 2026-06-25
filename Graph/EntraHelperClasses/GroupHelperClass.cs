@@ -354,7 +354,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
                     };
 
                     await graphServiceClient.Groups[groupID].PatchAsync(group);
-                    LogToFunctionFile(appFunction.Main, $"Cleared description for group {groupID}");
+                    AppLogger.Info($"Cleared description for group {groupID}", appFunction.Main);
                 }
             }
             catch (Microsoft.Graph.Beta.Models.ODataErrors.ODataError odataError)
@@ -455,7 +455,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
                 }
                 catch (Exception ex)
                 {
-                    LogToFunctionFile(appFunction.Main, $"Failed to resolve group name for ID '{id}': {ex.Message}", LogLevels.Warning);
+                    AppLogger.Warning($"Failed to resolve group name for ID '{id}': {ex.Message}", appFunction.Main);
                     result[id] = id;
                 }
             }

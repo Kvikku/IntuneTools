@@ -268,7 +268,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.AssignmentFilters[filterID].PatchAsync(filter);
-                    LogToFunctionFile(appFunction.Main, $"Cleared description for filter {filterID}", LogLevels.Info);
+                    AppLogger.Info($"Cleared description for filter {filterID}", appFunction.Main);
                 }
             }
             catch (Exception)

@@ -528,7 +528,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     policy.Description = string.Empty;
 
                     await graphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyID].PatchAsync(policy);
-                    LogToFunctionFile(appFunction.Main, $"Cleared description for device compliance policy {policyID}");
+                    AppLogger.Info($"Cleared description for device compliance policy {policyID}", appFunction.Main);
                 }
             }
             catch (Exception)

@@ -372,7 +372,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.DeviceHealthScripts[scriptID].PatchAsync(script);
-                    LogToFunctionFile(appFunction.Main, $"Cleared description for Proactive remediation script {scriptID}");
+                    AppLogger.Info($"Cleared description for Proactive remediation script {scriptID}", appFunction.Main);
                 }
             }
             catch (Exception)
