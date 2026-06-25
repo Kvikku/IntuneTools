@@ -370,7 +370,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[profileID].PatchAsync(profile);
-                    LogToFunctionFile(appFunction.Main, $"Cleared description for Windows Driver Update Profile {profileID}");
+                    AppLogger.Info($"Cleared description for Windows Driver Update Profile {profileID}", appFunction.Main);
                 }
             }
             catch (Exception)

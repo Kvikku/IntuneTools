@@ -516,7 +516,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                     if (existingProfile.OdataType?.Contains("activeDirectory", StringComparison.OrdinalIgnoreCase) == true)
                     {
-                        LogToFunctionFile(appFunction.Main, "Active Directory Autopilot profiles is not supported yet. Skipping.", LogLevels.Warning);
+                        AppLogger.Warning("Active Directory Autopilot profiles is not supported yet. Skipping.", appFunction.Main);
                         return;
                     }
 
@@ -527,7 +527,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].PatchAsync(profile);
-                    LogToFunctionFile(appFunction.Main, $"Cleared description for Windows Autopilot profile {profileID}", LogLevels.Info);
+                    AppLogger.Info($"Cleared description for Windows Autopilot profile {profileID}", appFunction.Main);
                 }
             }
             catch (Exception)

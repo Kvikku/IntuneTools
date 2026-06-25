@@ -397,7 +397,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptID].PatchAsync(script);
-                    LogToFunctionFile(appFunction.Main, $"Cleared description for macOS shell script {scriptID}");
+                    AppLogger.Info($"Cleared description for macOS shell script {scriptID}", appFunction.Main);
                 }
             }
             catch (Exception)

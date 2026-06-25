@@ -106,7 +106,7 @@ namespace IntuneTools.Pages
             "SearchQueryTextBox", "Search", "ListAll", "ClearSelected", "ClearAll",
             "ContentTypesButton", "GroupsCheckBox", "FiltersCheckBox", "ContentDataGrid",
             "Import", "FilterSelectionComboBox", "GroupSearchTextBox", "NewButton1",
-            "NewButton2", "GroupDataGrid", "ClearLogButton"
+            "NewButton2", "GroupDataGrid", "ClearLogButton", "ExportCsvButton"
         };
 
         private void LoadFilterOptions()
@@ -788,6 +788,25 @@ namespace IntuneTools.Pages
             else
                 OptionsAllCheckBox.IsChecked = null;
             _suppressSelectAllEvents = false;
+        }
+
+        private async void ExportCsvButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (ContentList.Count == 0)
+            {
+                LogWarning("Nothing to export — the list is empty.");
+                return;
+            }
+            try
+            {
+                var savedPath = await CsvExporter.ExportContentListAsync(ContentList, "Import");
+                if (savedPath != null)
+                    ShowOperationSuccess($"Exported {ContentList.Count} items to CSV.", savedPath);
+            }
+            catch (Exception ex)
+            {
+                LogError($"CSV export failed: {ex.Message}");
+            }
         }
 
         #endregion

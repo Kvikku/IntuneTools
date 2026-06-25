@@ -396,7 +396,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].PatchAsync(policy);
-                    LogToFunctionFile(appFunction.Main, $"Cleared description for Settings Catalog policy {policyID}");
+                    AppLogger.Info($"Cleared description for Settings Catalog policy {policyID}", appFunction.Main);
                 }
             }
             catch (Exception)

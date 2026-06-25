@@ -383,7 +383,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].PatchAsync(policy);
-                    LogToFunctionFile(appFunction.Main, $"Cleared description for Windows Quality Update policy {policyID}");
+                    AppLogger.Info($"Cleared description for Windows Quality Update policy {policyID}", appFunction.Main);
                 }
             }
             catch (Exception)

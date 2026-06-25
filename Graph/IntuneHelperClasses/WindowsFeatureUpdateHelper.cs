@@ -348,7 +348,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[profileID].PatchAsync(profile);
-                    LogToFunctionFile(appFunction.Main, $"Cleared description for Windows Feature Update profile {profileID}");
+                    AppLogger.Info($"Cleared description for Windows Feature Update profile {profileID}", appFunction.Main);
                 }
             }
             catch (Exception)

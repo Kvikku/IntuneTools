@@ -474,7 +474,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceAppManagement.MobileApps[appId].PatchAsync(app);
-                    LogToFunctionFile(appFunction.Main, $"Cleared description for application {appId}");
+                    AppLogger.Info($"Cleared description for application {appId}", appFunction.Main);
                 }
             }
             catch (Exception)

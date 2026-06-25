@@ -132,7 +132,7 @@ namespace IntuneTools.Pages
             "ContentSearchBox", "ListAllButton", "RemoveSelectedButton", "RemoveAllButton",
             "AssignButton", "GroupSearchTextBox", "GroupSearchButton", "GroupListAllButton",
             "AppDataGrid", "GroupDataGrid", "FilterExpander", "FilterSelectionComboBox",
-            "FilterModeComboBox", "OptionsAllCheckBox", "ClearLogButton", "ContentTypesButton"
+            "FilterModeComboBox", "OptionsAllCheckBox", "ClearLogButton", "ContentTypesButton", "ExportCsvButton"
         };
 
         #endregion
@@ -1113,6 +1113,25 @@ namespace IntuneTools.Pages
             }
         }
 
+
+        private async void ExportCsvButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (AssignmentList.Count == 0)
+            {
+                LogWarning("Nothing to export — the list is empty.");
+                return;
+            }
+            try
+            {
+                var savedPath = await CsvExporter.ExportContentListAsync(AssignmentList, "Assignments");
+                if (savedPath != null)
+                    ShowOperationSuccess($"Exported {AssignmentList.Count} items to CSV.", savedPath);
+            }
+            catch (Exception ex)
+            {
+                LogError($"CSV export failed: {ex.Message}");
+            }
+        }
 
         #endregion
     }

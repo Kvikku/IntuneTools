@@ -373,7 +373,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileID].PatchAsync(profile);
-                    LogToFunctionFile(appFunction.Main, $"Cleared description for Windows Quality Update profile {profileID}");
+                    AppLogger.Info($"Cleared description for Windows Quality Update profile {profileID}", appFunction.Main);
                 }
             }
             catch (Exception)

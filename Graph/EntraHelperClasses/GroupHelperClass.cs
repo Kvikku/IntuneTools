@@ -8,8 +8,9 @@ namespace IntuneTools.Graph.EntraHelperClasses
         {
             // This method gets all the groups in the tenant and returns them as a list of Group objects
 
-            // clear the dictionary
+            // Replace instances so any in-flight reader keeps its reference to the old dict
             groupNameAndID.Clear();
+            groupIDAndName = new System.Collections.Concurrent.ConcurrentDictionary<string, string>(System.StringComparer.OrdinalIgnoreCase);
 
             try
             {
@@ -58,6 +59,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
                     if (!string.IsNullOrEmpty(group.DisplayName) && !string.IsNullOrEmpty(group.Id))
                     {
                         groupNameAndID[group.DisplayName] = group.Id;
+                        groupIDAndName[group.Id] = group.DisplayName;
                     }
                 }
 
@@ -76,8 +78,9 @@ namespace IntuneTools.Graph.EntraHelperClasses
         {
             // This method searches for groups in the tenant based on a search query and returns the results as a list of Group objects
 
-            // clear the dictionary
+            // Replace instances so any in-flight reader keeps its reference to the old dict
             groupNameAndID.Clear();
+            groupIDAndName = new System.Collections.Concurrent.ConcurrentDictionary<string, string>(System.StringComparer.OrdinalIgnoreCase);
 
             try
             {
@@ -104,6 +107,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
                     if (!string.IsNullOrEmpty(group.DisplayName) && !string.IsNullOrEmpty(group.Id))
                     {
                         groupNameAndID[group.DisplayName] = group.Id;
+                        groupIDAndName[group.Id] = group.DisplayName;
                     }
                 }
 
@@ -350,7 +354,7 @@ namespace IntuneTools.Graph.EntraHelperClasses
                     };
 
                     await graphServiceClient.Groups[groupID].PatchAsync(group);
-                    LogToFunctionFile(appFunction.Main, $"Cleared description for group {groupID}");
+                    AppLogger.Info($"Cleared description for group {groupID}", appFunction.Main);
                 }
             }
             catch (Microsoft.Graph.Beta.Models.ODataErrors.ODataError odataError)
@@ -410,6 +414,53 @@ namespace IntuneTools.Graph.EntraHelperClasses
             }
 
             return content;
+        }
+
+        /// <summary>
+        /// Resolves a list of group IDs to their display names.
+        /// Checks the session cache first; falls back to individual Graph API calls for any misses.
+        /// Falls back to the raw ID if resolution fails.
+        /// </summary>
+        public static async Task<Dictionary<string, string>> ResolveGroupNamesAsync(
+            GraphServiceClient graphServiceClient,
+            IEnumerable<string> groupIds)
+        {
+            var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var misses = new List<string>();
+
+            foreach (var id in groupIds)
+            {
+                if (groupIDAndName.TryGetValue(id, out var cached))
+                    result[id] = cached;
+                else
+                    misses.Add(id);
+            }
+
+            foreach (var id in misses)
+            {
+                try
+                {
+                    var group = await graphServiceClient.Groups[id].GetAsync(config =>
+                        config.QueryParameters.Select = new[] { "displayName" });
+
+                    if (group?.DisplayName != null)
+                    {
+                        result[id] = group.DisplayName;
+                        groupIDAndName[id] = group.DisplayName;
+                    }
+                    else
+                    {
+                        result[id] = id; // fall back to ID without caching — allows retry next session
+                    }
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.Warning($"Failed to resolve group name for ID '{id}': {ex.Message}", appFunction.Main);
+                    result[id] = id;
+                }
+            }
+
+            return result;
         }
     }
 }

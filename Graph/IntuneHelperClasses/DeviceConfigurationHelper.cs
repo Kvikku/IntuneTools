@@ -448,7 +448,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     policy.Description = string.Empty;
 
                     await graphServiceClient.DeviceManagement.DeviceConfigurations[policyID].PatchAsync(policy);
-                    LogToFunctionFile(appFunction.Main, $"Cleared description for device configuration policy {policyID}");
+                    AppLogger.Info($"Cleared description for device configuration policy {policyID}", appFunction.Main);
                 }
             }
             catch (Exception)
