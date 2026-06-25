@@ -78,8 +78,6 @@ namespace IntuneTools.Pages
 
         #region Base Class Overrides
 
-        protected override appFunction PageLogFunction => appFunction.Rename;
-
         protected override void ShowLoading(string message = "Loading data from Microsoft Graph...")
         {
             base.ShowLoading(message);
@@ -101,11 +99,11 @@ namespace IntuneTools.Pages
         private async Task ListAllOrchestrator(GraphServiceClient graphServiceClient)
         {
             ShowLoading("Loading data from Microsoft Graph...");
-            AppLogger.UiOnly("Starting to load all content. This could take a while...");
+            LogInfo("Starting to load all content. This could take a while...");
             try
             {
                 CustomContentList.Clear();
-                await LoadAllContentTypesAsync(graphServiceClient, AppLogger.UiOnly);
+                await LoadAllContentTypesAsync(graphServiceClient);
                 RenamingDataGrid.ItemsSource = CustomContentList;
             }
             catch (Exception ex)
@@ -121,11 +119,11 @@ namespace IntuneTools.Pages
         private async Task SearchOrchestrator(GraphServiceClient graphServiceClient, string searchQuery)
         {
             ShowLoading("Searching content in Microsoft Graph...");
-            AppLogger.UiOnly($"Searching for content matching '{searchQuery}'. This may take a while...");
+            LogInfo($"Searching for content matching '{searchQuery}'. This may take a while...");
             try
             {
                 CustomContentList.Clear();
-                await SearchAllContentTypesAsync(graphServiceClient, searchQuery, AppLogger.UiOnly);
+                await SearchAllContentTypesAsync(graphServiceClient, searchQuery);
                 RenamingDataGrid.ItemsSource = CustomContentList;
             }
             catch (Exception ex)
@@ -161,7 +159,6 @@ namespace IntuneTools.Pages
             try
             {
                 InitializeProgressTracking(totalItems);
-                AppLogger.Info($"Rename operation started ({totalItems} item(s)) — see Rename.log for details.", appFunction.Main);
                 ShowOperationProgress("Preparing to rename items...", 0, _renameTotal);
 
                 foreach (var definition in GetRenameTypeRegistry())
@@ -201,20 +198,20 @@ namespace IntuneTools.Pages
             {
                 _renameCurrent++;
                 ShowOperationProgress($"Renaming {contentTypeName}", _renameCurrent, _renameTotal);
-                var name = id;
                 try
                 {
-                    if (getDisplayName != null)
-                        name = await getDisplayName(id) ?? id;
+                    string? displayName = getDisplayName != null ? await getDisplayName(id) : null;
                     await renameAction(id, prefix);
-                    LogSuccess($"Renamed '{name}' successfully.");
+
+                    var logName = displayName ?? $"ID '{id}'";
+                    LogSuccess($"Updated {contentTypeName} '{logName}' with '{prefix}'.");
                     UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
                     _renameSuccessCount++;
                 }
                 catch (Exception ex)
                 {
                     _renameErrorCount++;
-                    LogError($"Failed to rename '{name}': {ex.Message}");
+                    LogError($"Error renaming {contentTypeName} with ID {id}: {ex.Message}");
                 }
             }
         }
@@ -479,8 +476,7 @@ namespace IntuneTools.Pages
             {
                 ShowOperationError($"Completed with {_renameErrorCount} error(s). {_renameSuccessCount} items renamed successfully.");
             }
-            LogSuccess($"Rename completed — {_renameSuccessCount} succeeded, {_renameErrorCount} failed.");
-            AppLogger.Info($"Rename operation completed — {_renameSuccessCount} succeeded, {_renameErrorCount} failed.", appFunction.Main);
+            LogSuccess($"Renamed {_renameSuccessCount} items with '{operationText}'.");
         }
 
         #endregion

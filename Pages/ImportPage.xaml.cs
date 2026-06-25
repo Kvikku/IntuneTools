@@ -163,12 +163,13 @@ namespace IntuneTools.Pages
 
                 if (selectedContentTypes.Count == 0)
                 {
-                    AppLogger.UiOnly("No content types selected for import.");
+                    // If no options are selected, show a message and return
+                    AppendToLog("No content types selected for import.");
                     return;
                 }
 
                 // Load all selected content types using the registry
-                await LoadContentTypesAsync(graphServiceClient, selectedContentTypes, AppLogger.UiOnly);
+                await LoadContentTypesAsync(graphServiceClient, selectedContentTypes);
 
                 // Clean up content platform value (operating system names) in ContentList
                 foreach (var content in ContentList)
@@ -199,12 +200,13 @@ namespace IntuneTools.Pages
 
                 if (selectedContentTypes.Count == 0)
                 {
-                    AppLogger.UiOnly("No content types selected for import.");
+                    // If no options are selected, show a message and return
+                    AppendToLog("No content types selected for import.");
                     return;
                 }
 
                 // Search all selected content types using the registry
-                await SearchContentTypesAsync(graphServiceClient, searchQuery, selectedContentTypes, AppLogger.UiOnly);
+                await SearchContentTypesAsync(graphServiceClient, searchQuery, selectedContentTypes);
 
                 // Clean up content platform value (operating system names) in ContentList
                 foreach (var content in ContentList)
@@ -500,7 +502,7 @@ namespace IntuneTools.Pages
                 var bulkResult = await bulkWarning.ShowAsync();
                 if (bulkResult != ContentDialogResult.Primary)
                 {
-                    AppLogger.UiOnly("Bulk import cancelled by user.");
+                    AppendToLog("Bulk import cancelled by user.");
                     return;
                 }
             }
@@ -525,7 +527,6 @@ namespace IntuneTools.Pages
             ShowOperationProgress("Starting import...", 0, _importTotal);
 
             // Log the start of the import process
-            AppLogger.Info($"Import operation started — see Import.log for details.", appFunction.Main);
             AppLogger.Info("Starting import process...", appFunction.Import);
             AppLogger.Info($"Source Tenant: {sourceTenantName}", appFunction.Import);
             AppLogger.Info($"Destination Tenant: {destinationTenantName}", appFunction.Import);
@@ -555,7 +556,7 @@ namespace IntuneTools.Pages
                     var contentIds = GetContentIdsByType(definition.TypeKey);
                     await definition.ImportAsync(contentIds, groupIds);
 
-                    AppLogger.Info($"{definition.DisplayName} imported successfully.", appFunction.Import);
+                    AppendToLog($"{definition.DisplayName} imported successfully.\n");
                     _importSuccessCount++;
                 }
                 catch (Exception ex)
@@ -575,8 +576,7 @@ namespace IntuneTools.Pages
                 ShowOperationError($"Import completed with errors: {_importSuccessCount} succeeded, {_importErrorCount} failed");
             }
 
-            AppLogger.UiOnly("Import process finished.");
-            AppLogger.Info($"Import operation completed — {_importSuccessCount} succeeded, {_importErrorCount} failed.", appFunction.Main);
+            AppendToLog("Import process finished.\n");
         }
 
         #endregion
@@ -638,14 +638,14 @@ namespace IntuneTools.Pages
             string sortProperty = binding?.Path?.Path;
             if (string.IsNullOrEmpty(sortProperty))
             {
-                AppLogger.UiOnly("Sorting error: Unable to determine property name from column binding.");
+                AppendToLog("Sorting error: Unable to determine property name from column binding.");
                 return;
             }
 
             var propInfo = typeof(GroupInfo).GetProperty(sortProperty);
             if (propInfo == null)
             {
-                AppLogger.UiOnly($"Sorting error: Property '{sortProperty}' not found on GroupInfo.");
+                AppendToLog($"Sorting error: Property '{sortProperty}' not found on GroupInfo.");
                 return;
             }
 
@@ -666,7 +666,7 @@ namespace IntuneTools.Pages
             }
             catch (Exception ex)
             {
-                AppLogger.UiOnly($"Sorting error: {ex.Message}");
+                AppendToLog($"Sorting error: {ex.Message}");
                 return;
             }
 
@@ -734,7 +734,7 @@ namespace IntuneTools.Pages
             }
             else
             {
-                AppLogger.UiOnly("Search query cannot be empty.");
+                AppendToLog("Search query cannot be empty.");
             }
         }
 

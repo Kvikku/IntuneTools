@@ -201,7 +201,7 @@ namespace IntuneTools.Pages
             {
                 ContentList.Clear();
                 _policyDataCache.Clear();
-                await LoadContentTypesAsync(graphServiceClient, SupportedContentTypes, AppendToDetailsRichTextBlock);
+                await LoadContentTypesAsync(graphServiceClient, SupportedContentTypes);
                 JsonDataGrid.ItemsSource = ContentList;
             }
             catch (Exception ex)
@@ -225,7 +225,7 @@ namespace IntuneTools.Pages
             {
                 ContentList.Clear();
                 _policyDataCache.Clear();
-                await SearchContentTypesAsync(graphServiceClient, searchQuery, SupportedContentTypes, AppendToDetailsRichTextBlock);
+                await SearchContentTypesAsync(graphServiceClient, searchQuery, SupportedContentTypes);
                 JsonDataGrid.ItemsSource = ContentList;
             }
             catch (Exception ex)

@@ -43,7 +43,6 @@ namespace IntuneTools.Pages
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Version check failed: {ex.Message}");
                 AppLogger.Warning($"Version check failed: {ex}", appFunction.Main);
                 VersionStatusText.Text = "Version check failed.";
                 SetIndicatorColor(Windows.UI.Color.FromArgb(255, 128, 128, 128)); // Gray

@@ -106,10 +106,8 @@ namespace IntuneTools.Pages
             FindUnassignedButton.IsEnabled = true;
         }
 
-        private void AppendToDetailsRichTextBlock(string text) => AppLogger.UiOnly(text);
-
-        private appFunction _pageLogFunction = appFunction.Main;
-        protected override appFunction PageLogFunction => _pageLogFunction;
+        // Convenience method for logging - calls base class AppendToLog
+        private void AppendToDetailsRichTextBlock(string text) => AppendToLog(text);
 
         #endregion
 
@@ -124,13 +122,10 @@ namespace IntuneTools.Pages
             _deleteCurrent = 0;
             _deleteSuccessCount = 0;
             _deleteErrorCount = 0;
-            AppLogger.Info($"Delete operation started ({_deleteTotal} item(s)) — see Delete.log for details.", appFunction.Main);
-            _pageLogFunction = appFunction.Delete;
 
             if (_deleteTotal == 0)
             {
                 LogWarning("No content to delete.");
-                _pageLogFunction = appFunction.Main;
                 return;
             }
 
@@ -160,8 +155,6 @@ namespace IntuneTools.Pages
             }
 
             AppendToDetailsRichTextBlock("Content deletion completed.");
-            AppLogger.Info($"Delete operation completed — {_deleteSuccessCount} succeeded, {_deleteErrorCount} failed.", appFunction.Main);
-            _pageLogFunction = appFunction.Main;
         }
 
         /// <summary>
@@ -170,11 +163,11 @@ namespace IntuneTools.Pages
         private async Task ListAllOrchestrator(GraphServiceClient graphServiceClient)
         {
             ShowLoading("Loading data from Microsoft Graph...");
-            AppLogger.UiOnly("Starting to load all content. This could take a while...");
+            AppendToDetailsRichTextBlock("Starting to load all content. This could take a while...");
             try
             {
                 ContentList.Clear();
-                await LoadContentTypesAsync(graphServiceClient, SupportedContentTypes, AppLogger.UiOnly);
+                await LoadContentTypesAsync(graphServiceClient, SupportedContentTypes);
                 CleanupDataGrid.ItemsSource = ContentList;
             }
             catch (Exception ex)
@@ -193,11 +186,11 @@ namespace IntuneTools.Pages
         private async Task SearchOrchestrator(GraphServiceClient graphServiceClient, string searchQuery)
         {
             ShowLoading("Searching content in Microsoft Graph...");
-            AppLogger.UiOnly($"Searching for content matching '{searchQuery}'. This may take a while...");
+            AppendToDetailsRichTextBlock($"Searching for content matching '{searchQuery}'. This may take a while...");
             try
             {
                 ContentList.Clear();
-                await SearchContentTypesAsync(graphServiceClient, searchQuery, SupportedContentTypes, AppLogger.UiOnly);
+                await SearchContentTypesAsync(graphServiceClient, searchQuery, SupportedContentTypes);
                 CleanupDataGrid.ItemsSource = ContentList;
             }
             catch (Exception ex)
@@ -223,13 +216,12 @@ namespace IntuneTools.Pages
             {
                 _deleteCurrent++;
                 ShowOperationProgress($"Deleting {definition.DisplayName}", _deleteCurrent, _deleteTotal);
-                var name = ContentList.FirstOrDefault(c => c.ContentId == id)?.ContentName ?? id;
                 try
                 {
                     var deleted = await definition.DeleteAsync(id);
                     if (deleted)
                     {
-                        AppLogger.Info($"Deleted '{name}' successfully.", appFunction.Delete);
+                        AppLogger.Info($"Deleted {definition.DisplayName} with ID: {id}", appFunction.Delete);
                         UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
                         _deleteSuccessCount++;
                     }
@@ -238,8 +230,13 @@ namespace IntuneTools.Pages
                 catch (Exception ex)
                 {
                     _deleteErrorCount++;
-                    AppLogger.Error($"Failed to delete '{name}': {ex.Message}", appFunction.Delete);
+                    AppLogger.Error($"Error deleting {definition.DisplayName} {id}: {ex.Message}", appFunction.Delete);
                 }
+            }
+
+            if (ids.Count > 0)
+            {
+                AppendToDetailsRichTextBlock($"Processed {ids.Count} {definition.DisplayName}(s).");
             }
         }
 
@@ -248,12 +245,11 @@ namespace IntuneTools.Pages
         /// </summary>
         private async Task<bool> HandleAutoPilotProfileDeletion(string id)
         {
-            var name = ContentList.FirstOrDefault(c => c.ContentId == id)?.ContentName ?? id;
             var isAssigned = await CheckIfAutoPilotProfileHasAssignments(sourceGraphServiceClient, id);
 
             if (isAssigned == null)
             {
-                AppLogger.Warning($"Failed to check assignments for '{name}'. Skipping deletion to be safe.", appFunction.Delete);
+                AppendToDetailsRichTextBlock($"Failed to check assignments for AutoPilot profile {id}. Skipping deletion to be safe.");
                 return false;
             }
 
@@ -262,7 +258,7 @@ namespace IntuneTools.Pages
                 var dialog = new ContentDialog
                 {
                     Title = "Delete AutoPilot Profile",
-                    Content = $"'{name}' is assigned to devices. Do you want to delete the assignments before deleting the profile?",
+                    Content = $"The Windows AutoPilot profile with ID: {id} is assigned to devices. Do you want to delete the assignments before deleting the profile?",
                     PrimaryButtonText = "Delete Assignments",
                     SecondaryButtonText = "Cancel",
                     DefaultButton = ContentDialogButton.Secondary,
@@ -273,13 +269,13 @@ namespace IntuneTools.Pages
                 if (result == ContentDialogResult.Primary)
                 {
                     await DeleteWindowsAutoPilotProfileAssignments(sourceGraphServiceClient, id);
-                    AppLogger.Info($"Deleted assignments for '{name}'.", appFunction.Delete);
+                    AppLogger.Info($"Deleted assignments for Windows AutoPilot profile with ID: {id}", appFunction.Delete);
                     await DeleteWindowsAutopilotProfile(sourceGraphServiceClient, id);
                     return true;
                 }
                 else
                 {
-                    AppLogger.Warning($"Skipped deletion of '{name}' — profile is assigned to devices.", appFunction.Delete);
+                    AppLogger.Warning($"Skipped deletion of Windows AutoPilot profile with ID: {id} as it is assigned to devices.", appFunction.Delete);
                     return false;
                 }
             }
@@ -394,14 +390,12 @@ namespace IntuneTools.Pages
             DeleteButton.IsEnabled = false;
             ClearSelectedButton.IsEnabled = false;
             ClearAllButton.IsEnabled = false;
-            AppLogger.Info("Find Unassigned scan started — see FindUnassigned.log for details.", appFunction.Main);
-            _pageLogFunction = appFunction.FindUnassigned;
-            AppLogger.UiOnly("Loading all assignable content types. This may take a while...");
+            AppendToDetailsRichTextBlock("Loading all assignable content types. This may take a while...");
             try
             {
                 // Load into a temporary list so items don't appear in the grid before being checked
                 ContentList.Clear();
-                await LoadContentTypesAsync(graphServiceClient, AssignableContentTypes, AppLogger.UiOnly);
+                await LoadContentTypesAsync(graphServiceClient, AssignableContentTypes);
                 var allItems = ContentList.ToList();
                 ContentList.Clear();
 
@@ -436,7 +430,7 @@ namespace IntuneTools.Pages
                         UpdateTotalTimeSaved(secondsSavedOnFindingUnassigned, appFunction.FindUnassigned);
                         if (hasAssignments == null)
                         {
-                            AppLogger.Warning($"Failed to check assignments for '{item.ContentName}'. Skipping to be safe.", appFunction.FindUnassigned);
+                            AppendToDetailsRichTextBlock($"Failed to check assignments for '{item.ContentName}'. Skipping to be safe.");
                         }
                         else if (!hasAssignments.Value)
                         {
@@ -445,23 +439,21 @@ namespace IntuneTools.Pages
                     }
                     else
                     {
-                        // No assignment check for this type — silently skip
+                        AppendToDetailsRichTextBlock($"No assignment check available for type '{item.ContentType}'. Skipping.");
                     }
                 }
 
                 CleanupDataGrid.ItemsSource = ContentList;
-                AppLogger.Info($"Found {ContentList.Count} unassigned item(s) out of {totalItems} total.", appFunction.FindUnassigned);
+                AppendToDetailsRichTextBlock($"Found {ContentList.Count} unassigned item(s) out of {totalItems} total.");
                 ShowOperationSuccess($"Found {ContentList.Count} unassigned item(s)");
-                AppLogger.Info($"Find Unassigned scan completed — {ContentList.Count} unassigned item(s) found.", appFunction.Main);
             }
             catch (Exception ex)
             {
-                AppLogger.Error($"Error finding unassigned content: {ex.Message}", appFunction.FindUnassigned);
+                AppendToDetailsRichTextBlock($"Error finding unassigned content: {ex.Message}");
                 ShowOperationError($"Error: {ex.Message}");
             }
             finally
             {
-                _pageLogFunction = appFunction.Main;
                 HideLoading();
                 DeleteButton.IsEnabled = true;
                 ClearSelectedButton.IsEnabled = true;
