@@ -129,7 +129,7 @@ namespace IntuneTools.Pages
 
             if (_deleteTotal == 0)
             {
-                AppLogger.UiOnly("No content to delete.");
+                LogWarning("No content to delete.");
                 _pageLogFunction = appFunction.Main;
                 return;
             }
@@ -179,7 +179,7 @@ namespace IntuneTools.Pages
             }
             catch (Exception ex)
             {
-                AppLogger.UiOnly($"Error during loading: {ex.Message}");
+                LogError($"Error during loading: {ex.Message}");
             }
             finally
             {
@@ -202,7 +202,7 @@ namespace IntuneTools.Pages
             }
             catch (Exception ex)
             {
-                AppLogger.UiOnly($"Error during search: {ex.Message}");
+                LogError($"Error during search: {ex.Message}");
             }
             finally
             {

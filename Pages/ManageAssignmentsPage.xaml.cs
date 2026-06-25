@@ -275,7 +275,7 @@ namespace IntuneTools.Pages
             }
             catch (Exception ex)
             {
-                AppLogger.UiOnly($"Error during loading: {ex.Message}");
+                LogError($"Error during loading: {ex.Message}");
             }
             finally
             {
@@ -298,7 +298,7 @@ namespace IntuneTools.Pages
             }
             catch (Exception ex)
             {
-                AppLogger.UiOnly($"Error during search: {ex.Message}");
+                LogError($"Error during search: {ex.Message}");
             }
             finally
             {

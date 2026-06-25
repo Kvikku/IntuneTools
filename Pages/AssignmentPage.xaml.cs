@@ -445,7 +445,7 @@ namespace IntuneTools.Pages
                         }
                         catch (Exception ex)
                         {
-                            AppLogger.UiOnly($"Failed loading {op.DisplayNamePlural}: {ex.Message}");
+                            LogError($"Failed loading {op.DisplayNamePlural}: {ex.Message}");
                         }
                     }
                 }

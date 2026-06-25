@@ -184,6 +184,8 @@ namespace IntuneTools.Pages
 
         private void AppendToDetailsRichTextBlock(string text) => AppLogger.UiOnly(text);
 
+        protected override appFunction PageLogFunction => appFunction.JsonExport;
+
         #endregion
 
         #region Core Operations

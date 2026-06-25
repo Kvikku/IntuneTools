@@ -99,6 +99,8 @@ namespace IntuneTools.Pages
             RightClickMenu.AttachDataGridContextMenu(ContentDataGrid);
         }
 
+        protected override appFunction PageLogFunction => appFunction.Import;
+
         protected override string[] GetManagedControlNames() => new[]
         {
             "SearchQueryTextBox", "Search", "ListAll", "ClearSelected", "ClearAll",
