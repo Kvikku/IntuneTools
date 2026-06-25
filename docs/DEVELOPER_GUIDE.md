@@ -326,7 +326,7 @@ public class MyNewPolicyHelper
             });
         await pageIterator.IterateAsync();
 
-        LogToFunctionFile(appFunction.Main, $"Found {policies.Count} MyNewPolicy items.");
+        AppLogger.Info($"Found {policies.Count} MyNewPolicy items.", appFunction.Main);
         return policies;
     }
 
@@ -462,7 +462,6 @@ await pageIterator.IterateAsync();
 
 | Method | Use When |
 |--------|----------|
-| `LogToFunctionFile(function, message, level)` | Writing to disk log files |
 | `TranslatePolicyPlatformName(name)` | Normalizing platform names for display |
 | `TranslateApplicationType(odataType)` | Converting OData types to friendly app names |
 | `RemovePrefixFromPolicyName(name)` | Stripping `(prefix)`, `[prefix]`, `{prefix}` |
@@ -516,6 +515,21 @@ public class CustomContentInfo
     public string? ContentDescription { get; set; }
 }
 ```
+
+### AppLogger (static logging entry point)
+
+`AppLogger` is the single logging entry point — it writes to the function-specific `.log` file **and** dispatches to the active page's UI console automatically.
+
+```csharp
+AppLogger.Info("Processing...", appFunction.Import);
+AppLogger.Success("Done!", appFunction.Import);
+AppLogger.Warning("Check this", appFunction.Assignment);
+AppLogger.Error("Failed", appFunction.Assignment);
+```
+
+Use `AppLogger` in Graph helpers and anywhere outside a page class. Pages can use the inherited `LogInfo/Success/Warning/Error` methods for UI-only messages, but for anything that should also appear in the log file, use `AppLogger`.
+
+`PageLogFunction` on `BaseMultiTenantPage` controls which `appFunction` the page's `AppendToLog` calls are routed to. Override it when your page should write to a function-specific log instead of `Main`.
 
 ### LogEntry (log display model)
 
@@ -577,7 +591,7 @@ Use this checklist when adding a new page:
 - [ ] **Navigation registered** — `NavigationViewItem` in `MainWindow.xaml` + case in `MainWindow.xaml.cs`
 - [ ] **Uses `ExecuteWithLoadingAsync`** — For all async operations (handles loading/errors/completion)
 - [ ] **Uses base class methods** — `LoadContentTypesAsync`, `SearchContentTypesAsync`, `ContentList`, etc.
-- [ ] **Logging via `LogInfo/Success/Warning/Error`** — Not manual TextBlock writes
+- [ ] **Logging via `AppLogger.Info/Success/Warning/Error`** — use `AppLogger` in helpers and for file+UI combined logging; use base class `LogInfo/…` for UI-only messages
 
 If adding a new **content type**:
 
