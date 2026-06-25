@@ -182,7 +182,9 @@ namespace IntuneTools.Pages
             SearchButton.IsEnabled = true;
         }
 
-        private void AppendToDetailsRichTextBlock(string text) => AppendToLog(text);
+        private void AppendToDetailsRichTextBlock(string text) => AppLogger.UiOnly(text);
+
+        protected override appFunction PageLogFunction => appFunction.JsonExport;
 
         #endregion
 
@@ -199,7 +201,7 @@ namespace IntuneTools.Pages
             {
                 ContentList.Clear();
                 _policyDataCache.Clear();
-                await LoadContentTypesAsync(graphServiceClient, SupportedContentTypes, AppendToDetailsRichTextBlock);
+                await LoadContentTypesAsync(graphServiceClient, SupportedContentTypes);
                 JsonDataGrid.ItemsSource = ContentList;
             }
             catch (Exception ex)
@@ -223,7 +225,7 @@ namespace IntuneTools.Pages
             {
                 ContentList.Clear();
                 _policyDataCache.Clear();
-                await SearchContentTypesAsync(graphServiceClient, searchQuery, SupportedContentTypes, AppendToDetailsRichTextBlock);
+                await SearchContentTypesAsync(graphServiceClient, searchQuery, SupportedContentTypes);
                 JsonDataGrid.ItemsSource = ContentList;
             }
             catch (Exception ex)
@@ -323,7 +325,8 @@ namespace IntuneTools.Pages
                 int totalWithData = 0;
                 int filesWritten = 0;
                 ShowOperationProgress("Exporting to folder...", 0, totalItems);
-                LogToFunctionFile(appFunction.Main, $"JSON Export: Starting export of {totalItems} item(s) to '{folder.Path}'.");
+                AppLogger.Info($"JSON Export operation started ({totalItems} item(s)) — see JsonExport.log for details.", appFunction.Main);
+                AppLogger.Info($"JSON Export: Starting export of {totalItems} item(s) to '{folder.Path}'.", appFunction.JsonExport);
 
                 foreach (var group in itemsByType)
                 {
@@ -341,7 +344,24 @@ namespace IntuneTools.Pages
                         if (sourceGraphServiceClient != null && !string.IsNullOrEmpty(c.ContentId)
                             && JsonContentTypeOperations.TryGetValue(contentType, out var ops))
                         {
-                            policyData = await ops.Export(sourceGraphServiceClient, c.ContentId);
+                            try
+                            {
+                                policyData = await ops.Export(sourceGraphServiceClient, c.ContentId);
+                            }
+                            catch (Exception ex)
+                            {
+                                AppLogger.Error($"Failed to retrieve data for '{c.ContentName}': {ex.Message}", appFunction.JsonExport);
+                            }
+                        }
+
+                        if (policyData.HasValue)
+                        {
+                            AppLogger.Info($"Exported '{c.ContentName}' ({contentType}).", appFunction.JsonExport);
+                            totalWithData++;
+                        }
+                        else
+                        {
+                            AppLogger.Warning($"No data retrieved for '{c.ContentName}' ({contentType}) — exported as metadata only.", appFunction.JsonExport);
                         }
 
                         // Cache fetched policy data so Import-to-Tenant works in the same session
@@ -349,8 +369,6 @@ namespace IntuneTools.Pages
                         {
                             _policyDataCache[c.ContentId!] = policyData.Value;
                         }
-
-                        if (policyData.HasValue) totalWithData++;
 
                         items.Add(new JsonExportItem
                         {
@@ -383,7 +401,8 @@ namespace IntuneTools.Pages
                 }
 
                 ShowOperationSuccess($"Exported {totalItems} items ({totalWithData} with full data) across {filesWritten} file(s) to '{folder.Name}'");
-                LogToFunctionFile(appFunction.Main, $"JSON Export: Completed. {totalItems} items ({totalWithData} with full data) across {filesWritten} file(s) to '{folder.Path}'.");
+                AppLogger.Info($"JSON Export: Completed. {totalItems} items ({totalWithData} with full data) across {filesWritten} file(s) to '{folder.Path}'.", appFunction.JsonExport);
+                AppLogger.Info($"JSON Export operation completed — {totalWithData} item(s) exported across {filesWritten} file(s).", appFunction.Main);
                 AppendToDetailsRichTextBlock($"Export complete. {filesWritten} file(s) written to '{folder.Path}'.");
 
                 for (int i = 0; i < totalItems; i++)
@@ -394,7 +413,7 @@ namespace IntuneTools.Pages
             catch (Exception ex)
             {
                 ShowOperationError($"Export failed: {ex.Message}");
-                LogToFunctionFile(appFunction.Main, $"JSON Export: Failed: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"JSON Export: Failed: {ex.Message}", appFunction.JsonExport);
                 AppendToDetailsRichTextBlock($"Error exporting to folder: {ex.Message}");
             }
         }
@@ -585,7 +604,8 @@ namespace IntuneTools.Pages
             var failedItems = new List<(string Name, string Type, string Reason)>();
 
             ShowOperationProgress("Importing to tenant...", 0, total);
-            LogToFunctionFile(appFunction.Main, $"JSON Import: Starting import of {total} item(s) to {destinationTenantName}.");
+            AppLogger.Info($"JSON Import operation started ({total} item(s)) — see Import.log for details.", appFunction.Main);
+            AppLogger.Info($"JSON Import: Starting import of {total} item(s) to {destinationTenantName}.", appFunction.Import);
             AppendToDetailsRichTextBlock($"Starting import of {total} item(s) to {destinationTenantName}...");
 
             foreach (var item in importableItems)
@@ -617,7 +637,7 @@ namespace IntuneTools.Pages
                     else
                     {
                         AppendToDetailsRichTextBlock($"Failed to import: {item.ContentName}");
-                        LogToFunctionFile(appFunction.Main, $"JSON Import: Failed to import '{item.ContentName}'.", LogLevels.Warning);
+                        AppLogger.Warning($"JSON Import: Failed to import '{item.ContentName}'.", appFunction.Import);
                         failedItems.Add((item.ContentName ?? "Unknown", item.ContentType ?? "Unknown", "Import returned null — check the log file for details."));
                         errorCount++;
                     }
@@ -625,7 +645,7 @@ namespace IntuneTools.Pages
                 catch (Exception ex)
                 {
                     AppendToDetailsRichTextBlock($"Error importing '{item.ContentName}': {ex.Message}");
-                    LogToFunctionFile(appFunction.Main, $"JSON Import: Error importing '{item.ContentName}': {ex.Message}", LogLevels.Error);
+                    AppLogger.Error($"JSON Import: Error importing '{item.ContentName}': {ex.Message}", appFunction.Import);
                     failedItems.Add((item.ContentName ?? "Unknown", item.ContentType ?? "Unknown", ex.Message));
                     errorCount++;
                 }
@@ -634,15 +654,16 @@ namespace IntuneTools.Pages
             if (errorCount == 0)
             {
                 ShowOperationSuccess($"Import completed: {successCount} item(s) imported successfully");
-                LogToFunctionFile(appFunction.Main, $"JSON Import: Completed successfully. {successCount} item(s) imported.");
+                AppLogger.Info($"JSON Import: Completed successfully. {successCount} item(s) imported.", appFunction.Import);
             }
             else
             {
                 ShowOperationError($"Import completed with errors: {successCount} succeeded, {errorCount} failed");
-                LogToFunctionFile(appFunction.Main, $"JSON Import: Completed with errors. {successCount} succeeded, {errorCount} failed.", LogLevels.Warning);
+                AppLogger.Warning($"JSON Import: Completed with errors. {successCount} succeeded, {errorCount} failed.", appFunction.Import);
             }
 
             AppendToDetailsRichTextBlock("Import to tenant finished.");
+            AppLogger.Info($"JSON Import operation completed — {successCount} succeeded, {errorCount} failed.", appFunction.Main);
 
             // Show summary of failed items
             if (failedItems.Count > 0)

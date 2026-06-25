@@ -103,7 +103,7 @@ namespace IntuneTools.Pages
             try
             {
                 CustomContentList.Clear();
-                await LoadAllContentTypesAsync(graphServiceClient, LogInfo);
+                await LoadAllContentTypesAsync(graphServiceClient);
                 RenamingDataGrid.ItemsSource = CustomContentList;
             }
             catch (Exception ex)
@@ -123,7 +123,7 @@ namespace IntuneTools.Pages
             try
             {
                 CustomContentList.Clear();
-                await SearchAllContentTypesAsync(graphServiceClient, searchQuery, LogInfo);
+                await SearchAllContentTypesAsync(graphServiceClient, searchQuery);
                 RenamingDataGrid.ItemsSource = CustomContentList;
             }
             catch (Exception ex)
@@ -227,7 +227,7 @@ namespace IntuneTools.Pages
                 return false;
             }
 
-            if (selectedRenameMode != "RemovePrefix" && string.IsNullOrWhiteSpace(newName))
+            if (selectedRenameMode != "RemovePrefix" && selectedRenameMode != "RemoveDescription" && string.IsNullOrWhiteSpace(newName))
             {
                 LogWarning("New name cannot be empty.");
                 return false;
@@ -254,6 +254,7 @@ namespace IntuneTools.Pages
                 "Prefix" => await PreparePrefixRename(contentIDs, newName),
                 "RemovePrefix" => await PrepareRemovePrefixRename(contentIDs),
                 "Description" => await PrepareDescriptionUpdate(newName),
+                "RemoveDescription" => await PrepareRemoveDescriptionUpdate(),
                 _ => null
             };
         }
@@ -332,6 +333,16 @@ namespace IntuneTools.Pages
                 "Update");
 
             return confirmed ? newDescription : null;
+        }
+
+        private async Task<string?> PrepareRemoveDescriptionUpdate()
+        {
+            var confirmed = await ShowConfirmationDialog(
+                "Confirm removing descriptions",
+                "The descriptions of all selected items will be cleared. Proceed?",
+                "Remove Descriptions");
+
+            return confirmed ? "__REMOVE_DESCRIPTION__" : null;
         }
 
         /// <summary>
@@ -526,7 +537,7 @@ namespace IntuneTools.Pages
 
             string newName = NewNameTextBox.Text.Trim();
 
-            if (renameMode != RenameMode.RemovePrefix && string.IsNullOrEmpty(newName))
+            if (renameMode != RenameMode.RemovePrefix && renameMode != RenameMode.RemoveDescription && string.IsNullOrEmpty(newName))
             {
                 LogWarning("Please enter a new name.");
                 return;
@@ -572,7 +583,7 @@ namespace IntuneTools.Pages
 
             if (PrefixButton is null || NewNameTextBox is null) return;
 
-            var needsTextInput = selectionMode != RenameMode.RemovePrefix;
+            var needsTextInput = selectionMode != RenameMode.RemovePrefix && selectionMode != RenameMode.RemoveDescription;
             var needsPrefixSymbol = selectionMode == RenameMode.Prefix;
 
             PrefixButton.Visibility = needsPrefixSymbol ? Visibility.Visible : Visibility.Collapsed;

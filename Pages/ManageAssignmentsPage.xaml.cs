@@ -269,7 +269,7 @@ namespace IntuneTools.Pages
             try
             {
                 ContentList.Clear();
-                await LoadContentTypesAsync(graphServiceClient, AssignableContentTypes, AppendToLog);
+                await LoadContentTypesAsync(graphServiceClient, AssignableContentTypes);
                 AssignmentsDataGrid.ItemsSource = ContentList;
             }
             catch (Exception ex)
@@ -292,7 +292,7 @@ namespace IntuneTools.Pages
             try
             {
                 ContentList.Clear();
-                await SearchContentTypesAsync(graphServiceClient, searchQuery, AssignableContentTypes, AppendToLog);
+                await SearchContentTypesAsync(graphServiceClient, searchQuery, AssignableContentTypes);
                 AssignmentsDataGrid.ItemsSource = ContentList;
             }
             catch (Exception ex)

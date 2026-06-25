@@ -20,7 +20,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                LogToFunctionFile(appFunction.Main, $"Retrieving audit events for the last {days} day(s).");
+                AppLogger.Info($"Retrieving audit events for the last {days} day(s).", appFunction.AuditLog);
 
                 var fromDate = DateTime.UtcNow.AddDays(-days).ToString("yyyy-MM-ddTHH:mm:ssZ");
 
@@ -43,19 +43,19 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 await pageIterator.IterateAsync(cancellationToken);
 
-                LogToFunctionFile(appFunction.Main, $"Retrieved {auditEvents.Count} audit event(s).");
+                AppLogger.Info($"Retrieved {auditEvents.Count} audit event(s).", appFunction.AuditLog);
 
                 return auditEvents;
             }
             catch (OperationCanceledException)
             {
-                LogToFunctionFile(appFunction.Main, "Audit event retrieval was cancelled by the user.", LogLevels.Warning);
+                AppLogger.Warning("Audit event retrieval was cancelled by the user.", appFunction.AuditLog);
                 throw;
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, "An error occurred while retrieving audit events.", LogLevels.Warning);
-                LogToFunctionFile(appFunction.Main, ex.Message, LogLevels.Error);
+                AppLogger.Warning("An error occurred while retrieving audit events.", appFunction.AuditLog);
+                AppLogger.Error(ex.Message, appFunction.AuditLog);
                 throw;
             }
         }

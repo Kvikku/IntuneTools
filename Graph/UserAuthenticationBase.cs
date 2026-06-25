@@ -57,7 +57,7 @@ internal sealed class UserAuthenticationBase
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"Failed to parse tenant ID from JWT: {ex.Message}", LogLevels.Warning);
+                AppLogger.Warning($"Failed to parse tenant ID from JWT: {ex.Message}", appFunction.Main);
             }
 
             _tokenProvider = new MsalAccessTokenProvider(_pca, scopes);
@@ -99,7 +99,7 @@ internal sealed class UserAuthenticationBase
         }
         catch (Exception ex)
         {
-            LogToFunctionFile(appFunction.Main, $"Failed to read granted scopes: {ex.Message}", LogLevels.Warning);
+            AppLogger.Warning($"Failed to read granted scopes: {ex.Message}", appFunction.Main);
             return Array.Empty<string>();
         }
     }

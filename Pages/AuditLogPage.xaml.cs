@@ -55,6 +55,8 @@ namespace IntuneTools.Pages
             yield return "LoadButton";
         }
 
+        protected override appFunction PageLogFunction => appFunction.AuditLog;
+
         #region Event Handlers
 
         private async void LoadButton_Click(object sender, RoutedEventArgs e)
@@ -77,11 +79,11 @@ namespace IntuneTools.Pages
         {
             if (AuditDataGrid.SelectedItem is AuditEventViewModel selectedEvent)
             {
-                LogInfo($"Selected: {selectedEvent.ActivityDisplayName} by {selectedEvent.ActorDisplayName} at {selectedEvent.ActivityDateTimeFormatted}");
+                AppLogger.UiOnly($"Selected: {selectedEvent.ActivityDisplayName} by {selectedEvent.ActorDisplayName} at {selectedEvent.ActivityDateTimeFormatted}");
 
                 if (!string.IsNullOrEmpty(selectedEvent.ResourceInfo))
                 {
-                    LogInfo($"  Resources: {selectedEvent.ResourceInfo}");
+                    AppLogger.UiOnly($"  Resources: {selectedEvent.ResourceInfo}");
                 }
             }
         }
@@ -94,7 +96,7 @@ namespace IntuneTools.Pages
                 btn.IsEnabled = false;
                 btn.Content = "Cancelling\u2026";
             }
-            LogWarning("Cancellation requested \u2014 waiting for current page to finish...");
+            AppLogger.UiOnly("Cancellation requested \u2014 waiting for current page to finish...");
         }
 
         #endregion
@@ -123,12 +125,12 @@ namespace IntuneTools.Pages
 
             await ExecuteWithLoadingAsync(async () =>
             {
-                LogInfo($"Loading audit events for the last {days} day(s)...");
-                LogInfo("This may take several minutes for large tenants. You can cancel at any time.");
+                AppLogger.UiOnly($"Loading audit events for the last {days} day(s)...");
+                AppLogger.UiOnly("This may take several minutes for large tenants. You can cancel at any time.");
 
                 if (sourceGraphServiceClient == null)
                 {
-                    LogError("Not authenticated. Please log in to a tenant first.");
+                    AppLogger.UiOnly("Not authenticated. Please log in to a tenant first.");
                     return;
                 }
 
@@ -168,7 +170,7 @@ namespace IntuneTools.Pages
 
                 if (_rawAuditEvents.Count == 0)
                 {
-                    LogWarning("No audit events found for the selected time range.");
+                    AppLogger.UiOnly("No audit events found for the selected time range.");
                     ClearSummary();
                     return;
                 }
@@ -185,7 +187,7 @@ namespace IntuneTools.Pages
 
                 UpdateTotalTimeSaved(secondsSavedOnAuditLog, appFunction.AuditLog);
 
-                LogInfo("Audit log summary generated successfully.");
+                AppLogger.UiOnly("Audit log summary generated successfully.");
             },
             "Loading audit events from Microsoft Graph...",
             errorMessagePrefix: "Failed to load audit events");
@@ -258,7 +260,7 @@ namespace IntuneTools.Pages
                 string.Equals(e.ResultText, "Failure", StringComparison.OrdinalIgnoreCase));
             SuccessFailureText.Text = $"{successCount} / {failureCount}";
 
-            LogInfo($"Summary: {_auditEvents.Count} events, {uniqueActors} actors, {categories} categories, {successCount} success / {failureCount} failure");
+            AppLogger.UiOnly($"Summary: {_auditEvents.Count} events, {uniqueActors} actors, {categories} categories, {successCount} success / {failureCount} failure");
         }
 
         private void UpdateActorSummary()
@@ -305,7 +307,7 @@ namespace IntuneTools.Pages
         {
             if (_auditEvents.Count == 0)
             {
-                LogWarning("No audit events to export.");
+                AppLogger.UiOnly("No audit events to export.");
                 return;
             }
 
@@ -322,11 +324,11 @@ namespace IntuneTools.Pages
                 var file = await savePicker.PickSaveFileAsync();
                 if (file == null)
                 {
-                    LogInfo("Export cancelled by user.");
+                    AppLogger.UiOnly("Export cancelled by user.");
                     return;
                 }
 
-                LogInfo("Exporting audit events to CSV...");
+                AppLogger.UiOnly("Exporting audit events to CSV...");
 
                 var csv = new StringBuilder();
                 csv.AppendLine("Date/Time,Actor,Activity,Category,Result,Component,Operation Type,Resources");
@@ -349,8 +351,7 @@ namespace IntuneTools.Pages
             }
             catch (Exception ex)
             {
-                LogError($"Export failed: {ex.Message}");
-                LogToFunctionFile(appFunction.Main, $"CSV export failed: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"CSV export failed: {ex.Message}", appFunction.AuditLog);
             }
         }
 
@@ -358,7 +359,7 @@ namespace IntuneTools.Pages
         {
             if (_auditEvents.Count == 0)
             {
-                LogWarning("No audit events to export.");
+                AppLogger.UiOnly("No audit events to export.");
                 return;
             }
 
@@ -375,11 +376,11 @@ namespace IntuneTools.Pages
                 var file = await savePicker.PickSaveFileAsync();
                 if (file == null)
                 {
-                    LogInfo("Report export cancelled by user.");
+                    AppLogger.UiOnly("Report export cancelled by user.");
                     return;
                 }
 
-                LogInfo("Generating audit log report...");
+                AppLogger.UiOnly("Generating audit log report...");
 
                 int days = GetSelectedDays();
                 var html = AuditLogReportGenerator.Generate(_auditEvents, days);
@@ -388,12 +389,11 @@ namespace IntuneTools.Pages
                 LogSuccess($"Exported audit report to {file.Path}");
 
                 System.Diagnostics.Process.Start(new ProcessStartInfo(file.Path) { UseShellExecute = true });
-                LogInfo("Opened report in default browser.");
+                AppLogger.UiOnly("Opened report in default browser.");
             }
             catch (Exception ex)
             {
-                LogError($"Report export failed: {ex.Message}");
-                LogToFunctionFile(appFunction.Main, $"Report export failed: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"Report export failed: {ex.Message}", appFunction.AuditLog);
             }
         }
 
