@@ -9,6 +9,7 @@ namespace IntuneTools.Utilities
         public DateTimeOffset? CreatedDateTime { get; set; }
         public DateTimeOffset? LastModifiedDateTime { get; set; }
         public bool? HasAssignments { get; set; }
+        public bool IsOddGroup { get; set; }
 
         public string CreatedDisplay =>
             CreatedDateTime?.LocalDateTime.ToString("yyyy-MM-dd HH:mm") ?? "—";

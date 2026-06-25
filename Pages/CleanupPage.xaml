@@ -167,15 +167,32 @@
                                 <TextBlock Text="Scan &amp; Review"
                                            Style="{StaticResource CardSectionLabelTextBlockStyle}"/>
                                 <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                    <AppBarButton x:Name="ScanDuplicatesButton" Label="Scan" Click="ScanDuplicatesButton_Click" ToolTipService.ToolTip="Scan all content types for duplicate names.">
+                                    <AppBarButton x:Name="ScanDuplicatesButton" Label="Scan" Click="ScanDuplicatesButton_Click" ToolTipService.ToolTip="Scan selected content types for duplicate names.">
                                         <AppBarButton.Icon>
                                             <FontIcon Glyph="&#xE8C8;"/>
                                         </AppBarButton.Icon>
                                     </AppBarButton>
+                                    <AppBarButton x:Name="ContentTypeFilterButton" Label="All Types" ToolTipService.ToolTip="Choose which content types to include in the scan.">
+                                        <AppBarButton.Icon>
+                                            <FontIcon Glyph="&#xE71C;"/>
+                                        </AppBarButton.Icon>
+                                        <AppBarButton.Flyout>
+                                            <Flyout Placement="Bottom">
+                                                <ScrollViewer MaxHeight="350" MinWidth="220">
+                                                    <StackPanel x:Name="ContentTypeFilterPanel" Spacing="6" Padding="4"/>
+                                                </ScrollViewer>
+                                            </Flyout>
+                                        </AppBarButton.Flyout>
+                                    </AppBarButton>
                                     <AppBarSeparator/>
-                                    <AppBarButton x:Name="AutoSelectOlderButton" Label="Auto-select Older" Click="AutoSelectOlderButton_Click" ToolTipService.ToolTip="Automatically select the older item in each duplicate pair.">
+                                    <AppBarButton x:Name="SelectOlderButton" Label="Select Older" Click="SelectOlderButton_Click" ToolTipService.ToolTip="Selects the older item in each duplicate pair. The newer item is kept.">
                                         <AppBarButton.Icon>
                                             <FontIcon Glyph="&#xE8CB;"/>
+                                        </AppBarButton.Icon>
+                                    </AppBarButton>
+                                    <AppBarButton x:Name="SelectUnassignedButton" Label="Select Unassigned" Click="SelectUnassignedButton_Click" ToolTipService.ToolTip="Selects unassigned items in groups where another item is assigned. Assigned items are kept.">
+                                        <AppBarButton.Icon>
+                                            <FontIcon Glyph="&#xE7B3;"/>
                                         </AppBarButton.Icon>
                                     </AppBarButton>
                                     <AppBarButton x:Name="ClearDuplicateSelectionButton" Icon="Remove" Label="Clear Selected" Click="ClearDuplicateSelectionButton_Click" ToolTipService.ToolTip="Remove selected items from the results."/>
@@ -208,11 +225,12 @@
 
                     <!-- Duplicates InfoBar -->
                     <InfoBar Grid.Row="1"
+                             x:Name="DuplicatesInfoBar"
                              IsOpen="True"
                              Severity="Informational"
                              Title="Duplicate Detection"
-                             Message="Scan to find policies with identical names. Use 'Auto-select Older' to mark the older item in each pair, then review and delete."
-                             IsClosable="True"
+                             Message="Scan to find policies with identical names. Use 'Select Older' or 'Select Unassigned' to mark items for deletion, then review and delete."
+                             IsClosable="False"
                              Margin="0,0,12,12"/>
 
                     <!-- Duplicates DataGrid -->
@@ -224,7 +242,8 @@
                                        IsReadOnly="True"
                                        CanUserSortColumns="True"
                                        CanUserReorderColumns="False"
-                                       Sorting="DuplicatesDataGrid_Sorting">
+                                       Sorting="DuplicatesDataGrid_Sorting"
+                                       LoadingRow="DuplicatesDataGrid_LoadingRow">
                         <controls:DataGrid.Columns>
                             <controls:DataGridTextColumn Header="Name" Binding="{Binding ContentName}" Width="2*"/>
                             <controls:DataGridTextColumn Header="Type" Binding="{Binding ContentType}" Width="*"/>

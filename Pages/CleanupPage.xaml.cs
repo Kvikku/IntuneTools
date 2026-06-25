@@ -32,6 +32,28 @@ namespace IntuneTools.Pages
         // Duplicate detection results
         private readonly ObservableCollection<DuplicateContentInfo> DuplicateContentList = new();
 
+        // Content type filter for duplicate scan
+        private readonly HashSet<string> _selectedContentTypes = new(SupportedContentTypes);
+
+        private static readonly (string TypeKey, string DisplayName)[] ContentTypeOptions =
+        [
+            (ContentTypes.SettingsCatalog,           "Settings Catalog"),
+            (ContentTypes.DeviceCompliancePolicy,    "Device Compliance Policy"),
+            (ContentTypes.DeviceConfigurationPolicy, "Device Configuration Policy"),
+            (ContentTypes.AppleBYODEnrollmentProfile,"Apple BYOD Enrollment Profile"),
+            (ContentTypes.AssignmentFilter,          "Assignment Filter"),
+            (ContentTypes.EntraGroup,                "Entra Group"),
+            (ContentTypes.PowerShellScript,          "PowerShell Script"),
+            (ContentTypes.ProactiveRemediation,      "Proactive Remediation"),
+            (ContentTypes.MacOSShellScript,          "macOS Shell Script"),
+            (ContentTypes.WindowsAutoPilotProfile,   "Windows AutoPilot Profile"),
+            (ContentTypes.WindowsDriverUpdate,       "Windows Driver Update"),
+            (ContentTypes.WindowsFeatureUpdate,      "Windows Feature Update"),
+            (ContentTypes.WindowsQualityUpdatePolicy,"Quality Update Policy"),
+            (ContentTypes.WindowsQualityUpdateProfile,"Quality Update Profile"),
+            (ContentTypes.Application,               "Application"),
+        ];
+
         // Progress tracking for delete operations
         private int _deleteTotal;
         private int _deleteCurrent;
@@ -82,6 +104,18 @@ namespace IntuneTools.Pages
             RightClickMenu.AttachDataGridContextMenu(DuplicatesDataGrid);
             LogConsole.ItemsSource = LogEntries;
             DuplicatesDataGrid.ItemsSource = DuplicateContentList;
+            PopulateContentTypeFilter();
+        }
+
+        private void PopulateContentTypeFilter()
+        {
+            foreach (var (typeKey, displayName) in ContentTypeOptions)
+            {
+                var cb = new CheckBox { Content = displayName, IsChecked = true, Tag = typeKey };
+                cb.Checked += ContentTypeFilter_Changed;
+                cb.Unchecked += ContentTypeFilter_Changed;
+                ContentTypeFilterPanel.Children.Add(cb);
+            }
         }
 
         protected override string UnauthenticatedMessage => "You must authenticate with a tenant before using cleanup features.";
@@ -92,8 +126,9 @@ namespace IntuneTools.Pages
         {
             "InputTextBox", "SearchButton", "ListAllButton", "FindUnassignedButton",
             "ClearSelectedButton", "ClearAllButton", "DeleteButton", "CleanupDataGrid", "ClearLogButton", "ExportCsvButton",
-            "ScanDuplicatesButton", "AutoSelectOlderButton", "ClearDuplicateSelectionButton",
-            "DeleteDuplicatesButton", "DuplicatesDataGrid", "DuplicatesClearLogButton", "DuplicatesExportCsvButton"
+            "ScanDuplicatesButton", "ContentTypeFilterButton", "SelectOlderButton", "SelectUnassignedButton",
+            "ClearDuplicateSelectionButton", "DeleteDuplicatesButton", "DuplicatesDataGrid",
+            "DuplicatesClearLogButton", "DuplicatesExportCsvButton"
         };
 
         #endregion
@@ -611,7 +646,7 @@ namespace IntuneTools.Pages
             await ScanDuplicatesOrchestrator(sourceGraphServiceClient);
         }
 
-        private void AutoSelectOlderButton_Click(object sender, RoutedEventArgs e)
+        private void SelectOlderButton_Click(object sender, RoutedEventArgs e)
         {
             if (DuplicateContentList.Count == 0)
             {
@@ -621,25 +656,64 @@ namespace IntuneTools.Pages
 
             DuplicatesDataGrid.SelectedItems.Clear();
 
-            var groups = DuplicateContentList
-                .GroupBy(i => (
-                    Name: i.ContentName?.Trim().ToUpperInvariant(),
-                    Type: i.ContentType))
-                .Where(g => g.Count() >= 2);
-
             var toSelect = new List<DuplicateContentInfo>();
-            foreach (var group in groups)
+            foreach (var group in DuplicateContentList
+                .GroupBy(i => (Name: i.ContentName?.Trim().ToUpperInvariant(), Type: i.ContentType))
+                .Where(g => g.Count() >= 2))
             {
-                var older = group
+                toSelect.AddRange(group
                     .OrderByDescending(i => i.CreatedDateTime ?? DateTimeOffset.MinValue)
-                    .Skip(1);
-                toSelect.AddRange(older);
+                    .Skip(1));
             }
 
             foreach (var item in toSelect)
                 DuplicatesDataGrid.SelectedItems.Add(item);
 
-            LogInfo($"Auto-selected {toSelect.Count} older item(s).");
+            LogInfo($"Selected {toSelect.Count} older item(s) — the newest in each group is kept.");
+        }
+
+        private void SelectUnassignedButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (DuplicateContentList.Count == 0)
+            {
+                LogWarning("No scan results to select from. Run a scan first.");
+                return;
+            }
+
+            DuplicatesDataGrid.SelectedItems.Clear();
+
+            var toSelect = new List<DuplicateContentInfo>();
+            foreach (var group in DuplicateContentList
+                .GroupBy(i => (Name: i.ContentName?.Trim().ToUpperInvariant(), Type: i.ContentType))
+                .Where(g => g.Count() >= 2 && g.Any(i => i.HasAssignments == true)))
+            {
+                toSelect.AddRange(group.Where(i => i.HasAssignments == false));
+            }
+
+            if (toSelect.Count == 0)
+            {
+                LogWarning("No unassigned items found in groups where another item is assigned. Assignment data may not be available for all types.");
+                return;
+            }
+
+            foreach (var item in toSelect)
+                DuplicatesDataGrid.SelectedItems.Add(item);
+
+            LogInfo($"Selected {toSelect.Count} unassigned item(s) — assigned items in each group are kept.");
+        }
+
+        private void ContentTypeFilter_Changed(object sender, RoutedEventArgs e)
+        {
+            if (sender is not CheckBox cb || cb.Tag is not string typeKey) return;
+
+            if (cb.IsChecked == true)
+                _selectedContentTypes.Add(typeKey);
+            else
+                _selectedContentTypes.Remove(typeKey);
+
+            var selected = _selectedContentTypes.Count;
+            var total = ContentTypeOptions.Length;
+            ContentTypeFilterButton.Label = selected == total ? "All Types" : $"{selected} of {total} types";
         }
 
         private void ClearDuplicateSelectionButton_Click(object sender, RoutedEventArgs e)
@@ -693,6 +767,15 @@ namespace IntuneTools.Pages
             HandleDataGridSorting(sender, e);
         }
 
+        private void DuplicatesDataGrid_LoadingRow(object sender, DataGridRowEventArgs e)
+        {
+            if (e.Row.DataContext is DuplicateContentInfo info && info.IsOddGroup)
+                e.Row.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+                    Windows.UI.Color.FromArgb(18, 128, 128, 128));
+            else
+                e.Row.Background = null;
+        }
+
         private async Task ScanDuplicatesOrchestrator(GraphServiceClient graphServiceClient)
         {
             if (ContentList.Count > 0)
@@ -715,13 +798,14 @@ namespace IntuneTools.Pages
 
             try
             {
+                var typesToScan = SupportedContentTypes.Where(_selectedContentTypes.Contains).ToArray();
                 ContentList.Clear();
-                await LoadContentTypesAsync(graphServiceClient, SupportedContentTypes);
+                await LoadContentTypesAsync(graphServiceClient, typesToScan);
                 var allItems = ContentList.ToList();
                 ContentList.Clear();
                 CleanupDataGrid.ItemsSource = ContentList;
 
-                AppLogger.Info($"Loaded {allItems.Count} total items across all content types.", appFunction.FindDuplicates);
+                AppLogger.Info($"Loaded {allItems.Count} total items across {typesToScan.Length} content type(s).", appFunction.FindDuplicates);
 
                 var duplicateGroups = allItems
                     .Where(i => !string.IsNullOrWhiteSpace(i.ContentName) && !string.IsNullOrWhiteSpace(i.ContentType))
@@ -745,9 +829,13 @@ namespace IntuneTools.Pages
                 var metadataRegistry = GetDuplicateMetadataRegistry();
                 var assignmentChecks = GetAssignmentCheckRegistry();
                 var processed = 0;
+                var groupIndex = 0;
 
                 foreach (var group in duplicateGroups)
                 {
+                    var isOddGroup = groupIndex % 2 != 0;
+                    groupIndex++;
+
                     foreach (var item in group)
                     {
                         processed++;
@@ -763,6 +851,7 @@ namespace IntuneTools.Pages
                             ContentType = item.ContentType,
                             ContentId = item.ContentId,
                             ContentPlatform = item.ContentPlatform,
+                            IsOddGroup = isOddGroup,
                         };
 
                         if (!string.IsNullOrEmpty(item.ContentId))
@@ -797,6 +886,11 @@ namespace IntuneTools.Pages
                         DuplicateContentList.Add(dupInfo);
                     }
                 }
+
+                var assignedCount = DuplicateContentList.Count(d => d.HasAssignments == true);
+                DuplicatesInfoBar.Severity = Microsoft.UI.Xaml.Controls.InfoBarSeverity.Success;
+                DuplicatesInfoBar.Title = "Scan Complete";
+                DuplicatesInfoBar.Message = $"{duplicateGroups.Count} duplicate group(s)  ·  {totalDuplicateItems} items  ·  {assignedCount} assigned";
 
                 ShowOperationSuccess($"Found {duplicateGroups.Count} duplicate name(s) — {totalDuplicateItems} items total.");
                 AppLogger.Info($"Scan complete. {duplicateGroups.Count} duplicate group(s) found.", appFunction.FindDuplicates);
