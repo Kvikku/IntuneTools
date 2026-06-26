@@ -26,10 +26,10 @@ Import, assign, rename, clean up, and export Intune policies and profiles in bul
 | | Feature | What it does |
 |---|---------|-------------|
 | 📥 | **Import** | Copy policies and profiles from one tenant to another via Microsoft Graph |
-| 🎯 | **Assignment** | Assign Entra groups to policies and apps in bulk, with optional assignment filters |
-| ✏️ | **Renaming** | Add a prefix to display names, update descriptions, or remove an existing prefix across many items at once |
-| 🧹 | **Cleanup** | Mass-delete Intune content with confirmation and progress tracking, including a **Find Unassigned** scan that surfaces policies and profiles with no group assignments so you can prune them in one go |
-| 📄 | **JSON Export/Import** | Export Intune content to JSON files and reimport them — great for backup and version control |
+| 🎯 | **Assignment** | Assign Entra groups to policies and apps in bulk, with optional assignment filters. Right-click any item to view its current assignments in a popup. |
+| ✏️ | **Renaming** | Rename items using prefix, suffix, find & replace, or description update — applied in bulk across as many items as you select |
+| 🧹 | **Cleanup** | Mass-delete policies, apps, and other Intune content. **Find Unassigned** surfaces items with no group assignments; **Find Duplicates** detects and auto-selects duplicate names so you can prune them in one go |
+| 📄 | **JSON Export/Import** | Export policies and Entra groups to JSON files and reimport them — great for backup and version control |
 | 🔗 | **Manage Assignments** | Inspect and remove existing group assignments from Intune content types that support assignments in bulk |
 | 📋 | **Audit Log** | Review recent Intune changes — who made them, what was done, and whether they succeeded — with time-range filters (1–30 days), a per-actor breakdown, and CSV/report export |
 
@@ -56,6 +56,7 @@ Import, assign, rename, clean up, and export Intune policies and profiles in bul
 - Apple BYOD enrollment profiles
 - Assignment Filters
 - Entra groups
+- Applications (Win32, Store, LOB, VPP, and more)
 
 </td>
 </tr>
@@ -93,7 +94,7 @@ Version is managed through the `<Version>` property in `IntuneTools.csproj`. The
    git tag 1.4.0.0
    git push origin master --tags
    ```
-3. The **Release** workflow builds the app for x64 and ARM64, then creates a **draft** GitHub Release with the zip files attached.
+3. The **Release** workflow builds the app for x64, then creates a **draft** GitHub Release with the zip attached.
 4. Open the draft release on GitHub, add release notes, and publish it.
 
 > You can also trigger a release manually from the **Actions** tab using the _Release_ workflow dispatch.
@@ -101,7 +102,7 @@ Version is managed through the `<Version>` property in `IntuneTools.csproj`. The
 ## Roadmap
 
 - [ ] Import applications
-- [ ] Delete duplicate policies/apps
+- [x] Delete duplicate policies/apps
 - [ ] Bulk add objects to groups
 
 Have an idea? [Open an issue](https://github.com/Kvikku/IntuneTools/issues) — community input shapes the roadmap.
