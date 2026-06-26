@@ -1,0 +1,31 @@
+name: Sync Wiki
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'wiki/**'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Push wiki pages to GitHub Wiki
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git clone "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.wiki.git" wiki-repo
+          cp wiki/*.md wiki-repo/
+          cd wiki-repo
+          git add -A
+          git diff --cached --quiet && echo "Wiki already up to date" && exit 0
+          git commit -m "Sync wiki from main repo (${GITHUB_SHA::7})"
+          git push

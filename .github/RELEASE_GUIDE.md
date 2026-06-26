@@ -54,6 +54,29 @@ This auto-bumps the patch version (e.g. `1.4.0.0` → `1.4.1.0`) and commits the
 
 The workflow auto-generates "What's Changed" from merged PRs. For polished releases, add a **Highlights** section above the auto-generated content summarising the most important user-facing changes in 2-4 bullet points.
 
-## The only manual step
+## Wiki / user documentation
 
-Publishing the draft release — this is intentionally manual so you can review the notes first.
+Wiki pages live in `wiki/` in the main repo and are automatically synced to the GitHub Wiki on every push to `master` (via `.github/workflows/wiki-sync.yml`). The wiki should be kept in sync with the code — update it in the same PR as the feature.
+
+**For each minor or major release, review:**
+
+- Do any page descriptions mention capabilities that have changed?
+- Are all new content types listed in the relevant pages' Supported Content Types tables?
+- Are any new pages or major features missing a wiki page?
+- Does `wiki/Home.md` link to all current pages?
+
+Pages most likely to need updates when adding features:
+
+| Wiki page | Update when… |
+|---|---|
+| `Home.md` | A new wiki page is added |
+| `Cleanup.md` | New content types, new scan modes |
+| `Renaming.md` | New rename modes |
+| `Assignment.md` | Assignment dialog or workflow changes |
+| `JSON-Import-Export.md` | New exportable content types |
+| `Manage-Assignments.md` | New content types |
+
+## Manual steps before publishing
+
+1. Update the wiki in the same PR as the feature (or in the release branch PR).
+2. Publish the draft GitHub release after reviewing the auto-generated notes.
