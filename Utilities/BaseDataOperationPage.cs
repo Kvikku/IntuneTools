@@ -231,7 +231,7 @@ namespace IntuneTools.Utilities
         public const string DeviceCompliancePolicy = "Device Compliance Policy";
         public const string DeviceConfigurationPolicy = "Device Configuration Policy";
         public const string AppleBYODEnrollmentProfile = "Apple BYOD Enrollment Profile";
-        public const string AssignmentFilter = "Assignment filter";
+        public const string AssignmentFilter = "Assignment Filter";
         public const string EntraGroup = "Entra Group";
         public const string PowerShellScript = "PowerShell Script";
         public const string ProactiveRemediation = "Proactive Remediation";

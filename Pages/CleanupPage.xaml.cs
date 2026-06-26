@@ -818,6 +818,9 @@ namespace IntuneTools.Pages
 
                 if (duplicateGroups.Count == 0)
                 {
+                    DuplicatesInfoBar.Severity = Microsoft.UI.Xaml.Controls.InfoBarSeverity.Informational;
+                    DuplicatesInfoBar.Title = "Scan Complete";
+                    DuplicatesInfoBar.Message = "No duplicates found.";
                     ShowOperationSuccess("No duplicates found.");
                     AppLogger.Info("Scan complete — no duplicates found.", appFunction.FindDuplicates);
                     return;
@@ -881,6 +884,20 @@ namespace IntuneTools.Pages
                                     AppLogger.Warning($"Could not check assignments for '{item.ContentName}': {ex.Message}", appFunction.FindDuplicates);
                                 }
                             }
+
+                            if (normalizedType == ContentTypes.EntraGroup)
+                            {
+                                try
+                                {
+                                    var members = await graphServiceClient.Groups[item.ContentId].Members.GetAsync(
+                                        req => req.QueryParameters.Top = 1);
+                                    dupInfo.HasMembers = members?.Value?.Count > 0;
+                                }
+                                catch (Exception ex)
+                                {
+                                    AppLogger.Warning($"Could not check members for group '{item.ContentName}': {ex.Message}", appFunction.FindDuplicates);
+                                }
+                            }
                         }
 
                         DuplicateContentList.Add(dupInfo);
@@ -916,10 +933,24 @@ namespace IntuneTools.Pages
                 return;
             }
 
+            var assignedCount = selected.Count(i => i.HasAssignments == true);
+            var groupsWithMembers = selected.Count(i => i.HasMembers == true);
+
+            var warnings = new List<string>();
+            if (assignedCount > 0)
+                warnings.Add($"{assignedCount} item(s) have active assignments");
+            if (groupsWithMembers > 0)
+                warnings.Add($"{groupsWithMembers} Entra group(s) have members");
+
+            var hasWarnings = warnings.Count > 0;
+            var dialogContent = hasWarnings
+                ? $"{string.Join(" and ", warnings)} — deleting them may impact users or devices. This cannot be undone."
+                : $"Are you sure you want to permanently delete {selected.Count} item(s)? This cannot be undone.";
+
             var dialog = new ContentDialog
             {
-                Title = "Delete selected duplicates?",
-                Content = $"Are you sure you want to permanently delete {selected.Count} item(s)? This cannot be undone.",
+                Title = hasWarnings ? "Delete items with active assignments or members?" : "Delete selected duplicates?",
+                Content = dialogContent,
                 PrimaryButtonText = "Delete",
                 CloseButtonText = "Cancel",
                 DefaultButton = ContentDialogButton.Close,

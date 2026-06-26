@@ -466,7 +466,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 content.Add(new CustomContentInfo
                 {
                     ContentName = script.DisplayName,
-                    ContentType = "MacOS Shell Script",
+                    ContentType = "macOS Shell Script",
                     ContentPlatform = "macOS",
                     ContentId = script.Id,
                     ContentDescription = script.Description
@@ -486,7 +486,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 content.Add(new CustomContentInfo
                 {
                     ContentName = script.DisplayName,
-                    ContentType = "MacOS Shell Script",
+                    ContentType = "macOS Shell Script",
                     ContentPlatform = "macOS",
                     ContentId = script.Id,
                     ContentDescription = script.Description
