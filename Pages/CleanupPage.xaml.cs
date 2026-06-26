@@ -100,8 +100,8 @@ namespace IntuneTools.Pages
         public CleanupPage()
         {
             InitializeComponent();
-            RightClickMenu.AttachDataGridContextMenu(CleanupDataGrid);
-            RightClickMenu.AttachDataGridContextMenu(DuplicatesDataGrid);
+            RightClickMenu.AttachDataGridContextMenu(CleanupDataGrid, () => sourceGraphServiceClient);
+            RightClickMenu.AttachDataGridContextMenu(DuplicatesDataGrid, () => sourceGraphServiceClient);
             LogConsole.ItemsSource = LogEntries;
             DuplicatesDataGrid.ItemsSource = DuplicateContentList;
             PopulateContentTypeFilter();

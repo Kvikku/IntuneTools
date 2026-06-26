@@ -61,7 +61,7 @@ namespace IntuneTools.Pages
         public RenamingPage()
         {
             this.InitializeComponent();
-            RightClickMenu.AttachDataGridContextMenu(RenamingDataGrid);
+            RightClickMenu.AttachDataGridContextMenu(RenamingDataGrid, () => sourceGraphServiceClient);
             LogConsole.ItemsSource = LogEntries;
         }
 

@@ -76,7 +76,7 @@ namespace IntuneTools.Pages
         public ManageAssignmentsPage()
         {
             InitializeComponent();
-            RightClickMenu.AttachDataGridContextMenu(AssignmentsDataGrid);
+            RightClickMenu.AttachDataGridContextMenu(AssignmentsDataGrid, () => sourceGraphServiceClient);
             LogConsole.ItemsSource = LogEntries;
         }
 

@@ -126,7 +126,7 @@ namespace IntuneTools.Pages
             LogConsole.ItemsSource = LogEntries;
 
             this.Loaded += AssignmentPage_Loaded;
-            RightClickMenu.AttachDataGridContextMenu(AppDataGrid);
+            RightClickMenu.AttachDataGridContextMenu(AppDataGrid, () => sourceGraphServiceClient);
         }
 
         protected override appFunction PageLogFunction => appFunction.Assignment;

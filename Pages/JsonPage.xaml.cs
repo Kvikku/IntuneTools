@@ -115,7 +115,7 @@ namespace IntuneTools.Pages
         public JsonPage()
         {
             InitializeComponent();
-            RightClickMenu.AttachDataGridContextMenu(JsonDataGrid);
+            RightClickMenu.AttachDataGridContextMenu(JsonDataGrid, () => sourceGraphServiceClient);
             LogConsole.ItemsSource = LogEntries;
         }
 

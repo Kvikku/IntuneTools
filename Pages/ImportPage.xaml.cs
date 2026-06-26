@@ -96,7 +96,7 @@ namespace IntuneTools.Pages
             NewControlsPanel.Visibility = Visibility.Collapsed;
             LogConsole.ItemsSource = LogEntries;
             LogInfo("Console output");
-            RightClickMenu.AttachDataGridContextMenu(ContentDataGrid);
+            RightClickMenu.AttachDataGridContextMenu(ContentDataGrid, () => sourceGraphServiceClient);
         }
 
         protected override appFunction PageLogFunction => appFunction.Import;
