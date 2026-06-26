@@ -223,7 +223,21 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
+                    var existingFilter = await graphServiceClient.DeviceManagement.AssignmentFilters[filterID].GetAsync();
 
+                    if (existingFilter == null)
+                    {
+                        throw new InvalidOperationException($"Filter with ID '{filterID}' not found.");
+                    }
+
+                    var name = FindSuffixInPolicyName(existingFilter.DisplayName ?? string.Empty, newName);
+
+                    var filter = new DeviceAndAppManagementAssignmentFilter
+                    {
+                        DisplayName = name,
+                    };
+
+                    await graphServiceClient.DeviceManagement.AssignmentFilters[filterID].PatchAsync(filter);
                 }
                 else if (selectedRenameMode == "Description")
                 {
@@ -251,7 +265,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         throw new InvalidOperationException($"Filter with ID '{filterID}' not found.");
                     }
 
-                    var name = RemovePrefixFromPolicyName(existingFilter.DisplayName);
+                    var name = ApplyPrefixRemoval(existingFilter.DisplayName);
 
                     var filter = new DeviceAndAppManagementAssignmentFilter
                     {
@@ -269,6 +283,42 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                     await graphServiceClient.DeviceManagement.AssignmentFilters[filterID].PatchAsync(filter);
                     AppLogger.Info($"Cleared description for filter {filterID}", appFunction.Main);
+                }
+                else if (selectedRenameMode == "RemoveSuffix")
+                {
+                    var existingFilter = await graphServiceClient.DeviceManagement.AssignmentFilters[filterID].GetAsync();
+
+                    if (existingFilter == null)
+                    {
+                        throw new InvalidOperationException($"Filter with ID '{filterID}' not found.");
+                    }
+
+                    var name = ApplySuffixRemoval(existingFilter.DisplayName);
+
+                    var filter = new DeviceAndAppManagementAssignmentFilter
+                    {
+                        DisplayName = name
+                    };
+
+                    await graphServiceClient.DeviceManagement.AssignmentFilters[filterID].PatchAsync(filter);
+                }
+                else if (selectedRenameMode == "FindAndReplace")
+                {
+                    var existingFilter = await graphServiceClient.DeviceManagement.AssignmentFilters[filterID].GetAsync();
+
+                    if (existingFilter == null)
+                    {
+                        throw new InvalidOperationException($"Filter with ID '{filterID}' not found.");
+                    }
+
+                    var name = ApplyFindAndReplace(existingFilter.DisplayName);
+
+                    var filter = new DeviceAndAppManagementAssignmentFilter
+                    {
+                        DisplayName = name
+                    };
+
+                    await graphServiceClient.DeviceManagement.AssignmentFilters[filterID].PatchAsync(filter);
                 }
             }
             catch (Exception)

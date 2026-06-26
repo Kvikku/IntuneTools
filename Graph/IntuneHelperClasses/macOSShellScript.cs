@@ -346,7 +346,21 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
+                    var existingScript = await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptID].GetAsync();
 
+                    if (existingScript == null)
+                    {
+                        throw new InvalidOperationException($"Script with ID '{scriptID}' not found.");
+                    }
+
+                    var name = FindSuffixInPolicyName(existingScript.DisplayName ?? string.Empty, newName);
+
+                    var script = new DeviceShellScript
+                    {
+                        DisplayName = name
+                    };
+
+                    await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptID].PatchAsync(script);
                 }
                 else if (selectedRenameMode == "Description")
                 {
@@ -380,7 +394,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         throw new InvalidOperationException($"Script with ID '{scriptID}' not found.");
                     }
 
-                    var name = RemovePrefixFromPolicyName(existingScript.DisplayName);
+                    var name = ApplyPrefixRemoval(existingScript.DisplayName);
 
                     var script = new DeviceShellScript
                     {
@@ -399,6 +413,42 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptID].PatchAsync(script);
                     AppLogger.Info($"Cleared description for macOS shell script {scriptID}", appFunction.Main);
                 }
+                else if (selectedRenameMode == "RemoveSuffix")
+                {
+                    var existingScript = await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptID].GetAsync();
+
+                    if (existingScript == null)
+                    {
+                        throw new InvalidOperationException($"Script with ID '{scriptID}' not found.");
+                    }
+
+                    var name = ApplySuffixRemoval(existingScript.DisplayName);
+
+                    var script = new DeviceShellScript
+                    {
+                        DisplayName = name
+                    };
+
+                    await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptID].PatchAsync(script);
+                }
+                else if (selectedRenameMode == "FindAndReplace")
+                {
+                    var existingScript = await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptID].GetAsync();
+
+                    if (existingScript == null)
+                    {
+                        throw new InvalidOperationException($"Script with ID '{scriptID}' not found.");
+                    }
+
+                    var name = ApplyFindAndReplace(existingScript.DisplayName);
+
+                    var script = new DeviceShellScript
+                    {
+                        DisplayName = name
+                    };
+
+                    await graphServiceClient.DeviceManagement.DeviceShellScripts[scriptID].PatchAsync(script);
+                }
             }
             catch (Exception)
             {
@@ -416,7 +466,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 content.Add(new CustomContentInfo
                 {
                     ContentName = script.DisplayName,
-                    ContentType = "MacOS Shell Script",
+                    ContentType = "macOS Shell Script",
                     ContentPlatform = "macOS",
                     ContentId = script.Id,
                     ContentDescription = script.Description
@@ -436,7 +486,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 content.Add(new CustomContentInfo
                 {
                     ContentName = script.DisplayName,
-                    ContentType = "MacOS Shell Script",
+                    ContentType = "macOS Shell Script",
                     ContentPlatform = "macOS",
                     ContentId = script.Id,
                     ContentDescription = script.Description

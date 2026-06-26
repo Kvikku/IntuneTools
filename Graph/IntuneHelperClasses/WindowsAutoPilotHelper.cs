@@ -454,7 +454,28 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
+                    var existingProfile = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].GetAsync();
 
+                    if (existingProfile == null)
+                    {
+                        throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
+                    }
+
+                    if (existingProfile.OdataType?.Contains("activeDirectory", StringComparison.OrdinalIgnoreCase) == true)
+                    {
+                        AppLogger.Warning("Active Directory Autopilot profiles is not supported yet. Skipping.", appFunction.Rename);
+                        return;
+                    }
+
+                    var name = FindSuffixInPolicyName(existingProfile.DisplayName ?? string.Empty, newName);
+
+                    var profile = new AzureADWindowsAutopilotDeploymentProfile
+                    {
+                        OdataType = existingProfile.OdataType ?? "#microsoft.graph.azureADWindowsAutopilotDeploymentProfile",
+                        DisplayName = name
+                    };
+
+                    await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].PatchAsync(profile);
                 }
                 else if (selectedRenameMode == "Description")
                 {
@@ -495,7 +516,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         return;
                     }
 
-                    var name = RemovePrefixFromPolicyName(existingProfile.DisplayName);
+                    var name = ApplyPrefixRemoval(existingProfile.DisplayName);
 
                     var profile = new AzureADWindowsAutopilotDeploymentProfile
                     {
@@ -528,6 +549,56 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                     await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].PatchAsync(profile);
                     AppLogger.Info($"Cleared description for Windows Autopilot profile {profileID}", appFunction.Main);
+                }
+                else if (selectedRenameMode == "RemoveSuffix")
+                {
+                    var existingProfile = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].GetAsync();
+
+                    if (existingProfile == null)
+                    {
+                        throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
+                    }
+
+                    if (existingProfile.OdataType?.Contains("activeDirectory", StringComparison.OrdinalIgnoreCase) == true)
+                    {
+                        AppLogger.Warning("Active Directory Autopilot profiles is not supported yet. Skipping.", appFunction.Main);
+                        return;
+                    }
+
+                    var name = ApplySuffixRemoval(existingProfile.DisplayName);
+
+                    var profile = new AzureADWindowsAutopilotDeploymentProfile
+                    {
+                        OdataType = existingProfile.OdataType ?? "#microsoft.graph.azureADWindowsAutopilotDeploymentProfile",
+                        DisplayName = name
+                    };
+
+                    await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].PatchAsync(profile);
+                }
+                else if (selectedRenameMode == "FindAndReplace")
+                {
+                    var existingProfile = await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].GetAsync();
+
+                    if (existingProfile == null)
+                    {
+                        throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
+                    }
+
+                    if (existingProfile.OdataType?.Contains("activeDirectory", StringComparison.OrdinalIgnoreCase) == true)
+                    {
+                        AppLogger.Warning("Active Directory Autopilot profiles is not supported yet. Skipping.", appFunction.Main);
+                        return;
+                    }
+
+                    var name = ApplyFindAndReplace(existingProfile.DisplayName);
+
+                    var profile = new AzureADWindowsAutopilotDeploymentProfile
+                    {
+                        OdataType = existingProfile.OdataType ?? "#microsoft.graph.azureADWindowsAutopilotDeploymentProfile",
+                        DisplayName = name
+                    };
+
+                    await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].PatchAsync(profile);
                 }
             }
             catch (Exception)

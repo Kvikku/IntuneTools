@@ -338,7 +338,21 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
+                    var existingPolicy = await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].GetAsync();
 
+                    if (existingPolicy == null)
+                    {
+                        throw new InvalidOperationException($"Policy with ID '{policyID}' not found.");
+                    }
+
+                    var name = FindSuffixInPolicyName(existingPolicy.DisplayName ?? string.Empty, newName);
+
+                    var policy = new WindowsQualityUpdatePolicy
+                    {
+                        DisplayName = name,
+                    };
+
+                    await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].PatchAsync(policy);
                 }
                 else if (selectedRenameMode == "Description")
                 {
@@ -366,7 +380,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         throw new InvalidOperationException($"Policy with ID '{policyID}' not found.");
                     }
 
-                    var name = RemovePrefixFromPolicyName(existingPolicy.DisplayName);
+                    var name = ApplyPrefixRemoval(existingPolicy.DisplayName);
 
                     var policy = new WindowsQualityUpdatePolicy
                     {
@@ -384,6 +398,42 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                     await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].PatchAsync(policy);
                     AppLogger.Info($"Cleared description for Windows Quality Update policy {policyID}", appFunction.Main);
+                }
+                else if (selectedRenameMode == "RemoveSuffix")
+                {
+                    var existingPolicy = await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].GetAsync();
+
+                    if (existingPolicy == null)
+                    {
+                        throw new InvalidOperationException($"Policy with ID '{policyID}' not found.");
+                    }
+
+                    var name = ApplySuffixRemoval(existingPolicy.DisplayName);
+
+                    var policy = new WindowsQualityUpdatePolicy
+                    {
+                        DisplayName = name
+                    };
+
+                    await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].PatchAsync(policy);
+                }
+                else if (selectedRenameMode == "FindAndReplace")
+                {
+                    var existingPolicy = await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].GetAsync();
+
+                    if (existingPolicy == null)
+                    {
+                        throw new InvalidOperationException($"Policy with ID '{policyID}' not found.");
+                    }
+
+                    var name = ApplyFindAndReplace(existingPolicy.DisplayName);
+
+                    var policy = new WindowsQualityUpdatePolicy
+                    {
+                        DisplayName = name
+                    };
+
+                    await graphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[policyID].PatchAsync(policy);
                 }
             }
             catch (Exception)

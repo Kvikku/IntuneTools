@@ -460,7 +460,26 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
+                    var existingPolicy = await graphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyID].GetAsync();
 
+                    if (existingPolicy == null)
+                    {
+                        throw new InvalidOperationException($"Policy with ID '{policyID}' not found.");
+                    }
+
+                    var name = FindSuffixInPolicyName(existingPolicy.DisplayName ?? string.Empty, newName);
+
+                    var policyType = existingPolicy.GetType();
+                    var policy = (DeviceCompliancePolicy?)Activator.CreateInstance(policyType);
+
+                    if (policy == null)
+                    {
+                        throw new InvalidOperationException($"Failed to create instance of type {policyType.Name}");
+                    }
+
+                    policy.DisplayName = name;
+
+                    await graphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyID].PatchAsync(policy);
                 }
                 else if (selectedRenameMode == "Description")
                 {
@@ -494,7 +513,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         throw new InvalidOperationException($"Policy with ID '{policyID}' not found.");
                     }
 
-                    var name = RemovePrefixFromPolicyName(existingPolicy.DisplayName);
+                    var name = ApplyPrefixRemoval(existingPolicy.DisplayName);
 
                     var policyType = existingPolicy.GetType();
                     var policy = (DeviceCompliancePolicy?)Activator.CreateInstance(policyType);
@@ -529,6 +548,52 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                     await graphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyID].PatchAsync(policy);
                     AppLogger.Info($"Cleared description for device compliance policy {policyID}", appFunction.Main);
+                }
+                else if (selectedRenameMode == "RemoveSuffix")
+                {
+                    var existingPolicy = await graphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyID].GetAsync();
+
+                    if (existingPolicy == null)
+                    {
+                        throw new InvalidOperationException($"Policy with ID '{policyID}' not found.");
+                    }
+
+                    var name = ApplySuffixRemoval(existingPolicy.DisplayName);
+
+                    var policyType = existingPolicy.GetType();
+                    var policy = (DeviceCompliancePolicy?)Activator.CreateInstance(policyType);
+
+                    if (policy == null)
+                    {
+                        throw new InvalidOperationException($"Failed to create instance of type {policyType.Name}");
+                    }
+
+                    policy.DisplayName = name;
+
+                    await graphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyID].PatchAsync(policy);
+                }
+                else if (selectedRenameMode == "FindAndReplace")
+                {
+                    var existingPolicy = await graphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyID].GetAsync();
+
+                    if (existingPolicy == null)
+                    {
+                        throw new InvalidOperationException($"Policy with ID '{policyID}' not found.");
+                    }
+
+                    var name = ApplyFindAndReplace(existingPolicy.DisplayName);
+
+                    var policyType = existingPolicy.GetType();
+                    var policy = (DeviceCompliancePolicy?)Activator.CreateInstance(policyType);
+
+                    if (policy == null)
+                    {
+                        throw new InvalidOperationException($"Failed to create instance of type {policyType.Name}");
+                    }
+
+                    policy.DisplayName = name;
+
+                    await graphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyID].PatchAsync(policy);
                 }
             }
             catch (Exception)

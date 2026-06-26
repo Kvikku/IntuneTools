@@ -385,6 +385,79 @@ namespace IntuneTools.Utilities
         }
 
         /// <summary>
+        /// Removes an exact prefix string from the start of a policy name (case-sensitive).
+        /// Trims any leading whitespace left after removal.
+        /// </summary>
+        public static string RemoveExactPrefixFromPolicyName(string policyName, string prefix)
+        {
+            if (string.IsNullOrWhiteSpace(policyName) || string.IsNullOrEmpty(prefix))
+                return policyName;
+
+            policyName = policyName.Trim();
+            if (policyName.StartsWith(prefix, StringComparison.Ordinal))
+            {
+                var result = policyName[prefix.Length..].TrimStart();
+                return string.IsNullOrWhiteSpace(result) ? policyName : result;
+            }
+
+            return policyName;
+        }
+
+        /// <summary>
+        /// Dispatches to freeform or bracket-style prefix removal based on selectedRemovePrefixString.
+        /// </summary>
+        public static string ApplyPrefixRemoval(string policyName) =>
+            string.IsNullOrEmpty(selectedRemovePrefixString)
+                ? RemovePrefixFromPolicyName(policyName)
+                : RemoveExactPrefixFromPolicyName(policyName, selectedRemovePrefixString);
+
+        /// <summary>
+        /// Appends a suffix to a policy name, separated by a space.
+        /// </summary>
+        public static string FindSuffixInPolicyName(string policyName, string suffix)
+        {
+            if (string.IsNullOrWhiteSpace(policyName))
+                return suffix;
+            return policyName.TrimEnd() + " " + suffix;
+        }
+
+        /// <summary>
+        /// Removes an exact suffix string from the end of a policy name (case-sensitive).
+        /// Trims any trailing whitespace left after removal.
+        /// </summary>
+        public static string RemoveExactSuffixFromPolicyName(string policyName, string suffix)
+        {
+            if (string.IsNullOrWhiteSpace(policyName) || string.IsNullOrEmpty(suffix))
+                return policyName;
+
+            policyName = policyName.Trim();
+            if (policyName.EndsWith(suffix, StringComparison.Ordinal))
+            {
+                var result = policyName[..^suffix.Length].TrimEnd();
+                return string.IsNullOrWhiteSpace(result) ? policyName : result;
+            }
+
+            return policyName;
+        }
+
+        /// <summary>
+        /// Removes the configured suffix from a policy name using selectedRemoveSuffixString.
+        /// </summary>
+        public static string ApplySuffixRemoval(string policyName) =>
+            RemoveExactSuffixFromPolicyName(policyName, selectedRemoveSuffixString);
+
+        /// <summary>
+        /// Replaces all occurrences of selectedFindString with selectedReplaceString (case-sensitive).
+        /// Returns policyName unchanged if selectedFindString is empty.
+        /// </summary>
+        public static string ApplyFindAndReplace(string policyName)
+        {
+            if (string.IsNullOrEmpty(selectedFindString) || string.IsNullOrWhiteSpace(policyName))
+                return policyName;
+            return policyName.Replace(selectedFindString, selectedReplaceString, StringComparison.Ordinal);
+        }
+
+        /// <summary>
         /// Removes any bracket-style prefix from a policy name.
         /// Handles (prefix), [prefix], and {prefix} formats.
         /// </summary>
