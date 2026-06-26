@@ -134,7 +134,7 @@
                             Click="QuickAction_ManageAssignments_Click"
                             Style="{StaticResource FeatureCardButtonStyle}">
                         <StackPanel Spacing="8">
-                            <FontIcon Glyph="&#xE71D;" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" HorizontalAlignment="Left"/>
+                            <FontIcon Glyph="&#xE77B;" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" HorizontalAlignment="Left"/>
                             <TextBlock Text="Manage Assignments"
                                        Style="{StaticResource FeatureCardTitleTextBlockStyle}"/>
                             <TextBlock Text="View and remove group assignments from content."
