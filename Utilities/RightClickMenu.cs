@@ -1,5 +1,6 @@
 using CommunityToolkit.WinUI.UI.Controls;
 using IntuneTools.Graph.EntraHelperClasses;
+using IntuneTools.Graph.IntuneHelperClasses;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -186,8 +187,13 @@ namespace IntuneTools.Utilities
                 var registry = GetAssignmentViewRegistry();
                 if (!registry.TryGetValue(target.ContentType, out var getAssignments))
                 {
-                    await ShowErrorDialogAsync("Not supported", $"Assignment lookup is not supported for '{target.ContentType}'.");
-                    return;
+                    if (target.ContentType.StartsWith("App - ", StringComparison.OrdinalIgnoreCase))
+                        getAssignments = ApplicationHelper.GetApplicationAssignmentDetailsAsync;
+                    else
+                    {
+                        await ShowErrorDialogAsync("Not supported", $"Assignment lookup is not supported for '{target.ContentType}'.");
+                        return;
+                    }
                 }
 
                 try
@@ -227,9 +233,10 @@ namespace IntuneTools.Utilities
             var contentType = GetRowCellTextByHeader(context.DataGrid, context.Row, "Type");
             var contentId   = GetRowCellTextByHeader(context.DataGrid, context.Row, "ID");
 
+            var isApp = contentType?.StartsWith("App - ", StringComparison.OrdinalIgnoreCase) == true;
             var supported = !string.IsNullOrWhiteSpace(contentType)
                          && !string.IsNullOrWhiteSpace(contentId)
-                         && GetAssignmentViewRegistry().ContainsKey(contentType);
+                         && (GetAssignmentViewRegistry().ContainsKey(contentType) || isApp);
 
             item.Tag = supported ? new AssignmentTarget(contentId!, contentType!) : null;
             item.IsEnabled = supported;

@@ -16,6 +16,7 @@ using static IntuneTools.Graph.IntuneHelperClasses.WindowsFeatureUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdatePolicyHandler;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHelper;
 using IntuneTools.Graph.EntraHelperClasses;
+using IntuneTools.Graph.IntuneHelperClasses;
 
 namespace IntuneTools.Pages
 {
@@ -332,8 +333,13 @@ namespace IntuneTools.Pages
 
                 if (!viewRegistry.TryGetValue(item.ContentType, out var getDetailsFunc))
                 {
-                    LogWarning($"No assignment viewer available for type '{item.ContentType}'. Skipping.");
-                    continue;
+                    if (item.ContentType.StartsWith("App - ", StringComparison.OrdinalIgnoreCase))
+                        getDetailsFunc = ApplicationHelper.GetApplicationAssignmentDetailsAsync;
+                    else
+                    {
+                        LogWarning($"No assignment viewer available for type '{item.ContentType}'. Skipping.");
+                        continue;
+                    }
                 }
 
                 try

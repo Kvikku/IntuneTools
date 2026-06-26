@@ -564,6 +564,38 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         }
 
         /// <summary>
+        /// Gets detailed assignment information for a mobile application.
+        /// </summary>
+        public static async Task<List<AssignmentInfo>?> GetApplicationAssignmentDetailsAsync(GraphServiceClient graphServiceClient, string appId)
+        {
+            try
+            {
+                var details = new List<AssignmentInfo>();
+                var result = await graphServiceClient.DeviceAppManagement.MobileApps[appId].Assignments.GetAsync();
+
+                while (result?.Value != null)
+                {
+                    foreach (var assignment in result.Value)
+                    {
+                        details.Add(AssignmentInfo.FromTarget(assignment.Id, assignment.Target));
+                    }
+
+                    if (string.IsNullOrEmpty(result.OdataNextLink)) break;
+
+                    result = await graphServiceClient.DeviceAppManagement.MobileApps[appId]
+                        .Assignments.WithUrl(result.OdataNextLink).GetAsync();
+                }
+
+                return details;
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error($"Error getting assignment details for application {appId}: {ex.Message}", appFunction.Assignment);
+                return null;
+            }
+        }
+
+        /// <summary>
         /// Checks if a mobile application has any assignments.
         /// </summary>
         public static async Task<bool?> HasApplicationAssignmentsAsync(GraphServiceClient graphServiceClient, string appId)
