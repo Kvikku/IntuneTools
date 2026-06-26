@@ -68,6 +68,7 @@ namespace IntuneTools.Pages
             ContentTypes.WindowsFeatureUpdate,
             ContentTypes.WindowsQualityUpdatePolicy,
             ContentTypes.WindowsQualityUpdateProfile,
+            ContentTypes.Application,
         };
 
         #endregion
