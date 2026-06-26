@@ -15,8 +15,9 @@
         Migrated to the unified UI standard (see docs/UI_STANDARD.md).
         Layout contract:
             Row 0  Header (title, subtitle, status InfoBars)
-            Row 1  Toolbar cards (search/staging)
-            Row 2  Main content (DataGrid | groups side panel | splitter | log panel)
+            Row 1  Toolbar cards (search/staging/assign)
+            Row 2  Main content (DataGrid | splitter | log panel)
+        Group selection and assignment options live inside the Configure Assignment dialog.
     -->
     <Grid Margin="{StaticResource PageRootMargin}">
         <Grid.RowDefinitions>
@@ -72,10 +73,8 @@
                                         <CheckBox x:Name="Application" Content="Applications" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
                                         <CheckBox x:Name="SettingsCatalog" Content="Settings Catalog" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
                                         <CheckBox x:Name="DeviceCompliance" Content="Device Compliance" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                        <CheckBox x:Name="EntraGroups" Content="Entra Groups" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
                                         <CheckBox x:Name="DeviceConfiguration" Content="Device Configuration" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
                                         <CheckBox x:Name="AppleBYODEnrollmentProfile" Content="Apple BYOD enrollment profile" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                        <CheckBox x:Name="Filters" Content="Filters" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
                                         <CheckBox x:Name="PowerShellScript" Content="PowerShell Scripts" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
                                         <CheckBox x:Name="ProactiveRemediation" Content="Remediation Scripts" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
                                         <CheckBox x:Name="macOSShellScript" Content="macOS Shell Scripts" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
@@ -95,6 +94,8 @@
                         <AppBarButton x:Name="ClearLogButton" Icon="Delete" Label="Clear Log" Click="ClearLogButton_Click" ToolTipService.ToolTip="Clear the log console."/>
                         <AppBarSeparator/>
                         <AppBarButton x:Name="ExportCsvButton" Icon="Save" Label="Export CSV" Click="ExportCsvButton_Click" ToolTipService.ToolTip="Export the current list to a CSV file."/>
+                        <AppBarSeparator/>
+                        <AppBarButton x:Name="AssignButton" Icon="People" Label="Configure &amp; Assign" Click="AssignButton_Click" ToolTipService.ToolTip="Select groups and configure assignment options."/>
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -105,8 +106,6 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" MinWidth="300"/>
                 <!-- DataGrid -->
-                <ColumnDefinition Width="280" MinWidth="200"/>
-                <!-- Assignment side panel -->
                 <ColumnDefinition Width="Auto"/>
                 <!-- Splitter -->
                 <ColumnDefinition Width="340" MinWidth="200"/>
@@ -149,73 +148,15 @@
                                           x:Name="LoadingOverlay"/>
             </Grid>
 
-            <!-- Assignment Side Panel -->
-            <ScrollViewer Grid.Column="1"
-                          VerticalScrollBarVisibility="Auto"
-                          Margin="0,0,12,0">
-                <StackPanel Orientation="Vertical" Spacing="4">
-                    <TextBlock Text="Assign to Groups"
-                               Style="{StaticResource SidePanelHeaderTextBlockStyle}"/>
-
-                    <!-- Groups Section -->
-                    <TextBlock Text="Groups"
-                               Style="{StaticResource CardSectionLabelTextBlockStyle}"
-                               Margin="0,0,0,6"/>
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8" Spacing="8">
-                        <TextBox x:Name="GroupSearchTextBox"
-                                 PlaceholderText="Search groups..."
-                                 Width="150"/>
-                        <Button x:Name="GroupSearchButton"
-                                Click="GroupSearchButton_Click"
-                                ToolTipService.ToolTip="Search for a specific group.">
-                            <FontIcon Glyph="&#xE721;" FontSize="14"/>
-                        </Button>
-                    </StackPanel>
-
-                    <Button x:Name="GroupListAllButton"
-                            Content="List all groups"
-                            Margin="0,0,0,8"
-                            HorizontalAlignment="Left"
-                            Click="GroupListAllButton_Click"/>
-
-                    <controls:DataGrid x:Name="GroupDataGrid"
-                                       AutoGenerateColumns="False"
-                                       HeadersVisibility="Column"
-                                       Height="160"
-                                       SelectionMode="Extended"
-                                       Margin="0,0,0,16"
-                                       IsReadOnly="True"
-                                       CanUserSortColumns="True"
-                                       CanUserReorderColumns="False"
-                                       Sorting="GroupDataGrid_Sorting">
-                        <controls:DataGrid.Columns>
-                            <controls:DataGridTextColumn Header="Group Name" Binding="{Binding GroupName}" Width="2*"/>
-                            <controls:DataGridTextColumn Header="ID" Binding="{Binding GroupId}" Width="*"/>
-                        </controls:DataGrid.Columns>
-                    </controls:DataGrid>
-
-                    <!-- ASSIGN BUTTON - Primary action -->
-                    <Button x:Name="AssignButton"
-                            Click="AssignButton_Click"
-                            HorizontalAlignment="Stretch"
-                            Style="{StaticResource PrimaryActionButtonStyle}">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <FontIcon Glyph="&#xE8FB;" FontSize="16"/>
-                            <TextBlock Text="Configure Assignment" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                        </StackPanel>
-                    </Button>
-                </StackPanel>
-            </ScrollViewer>
-
             <!-- Resizable Splitter -->
-            <sizers:GridSplitter Grid.Column="2"
+            <sizers:GridSplitter Grid.Column="1"
                                  Width="8"
                                  ResizeBehavior="BasedOnAlignment"
                                  ResizeDirection="Columns"
                                  Background="Transparent"/>
 
             <!-- Log Console Panel -->
-            <Grid Grid.Column="3">
+            <Grid Grid.Column="2">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
@@ -232,37 +173,110 @@
             </Grid>
         </Grid>
 
-        <!-- Application Deployment Options Dialog -->
+        <!-- Configure Assignment Dialog -->
         <ContentDialog x:Name="AppDeployment"
-                       Title="Assignment Options"
-                       PrimaryButtonText="Confirm"
+                       Title="Configure Assignment"
+                       PrimaryButtonText="Assign"
                        SecondaryButtonText="Cancel"
                        DefaultButton="Primary">
-            <Grid MinWidth="500">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
+            <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="680" MinWidth="660">
+                <StackPanel Spacing="0" Margin="0,0,12,0">
 
-                <InfoBar Grid.Row="0"
-                         IsOpen="True" 
-                         Severity="Informational" 
-                         IsClosable="False" 
-                         Message="Please configure the specific settings for the application deployment."
-                         Margin="0,0,0,12"/>
+                    <!-- Groups -->
+                    <TextBlock Text="Groups"
+                               Style="{StaticResource CardSectionLabelTextBlockStyle}"
+                               Margin="0,0,0,8"/>
+                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+                        <TextBox x:Name="GroupSearchTextBox"
+                                 PlaceholderText="Search groups..."
+                                 Width="200"/>
+                        <Button x:Name="GroupSearchButton"
+                                Click="GroupSearchButton_Click"
+                                ToolTipService.ToolTip="Search for a specific group.">
+                            <FontIcon Glyph="&#xE721;" FontSize="14"/>
+                        </Button>
+                        <Button x:Name="GroupListAllButton"
+                                Content="List all"
+                                Click="GroupListAllButton_Click"
+                                ToolTipService.ToolTip="Load all groups."/>
+                    </StackPanel>
+                    <controls:DataGrid x:Name="GroupDataGrid"
+                                       AutoGenerateColumns="False"
+                                       HeadersVisibility="Column"
+                                       MaxHeight="220"
+                                       SelectionMode="Extended"
+                                       Margin="0,0,0,12"
+                                       IsReadOnly="True"
+                                       CanUserSortColumns="True"
+                                       CanUserReorderColumns="False"
+                                       Sorting="GroupDataGrid_Sorting">
+                        <controls:DataGrid.Columns>
+                            <controls:DataGridTextColumn Header="Group Name" Binding="{Binding GroupName}" Width="2*"/>
+                            <controls:DataGridTextColumn Header="ID" Binding="{Binding GroupId}" Width="*"/>
+                        </controls:DataGrid.Columns>
+                    </controls:DataGrid>
 
-                <Pivot Grid.Row="1">
-                    <PivotItem Header="General">
-                        <StackPanel Spacing="16" Margin="0,12,0,0">
-                            <ComboBox x:Name="DeploymentModeCombo"
-                                      Header="Deploy mode"
+                    <!-- Virtual groups -->
+                    <TextBlock Text="Virtual Groups"
+                               Style="{StaticResource CardSectionLabelTextBlockStyle}"
+                               Margin="0,0,0,8"/>
+                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,16">
+                        <ToggleButton x:Name="AllUsersToggle"
+                                      Content="All Users"
+                                      Click="VirtualGroupToggle_Click"
+                                      ToolTipService.ToolTip="Include the 'All Users' virtual group."/>
+                        <ToggleButton x:Name="AllDevicesToggle"
+                                      Content="All Devices"
+                                      Click="VirtualGroupToggle_Click"
+                                      ToolTipService.ToolTip="Include the 'All Devices' virtual group."/>
+                    </StackPanel>
+
+                    <!-- Assignment filter -->
+                    <TextBlock Text="Assignment Filter"
+                               Style="{StaticResource CardSectionLabelTextBlockStyle}"
+                               Margin="0,0,0,8"/>
+                    <Expander x:Name="FilterExpander"
+                              Header="Filter (optional)"
+                              HorizontalAlignment="Stretch"
+                              HorizontalContentAlignment="Stretch"
+                              Margin="0,0,0,16"
+                              Expanding="FilterExpander_Expanding"
+                              Collapsed="FilterExpander_Collapsed">
+                        <StackPanel Spacing="12" Margin="0,8,0,0">
+                            <ComboBox x:Name="FilterSelectionComboBox"
                                       HorizontalAlignment="Stretch"
-                                      SelectedIndex="0">
-                                <ComboBoxItem Content="Include" />
-                                <ComboBoxItem Content="Exclude" />
+                                      PlaceholderText="Select a filter..."
+                                      SelectionChanged="FilterSelectionComboBox_SelectionChanged"/>
+                            <ComboBox x:Name="FilterModeComboBox"
+                                      Header="Filter Mode"
+                                      HorizontalAlignment="Stretch"
+                                      SelectedIndex="0"
+                                      SelectionChanged="FilterModeComboBox_SelectionChanged">
+                                <ComboBoxItem Content="Include"/>
+                                <ComboBoxItem Content="Exclude"/>
                             </ComboBox>
+                            <InfoBar x:Name="FilterPlatformInfoBar"
+                                     IsOpen="True"
+                                     IsClosable="False"
+                                     Severity="Warning"
+                                     Title="Platform Compatibility"
+                                     Message="Filters are platform-specific — assign one platform at a time when using filters."/>
+                        </StackPanel>
+                    </Expander>
+
+                    <!-- Options info + pivot -->
+                    <InfoBar x:Name="DialogInfoBar"
+                             IsOpen="True"
+                             Severity="Informational"
+                             IsClosable="False"
+                             Message="Configure the settings for this assignment."
+                             Margin="0,0,0,4"/>
+
+                <Pivot x:Name="DeploymentPivot">
+                    <PivotItem x:Name="GeneralPivotItem" Header="General">
+                        <StackPanel Spacing="16" Margin="0,12,0,0">
                             <ComboBox x:Name="AssignmentIntentComboBox"
-                                      Header="Assignment Intent (Applications only)"
+                                      Header="Assignment Intent"
                                       PlaceholderText="Select an intent"
                                       HorizontalAlignment="Stretch"
                                       SelectedIndex="0"
@@ -278,39 +292,10 @@
                                      Title="Available Assignment"
                                      Message="Please note that the 'All Devices' virtual group is not supported for the 'Available' intent."
                                      Margin="0,8,0,0"/>
-
-                            <!-- Assignment Filter -->
-                            <Expander x:Name="FilterExpander"
-                                      Header="Assignment Filter"
-                                      HorizontalAlignment="Stretch"
-                                      HorizontalContentAlignment="Stretch"
-                                      Expanding="FilterExpander_Expanding"
-                                      Collapsed="FilterExpander_Collapsed">
-                                <StackPanel Spacing="12">
-                                    <ComboBox x:Name="FilterSelectionComboBox"
-                                              HorizontalAlignment="Stretch"
-                                              PlaceholderText="Select a filter..."
-                                              SelectionChanged="FilterSelectionComboBox_SelectionChanged"/>
-                                    <ComboBox x:Name="FilterModeComboBox"
-                                              Header="Filter Mode"
-                                              HorizontalAlignment="Stretch"
-                                              SelectedIndex="0"
-                                              SelectionChanged="FilterModeComboBox_SelectionChanged">
-                                        <ComboBoxItem Content="Include"/>
-                                        <ComboBoxItem Content="Exclude"/>
-                                    </ComboBox>
-                                    <InfoBar x:Name="FilterPlatformInfoBar"
-                                             IsOpen="True"
-                                             IsClosable="False"
-                                             Severity="Warning"
-                                             Title="Platform Compatibility"
-                                             Message="Filters are platform specific - Please only assign one platform at a time when using filters!"/>
-                                </StackPanel>
-                            </Expander>
                         </StackPanel>
                     </PivotItem>
 
-                    <PivotItem Header="Windows">
+                    <PivotItem x:Name="WindowsPivotItem" Header="Windows">
                         <StackPanel Spacing="16" Margin="0,12,0,0">
                             <ComboBox x:Name="NotificationSettingsCombo"
                                       Header="End user notifications"
@@ -328,13 +313,12 @@
                                 <ComboBoxItem Content="Content download in background" />
                                 <ComboBoxItem Content="Content download in foreground" />
                             </ComboBox>
-                            <TextBlock Text="Availability and Installation deadline will be set to 'As soon as possible'" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                            <TextBlock Text="Restart grace period will be set to 'Disabled'" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                            <TextBlock Text="These settings will be made configurable in a future update." Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                            <TextBlock Text="Availability and deadline will be set to 'As soon as possible'." Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                            <TextBlock Text="Restart grace period will be set to 'Disabled'." Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                         </StackPanel>
                     </PivotItem>
 
-                    <PivotItem Header="iOS">
+                    <PivotItem x:Name="iOSPivotItem" Header="iOS">
                         <StackPanel Spacing="16" Margin="0,12,0,0">
                             <ComboBox x:Name="UseDeviceLicensingCombo"
                                       Header="Use device licensing"
@@ -374,7 +358,7 @@
                         </StackPanel>
                     </PivotItem>
 
-                    <PivotItem Header="Android">
+                    <PivotItem x:Name="AndroidPivotItem" Header="Android">
                         <StackPanel Spacing="16" Margin="0,12,0,0">
                             <ComboBox x:Name="UpdatePriority"
                                         Header="Update priority"
@@ -386,14 +370,9 @@
                             </ComboBox>
                         </StackPanel>
                     </PivotItem>
-
-                    <PivotItem Header="macOS">
-                        <StackPanel Spacing="16" Margin="0,12,0,0">
-                            <TextBlock Text="No specific settings available for macOS." Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                        </StackPanel>
-                    </PivotItem>
                 </Pivot>
-            </Grid>
+                </StackPanel>
+            </ScrollViewer>
         </ContentDialog>
     </Grid>
 </utilities:BaseMultiTenantPage>
