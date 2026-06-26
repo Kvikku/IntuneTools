@@ -467,6 +467,90 @@ namespace IntuneTools.Graph.EntraHelperClasses
         }
 
         /// <summary>
+        /// Exports an Entra group's metadata (name, description, dynamic membership rule) as a JsonElement.
+        /// Members and assignments are not included.
+        /// </summary>
+        public static async Task<JsonElement?> ExportEntraGroupDataAsync(GraphServiceClient graphServiceClient, string groupId)
+        {
+            try
+            {
+                var result = await graphServiceClient.Groups[groupId].GetAsync(config =>
+                    config.QueryParameters.Select = new[]
+                    {
+                        "displayName", "description", "mailEnabled", "securityEnabled",
+                        "groupTypes", "membershipRule", "membershipRuleProcessingState"
+                    });
+
+                if (result == null)
+                {
+                    AppLogger.Warning($"Group {groupId} not found for export.", appFunction.JsonExport);
+                    return null;
+                }
+
+                using var writer = new JsonSerializationWriter();
+                writer.WriteObjectValue(null, result);
+                using var stream = writer.GetSerializedContent();
+                var doc = await JsonDocument.ParseAsync(stream);
+                return doc.RootElement.Clone();
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error($"Error exporting Entra group {groupId}: {ex.Message}", appFunction.JsonExport);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Imports an Entra group from previously exported JSON data.
+        /// Creates a security group preserving the display name, description, and dynamic membership rule if present.
+        /// </summary>
+        public static async Task<string?> ImportEntraGroupFromJsonDataAsync(GraphServiceClient graphServiceClient, JsonElement groupData)
+        {
+            try
+            {
+                var json = groupData.GetRawText();
+                using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+                var parseNode = new JsonParseNode(JsonDocument.Parse(stream).RootElement);
+                var exported = parseNode.GetObjectValue(Group.CreateFromDiscriminatorValue);
+
+                if (exported == null)
+                {
+                    AppLogger.Error("Failed to deserialize group data from JSON.", appFunction.Import);
+                    return null;
+                }
+
+                var isDynamic = exported.GroupTypes?.Contains("DynamicMembership") == true;
+
+                if (isDynamic && string.IsNullOrWhiteSpace(exported.MembershipRule))
+                {
+                    AppLogger.Error($"Cannot import dynamic group '{exported.DisplayName}': membership rule is missing.", appFunction.Import);
+                    return null;
+                }
+
+                var newGroup = new Group
+                {
+                    DisplayName = exported.DisplayName,
+                    Description = exported.Description,
+                    MailEnabled = false,
+                    SecurityEnabled = true,
+                    MailNickname = $"group_{Guid.NewGuid().ToString("N")[..8]}",
+                    OdataType = "#microsoft.graph.group",
+                    GroupTypes = isDynamic ? new List<string> { "DynamicMembership" } : new List<string>(),
+                    MembershipRule = isDynamic ? exported.MembershipRule : null,
+                };
+
+                var imported = await graphServiceClient.Groups.PostAsync(newGroup);
+                AppLogger.Info($"Imported Entra group: {imported?.DisplayName}", appFunction.Import);
+                return imported?.DisplayName;
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error($"Error importing Entra group from JSON: {ex.Message}", appFunction.Import);
+                return null;
+            }
+        }
+
+        /// <summary>
         /// Resolves a list of group IDs to their display names.
         /// Checks the session cache first; falls back to individual Graph API calls for any misses.
         /// Falls back to the raw ID if resolution fails.

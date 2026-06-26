@@ -14,6 +14,7 @@ using static IntuneTools.Graph.IntuneHelperClasses.macOSShellScript;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsAutoPilotHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.AppleBYODEnrollmentProfileHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.FilterHelperClass;
+using static IntuneTools.Graph.EntraHelperClasses.GroupHelperClass;
 
 namespace IntuneTools.Pages
 {
@@ -61,6 +62,7 @@ namespace IntuneTools.Pages
             ContentTypes.WindowsAutoPilotProfile,
             ContentTypes.AppleBYODEnrollmentProfile,
             ContentTypes.AssignmentFilter,
+            ContentTypes.EntraGroup,
         };
 
         /// <summary>
@@ -81,6 +83,7 @@ namespace IntuneTools.Pages
             { ContentTypes.WindowsAutoPilotProfile, "windowsautopilot.json" },
             { ContentTypes.AppleBYODEnrollmentProfile, "applebyodenrollment.json" },
             { ContentTypes.AssignmentFilter, "assignmentfilter.json" },
+            { ContentTypes.EntraGroup, "entragroup.json" },
         };
 
         /// <summary>
@@ -106,6 +109,7 @@ namespace IntuneTools.Pages
             { ContentTypes.WindowsAutoPilotProfile, (ExportWindowsAutoPilotProfileDataAsync, ImportWindowsAutoPilotProfileFromJsonDataAsync) },
             { ContentTypes.AppleBYODEnrollmentProfile, (ExportAppleBYODEnrollmentProfileDataAsync, ImportAppleBYODEnrollmentProfileFromJsonDataAsync) },
             { ContentTypes.AssignmentFilter, (ExportAssignmentFilterDataAsync, ImportAssignmentFilterFromJsonDataAsync) },
+            { ContentTypes.EntraGroup, (ExportEntraGroupDataAsync, ImportEntraGroupFromJsonDataAsync) },
         };
 
         #endregion

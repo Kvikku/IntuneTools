@@ -556,9 +556,8 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             {
                 await graphServiceClient.DeviceAppManagement.MobileApps[appId].DeleteAsync();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Warning($"An error occurred while deleting application '{appId}': {ex.Message}", appFunction.Delete);
                 throw;
             }
         }

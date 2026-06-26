@@ -260,13 +260,14 @@ namespace IntuneTools.Pages
             foreach (var id in ids)
             {
                 _deleteCurrent++;
+                var name = ContentList.FirstOrDefault(c => c.ContentId == id)?.ContentName ?? id;
                 ShowOperationProgress($"Deleting {definition.DisplayName}", _deleteCurrent, _deleteTotal);
                 try
                 {
                     var deleted = await definition.DeleteAsync(id);
                     if (deleted)
                     {
-                        AppLogger.Info($"Deleted {definition.DisplayName} with ID: {id}", appFunction.Delete);
+                        AppLogger.Info($"Deleted {definition.DisplayName}: '{name}'", appFunction.Delete);
                         UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
                         _deleteSuccessCount++;
                     }
@@ -275,7 +276,7 @@ namespace IntuneTools.Pages
                 catch (Exception ex)
                 {
                     _deleteErrorCount++;
-                    AppLogger.Error($"Error deleting {definition.DisplayName} {id}: {ex.Message}", appFunction.Delete);
+                    AppLogger.Error($"Failed to delete {definition.DisplayName} '{name}': {ex.Message}", appFunction.Delete);
                 }
             }
 

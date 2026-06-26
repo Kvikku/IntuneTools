@@ -394,9 +394,9 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 await graphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profileID].DeleteAsync();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                AppLogger.Error($"An error occurred while deleting Windows Autopilot profiles: {ex.Message}", appFunction.Delete);
+                throw;
             }
         }
 
