@@ -1,4 +1,4 @@
-﻿using Microsoft.Graph;
+using Microsoft.Graph;
 
 namespace IntuneTools.Graph.IntuneHelperClasses
 {
@@ -9,18 +9,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                LogToFunctionFile(appFunction.Main, "Searching for Windows Quality Update profiles. Search query: " + searchQuery);
-
                 var allProfiles = await GetAllWindowsQualityUpdateProfiles(graphServiceClient);
                 var filteredProfiles = allProfiles.Where(p => p?.DisplayName != null && p.DisplayName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)).ToList();
-
-                LogToFunctionFile(appFunction.Main, $"Found {filteredProfiles.Count} Windows Quality Update profiles matching the search query.");
-
                 return filteredProfiles;
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while searching for Windows Quality Update profiles: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"An error occurred while searching for Windows Quality Update profiles: {ex.Message}", appFunction.Main);
                 return new List<WindowsQualityUpdateProfile>();
             }
         }
@@ -29,8 +24,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                LogToFunctionFile(appFunction.Main, "Retrieving all Windows Quality Update profiles.");
-
                 var result = await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles.GetAsync((requestConfiguration) =>
                 {
                 });
@@ -46,18 +39,11 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     });
                     await pageIterator.IterateAsync();
                 }
-                else
-                {
-                    LogToFunctionFile(appFunction.Main, "No Windows Quality Update profiles found or result was null.");
-                }
-
-                LogToFunctionFile(appFunction.Main, $"Found {profiles.Count} Windows Quality Update profiles.");
-
                 return profiles;
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while retrieving all Windows Quality Update profiles: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"An error occurred while retrieving all Windows Quality Update profiles: {ex.Message}", appFunction.Main);
                 return new List<WindowsQualityUpdateProfile>();
             }
         }
@@ -65,18 +51,19 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         {
             try
             {
-                LogToFunctionFile(appFunction.Main, $"Importing {profileIDs.Count} Windows Quality Update profiles.");
-                string profileName = "";
+                AppLogger.Info($"Importing {profileIDs.Count} Windows Quality Update profiles.", appFunction.Import);
 
+                bool hasFailures = false;
                 foreach (var profileId in profileIDs)
                 {
+                    var profileName = profileId;
                     try
                     {
                         var sourceProfile = await sourceGraphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileId].GetAsync();
 
                         if (sourceProfile == null)
                         {
-                            LogToFunctionFile(appFunction.Main, $"Skipping profile ID {profileId}: Not found in source tenant.");
+                            AppLogger.Info($"Skipping profile ID {profileId}: Not found in source tenant.", appFunction.Import);
                             continue;
                         }
 
@@ -114,26 +101,26 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                         var importedProfile = await destinationGraphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles.PostAsync(newPolicy);
 
-                        LogToFunctionFile(appFunction.Main, $"Imported profile: {importedProfile?.DisplayName ?? "Unnamed Profile"} (ID: {importedProfile?.Id ?? "Unknown ID"})");
+                        AppLogger.Info($"Imported '{importedProfile?.DisplayName ?? "Unnamed Profile"}' successfully.", appFunction.Import);
 
                         if (assignments && groups != null && groups.Any() && importedProfile?.Id != null)
                         {
-                            await AssignGroupsToSingleWindowsQualityUpdateProfile(importedProfile.Id, groups, destinationGraphServiceClient);
+                            await AssignGroupsToSingleWindowsQualityUpdateProfile(importedProfile.Id, importedProfile.DisplayName ?? string.Empty, groups, destinationGraphServiceClient);
                         }
                     }
                     catch (Exception ex)
                     {
-                        LogToFunctionFile(appFunction.Main, $"Error importing profile {profileName}: {ex.Message}", LogLevels.Error);
-                        LogToFunctionFile(appFunction.Main, "There is currently a known bug with importing Windows Quality Update profiles. " +
-                                                "This will be fixed in a future release. " +
-                                                "For now, please manually assign the groups to the imported profiles.", LogLevels.Warning);
+                        AppLogger.Error($"Failed to import '{profileName}': {ex.Message}", appFunction.Import);
+                        AppLogger.Warning("There is currently a known bug with importing Windows Quality Update profiles. This will be fixed in a future release. For now, please manually assign the groups to the imported profiles.", appFunction.Import);
+                        hasFailures = true;
                     }
                 }
-                LogToFunctionFile(appFunction.Main, "Windows Quality Update profile import process finished.");
+                if (hasFailures)
+                    throw new Exception("One or more Windows Quality Update profiles failed to import. See Import.log for details.");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred during the import process: {ex.Message}", LogLevels.Error);
+                throw;
             }
         }
 
@@ -147,7 +134,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
         /// <param name="destinationGraphServiceClient">GraphServiceClient for the destination tenant.</param>
         /// <param name="applyFilter">Whether to apply assignment filters.</param>
         /// <returns>A Task representing the asynchronous assignment operation.</returns>
-        public static async Task AssignGroupsToSingleWindowsQualityUpdateProfile(string profileID, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
+        public static async Task AssignGroupsToSingleWindowsQualityUpdateProfile(string profileID, string contentName, List<string> groupIDs, GraphServiceClient destinationGraphServiceClient)
         {
             try
             {
@@ -169,7 +156,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 var assignments = new List<WindowsQualityUpdateProfileAssignment>();
                 var seenGroupIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-                LogToFunctionFile(appFunction.Main, $"Assigning {groupIDs.Count} groups to Windows Quality Update profile {profileID}.");
+                AppLogger.Info($"Assigning {groupIDs.Count} groups to Windows Quality Update profile {profileID}.", appFunction.Assignment);
 
                 // Step 1: Add new assignments to request body
                 foreach (var groupId in groupIDs)
@@ -182,14 +169,14 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     // Check if this is All Users - Quality Update profiles cannot be assigned to All Users
                     if (groupId.Equals(allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase))
                     {
-                        LogToFunctionFile(appFunction.Main, "Warning: Windows Quality Update profiles cannot be assigned to 'All Users'. Only device groups are supported. Skipping this assignment.", LogLevels.Warning);
+                        AppLogger.Warning("Warning: Windows Quality Update profiles cannot be assigned to 'All Users'. Only device groups are supported. Skipping this assignment.", appFunction.Assignment);
                         continue;
                     }
 
                     // Check if this is All Devices - Quality Update profiles cannot be assigned to All Devices
                     if (groupId.Equals(allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase))
                     {
-                        LogToFunctionFile(appFunction.Main, "Warning: Windows Quality Update profiles cannot be assigned to 'All Devices'. Only device groups are supported. Skipping this assignment.", LogLevels.Warning);
+                        AppLogger.Warning("Warning: Windows Quality Update profiles cannot be assigned to 'All Devices'. Only device groups are supported. Skipping this assignment.", appFunction.Assignment);
                         continue;
                     }
 
@@ -226,13 +213,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         if (existing.Target is AllLicensedUsersAssignmentTarget)
                         {
                             // Skip All Users assignments - they shouldn't exist but handle gracefully
-                            LogToFunctionFile(appFunction.Main, $"Warning: Found existing 'All Users' assignment on Quality Update profile {profileID}. This should not exist and will be skipped.", LogLevels.Warning);
+                            AppLogger.Warning($"Warning: Found existing 'All Users' assignment on Quality Update profile {profileID}. This should not exist and will be skipped.", appFunction.Assignment);
                             continue;
                         }
                         else if (existing.Target is AllDevicesAssignmentTarget)
                         {
                             // Skip All Devices assignments - they shouldn't exist but handle gracefully
-                            LogToFunctionFile(appFunction.Main, $"Warning: Found existing 'All Devices' assignment on Quality Update profile {profileID}. This should not exist and will be skipped.", LogLevels.Warning);
+                            AppLogger.Warning($"Warning: Found existing 'All Devices' assignment on Quality Update profile {profileID}. This should not exist and will be skipped.", appFunction.Assignment);
                             continue;
                         }
                         else if (existing.Target is GroupAssignmentTarget groupTarget)
@@ -262,21 +249,22 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                 try
                 {
                     await destinationGraphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileID].Assign.PostAsync(requestBody);
-                    LogToFunctionFile(appFunction.Main, $"Assigned {assignments.Count} assignments to Quality Update profile {profileID}.");
                     UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
                 }
                 catch (Exception ex)
                 {
-                    LogToFunctionFile(appFunction.Main, $"Error assigning groups to profile {profileID}: {ex.Message}", LogLevels.Error);
+                    AppLogger.Error($"Error assigning groups to profile {profileID}: {ex.Message}", appFunction.Assignment);
+                    throw;
                 }
             }
             catch (ArgumentNullException argEx)
             {
-                LogToFunctionFile(appFunction.Main, $"Argument null exception during group assignment setup: {argEx.Message}", LogLevels.Error);
+                AppLogger.Error($"Argument null exception during group assignment setup: {argEx.Message}", appFunction.Assignment);
+                throw;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while preparing assignment for profile {profileID}: {ex.Message}", LogLevels.Warning);
+                throw;
             }
         }
         public static async Task DeleteWindowsQualityUpdateProfile(GraphServiceClient graphServiceClient, string profileID)
@@ -295,9 +283,9 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileID].DeleteAsync();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while deleting a Windows Quality Update profile: {ex.Message}", LogLevels.Error);
+                throw;
             }
         }
         public static async Task RenameWindowsQualityUpdateProfile(GraphServiceClient graphServiceClient, string profileID, string newName)
@@ -337,11 +325,24 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileID].PatchAsync(profile);
-                    LogToFunctionFile(appFunction.Main, $"Successfully renamed Windows Quality Update profile {profileID} to '{name}'");
                 }
                 else if (selectedRenameMode == "Suffix")
                 {
+                    var existingProfile = await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileID].GetAsync();
 
+                    if (existingProfile == null)
+                    {
+                        throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
+                    }
+
+                    var name = FindSuffixInPolicyName(existingProfile.DisplayName ?? string.Empty, newName);
+
+                    var profile = new WindowsQualityUpdateProfile
+                    {
+                        DisplayName = name,
+                    };
+
+                    await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileID].PatchAsync(profile);
                 }
                 else if (selectedRenameMode == "Description")
                 {
@@ -359,7 +360,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileID].PatchAsync(profile);
-                    LogToFunctionFile(appFunction.Main, $"Updated description for Windows Quality Update profile {profileID} to '{newName}'");
                 }
                 else if (selectedRenameMode == "RemovePrefix")
                 {
@@ -370,7 +370,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                         throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
                     }
 
-                    var name = RemovePrefixFromPolicyName(existingProfile.DisplayName);
+                    var name = ApplyPrefixRemoval(existingProfile.DisplayName);
 
                     var profile = new WindowsQualityUpdateProfile
                     {
@@ -378,12 +378,57 @@ namespace IntuneTools.Graph.IntuneHelperClasses
                     };
 
                     await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileID].PatchAsync(profile);
-                    LogToFunctionFile(appFunction.Main, $"Removed prefix from Windows Quality Update profile {profileID}, new name: '{name}'");
+                }
+                else if (selectedRenameMode == "RemoveDescription")
+                {
+                    var profile = new WindowsQualityUpdateProfile
+                    {
+                        Description = string.Empty
+                    };
+
+                    await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileID].PatchAsync(profile);
+                    AppLogger.Info($"Cleared description for Windows Quality Update profile {profileID}", appFunction.Main);
+                }
+                else if (selectedRenameMode == "RemoveSuffix")
+                {
+                    var existingProfile = await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileID].GetAsync();
+
+                    if (existingProfile == null)
+                    {
+                        throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
+                    }
+
+                    var name = ApplySuffixRemoval(existingProfile.DisplayName);
+
+                    var profile = new WindowsQualityUpdateProfile
+                    {
+                        DisplayName = name
+                    };
+
+                    await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileID].PatchAsync(profile);
+                }
+                else if (selectedRenameMode == "FindAndReplace")
+                {
+                    var existingProfile = await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileID].GetAsync();
+
+                    if (existingProfile == null)
+                    {
+                        throw new InvalidOperationException($"Profile with ID '{profileID}' not found.");
+                    }
+
+                    var name = ApplyFindAndReplace(existingProfile.DisplayName);
+
+                    var profile = new WindowsQualityUpdateProfile
+                    {
+                        DisplayName = name
+                    };
+
+                    await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileID].PatchAsync(profile);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                LogToFunctionFile(appFunction.Main, $"An error occurred while renaming Windows Quality Update profile: {ex.Message}", LogLevels.Warning);
+                throw;
             }
         }
 
@@ -438,7 +483,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 if (result == null)
                 {
-                    LogToFunctionFile(appFunction.Main, $"Windows Quality Update profile {profileId} not found for export.", LogLevels.Warning);
+                    AppLogger.Warning($"Windows Quality Update profile {profileId} not found for export.", appFunction.JsonExport);
                     return null;
                 }
 
@@ -450,7 +495,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"Error exporting Windows Quality Update profile {profileId}: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"Error exporting Windows Quality Update profile {profileId}: {ex.Message}", appFunction.JsonExport);
                 return null;
             }
         }
@@ -469,7 +514,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 if (exportedProfile == null)
                 {
-                    LogToFunctionFile(appFunction.Main, "Failed to deserialize Windows Quality Update profile data from JSON.", LogLevels.Error);
+                    AppLogger.Error("Failed to deserialize Windows Quality Update profile data from JSON.", appFunction.Import);
                     return null;
                 }
 
@@ -498,13 +543,13 @@ namespace IntuneTools.Graph.IntuneHelperClasses
 
                 var imported = await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles.PostAsync(newProfile);
 
-                LogToFunctionFile(appFunction.Main, $"Imported Windows Quality Update profile: {imported?.DisplayName}");
+                AppLogger.Info($"Imported Windows Quality Update profile: {imported?.DisplayName}", appFunction.Import);
                 return imported?.DisplayName;
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"Error importing Windows Quality Update profile from JSON: {ex.Message}", LogLevels.Error);
-                LogToFunctionFile(appFunction.Main, $"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", LogLevels.Warning);
+                AppLogger.Error($"Error importing Windows Quality Update profile from JSON: {ex.Message}", appFunction.Import);
+                AppLogger.Warning($"This is most likely due to the feature not being licensed in the destination tenant. Please check that you have a Windows E3 or higher license active", appFunction.Import);
                 return null;
             }
         }
@@ -555,7 +600,7 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             }
             catch (Exception ex)
             {
-                LogToFunctionFile(appFunction.Main, $"Error getting assignment details for Windows Quality Update Profile {profileId}: {ex.Message}", LogLevels.Error);
+                AppLogger.Error($"Error getting assignment details for Windows Quality Update Profile {profileId}: {ex.Message}", appFunction.ManageAssignment);
                 return null;
             }
         }
@@ -571,7 +616,6 @@ namespace IntuneTools.Graph.IntuneHelperClasses
             };
 
             await graphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[profileId].Assign.PostAsync(requestBody);
-            LogToFunctionFile(appFunction.Main, $"Removed all assignments from Windows Quality Update Profile {profileId}.");
         }
     }
 }

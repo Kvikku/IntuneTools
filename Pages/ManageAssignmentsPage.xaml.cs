@@ -15,6 +15,8 @@ using static IntuneTools.Graph.IntuneHelperClasses.WindowsDriverUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsFeatureUpdateHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdatePolicyHandler;
 using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHelper;
+using IntuneTools.Graph.EntraHelperClasses;
+using IntuneTools.Graph.IntuneHelperClasses;
 
 namespace IntuneTools.Pages
 {
@@ -66,6 +68,7 @@ namespace IntuneTools.Pages
             ContentTypes.WindowsFeatureUpdate,
             ContentTypes.WindowsQualityUpdatePolicy,
             ContentTypes.WindowsQualityUpdateProfile,
+            ContentTypes.Application,
         };
 
         #endregion
@@ -75,17 +78,19 @@ namespace IntuneTools.Pages
         public ManageAssignmentsPage()
         {
             InitializeComponent();
-            RightClickMenu.AttachDataGridContextMenu(AssignmentsDataGrid);
+            RightClickMenu.AttachDataGridContextMenu(AssignmentsDataGrid, () => sourceGraphServiceClient);
             LogConsole.ItemsSource = LogEntries;
         }
 
         protected override string UnauthenticatedMessage => "You must authenticate with a tenant before managing assignments.";
 
+        protected override appFunction PageLogFunction => appFunction.ManageAssignment;
+
         protected override IEnumerable<string> GetManagedControlNames() => new[]
         {
             "InputTextBox", "SearchButton", "ListAllButton", "ViewAssignmentsButton",
             "ClearSelectedButton", "ClearAllButton",
-            "AssignmentsDataGrid", "ClearLogButton"
+            "AssignmentsDataGrid", "ClearLogButton", "ExportCsvButton"
         };
 
         #endregion
@@ -268,7 +273,7 @@ namespace IntuneTools.Pages
             try
             {
                 ContentList.Clear();
-                await LoadContentTypesAsync(graphServiceClient, AssignableContentTypes, AppendToLog);
+                await LoadContentTypesAsync(graphServiceClient, AssignableContentTypes);
                 AssignmentsDataGrid.ItemsSource = ContentList;
             }
             catch (Exception ex)
@@ -291,7 +296,7 @@ namespace IntuneTools.Pages
             try
             {
                 ContentList.Clear();
-                await SearchContentTypesAsync(graphServiceClient, searchQuery, AssignableContentTypes, AppendToLog);
+                await SearchContentTypesAsync(graphServiceClient, searchQuery, AssignableContentTypes);
                 AssignmentsDataGrid.ItemsSource = ContentList;
             }
             catch (Exception ex)
@@ -329,8 +334,13 @@ namespace IntuneTools.Pages
 
                 if (!viewRegistry.TryGetValue(item.ContentType, out var getDetailsFunc))
                 {
-                    LogWarning($"No assignment viewer available for type '{item.ContentType}'. Skipping.");
-                    continue;
+                    if (item.ContentType.StartsWith("App - ", StringComparison.OrdinalIgnoreCase))
+                        getDetailsFunc = ApplicationHelper.GetApplicationAssignmentDetailsAsync;
+                    else
+                    {
+                        LogWarning($"No assignment viewer available for type '{item.ContentType}'. Skipping.");
+                        continue;
+                    }
                 }
 
                 try
@@ -369,7 +379,7 @@ namespace IntuneTools.Pages
             if (groupIds.Count > 0)
             {
                 ShowOperationProgress("Resolving group names...");
-                groupNames = await ResolveGroupNamesAsync(graphServiceClient, groupIds);
+                groupNames = await GroupHelperClass.ResolveGroupNamesAsync(graphServiceClient, groupIds);
             }
 
             ShowOperationSuccess($"Checked assignments for {totalItems} item(s) — {totalAssignments} assignment(s) found");
@@ -462,37 +472,6 @@ namespace IntuneTools.Pages
         #endregion
 
         #region Assignment Details Dialog
-
-        /// <summary>
-        /// Resolves a list of group IDs to their display names via Microsoft Graph.
-        /// Returns a dictionary mapping group ID to display name.
-        /// </summary>
-        private static async Task<Dictionary<string, string>> ResolveGroupNamesAsync(GraphServiceClient graphServiceClient, List<string> groupIds)
-        {
-            var names = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-            foreach (var groupId in groupIds)
-            {
-                try
-                {
-                    var group = await graphServiceClient.Groups[groupId].GetAsync(config =>
-                    {
-                        config.QueryParameters.Select = new[] { "displayName" };
-                    });
-
-                    if (group?.DisplayName != null)
-                    {
-                        names[groupId] = group.DisplayName;
-                    }
-                }
-                catch
-                {
-                    // If we can't resolve a group name, we'll fall back to the ID in the UI
-                }
-            }
-
-            return names;
-        }
 
         /// <summary>
         /// Displays assignment details in a structured dialog with summary stats and expandable items.
@@ -932,6 +911,63 @@ namespace IntuneTools.Pages
             }
 
             await ViewAssignmentsOrchestrator(sourceGraphServiceClient, selectedItems);
+        }
+
+        private async void ExportCsvButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (ContentList.Count == 0)
+            {
+                LogWarning("Nothing to export — the list is empty.");
+                return;
+            }
+
+            var viewRegistry = GetViewAssignmentRegistry();
+            var rows = new List<(CustomContentInfo, IEnumerable<AssignmentInfo>)>();
+            var allGroupIds = new List<string>();
+
+            ShowLoading("Fetching assignments for export...");
+            try
+            {
+                foreach (var item in ContentList)
+                {
+                    if (item.ContentType == null || item.ContentId == null ||
+                        !viewRegistry.TryGetValue(item.ContentType, out var getDetailsFunc))
+                    {
+                        rows.Add((item, Enumerable.Empty<AssignmentInfo>()));
+                        continue;
+                    }
+
+                    try
+                    {
+                        var assignments = await getDetailsFunc(sourceGraphServiceClient, item.ContentId) ?? new List<AssignmentInfo>();
+                        rows.Add((item, assignments));
+                        allGroupIds.AddRange(assignments
+                            .Where(a => !string.IsNullOrEmpty(a.GroupId))
+                            .Select(a => a.GroupId!));
+                    }
+                    catch (Exception ex)
+                    {
+                        LogWarning($"Could not fetch assignments for '{item.ContentName}': {ex.Message}");
+                        rows.Add((item, Enumerable.Empty<AssignmentInfo>()));
+                    }
+                }
+
+                var groupNames = allGroupIds.Count > 0
+                    ? await GroupHelperClass.ResolveGroupNamesAsync(sourceGraphServiceClient, allGroupIds.Distinct(StringComparer.OrdinalIgnoreCase).ToList())
+                    : new Dictionary<string, string>();
+
+                var savedPath = await CsvExporter.ExportWithAssignmentsAsync(rows, groupNames, "ManageAssignments");
+                if (savedPath != null)
+                    ShowOperationSuccess($"Exported {rows.Count} items to CSV.", savedPath);
+            }
+            catch (Exception ex)
+            {
+                LogError($"CSV export failed: {ex.Message}");
+            }
+            finally
+            {
+                HideLoading();
+            }
         }
 
         #endregion

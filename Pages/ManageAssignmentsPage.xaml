@@ -61,6 +61,8 @@
                         <AppBarButton x:Name="ClearAllButton" Icon="Clear" Label="Clear All" Click="ClearAllButton_Click" ToolTipService.ToolTip="Clear all items from staging area."/>
                         <AppBarSeparator/>
                         <AppBarButton x:Name="ClearLogButton" Icon="Delete" Label="Clear Log" Click="ClearLogButton_Click" ToolTipService.ToolTip="Clear the log console."/>
+                        <AppBarSeparator/>
+                        <AppBarButton x:Name="ExportCsvButton" Icon="Save" Label="Export CSV" Click="ExportCsvButton_Click" ToolTipService.ToolTip="Export the current list with assignment details to a CSV file."/>
                     </StackPanel>
                 </StackPanel>
             </Border>

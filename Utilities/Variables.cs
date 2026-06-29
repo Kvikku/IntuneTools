@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Collections.Concurrent;
+using System.Reflection;
 
 namespace IntuneTools.Utilities
 {
@@ -39,42 +40,45 @@ namespace IntuneTools.Utilities
         public static string timestampedAppFolder = string.Empty; // Mutable, so keep as is or consider property
 
 
-        public enum LogLevels
-        {
-            Info,
-            Warning,
-            Error
-        };
-
         // Use an enum for clarity and keep integer mapping stable with ComboBox order.
         public enum RenameMode
         {
             Prefix = 0,
-            Description = 1,
-            RemovePrefix = 2
+            Suffix = 1,
+            FindAndReplace = 2,
+            Description = 3,
+            RemovePrefix = 4,
+            RemoveSuffix = 5,
+            RemoveDescription = 6
         }
 
         public enum appFunction
         {
-            Main, // Used for most logging operations for the time being
-            Summary, // Used to log system settings upon app launch
-            Import,
-            Assignment,
-            Rename,
-            Delete,
-            FindUnassigned,
-            JsonExport,
-            AuditLog,
+            Main,           // General / page-level messages
+            Summary,        // System info logged at app startup
+            Import,         // Import operations
+            Assignment,     // Assignment operations
+            Rename,         // Rename operations
+            Delete,         // Delete operations
+            FindUnassigned, // Find Unassigned scan
+            FindDuplicates, // Duplicate detection scan
+            JsonExport,     // JSON export/import operations
+            AuditLog,       // Audit log operations
             ManageAssignment,
         }
 
         public static string selectedRenameMode = "Prefix"; // Default rename mode
+        public static string selectedRemovePrefixString = string.Empty; // Freeform prefix to remove (empty = bracket auto-detect)
+        public static string selectedRemoveSuffixString = string.Empty; // Suffix to strip from the end of names
+        public static string selectedFindString = string.Empty;         // Find & Replace: text to search for
+        public static string selectedReplaceString = string.Empty;      // Find & Replace: replacement text (empty = delete)
 
         // Group variables
         public static bool IsGroupSelected = false;
         public static string SelectedGroupID = null;
         public static string SelectedGroupName = null;
         public static Dictionary<string, string> groupNameAndID = new Dictionary<string, string>();
+        public static ConcurrentDictionary<string, string> groupIDAndName = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         public static Dictionary<string, string> selectedGroupNameAndID = new Dictionary<string, string>();
         public static readonly string allUsersVirtualGroupID = "acacacac-9df4-4c7d-9d50-4ef0226f57a9"; // Virtual Group ID for "All Users"
         public static readonly string allDevicesVirtualGroupID = "adadadad-808e-44e2-905a-0b7873a8a531"; // Virtual Group ID for "All Devices"

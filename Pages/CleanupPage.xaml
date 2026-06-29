@@ -8,17 +8,10 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:controls="using:CommunityToolkit.WinUI.UI.Controls"
-    xmlns:sizers="using:CommunityToolkit.WinUI.Controls"
+    xmlns:ctk="using:CommunityToolkit.WinUI.Controls"
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <!--
-        Migrated to the unified UI standard (see docs/UI_STANDARD.md).
-        Layout contract:
-            Row 0  Header (title, subtitle, status InfoBars)
-            Row 1  Toolbar cards (search/staging + destructive action)
-            Row 2  Main content (DataGrid | splitter | side panel)
-    -->
     <Grid Margin="{StaticResource PageRootMargin}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -37,58 +30,27 @@
                      IsClosable="False"
                      IsOpen="False"
                      Margin="0,12,0,0"/>
-            <!-- Operation Status Bar - shared UserControl -->
             <utilities:OperationStatusBar x:Name="OperationStatusBar" Margin="0,8,0,0"/>
         </StackPanel>
 
-        <!-- ===== Toolbar Cards Row ===== -->
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="{StaticResource PageSectionSpacing}" Margin="0,0,0,16">
-
-            <!-- Search & Staging Card -->
-            <Border Style="{StaticResource CardBorderStyle}">
-                <StackPanel Spacing="8">
-                    <TextBlock Text="Search &amp; Staging"
-                               Style="{StaticResource CardSectionLabelTextBlockStyle}"/>
-                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                        <TextBox x:Name="InputTextBox"
-                                 PlaceholderText="Enter search query..."
-                                 Width="250"
-                                 VerticalAlignment="Center"/>
-                        <AppBarButton x:Name="SearchButton" Icon="Find" Label="Search" Click="SearchButton_Click" ToolTipService.ToolTip="Search for specific items."/>
-                        <AppBarButton x:Name="ListAllButton" Icon="ViewAll" Label="List All" Click="ListAllButton_Click" ToolTipService.ToolTip="List all items."/>
-                        <AppBarButton x:Name="FindUnassignedButton" Label="Find Unassigned" Click="FindUnassignedButton_Click" ToolTipService.ToolTip="Find content with no group assignments.">
-                            <AppBarButton.Icon>
-                                <FontIcon Glyph="&#xE7B3;"/>
-                            </AppBarButton.Icon>
-                        </AppBarButton>
-                        <AppBarSeparator/>
-                        <AppBarButton x:Name="ClearSelectedButton" Icon="Remove" Label="Clear Selected" Click="ClearSelectedButton_Click" ToolTipService.ToolTip="Remove selected items from staging area."/>
-                        <AppBarButton x:Name="ClearAllButton" Icon="Clear" Label="Clear All" Click="ClearAllButton_Click" ToolTipService.ToolTip="Clear all items from staging area."/>
-                        <AppBarSeparator/>
-                        <AppBarButton x:Name="ClearLogButton" Icon="Delete" Label="Clear Log" Click="ClearLogButton_Click" ToolTipService.ToolTip="Clear the log console."/>
-                    </StackPanel>
-                </StackPanel>
-            </Border>
-
-            <!-- Destructive Action Card -->
-            <Border Style="{StaticResource CardBorderStyle}">
-                <StackPanel Spacing="8">
-                    <TextBlock Text="Destructive Action"
-                               Style="{StaticResource CardSectionLabelTextBlockStyle}"/>
-                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                        <Button x:Name="DeleteButton"
-                                Click="DeleteButton_Click"
-                                ToolTipService.ToolTip="Permanently delete all staged items."
-                                Style="{StaticResource DestructiveActionButtonStyle}">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <FontIcon Glyph="&#xE74D;" FontSize="16" Foreground="White"/>
-                                <TextBlock Text="Delete All" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="White"/>
-                            </StackPanel>
-                        </Button>
-                    </StackPanel>
-                </StackPanel>
-            </Border>
-        </StackPanel>
+        <!-- ===== Mode Selector ===== -->
+        <ctk:Segmented Grid.Row="1"
+                       x:Name="CleanupModeSegmented"
+                       SelectionMode="Single"
+                       SelectedIndex="0"
+                       SelectionChanged="CleanupModeSegmented_SelectionChanged"
+                       Margin="0,0,0,16">
+            <ctk:SegmentedItem Content="Delete Content">
+                <ctk:SegmentedItem.Icon>
+                    <FontIcon Glyph="&#xE74D;"/>
+                </ctk:SegmentedItem.Icon>
+            </ctk:SegmentedItem>
+            <ctk:SegmentedItem Content="Find Duplicates">
+                <ctk:SegmentedItem.Icon>
+                    <FontIcon Glyph="&#xE8C8;"/>
+                </ctk:SegmentedItem.Icon>
+            </ctk:SegmentedItem>
+        </ctk:Segmented>
 
         <!-- ===== Main Content Row ===== -->
         <Grid Grid.Row="2">
@@ -98,50 +60,211 @@
                 <ColumnDefinition Width="340" MinWidth="200"/>
             </Grid.ColumnDefinitions>
 
-            <!-- DataGrid with InfoBar and loading overlay -->
+            <!-- Left panel: Delete or Duplicates -->
             <Grid Grid.Column="0">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
 
-                <InfoBar Grid.Row="0"
-                         IsOpen="True"
-                         Severity="Warning"
-                         Title="Staging Area"
-                         Message="This grid acts as a staging area. All items listed below will be permanently deleted. Use the 'Clear' buttons to exclude items you do not wish to delete."
-                         IsClosable="True"
-                         Margin="0,0,12,12"/>
+                <!-- ── DELETE PANEL ── -->
+                <Grid x:Name="DeletePanel" Visibility="Visible">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
 
-                <controls:DataGrid Grid.Row="1"
-                                   x:Name="CleanupDataGrid"
-                                   AutoGenerateColumns="False"
-                                   SelectionMode="Extended"
-                                   Margin="0,0,12,0"
-                                   IsReadOnly="True"
-                                   CanUserSortColumns="True"
-                                   CanUserReorderColumns="False"
-                                   Sorting="CleanupDataGrid_Sorting">
-                    <controls:DataGrid.Columns>
-                        <controls:DataGridTextColumn Header="Name" Binding="{Binding ContentName}" Width="2*"/>
-                        <controls:DataGridTextColumn Header="Type" Binding="{Binding ContentType}" Width="*"/>
-                        <controls:DataGridTextColumn Header="Platform" Binding="{Binding ContentPlatform}" Width="*"/>
-                        <controls:DataGridTextColumn Header="ID" Binding="{Binding ContentId}" Width="2*"/>
-                        <controls:DataGridTextColumn Header="Description" Binding="{Binding ContentDescription}" Width="3*"/>
-                    </controls:DataGrid.Columns>
-                </controls:DataGrid>
+                    <!-- Toolbar -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="{StaticResource PageSectionSpacing}" Margin="0,0,0,16">
 
-                <!-- Loading Overlay - shared UserControl -->
-                <utilities:LoadingOverlay Grid.RowSpan="2"
-                                          x:Name="LoadingOverlay"/>
+                        <Border Style="{StaticResource CardBorderStyle}">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Search &amp; Staging"
+                                           Style="{StaticResource CardSectionLabelTextBlockStyle}"/>
+                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                    <TextBox x:Name="InputTextBox"
+                                             PlaceholderText="Enter search query..."
+                                             Width="250"
+                                             VerticalAlignment="Center"/>
+                                    <AppBarButton x:Name="SearchButton" Icon="Find" Label="Search" Click="SearchButton_Click" ToolTipService.ToolTip="Search for specific items."/>
+                                    <AppBarButton x:Name="ListAllButton" Icon="ViewAll" Label="List All" Click="ListAllButton_Click" ToolTipService.ToolTip="List all items."/>
+                                    <AppBarButton x:Name="FindUnassignedButton" Label="Find Unassigned" Click="FindUnassignedButton_Click" ToolTipService.ToolTip="Find content with no group assignments.">
+                                        <AppBarButton.Icon>
+                                            <FontIcon Glyph="&#xE7B3;"/>
+                                        </AppBarButton.Icon>
+                                    </AppBarButton>
+                                    <AppBarSeparator/>
+                                    <AppBarButton x:Name="ClearSelectedButton" Icon="Remove" Label="Clear Selected" Click="ClearSelectedButton_Click" ToolTipService.ToolTip="Remove selected items from staging area."/>
+                                    <AppBarButton x:Name="ClearAllButton" Icon="Clear" Label="Clear All" Click="ClearAllButton_Click" ToolTipService.ToolTip="Clear all items from staging area."/>
+                                    <AppBarSeparator/>
+                                    <AppBarButton x:Name="ClearLogButton" Icon="Delete" Label="Clear Log" Click="ClearLogButton_Click" ToolTipService.ToolTip="Clear the log console."/>
+                                    <AppBarSeparator/>
+                                    <AppBarButton x:Name="ExportCsvButton" Icon="Save" Label="Export CSV" Click="ExportCsvButton_Click" ToolTipService.ToolTip="Export the current list to a CSV file."/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource CardBorderStyle}">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Destructive Action"
+                                           Style="{StaticResource CardSectionLabelTextBlockStyle}"/>
+                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                    <Button x:Name="DeleteButton"
+                                            Click="DeleteButton_Click"
+                                            ToolTipService.ToolTip="Permanently delete all staged items."
+                                            Style="{StaticResource DestructiveActionButtonStyle}">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <FontIcon Glyph="&#xE74D;" FontSize="16" Foreground="White"/>
+                                            <TextBlock Text="Delete All" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="White"/>
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Staging InfoBar -->
+                    <InfoBar Grid.Row="1"
+                             IsOpen="True"
+                             Severity="Warning"
+                             Title="Staging Area"
+                             Message="This grid acts as a staging area. All items listed below will be permanently deleted. Use the 'Clear' buttons to exclude items you do not wish to delete."
+                             IsClosable="True"
+                             Margin="0,0,12,12"/>
+
+                    <!-- Cleanup DataGrid -->
+                    <controls:DataGrid Grid.Row="2"
+                                       x:Name="CleanupDataGrid"
+                                       AutoGenerateColumns="False"
+                                       SelectionMode="Extended"
+                                       Margin="0,0,12,0"
+                                       IsReadOnly="True"
+                                       CanUserSortColumns="True"
+                                       CanUserReorderColumns="False"
+                                       Sorting="CleanupDataGrid_Sorting">
+                        <controls:DataGrid.Columns>
+                            <controls:DataGridTextColumn Header="Name" Binding="{Binding ContentName}" Width="2*"/>
+                            <controls:DataGridTextColumn Header="Type" Binding="{Binding ContentType}" Width="*"/>
+                            <controls:DataGridTextColumn Header="Platform" Binding="{Binding ContentPlatform}" Width="*"/>
+                            <controls:DataGridTextColumn Header="ID" Binding="{Binding ContentId}" Width="2*"/>
+                            <controls:DataGridTextColumn Header="Description" Binding="{Binding ContentDescription}" Width="3*"/>
+                        </controls:DataGrid.Columns>
+                    </controls:DataGrid>
+
+                    <utilities:LoadingOverlay Grid.RowSpan="3" x:Name="LoadingOverlay"/>
+                </Grid>
+
+                <!-- ── DUPLICATES PANEL ── -->
+                <Grid x:Name="DuplicatesPanel" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Duplicates Toolbar -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="{StaticResource PageSectionSpacing}" Margin="0,0,0,16">
+
+                        <Border Style="{StaticResource CardBorderStyle}">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Scan &amp; Review"
+                                           Style="{StaticResource CardSectionLabelTextBlockStyle}"/>
+                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                    <AppBarButton x:Name="ScanDuplicatesButton" Label="Scan" Click="ScanDuplicatesButton_Click" ToolTipService.ToolTip="Scan selected content types for duplicate names.">
+                                        <AppBarButton.Icon>
+                                            <FontIcon Glyph="&#xE8C8;"/>
+                                        </AppBarButton.Icon>
+                                    </AppBarButton>
+                                    <AppBarButton x:Name="ContentTypeFilterButton" Label="All Types" ToolTipService.ToolTip="Choose which content types to include in the scan.">
+                                        <AppBarButton.Icon>
+                                            <FontIcon Glyph="&#xE71C;"/>
+                                        </AppBarButton.Icon>
+                                        <AppBarButton.Flyout>
+                                            <Flyout Placement="Bottom">
+                                                <ScrollViewer MaxHeight="350" MinWidth="220">
+                                                    <StackPanel x:Name="ContentTypeFilterPanel" Spacing="6" Padding="4"/>
+                                                </ScrollViewer>
+                                            </Flyout>
+                                        </AppBarButton.Flyout>
+                                    </AppBarButton>
+                                    <AppBarSeparator/>
+                                    <AppBarButton x:Name="SelectOlderButton" Label="Select Older" Click="SelectOlderButton_Click" ToolTipService.ToolTip="Selects the older item in each duplicate pair. The newer item is kept.">
+                                        <AppBarButton.Icon>
+                                            <FontIcon Glyph="&#xE8CB;"/>
+                                        </AppBarButton.Icon>
+                                    </AppBarButton>
+                                    <AppBarButton x:Name="SelectUnassignedButton" Label="Select Unassigned" Click="SelectUnassignedButton_Click" ToolTipService.ToolTip="Selects unassigned items in groups where another item is assigned. Assigned items are kept.">
+                                        <AppBarButton.Icon>
+                                            <FontIcon Glyph="&#xE7B3;"/>
+                                        </AppBarButton.Icon>
+                                    </AppBarButton>
+                                    <AppBarButton x:Name="ClearDuplicateSelectionButton" Icon="Remove" Label="Clear Selected" Click="ClearDuplicateSelectionButton_Click" ToolTipService.ToolTip="Remove selected items from the results."/>
+                                    <AppBarSeparator/>
+                                    <AppBarButton x:Name="DuplicatesClearLogButton" Icon="Delete" Label="Clear Log" Click="ClearLogButton_Click" ToolTipService.ToolTip="Clear the log console."/>
+                                    <AppBarSeparator/>
+                                    <AppBarButton x:Name="DuplicatesExportCsvButton" Icon="Save" Label="Export CSV" Click="DuplicatesExportCsvButton_Click" ToolTipService.ToolTip="Export the duplicates list to a CSV file."/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource CardBorderStyle}">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Destructive Action"
+                                           Style="{StaticResource CardSectionLabelTextBlockStyle}"/>
+                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                    <Button x:Name="DeleteDuplicatesButton"
+                                            Click="DeleteDuplicatesButton_Click"
+                                            ToolTipService.ToolTip="Permanently delete selected duplicates."
+                                            Style="{StaticResource DestructiveActionButtonStyle}">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <FontIcon Glyph="&#xE74D;" FontSize="16" Foreground="White"/>
+                                            <TextBlock Text="Delete Selected" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="White"/>
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Duplicates InfoBar -->
+                    <InfoBar Grid.Row="1"
+                             x:Name="DuplicatesInfoBar"
+                             IsOpen="True"
+                             Severity="Informational"
+                             Title="Duplicate Detection"
+                             Message="Scan to find policies with identical names. Use 'Select Older' or 'Select Unassigned' to mark items for deletion, then review and delete."
+                             IsClosable="False"
+                             Margin="0,0,12,12"/>
+
+                    <!-- Duplicates DataGrid -->
+                    <controls:DataGrid Grid.Row="2"
+                                       x:Name="DuplicatesDataGrid"
+                                       AutoGenerateColumns="False"
+                                       SelectionMode="Extended"
+                                       Margin="0,0,12,0"
+                                       IsReadOnly="True"
+                                       CanUserSortColumns="True"
+                                       CanUserReorderColumns="False"
+                                       Sorting="DuplicatesDataGrid_Sorting"
+                                       LoadingRow="DuplicatesDataGrid_LoadingRow">
+                        <controls:DataGrid.Columns>
+                            <controls:DataGridTextColumn Header="Name" Binding="{Binding ContentName}" Width="2*"/>
+                            <controls:DataGridTextColumn Header="Type" Binding="{Binding ContentType}" Width="*"/>
+                            <controls:DataGridTextColumn Header="Platform" Binding="{Binding ContentPlatform}" Width="*"/>
+                            <controls:DataGridTextColumn Header="Created" Binding="{Binding CreatedDisplay}" Width="*"/>
+                            <controls:DataGridTextColumn Header="Modified" Binding="{Binding ModifiedDisplay}" Width="*"/>
+                            <controls:DataGridTextColumn Header="Assigned" Binding="{Binding AssignedDisplay}" Width="Auto"/>
+                            <controls:DataGridTextColumn Header="ID" Binding="{Binding ContentId}" Width="2*"/>
+                        </controls:DataGrid.Columns>
+                    </controls:DataGrid>
+
+                    <utilities:LoadingOverlay Grid.RowSpan="3" x:Name="DuplicatesLoadingOverlay"/>
+                </Grid>
             </Grid>
 
             <!-- Resizable Splitter -->
-            <sizers:GridSplitter Grid.Column="1"
-                                 Width="8"
-                                 ResizeBehavior="BasedOnAlignment"
-                                 ResizeDirection="Columns"
-                                 Background="Transparent"/>
+            <ctk:GridSplitter Grid.Column="1"
+                              Width="8"
+                              ResizeBehavior="BasedOnAlignment"
+                              ResizeDirection="Columns"
+                              Background="Transparent"/>
 
             <!-- Log Console Panel -->
             <Grid Grid.Column="2">
@@ -152,7 +275,6 @@
                 <TextBlock Grid.Row="0"
                            Text="Log Console"
                            Style="{StaticResource SidePanelHeaderTextBlockStyle}"/>
-
                 <ListView Grid.Row="1"
                           x:Name="LogConsole"
                           SelectionMode="Extended"

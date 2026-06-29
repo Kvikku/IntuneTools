@@ -61,17 +61,19 @@ namespace IntuneTools.Pages
         public RenamingPage()
         {
             this.InitializeComponent();
-            RightClickMenu.AttachDataGridContextMenu(RenamingDataGrid);
+            RightClickMenu.AttachDataGridContextMenu(RenamingDataGrid, () => sourceGraphServiceClient);
             LogConsole.ItemsSource = LogEntries;
         }
 
         protected override string UnauthenticatedMessage => "You must authenticate with a tenant before using renaming features.";
 
+        protected override appFunction PageLogFunction => appFunction.Rename;
+
         protected override IEnumerable<string> GetManagedControlNames() => new[]
         {
             "SearchQueryTextBox", "SearchButton", "ListAllButton", "ClearSelectedButton",
             "ClearAllButton", "NewNameTextBox", "PrefixButton", "RenameButton",
-            "RenamingDataGrid", "ClearLogButton", "RenameModeComboBox"
+            "RenamingDataGrid", "ClearLogButton", "RenameModeComboBox", "ExportCsvButton"
         };
 
         #endregion
@@ -103,7 +105,7 @@ namespace IntuneTools.Pages
             try
             {
                 CustomContentList.Clear();
-                await LoadAllContentTypesAsync(graphServiceClient, LogInfo);
+                await LoadAllContentTypesAsync(graphServiceClient);
                 RenamingDataGrid.ItemsSource = CustomContentList;
             }
             catch (Exception ex)
@@ -123,7 +125,7 @@ namespace IntuneTools.Pages
             try
             {
                 CustomContentList.Clear();
-                await SearchAllContentTypesAsync(graphServiceClient, searchQuery, LogInfo);
+                await SearchAllContentTypesAsync(graphServiceClient, searchQuery);
                 RenamingDataGrid.ItemsSource = CustomContentList;
             }
             catch (Exception ex)
@@ -204,7 +206,7 @@ namespace IntuneTools.Pages
                     await renameAction(id, prefix);
 
                     var logName = displayName ?? $"ID '{id}'";
-                    LogSuccess($"Updated {contentTypeName} '{logName}' with '{prefix}'.");
+                    LogSuccess($"Updated {contentTypeName} '{logName}' ({GetOperationDisplayText(prefix)}).");
                     UpdateTotalTimeSaved(secondsSavedOnRenaming, appFunction.Rename);
                     _renameSuccessCount++;
                 }
@@ -227,9 +229,9 @@ namespace IntuneTools.Pages
                 return false;
             }
 
-            if (selectedRenameMode != "RemovePrefix" && string.IsNullOrWhiteSpace(newName))
+            if (selectedRenameMode != "RemovePrefix" && selectedRenameMode != "RemoveDescription" && string.IsNullOrWhiteSpace(newName))
             {
-                LogWarning("New name cannot be empty.");
+                LogWarning(selectedRenameMode == "FindAndReplace" ? "Find text cannot be empty." : "New name cannot be empty.");
                 return false;
             }
 
@@ -252,8 +254,12 @@ namespace IntuneTools.Pages
             return selectedRenameMode switch
             {
                 "Prefix" => await PreparePrefixRename(contentIDs, newName),
-                "RemovePrefix" => await PrepareRemovePrefixRename(contentIDs),
+                "Suffix" => await PrepareSuffixRename(contentIDs, newName),
+                "RemovePrefix" => await PrepareRemovePrefixRename(contentIDs, newName),
+                "RemoveSuffix" => await PrepareRemoveSuffixRename(contentIDs, newName),
                 "Description" => await PrepareDescriptionUpdate(newName),
+                "RemoveDescription" => await PrepareRemoveDescriptionUpdate(),
+                "FindAndReplace" => await PrepareFindAndReplaceRename(contentIDs, newName),
                 _ => null
             };
         }
@@ -285,15 +291,19 @@ namespace IntuneTools.Pages
             return confirmed ? prefix : null;
         }
 
-        private async Task<string?> PrepareRemovePrefixRename(List<string> contentIDs)
+        private async Task<string?> PrepareRemovePrefixRename(List<string> contentIDs, string prefixToRemove)
         {
+            // Store the freeform prefix so ApplyPrefixRemoval in each helper can access it.
+            // Empty string means fall back to bracket auto-detect.
+            selectedRemovePrefixString = prefixToRemove.Trim();
+
             var previewNames = contentIDs
                 .Select(id => CustomContentList.FirstOrDefault(c => c.ContentId == id))
                 .Where(c => c != null)
                 .Select(c => new
                 {
                     Original = c!.ContentName,
-                    NewName = RemovePrefixFromPolicyName(c.ContentName)
+                    NewName = ApplyPrefixRemoval(c.ContentName)
                 })
                 .ToList();
 
@@ -306,22 +316,132 @@ namespace IntuneTools.Pages
             var itemsWithPrefixes = previewNames.Where(p => p.Original != p.NewName).ToList();
             if (itemsWithPrefixes.Count == 0)
             {
-                LogWarning("No items have prefixes to remove.");
+                var hint = string.IsNullOrEmpty(selectedRemovePrefixString)
+                    ? "No items have bracket-style prefixes to remove."
+                    : $"No items start with \"{selectedRemovePrefixString}\".";
+                LogWarning(hint);
                 return null;
             }
 
             var previewText = string.Join("\n", itemsWithPrefixes.Take(10).Select(p => $"{p.Original}  →  {p.NewName}"));
             if (itemsWithPrefixes.Count > 10)
-            {
                 previewText += $"\n... and {itemsWithPrefixes.Count - 10} more items";
-            }
+
+            var modeDescription = string.IsNullOrEmpty(selectedRemovePrefixString)
+                ? "bracket-style prefix"
+                : $"\"{selectedRemovePrefixString}\"";
 
             var confirmed = await ShowConfirmationDialog(
                 "Confirm Removing Prefixes",
-                $"The following {itemsWithPrefixes.Count} item(s) will have their prefixes removed:\n\n{previewText}",
+                $"Remove {modeDescription} from {itemsWithPrefixes.Count} item(s):\n\n{previewText}",
                 "Remove Prefixes");
 
             return confirmed ? "__REMOVE_PREFIX__" : null;
+        }
+
+        private async Task<string?> PrepareSuffixRename(List<string> contentIDs, string newName)
+        {
+            var contentNames = contentIDs
+                .Select(id => CustomContentList.FirstOrDefault(c => c.ContentId == id))
+                .Where(c => c != null)
+                .Select(c => FindSuffixInPolicyName(c!.ContentName, newName))
+                .ToList();
+
+            if (contentNames.Count == 0)
+            {
+                LogWarning("No content names found for the provided IDs.");
+                return null;
+            }
+
+            var confirmed = await ShowConfirmationDialog(
+                "Confirm Renaming",
+                $"The new policy names will look like this. Proceed?\n\n{string.Join("\n", contentNames)}",
+                "Rename");
+
+            return confirmed ? newName : null;
+        }
+
+        private async Task<string?> PrepareRemoveSuffixRename(List<string> contentIDs, string suffixToRemove)
+        {
+            selectedRemoveSuffixString = suffixToRemove.Trim();
+
+            var previewNames = contentIDs
+                .Select(id => CustomContentList.FirstOrDefault(c => c.ContentId == id))
+                .Where(c => c != null)
+                .Select(c => new
+                {
+                    Original = c!.ContentName,
+                    NewName = ApplySuffixRemoval(c.ContentName)
+                })
+                .ToList();
+
+            if (previewNames.Count == 0)
+            {
+                LogWarning("No content names found for the provided IDs.");
+                return null;
+            }
+
+            var itemsWithSuffixes = previewNames.Where(p => p.Original != p.NewName).ToList();
+            if (itemsWithSuffixes.Count == 0)
+            {
+                LogWarning($"No items end with \"{selectedRemoveSuffixString}\".");
+                return null;
+            }
+
+            var previewText = string.Join("\n", itemsWithSuffixes.Take(10).Select(p => $"{p.Original}  →  {p.NewName}"));
+            if (itemsWithSuffixes.Count > 10)
+                previewText += $"\n... and {itemsWithSuffixes.Count - 10} more items";
+
+            var confirmed = await ShowConfirmationDialog(
+                "Confirm Removing Suffixes",
+                $"Remove \"{selectedRemoveSuffixString}\" from {itemsWithSuffixes.Count} item(s):\n\n{previewText}",
+                "Remove Suffixes");
+
+            return confirmed ? "__REMOVE_SUFFIX__" : null;
+        }
+
+        private async Task<string?> PrepareFindAndReplaceRename(List<string> contentIDs, string findText)
+        {
+            selectedFindString = findText.Trim();
+            selectedReplaceString = ReplaceWithTextBox?.Text ?? string.Empty;
+
+            var previewNames = contentIDs
+                .Select(id => CustomContentList.FirstOrDefault(c => c.ContentId == id))
+                .Where(c => c != null)
+                .Select(c => new
+                {
+                    Original = c!.ContentName,
+                    NewName = ApplyFindAndReplace(c.ContentName)
+                })
+                .ToList();
+
+            if (previewNames.Count == 0)
+            {
+                LogWarning("No content names found for the provided IDs.");
+                return null;
+            }
+
+            var changedItems = previewNames.Where(p => p.Original != p.NewName).ToList();
+            if (changedItems.Count == 0)
+            {
+                LogWarning($"No items contain \"{selectedFindString}\".");
+                return null;
+            }
+
+            var previewText = string.Join("\n", changedItems.Take(10).Select(p => $"{p.Original}  →  {p.NewName}"));
+            if (changedItems.Count > 10)
+                previewText += $"\n... and {changedItems.Count - 10} more items";
+
+            var replaceDescription = string.IsNullOrEmpty(selectedReplaceString)
+                ? $"delete \"{selectedFindString}\""
+                : $"replace \"{selectedFindString}\" with \"{selectedReplaceString}\"";
+
+            var confirmed = await ShowConfirmationDialog(
+                "Confirm Find & Replace",
+                $"Will {replaceDescription} in {changedItems.Count} item(s):\n\n{previewText}",
+                "Replace");
+
+            return confirmed ? "__FIND_AND_REPLACE__" : null;
         }
 
         private async Task<string?> PrepareDescriptionUpdate(string newDescription)
@@ -332,6 +452,16 @@ namespace IntuneTools.Pages
                 "Update");
 
             return confirmed ? newDescription : null;
+        }
+
+        private async Task<string?> PrepareRemoveDescriptionUpdate()
+        {
+            var confirmed = await ShowConfirmationDialog(
+                "Confirm removing descriptions",
+                "The descriptions of all selected items will be cleared. Proceed?",
+                "Remove Descriptions");
+
+            return confirmed ? "__REMOVE_DESCRIPTION__" : null;
         }
 
         /// <summary>
@@ -454,9 +584,18 @@ namespace IntuneTools.Pages
         private RenameMode GetSelectedRenameMode()
         {
             var index = RenameModeComboBox?.SelectedIndex ?? 0;
-            if (index < 0 || index > 2) index = 0;
+            if (index < 0 || index > 6) index = 0;
             return (RenameMode)index;
         }
+
+        private static string GetOperationDisplayText(string operationText) => operationText switch
+        {
+            "__REMOVE_PREFIX__" => "prefix removed",
+            "__REMOVE_DESCRIPTION__" => "description cleared",
+            "__REMOVE_SUFFIX__" => "suffix removed",
+            "__FIND_AND_REPLACE__" => $"find & replace: \"{selectedFindString}\" → \"{selectedReplaceString}\"",
+            _ => $"applied \"{operationText}\""
+        };
 
         private void InitializeProgressTracking(int totalItems)
         {
@@ -476,7 +615,7 @@ namespace IntuneTools.Pages
             {
                 ShowOperationError($"Completed with {_renameErrorCount} error(s). {_renameSuccessCount} items renamed successfully.");
             }
-            LogSuccess($"Renamed {_renameSuccessCount} items with '{operationText}'.");
+            LogSuccess($"Renamed {_renameSuccessCount} items — {GetOperationDisplayText(operationText)}.");
         }
 
         #endregion
@@ -526,9 +665,9 @@ namespace IntuneTools.Pages
 
             string newName = NewNameTextBox.Text.Trim();
 
-            if (renameMode != RenameMode.RemovePrefix && string.IsNullOrEmpty(newName))
+            if (renameMode != RenameMode.RemovePrefix && renameMode != RenameMode.RemoveDescription && string.IsNullOrEmpty(newName))
             {
-                LogWarning("Please enter a new name.");
+                LogWarning(renameMode == RenameMode.FindAndReplace ? "Please enter the text to find." : "Please enter a new name.");
                 return;
             }
 
@@ -572,16 +711,28 @@ namespace IntuneTools.Pages
 
             if (PrefixButton is null || NewNameTextBox is null) return;
 
-            var needsTextInput = selectionMode != RenameMode.RemovePrefix;
+            var isFindAndReplace = selectionMode == RenameMode.FindAndReplace;
             var needsPrefixSymbol = selectionMode == RenameMode.Prefix;
 
             PrefixButton.Visibility = needsPrefixSymbol ? Visibility.Visible : Visibility.Collapsed;
-            NewNameTextBox.IsEnabled = needsTextInput;
+
+            if (ReplaceWithTextBox is not null)
+                ReplaceWithTextBox.Visibility = isFindAndReplace ? Visibility.Visible : Visibility.Collapsed;
+
+            if (FindReplaceInfoIcon is not null)
+                FindReplaceInfoIcon.Visibility = isFindAndReplace ? Visibility.Visible : Visibility.Collapsed;
+
+            NewNameTextBox.IsEnabled = selectionMode != RenameMode.RemoveDescription;
             NewNameTextBox.PlaceholderText = selectionMode switch
             {
                 RenameMode.Prefix => "Enter prefix...",
+                RenameMode.Suffix => "Enter suffix...",
                 RenameMode.Description => "Enter description...",
-                _ => "Not required"
+                RenameMode.RemovePrefix => "Enter prefix to remove (leave blank for bracket auto-detect)...",
+                RenameMode.RemoveSuffix => "Enter suffix to remove...",
+                RenameMode.FindAndReplace => "Find...",
+                RenameMode.RemoveDescription => "No input required",
+                _ => string.Empty
             };
         }
 
@@ -599,6 +750,25 @@ namespace IntuneTools.Pages
                 return;
             }
             await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
+        }
+
+        private async void ExportCsvButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (ContentList.Count == 0)
+            {
+                LogWarning("Nothing to export — the list is empty.");
+                return;
+            }
+            try
+            {
+                var savedPath = await CsvExporter.ExportContentListAsync(ContentList, "Renaming");
+                if (savedPath != null)
+                    ShowOperationSuccess($"Exported {ContentList.Count} items to CSV.", savedPath);
+            }
+            catch (Exception ex)
+            {
+                LogError($"CSV export failed: {ex.Message}");
+            }
         }
 
         #endregion

@@ -101,7 +101,7 @@
                             <SymbolIcon Symbol="Delete" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" HorizontalAlignment="Left"/>
                             <TextBlock Text="Cleanup"
                                        Style="{StaticResource FeatureCardTitleTextBlockStyle}"/>
-                            <TextBlock Text="Remove policies, scripts, and profiles in bulk."
+                            <TextBlock Text="Remove policies, apps, and other content in bulk. Detect and clean up duplicates."
                                        Style="{StaticResource FeatureCardDescriptionTextBlockStyle}"/>
                         </StackPanel>
                     </Button>
@@ -113,7 +113,7 @@
                             <SymbolIcon Symbol="Rename" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" HorizontalAlignment="Left"/>
                             <TextBlock Text="Renaming"
                                        Style="{StaticResource FeatureCardTitleTextBlockStyle}"/>
-                            <TextBlock Text="Rename objects with customizable prefixes."
+                            <TextBlock Text="Rename objects using prefix, suffix, find &amp; replace, and more."
                                        Style="{StaticResource FeatureCardDescriptionTextBlockStyle}"/>
                         </StackPanel>
                     </Button>
@@ -125,7 +125,7 @@
                             <FontIcon Glyph="&#xE8AB;" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" HorizontalAlignment="Left"/>
                             <TextBlock Text="JSON"
                                        Style="{StaticResource FeatureCardTitleTextBlockStyle}"/>
-                            <TextBlock Text="Import from and export to JSON files."
+                            <TextBlock Text="Back up and restore policies and Entra groups as JSON files."
                                        Style="{StaticResource FeatureCardDescriptionTextBlockStyle}"/>
                         </StackPanel>
                     </Button>
@@ -134,7 +134,7 @@
                             Click="QuickAction_ManageAssignments_Click"
                             Style="{StaticResource FeatureCardButtonStyle}">
                         <StackPanel Spacing="8">
-                            <FontIcon Glyph="&#xE71D;" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" HorizontalAlignment="Left"/>
+                            <FontIcon Glyph="&#xE77B;" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" HorizontalAlignment="Left"/>
                             <TextBlock Text="Manage Assignments"
                                        Style="{StaticResource FeatureCardTitleTextBlockStyle}"/>
                             <TextBlock Text="View and remove group assignments from content."

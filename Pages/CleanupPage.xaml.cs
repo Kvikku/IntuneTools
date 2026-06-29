@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using CommunityToolkit.WinUI.UI.Controls;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -27,6 +28,31 @@ namespace IntuneTools.Pages
     public sealed partial class CleanupPage : BaseDataOperationPage
     {
         #region Fields & Types
+
+        // Duplicate detection results
+        private readonly ObservableCollection<DuplicateContentInfo> DuplicateContentList = new();
+
+        // Content type filter for duplicate scan
+        private readonly HashSet<string> _selectedContentTypes = new(SupportedContentTypes);
+
+        private static readonly (string TypeKey, string DisplayName)[] ContentTypeOptions =
+        [
+            (ContentTypes.SettingsCatalog,           "Settings Catalog"),
+            (ContentTypes.DeviceCompliancePolicy,    "Device Compliance Policy"),
+            (ContentTypes.DeviceConfigurationPolicy, "Device Configuration Policy"),
+            (ContentTypes.AppleBYODEnrollmentProfile,"Apple BYOD Enrollment Profile"),
+            (ContentTypes.AssignmentFilter,          "Assignment Filter"),
+            (ContentTypes.EntraGroup,                "Entra Group"),
+            (ContentTypes.PowerShellScript,          "PowerShell Script"),
+            (ContentTypes.ProactiveRemediation,      "Proactive Remediation"),
+            (ContentTypes.MacOSShellScript,          "macOS Shell Script"),
+            (ContentTypes.WindowsAutoPilotProfile,   "Windows AutoPilot Profile"),
+            (ContentTypes.WindowsDriverUpdate,       "Windows Driver Update"),
+            (ContentTypes.WindowsFeatureUpdate,      "Windows Feature Update"),
+            (ContentTypes.WindowsQualityUpdatePolicy,"Quality Update Policy"),
+            (ContentTypes.WindowsQualityUpdateProfile,"Quality Update Profile"),
+            (ContentTypes.Application,               "Application"),
+        ];
 
         // Progress tracking for delete operations
         private int _deleteTotal;
@@ -74,16 +100,35 @@ namespace IntuneTools.Pages
         public CleanupPage()
         {
             InitializeComponent();
-            RightClickMenu.AttachDataGridContextMenu(CleanupDataGrid);
+            RightClickMenu.AttachDataGridContextMenu(CleanupDataGrid, () => sourceGraphServiceClient);
+            RightClickMenu.AttachDataGridContextMenu(DuplicatesDataGrid, () => sourceGraphServiceClient);
             LogConsole.ItemsSource = LogEntries;
+            DuplicatesDataGrid.ItemsSource = DuplicateContentList;
+            PopulateContentTypeFilter();
+        }
+
+        private void PopulateContentTypeFilter()
+        {
+            foreach (var (typeKey, displayName) in ContentTypeOptions)
+            {
+                var cb = new CheckBox { Content = displayName, IsChecked = true, Tag = typeKey };
+                cb.Checked += ContentTypeFilter_Changed;
+                cb.Unchecked += ContentTypeFilter_Changed;
+                ContentTypeFilterPanel.Children.Add(cb);
+            }
         }
 
         protected override string UnauthenticatedMessage => "You must authenticate with a tenant before using cleanup features.";
 
+        protected override appFunction PageLogFunction => appFunction.Delete;
+
         protected override IEnumerable<string> GetManagedControlNames() => new[]
         {
             "InputTextBox", "SearchButton", "ListAllButton", "FindUnassignedButton",
-            "ClearSelectedButton", "ClearAllButton", "DeleteButton", "CleanupDataGrid", "ClearLogButton"
+            "ClearSelectedButton", "ClearAllButton", "DeleteButton", "CleanupDataGrid", "ClearLogButton", "ExportCsvButton",
+            "ScanDuplicatesButton", "ContentTypeFilterButton", "SelectOlderButton", "SelectUnassignedButton",
+            "ClearDuplicateSelectionButton", "DeleteDuplicatesButton", "DuplicatesDataGrid",
+            "DuplicatesClearLogButton", "DuplicatesExportCsvButton"
         };
 
         #endregion
@@ -125,7 +170,7 @@ namespace IntuneTools.Pages
 
             if (_deleteTotal == 0)
             {
-                AppendToDetailsRichTextBlock("No content to delete.");
+                LogWarning("No content to delete.");
                 return;
             }
 
@@ -167,12 +212,12 @@ namespace IntuneTools.Pages
             try
             {
                 ContentList.Clear();
-                await LoadContentTypesAsync(graphServiceClient, SupportedContentTypes, AppendToDetailsRichTextBlock);
+                await LoadContentTypesAsync(graphServiceClient, SupportedContentTypes);
                 CleanupDataGrid.ItemsSource = ContentList;
             }
             catch (Exception ex)
             {
-                AppendToDetailsRichTextBlock($"Error during loading: {ex.Message}");
+                LogError($"Error during loading: {ex.Message}");
             }
             finally
             {
@@ -190,12 +235,12 @@ namespace IntuneTools.Pages
             try
             {
                 ContentList.Clear();
-                await SearchContentTypesAsync(graphServiceClient, searchQuery, SupportedContentTypes, AppendToDetailsRichTextBlock);
+                await SearchContentTypesAsync(graphServiceClient, searchQuery, SupportedContentTypes);
                 CleanupDataGrid.ItemsSource = ContentList;
             }
             catch (Exception ex)
             {
-                AppendToDetailsRichTextBlock($"Error during search: {ex.Message}");
+                LogError($"Error during search: {ex.Message}");
             }
             finally
             {
@@ -215,13 +260,14 @@ namespace IntuneTools.Pages
             foreach (var id in ids)
             {
                 _deleteCurrent++;
+                var name = ContentList.FirstOrDefault(c => c.ContentId == id)?.ContentName ?? id;
                 ShowOperationProgress($"Deleting {definition.DisplayName}", _deleteCurrent, _deleteTotal);
                 try
                 {
                     var deleted = await definition.DeleteAsync(id);
                     if (deleted)
                     {
-                        LogToFunctionFile(appFunction.Main, $"Deleted {definition.DisplayName} with ID: {id}");
+                        AppLogger.Info($"Deleted {definition.DisplayName}: '{name}'", appFunction.Delete);
                         UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
                         _deleteSuccessCount++;
                     }
@@ -230,7 +276,7 @@ namespace IntuneTools.Pages
                 catch (Exception ex)
                 {
                     _deleteErrorCount++;
-                    LogToFunctionFile(appFunction.Main, $"Error deleting {definition.DisplayName} {id}: {ex.Message}", LogLevels.Error);
+                    AppLogger.Error($"Failed to delete {definition.DisplayName} '{name}': {ex.Message}", appFunction.Delete);
                 }
             }
 
@@ -269,13 +315,13 @@ namespace IntuneTools.Pages
                 if (result == ContentDialogResult.Primary)
                 {
                     await DeleteWindowsAutoPilotProfileAssignments(sourceGraphServiceClient, id);
-                    LogToFunctionFile(appFunction.Main, $"Deleted assignments for Windows AutoPilot profile with ID: {id}");
+                    AppLogger.Info($"Deleted assignments for Windows AutoPilot profile with ID: {id}", appFunction.Delete);
                     await DeleteWindowsAutopilotProfile(sourceGraphServiceClient, id);
                     return true;
                 }
                 else
                 {
-                    LogToFunctionFile(appFunction.Main, $"Skipped deletion of Windows AutoPilot profile with ID: {id} as it is assigned to devices.", LogLevels.Warning);
+                    AppLogger.Warning($"Skipped deletion of Windows AutoPilot profile with ID: {id} as it is assigned to devices.", appFunction.Delete);
                     return false;
                 }
             }
@@ -395,7 +441,7 @@ namespace IntuneTools.Pages
             {
                 // Load into a temporary list so items don't appear in the grid before being checked
                 ContentList.Clear();
-                await LoadContentTypesAsync(graphServiceClient, AssignableContentTypes, AppendToDetailsRichTextBlock);
+                await LoadContentTypesAsync(graphServiceClient, AssignableContentTypes);
                 var allItems = ContentList.ToList();
                 ContentList.Clear();
 
@@ -560,8 +606,488 @@ namespace IntuneTools.Pages
             await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
         }
 
+        private async void ExportCsvButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (ContentList.Count == 0)
+            {
+                LogWarning("Nothing to export — the list is empty.");
+                return;
+            }
+            try
+            {
+                var savedPath = await CsvExporter.ExportContentListAsync(ContentList, "Cleanup");
+                if (savedPath != null)
+                    ShowOperationSuccess($"Exported {ContentList.Count} items to CSV.", savedPath);
+            }
+            catch (Exception ex)
+            {
+                LogError($"CSV export failed: {ex.Message}");
+            }
+        }
+
+        #endregion
+
+        #region Mode Selector
+
+        private void CleanupModeSegmented_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (DeletePanel is null || DuplicatesPanel is null) return;
+
+            var isDuplicates = CleanupModeSegmented.SelectedIndex == 1;
+            DeletePanel.Visibility = isDuplicates ? Visibility.Collapsed : Visibility.Visible;
+            DuplicatesPanel.Visibility = isDuplicates ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        #endregion
+
+        #region Duplicate Detection
+
+        private async void ScanDuplicatesButton_Click(object sender, RoutedEventArgs e)
+        {
+            await ScanDuplicatesOrchestrator(sourceGraphServiceClient);
+        }
+
+        private void SelectOlderButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (DuplicateContentList.Count == 0)
+            {
+                LogWarning("No scan results to select from. Run a scan first.");
+                return;
+            }
+
+            DuplicatesDataGrid.SelectedItems.Clear();
+
+            var toSelect = new List<DuplicateContentInfo>();
+            foreach (var group in DuplicateContentList
+                .GroupBy(i => (Name: i.ContentName?.Trim().ToUpperInvariant(), Type: i.ContentType, Platform: i.ContentPlatform?.Trim() ?? string.Empty))
+                .Where(g => g.Count() >= 2))
+            {
+                toSelect.AddRange(group
+                    .OrderByDescending(i => i.CreatedDateTime ?? DateTimeOffset.MinValue)
+                    .Skip(1));
+            }
+
+            foreach (var item in toSelect)
+                DuplicatesDataGrid.SelectedItems.Add(item);
+
+            LogInfo($"Selected {toSelect.Count} older item(s) — the newest in each group is kept.");
+        }
+
+        private void SelectUnassignedButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (DuplicateContentList.Count == 0)
+            {
+                LogWarning("No scan results to select from. Run a scan first.");
+                return;
+            }
+
+            DuplicatesDataGrid.SelectedItems.Clear();
+
+            var toSelect = new List<DuplicateContentInfo>();
+            foreach (var group in DuplicateContentList
+                .GroupBy(i => (Name: i.ContentName?.Trim().ToUpperInvariant(), Type: i.ContentType, Platform: i.ContentPlatform?.Trim() ?? string.Empty))
+                .Where(g => g.Count() >= 2 && g.Any(i => i.HasAssignments == true)))
+            {
+                toSelect.AddRange(group.Where(i => i.HasAssignments == false));
+            }
+
+            if (toSelect.Count == 0)
+            {
+                LogWarning("No unassigned items found in groups where another item is assigned. Assignment data may not be available for all types.");
+                return;
+            }
+
+            foreach (var item in toSelect)
+                DuplicatesDataGrid.SelectedItems.Add(item);
+
+            LogInfo($"Selected {toSelect.Count} unassigned item(s) — assigned items in each group are kept.");
+        }
+
+        private void ContentTypeFilter_Changed(object sender, RoutedEventArgs e)
+        {
+            if (sender is not CheckBox cb || cb.Tag is not string typeKey) return;
+
+            if (cb.IsChecked == true)
+                _selectedContentTypes.Add(typeKey);
+            else
+                _selectedContentTypes.Remove(typeKey);
+
+            var selected = _selectedContentTypes.Count;
+            var total = ContentTypeOptions.Length;
+            ContentTypeFilterButton.Label = selected == total ? "All Types" : $"{selected} of {total} types";
+        }
+
+        private void ClearDuplicateSelectionButton_Click(object sender, RoutedEventArgs e)
+        {
+            var selected = DuplicatesDataGrid.SelectedItems?.Cast<DuplicateContentInfo>().ToList();
+            if (selected == null || selected.Count == 0)
+            {
+                LogWarning("No items selected to clear.");
+                return;
+            }
+            foreach (var item in selected)
+                DuplicateContentList.Remove(item);
+        }
+
+        private async void DeleteDuplicatesButton_Click(object sender, RoutedEventArgs e)
+        {
+            await DeleteSelectedDuplicatesAsync();
+        }
+
+        private async void DuplicatesExportCsvButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (DuplicateContentList.Count == 0)
+            {
+                LogWarning("Nothing to export — run a scan first.");
+                return;
+            }
+            try
+            {
+                var exportList = DuplicateContentList
+                    .Select(d => new CustomContentInfo
+                    {
+                        ContentName = d.ContentName,
+                        ContentType = d.ContentType,
+                        ContentId = d.ContentId,
+                        ContentPlatform = d.ContentPlatform,
+                        ContentDescription = $"Created: {d.CreatedDisplay} | Modified: {d.ModifiedDisplay} | Assigned: {d.AssignedDisplay}"
+                    })
+                    .ToList();
+                var path = await CsvExporter.ExportContentListAsync(exportList, "Duplicates");
+                if (path != null)
+                    ShowOperationSuccess($"Exported {DuplicateContentList.Count} items to CSV.", path);
+            }
+            catch (Exception ex)
+            {
+                LogError($"CSV export failed: {ex.Message}");
+            }
+        }
+
+        private void DuplicatesDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
+        {
+            HandleDataGridSorting(sender, e);
+        }
+
+        private void DuplicatesDataGrid_LoadingRow(object sender, DataGridRowEventArgs e)
+        {
+            if (e.Row.DataContext is DuplicateContentInfo info && info.IsOddGroup)
+                e.Row.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+                    Windows.UI.Color.FromArgb(18, 128, 128, 128));
+            else
+                e.Row.Background = null;
+        }
+
+        private async Task ScanDuplicatesOrchestrator(GraphServiceClient graphServiceClient)
+        {
+            if (ContentList.Count > 0)
+            {
+                var warn = new ContentDialog
+                {
+                    Title = "Clear Staging Area?",
+                    Content = $"Scanning requires loading all content, which will clear the {ContentList.Count} item(s) currently in the delete staging area. Continue?",
+                    PrimaryButtonText = "Continue",
+                    CloseButtonText = "Cancel",
+                    DefaultButton = ContentDialogButton.Close,
+                    XamlRoot = this.XamlRoot
+                };
+                if (await warn.ShowAsync() != ContentDialogResult.Primary) return;
+            }
+
+            ScanDuplicatesButton.IsEnabled = false;
+            DuplicatesLoadingOverlay.Show("Loading all content types...");
+            DuplicateContentList.Clear();
+
+            try
+            {
+                var typesToScan = SupportedContentTypes.Where(_selectedContentTypes.Contains).ToArray();
+                ContentList.Clear();
+                await LoadContentTypesAsync(graphServiceClient, typesToScan);
+                var allItems = ContentList.ToList();
+                ContentList.Clear();
+                CleanupDataGrid.ItemsSource = ContentList;
+
+                AppLogger.Info($"Loaded {allItems.Count} total items across {typesToScan.Length} content type(s).", appFunction.FindDuplicates);
+
+                var duplicateGroups = allItems
+                    .Where(i => !string.IsNullOrWhiteSpace(i.ContentName) && !string.IsNullOrWhiteSpace(i.ContentType))
+                    .GroupBy(i => (
+                        Name: i.ContentName!.Trim().ToUpperInvariant(),
+                        Type: i.ContentType!,
+                        Platform: i.ContentPlatform?.Trim() ?? string.Empty))
+                    .Where(g => g.Count() >= 2)
+                    .ToList();
+
+                if (duplicateGroups.Count == 0)
+                {
+                    DuplicatesInfoBar.Severity = Microsoft.UI.Xaml.Controls.InfoBarSeverity.Informational;
+                    DuplicatesInfoBar.Title = "Scan Complete";
+                    DuplicatesInfoBar.Message = "No duplicates found.";
+                    ShowOperationSuccess("No duplicates found.");
+                    AppLogger.Info("Scan complete — no duplicates found.", appFunction.FindDuplicates);
+                    return;
+                }
+
+                var totalDuplicateItems = duplicateGroups.Sum(g => g.Count());
+                AppLogger.Info($"Found {duplicateGroups.Count} duplicate group(s) with {totalDuplicateItems} items. Fetching metadata...", appFunction.FindDuplicates);
+
+                var metadataRegistry = GetDuplicateMetadataRegistry();
+                var assignmentChecks = GetAssignmentCheckRegistry();
+                var processed = 0;
+                var groupIndex = 0;
+
+                foreach (var group in duplicateGroups)
+                {
+                    var isOddGroup = groupIndex % 2 != 0;
+                    groupIndex++;
+
+                    foreach (var item in group)
+                    {
+                        processed++;
+                        DuplicatesLoadingOverlay.Show($"Fetching metadata... ({processed}/{totalDuplicateItems})");
+                        ShowOperationProgress("Fetching duplicate metadata", processed, totalDuplicateItems);
+
+                        var normalizedType = UserInterfaceHelper.IsApplicationContentType(item.ContentType!)
+                            ? ContentTypes.Application : item.ContentType!;
+
+                        var dupInfo = new DuplicateContentInfo
+                        {
+                            ContentName = item.ContentName,
+                            ContentType = item.ContentType,
+                            ContentId = item.ContentId,
+                            ContentPlatform = item.ContentPlatform,
+                            IsOddGroup = isOddGroup,
+                        };
+
+                        if (!string.IsNullOrEmpty(item.ContentId))
+                        {
+                            if (metadataRegistry.TryGetValue(normalizedType, out var getMetadata))
+                            {
+                                try
+                                {
+                                    var (created, modified) = await getMetadata(graphServiceClient, item.ContentId);
+                                    dupInfo.CreatedDateTime = created;
+                                    dupInfo.LastModifiedDateTime = modified;
+                                }
+                                catch (Exception ex)
+                                {
+                                    AppLogger.Warning($"Could not fetch metadata for '{item.ContentName}': {ex.Message}", appFunction.FindDuplicates);
+                                }
+                            }
+
+                            if (assignmentChecks.TryGetValue(normalizedType, out var checkAssignment))
+                            {
+                                try
+                                {
+                                    dupInfo.HasAssignments = await checkAssignment(graphServiceClient, item.ContentId);
+                                }
+                                catch (Exception ex)
+                                {
+                                    AppLogger.Warning($"Could not check assignments for '{item.ContentName}': {ex.Message}", appFunction.FindDuplicates);
+                                }
+                            }
+
+                            if (normalizedType == ContentTypes.EntraGroup)
+                            {
+                                try
+                                {
+                                    var members = await graphServiceClient.Groups[item.ContentId].Members.GetAsync(
+                                        req => req.QueryParameters.Top = 1);
+                                    dupInfo.HasMembers = members?.Value?.Count > 0;
+                                }
+                                catch (Exception ex)
+                                {
+                                    AppLogger.Warning($"Could not check members for group '{item.ContentName}': {ex.Message}", appFunction.FindDuplicates);
+                                }
+                            }
+                        }
+
+                        DuplicateContentList.Add(dupInfo);
+                    }
+                }
+
+                var assignedCount = DuplicateContentList.Count(d => d.HasAssignments == true);
+                DuplicatesInfoBar.Severity = Microsoft.UI.Xaml.Controls.InfoBarSeverity.Success;
+                DuplicatesInfoBar.Title = "Scan Complete";
+                DuplicatesInfoBar.Message = $"{duplicateGroups.Count} duplicate group(s)  ·  {totalDuplicateItems} items  ·  {assignedCount} assigned";
+
+                ShowOperationSuccess($"Found {duplicateGroups.Count} duplicate name(s) — {totalDuplicateItems} items total.");
+                AppLogger.Info($"Scan complete. {duplicateGroups.Count} duplicate group(s) found.", appFunction.FindDuplicates);
+            }
+            catch (Exception ex)
+            {
+                LogError($"Scan failed: {ex.Message}");
+                ShowOperationError($"Scan failed: {ex.Message}");
+            }
+            finally
+            {
+                DuplicatesLoadingOverlay.Hide();
+                ScanDuplicatesButton.IsEnabled = true;
+            }
+        }
+
+        private async Task DeleteSelectedDuplicatesAsync()
+        {
+            var selected = DuplicatesDataGrid.SelectedItems?.Cast<DuplicateContentInfo>().ToList();
+            if (selected == null || selected.Count == 0)
+            {
+                LogWarning("No items selected for deletion.");
+                return;
+            }
+
+            var assignedCount = selected.Count(i => i.HasAssignments == true);
+            var groupsWithMembers = selected.Count(i => i.HasMembers == true);
+
+            var warnings = new List<string>();
+            if (assignedCount > 0)
+                warnings.Add($"{assignedCount} item(s) have active assignments");
+            if (groupsWithMembers > 0)
+                warnings.Add($"{groupsWithMembers} Entra group(s) have members");
+
+            var hasWarnings = warnings.Count > 0;
+            var dialogContent = hasWarnings
+                ? $"{string.Join(" and ", warnings)} — deleting them may impact users or devices. This cannot be undone."
+                : $"Are you sure you want to permanently delete {selected.Count} item(s)? This cannot be undone.";
+
+            var dialog = new ContentDialog
+            {
+                Title = hasWarnings ? "Delete items with active assignments or members?" : "Delete selected duplicates?",
+                Content = dialogContent,
+                PrimaryButtonText = "Delete",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+            if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+
+            var deleteRegistry = GetDeleteTypeRegistry().ToDictionary(d => d.TypeKey);
+            var total = selected.Count;
+            var current = 0;
+            var success = 0;
+            var errors = 0;
+
+            DuplicatesLoadingOverlay.Show("Deleting selected duplicates...");
+            try
+            {
+                foreach (var item in selected)
+                {
+                    current++;
+                    ShowOperationProgress($"Deleting duplicate ({current}/{total})", current, total);
+
+                    if (string.IsNullOrEmpty(item.ContentId) || string.IsNullOrEmpty(item.ContentType)) continue;
+
+                    var typeKey = UserInterfaceHelper.IsApplicationContentType(item.ContentType)
+                        ? ContentTypes.Application : item.ContentType;
+
+                    if (!deleteRegistry.TryGetValue(typeKey, out var definition)) continue;
+
+                    try
+                    {
+                        await definition.DeleteAsync(item.ContentId);
+                        DuplicateContentList.Remove(item);
+                        AppLogger.Info($"Deleted duplicate '{item.ContentName}' (ID: {item.ContentId})", appFunction.Delete);
+                        UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
+                        success++;
+                    }
+                    catch (Exception ex)
+                    {
+                        AppLogger.Error($"Error deleting '{item.ContentName}': {ex.Message}", appFunction.Delete);
+                        errors++;
+                    }
+                }
+
+                if (errors == 0)
+                    ShowOperationSuccess($"Successfully deleted {success} duplicate(s).");
+                else
+                    ShowOperationError($"Completed with {errors} error(s). {success} deleted successfully.");
+            }
+            finally
+            {
+                DuplicatesLoadingOverlay.Hide();
+            }
+        }
+
+        private Dictionary<string, Func<GraphServiceClient, string, Task<(DateTimeOffset? Created, DateTimeOffset? Modified)>>> GetDuplicateMetadataRegistry() => new()
+        {
+            [ContentTypes.SettingsCatalog] = async (c, id) =>
+            {
+                var p = await c.DeviceManagement.ConfigurationPolicies[id].GetAsync();
+                return (p?.CreatedDateTime, p?.LastModifiedDateTime);
+            },
+            [ContentTypes.DeviceCompliancePolicy] = async (c, id) =>
+            {
+                var p = await c.DeviceManagement.DeviceCompliancePolicies[id].GetAsync();
+                return (p?.CreatedDateTime, p?.LastModifiedDateTime);
+            },
+            [ContentTypes.DeviceConfigurationPolicy] = async (c, id) =>
+            {
+                var p = await c.DeviceManagement.DeviceConfigurations[id].GetAsync();
+                return (p?.CreatedDateTime, p?.LastModifiedDateTime);
+            },
+            [ContentTypes.AppleBYODEnrollmentProfile] = async (c, id) =>
+            {
+                var p = await c.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[id].GetAsync();
+                return (p?.CreatedDateTime, p?.LastModifiedDateTime);
+            },
+            [ContentTypes.AssignmentFilter] = async (c, id) =>
+            {
+                var p = await c.DeviceManagement.AssignmentFilters[id].GetAsync();
+                return (p?.CreatedDateTime, p?.LastModifiedDateTime);
+            },
+            [ContentTypes.EntraGroup] = async (c, id) =>
+            {
+                var p = await c.Groups[id].GetAsync();
+                return (p?.CreatedDateTime, null);
+            },
+            [ContentTypes.PowerShellScript] = async (c, id) =>
+            {
+                var p = await c.DeviceManagement.DeviceManagementScripts[id].GetAsync();
+                return (p?.CreatedDateTime, p?.LastModifiedDateTime);
+            },
+            [ContentTypes.ProactiveRemediation] = async (c, id) =>
+            {
+                var p = await c.DeviceManagement.DeviceHealthScripts[id].GetAsync();
+                return (p?.CreatedDateTime, p?.LastModifiedDateTime);
+            },
+            [ContentTypes.MacOSShellScript] = async (c, id) =>
+            {
+                var p = await c.DeviceManagement.DeviceShellScripts[id].GetAsync();
+                return (p?.CreatedDateTime, p?.LastModifiedDateTime);
+            },
+            [ContentTypes.WindowsAutoPilotProfile] = async (c, id) =>
+            {
+                var p = await c.DeviceManagement.WindowsAutopilotDeploymentProfiles[id].GetAsync();
+                return (p?.CreatedDateTime, p?.LastModifiedDateTime);
+            },
+            [ContentTypes.WindowsDriverUpdate] = async (c, id) =>
+            {
+                var p = await c.DeviceManagement.WindowsDriverUpdateProfiles[id].GetAsync();
+                return (p?.CreatedDateTime, p?.LastModifiedDateTime);
+            },
+            [ContentTypes.WindowsFeatureUpdate] = async (c, id) =>
+            {
+                var p = await c.DeviceManagement.WindowsFeatureUpdateProfiles[id].GetAsync();
+                return (p?.CreatedDateTime, p?.LastModifiedDateTime);
+            },
+            [ContentTypes.WindowsQualityUpdatePolicy] = async (c, id) =>
+            {
+                var p = await c.DeviceManagement.WindowsQualityUpdatePolicies[id].GetAsync();
+                return (p?.CreatedDateTime, p?.LastModifiedDateTime);
+            },
+            [ContentTypes.WindowsQualityUpdateProfile] = async (c, id) =>
+            {
+                var p = await c.DeviceManagement.WindowsQualityUpdateProfiles[id].GetAsync();
+                return (p?.CreatedDateTime, p?.LastModifiedDateTime);
+            },
+            [ContentTypes.Application] = async (c, id) =>
+            {
+                var p = await c.DeviceAppManagement.MobileApps[id].GetAsync();
+                return (p?.CreatedDateTime, p?.LastModifiedDateTime);
+            },
+        };
+
         #endregion
     }
 }
+
 
 
