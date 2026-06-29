@@ -5,7 +5,7 @@ VisualStudioVersion = 18.0.11217.181
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IntuneTools", "IntuneTools.csproj", "{02C93EA9-C478-4299-847B-F1910EC0B571}"
 EndProject
-Project("{C7167F0D-BC9F-4E6E-AFE1-012C56B48DB5}") = "IntuneToolsPackaged", "..\IntuneToolsPackaged\IntuneToolsPackaged.wapproj", "{362685B8-A82A-4468-BCE7-0376880A2945}"
+Project("{C7167F0D-BC9F-4E6E-AFE1-012C56B48DB5}") = "IntuneToolsPackaged", "IntuneToolsPackaged\IntuneToolsPackaged.wapproj", "{362685B8-A82A-4468-BCE7-0376880A2945}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IntuneTools.Tests", "IntuneTools.Tests\IntuneTools.Tests.csproj", "{3F5A4E50-4F91-450D-96F7-1AA7D05996A3}"
 EndProject
