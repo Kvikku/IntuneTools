@@ -80,29 +80,11 @@ cd IntuneTools
 dotnet build
 ```
 
-## Releasing a new version
-
-Version is managed through the `<Version>` property in `IntuneTools.csproj`. The `Package.appxmanifest` identity version is automatically kept in sync via an MSBuild target — no manual update needed.
-
-**To ship a new release:**
-
-1. Update the `<Version>` in `IntuneTools.csproj` (e.g. `1.4.0.0`).
-2. Commit, push, and tag:
-   ```powershell
-   git add .
-   git commit -m "Bump version to 1.4.0.0"
-   git tag 1.4.0.0
-   git push origin master --tags
-   ```
-3. The **Release** workflow builds the app for x64, then creates a **draft** GitHub Release with the zip attached.
-4. Open the draft release on GitHub, add release notes, and publish it.
-
-> You can also trigger a release manually from the **Actions** tab using the _Release_ workflow dispatch.
-
 ## Roadmap
 
-- [ ] Import applications
 - [x] Delete duplicate policies/apps
+- [x] CSV export on all content pages
+- [ ] JSON export/import for applications
 - [ ] Bulk add objects to groups
 
 Have an idea? [Open an issue](https://github.com/Kvikku/IntuneTools/issues) — community input shapes the roadmap.
