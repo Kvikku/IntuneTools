@@ -2,7 +2,9 @@ using CommunityToolkit.WinUI.UI.Controls;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
+using Microsoft.UI.Xaml.Input;
 using System.ComponentModel;
+using Windows.System;
 using static IntuneTools.Graph.EntraHelperClasses.GroupHelperClass;
 using static IntuneTools.Graph.IntuneHelperClasses.AppleBYODEnrollmentProfileHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceCompliancePolicyHelper;
@@ -735,6 +737,15 @@ namespace IntuneTools.Pages
             else
             {
                 AppendToLog("Search query cannot be empty.");
+            }
+        }
+
+        private void SearchQueryTextBox_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == VirtualKey.Enter && Search.IsEnabled)
+            {
+                e.Handled = true;
+                SearchButton_Click(Search, e);
             }
         }
 

@@ -1,8 +1,10 @@
 using CommunityToolkit.WinUI.UI.Controls;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Text;
+using Windows.System;
 using static IntuneTools.Graph.IntuneHelperClasses.AppleBYODEnrollmentProfileHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceCompliancePolicyHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceConfigurationHelper;
@@ -899,6 +901,15 @@ namespace IntuneTools.Pages
                 return;
             }
             await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
+        }
+
+        private void InputTextBox_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == VirtualKey.Enter && SearchButton.IsEnabled)
+            {
+                e.Handled = true;
+                SearchButton_Click(SearchButton, e);
+            }
         }
 
         private async void ViewAssignmentsButton_Click(object sender, RoutedEventArgs e)

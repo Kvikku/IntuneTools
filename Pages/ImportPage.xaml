@@ -53,7 +53,8 @@
                         <TextBox x:Name="SearchQueryTextBox"
                                  PlaceholderText="Enter search query..."
                                  Width="250"
-                                 VerticalAlignment="Center"/>
+                                 VerticalAlignment="Center"
+                                 KeyDown="SearchQueryTextBox_KeyDown"/>
                         <AppBarButton x:Name="Search" Icon="Find" Label="Search" Click="SearchButton_Click" ToolTipService.ToolTip="Search for specific items."/>
                         <AppBarButton x:Name="ListAll" Icon="ViewAll" Label="List All" Click="ListAllButton_Click" ToolTipService.ToolTip="List all items."/>
                         <AppBarSeparator/>
