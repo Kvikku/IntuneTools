@@ -10,6 +10,7 @@
     xmlns:sizers="using:CommunityToolkit.WinUI.Controls"
     xmlns:utilities="using:IntuneTools.Utilities"
     mc:Ignorable="d"
+    NavigationCacheMode="Required"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
     <!--
