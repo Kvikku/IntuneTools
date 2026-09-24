@@ -37,6 +37,10 @@ namespace IntuneTools.Pages
         // Content type filter for duplicate scan
         private readonly HashSet<string> _selectedContentTypes = new(SupportedContentTypes);
 
+        // Keys used to persist this page's content-type filter selection and last search query.
+        private const string DuplicatesContentTypeStateKey = "CleanupDuplicates";
+        private const string SearchStateKey = "Cleanup";
+
         private static readonly (string TypeKey, string DisplayName)[] ContentTypeOptions =
         [
             (ContentTypes.SettingsCatalog,           "Settings Catalog"),
@@ -107,17 +111,37 @@ namespace IntuneTools.Pages
             LogConsole.ItemsSource = LogEntries;
             DuplicatesDataGrid.ItemsSource = DuplicateContentList;
             PopulateContentTypeFilter();
+
+            // Restore the last search query so it doesn't need to be retyped after every restart.
+            InputTextBox.Text = PageStatePersistence.LoadLastSearchQuery(SearchStateKey);
         }
 
+        /// <summary>
+        /// Builds the duplicate-scan content-type checkboxes, restoring the last saved
+        /// selection. If nothing has been saved yet (first run), defaults to selecting
+        /// everything, matching prior behavior.
+        /// </summary>
         private void PopulateContentTypeFilter()
         {
+            var saved = PageStatePersistence.LoadContentTypeSelection(DuplicatesContentTypeStateKey);
+            if (saved != null)
+            {
+                _selectedContentTypes.Clear();
+                foreach (var typeKey in saved)
+                    _selectedContentTypes.Add(typeKey);
+            }
+
             foreach (var (typeKey, displayName) in ContentTypeOptions)
             {
-                var cb = new CheckBox { Content = displayName, IsChecked = true, Tag = typeKey };
+                var cb = new CheckBox { Content = displayName, IsChecked = _selectedContentTypes.Contains(typeKey), Tag = typeKey };
                 cb.Checked += ContentTypeFilter_Changed;
                 cb.Unchecked += ContentTypeFilter_Changed;
                 ContentTypeFilterPanel.Children.Add(cb);
             }
+
+            var selected = _selectedContentTypes.Count;
+            var total = ContentTypeOptions.Length;
+            ContentTypeFilterButton.Label = selected == total ? "All Types" : $"{selected} of {total} types";
         }
 
         protected override string UnauthenticatedMessage => "You must authenticate with a tenant before using cleanup features.";
@@ -605,6 +629,7 @@ namespace IntuneTools.Pages
                 AppendToDetailsRichTextBlock("Please enter a search query.");
                 return;
             }
+            PageStatePersistence.SaveLastSearchQuery(SearchStateKey, searchQuery);
             await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
         }
 
@@ -726,6 +751,8 @@ namespace IntuneTools.Pages
             var selected = _selectedContentTypes.Count;
             var total = ContentTypeOptions.Length;
             ContentTypeFilterButton.Label = selected == total ? "All Types" : $"{selected} of {total} types";
+
+            PageStatePersistence.SaveContentTypeSelection(DuplicatesContentTypeStateKey, _selectedContentTypes);
         }
 
         private void ClearDuplicateSelectionButton_Click(object sender, RoutedEventArgs e)

@@ -82,7 +82,13 @@ namespace IntuneTools.Pages
             InitializeComponent();
             RightClickMenu.AttachDataGridContextMenu(AssignmentsDataGrid, () => sourceGraphServiceClient);
             LogConsole.ItemsSource = LogEntries;
+
+            // Restore the last search query so it doesn't need to be retyped after every restart.
+            InputTextBox.Text = PageStatePersistence.LoadLastSearchQuery(PageStateKey);
         }
+
+        // Key used to persist this page's last search query.
+        private const string PageStateKey = "ManageAssignments";
 
         protected override string UnauthenticatedMessage => "You must authenticate with a tenant before managing assignments.";
 
@@ -900,6 +906,7 @@ namespace IntuneTools.Pages
                 AppendToLog("Please enter a search query.");
                 return;
             }
+            PageStatePersistence.SaveLastSearchQuery(PageStateKey, searchQuery);
             await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
         }
 

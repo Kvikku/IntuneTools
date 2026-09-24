@@ -113,6 +113,9 @@ namespace IntuneTools.Pages
         // UI initialization flag to prevent early event handlers from using null controls (e.g., LogConsole)
         private bool _uiInitialized = false;
 
+        // Key used to persist this page's content-type filter selection and last search query.
+        private const string PageStateKey = "Assignment";
+
         #endregion
 
         #region Constructor & Configuration
@@ -124,6 +127,9 @@ namespace IntuneTools.Pages
             _allAssignments.AddRange(AssignmentList);
             AppDataGrid.ItemsSource = AssignmentList;
             LogConsole.ItemsSource = LogEntries;
+
+            // Restore the last search query so it doesn't need to be retyped after every restart.
+            ContentSearchBox.Text = PageStatePersistence.LoadLastSearchQuery(PageStateKey);
 
             this.Loaded += AssignmentPage_Loaded;
             RightClickMenu.AttachDataGridContextMenu(AppDataGrid, () => sourceGraphServiceClient);
@@ -575,6 +581,7 @@ namespace IntuneTools.Pages
         private void ContentSearchBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
         {
             var query = sender.Text;
+            PageStatePersistence.SaveLastSearchQuery(PageStateKey, query);
             if (string.IsNullOrWhiteSpace(query))
             {
                 // If query is empty, restore the full list
@@ -782,22 +789,34 @@ namespace IntuneTools.Pages
         private void AssignmentPage_Loaded(object sender, RoutedEventArgs e)
         {
             _uiInitialized = true; // UI now safe for logging
-            AutoCheckAllOptions();
+            ApplyPersistedOrDefaultContentTypeSelection();
             AppLogger.UiOnly("Assignment page loaded.");
         }
 
-        private void AutoCheckAllOptions()
+        /// <summary>
+        /// Restores the content-type checkboxes from the last saved selection. If nothing has
+        /// been saved yet (first run), defaults to selecting everything, matching prior behavior.
+        /// </summary>
+        private void ApplyPersistedOrDefaultContentTypeSelection()
         {
+            var saved = PageStatePersistence.LoadContentTypeSelection(PageStateKey);
+
             _suppressOptionEvents = true;
             foreach (var cb in OptionsPanel.Children.OfType<CheckBox>().Where(cb => cb.Name != "OptionsAllCheckBox"))
             {
-                cb.IsChecked = true;
+                cb.IsChecked = saved == null || saved.Contains(cb.Name);
             }
             _suppressOptionEvents = false;
 
-            _suppressSelectAllEvents = true;
-            OptionsAllCheckBox.IsChecked = true;
-            _suppressSelectAllEvents = false;
+            UpdateSelectAllCheckBox();
+        }
+
+        /// <summary>
+        /// Persists the currently checked content-type filters so they're remembered next launch.
+        /// </summary>
+        private void SaveContentTypeSelection()
+        {
+            PageStatePersistence.SaveContentTypeSelection(PageStateKey, GetCheckedOptionNames());
         }
 
         public List<string> GetCheckedOptionNames()
@@ -819,6 +838,7 @@ namespace IntuneTools.Pages
             {
                 checkbox.IsChecked = true;
             }
+            SaveContentTypeSelection();
         }
 
         private void SelectAll_Unchecked(object sender, RoutedEventArgs e)
@@ -833,6 +853,7 @@ namespace IntuneTools.Pages
                 }
             }
             _suppressOptionEvents = false;
+            SaveContentTypeSelection();
         }
 
         private void SelectAll_Indeterminate(object sender, RoutedEventArgs e) { }
@@ -841,12 +862,14 @@ namespace IntuneTools.Pages
         {
             if (_suppressOptionEvents) return;
             UpdateSelectAllCheckBox();
+            SaveContentTypeSelection();
         }
 
         private void Option_Unchecked(object sender, RoutedEventArgs e)
         {
             if (_suppressOptionEvents) return;
             UpdateSelectAllCheckBox();
+            SaveContentTypeSelection();
         }
 
         private void UpdateSelectAllCheckBox()

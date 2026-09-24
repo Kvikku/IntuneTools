@@ -65,7 +65,13 @@ namespace IntuneTools.Pages
             this.InitializeComponent();
             RightClickMenu.AttachDataGridContextMenu(RenamingDataGrid, () => sourceGraphServiceClient);
             LogConsole.ItemsSource = LogEntries;
+
+            // Restore the last search query so it doesn't need to be retyped after every restart.
+            SearchQueryTextBox.Text = PageStatePersistence.LoadLastSearchQuery(PageStateKey);
         }
+
+        // Key used to persist this page's last search query.
+        private const string PageStateKey = "Renaming";
 
         protected override string UnauthenticatedMessage => "You must authenticate with a tenant before using renaming features.";
 
@@ -751,6 +757,7 @@ namespace IntuneTools.Pages
                 LogWarning("Please enter a search query.");
                 return;
             }
+            PageStatePersistence.SaveLastSearchQuery(PageStateKey, searchQuery);
             await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
         }
 
