@@ -133,6 +133,21 @@ namespace IntuneTools.Pages
 
         protected override string UnauthenticatedMessage => "Authenticate with a tenant to load items, or use 'Import from JSON' to load from a file.";
 
+        /// <summary>
+        /// Auto-runs the remembered search the first time this page is shown while
+        /// authenticated in a session, if nothing is staged yet.
+        /// </summary>
+        protected override async void OnFirstAuthenticatedEntry()
+        {
+            if (ContentList.Count > 0) return;
+
+            var savedQuery = PageStatePersistence.LoadLastSearchQuery(PageStateKey);
+            if (string.IsNullOrWhiteSpace(savedQuery)) return;
+
+            AppendToDetailsRichTextBlock($"Auto-loading remembered search: '{savedQuery}'.");
+            await SearchOrchestrator(sourceGraphServiceClient, savedQuery);
+        }
+
         protected override IEnumerable<string> GetManagedControlNames() => new[]
         {
             "InputTextBox", "SearchButton", "ListAllButton",
