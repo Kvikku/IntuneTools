@@ -1,4 +1,5 @@
 using IntuneTools.Graph;
+using IntuneTools.Graph.DemoMode;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -178,6 +179,29 @@ namespace IntuneTools.Pages
             AppLogger.Info($"Swapped tenants. Source is now '{sourceTenantName}', Destination is now '{destinationTenantName}'.", appFunction.Main);
         }
 
+        /// <summary>
+        /// Enables Demo Mode: replaces both tenant connections with in-memory fictitious data,
+        /// bypassing MSAL entirely, so pages can be navigated without a live tenant.
+        /// </summary>
+        private void EnableDemoMode()
+        {
+            var (sourceClient, sourceName) = DemoModeService.CreateSourceTenant();
+            var (destinationClient, destinationName) = DemoModeService.CreateDestinationTenant();
+
+            sourceGraphServiceClient = sourceClient;
+            sourceTenantName = sourceName;
+            Variables.sourceTenantName = sourceName;
+
+            destinationGraphServiceClient = destinationClient;
+            destinationTenantName = destinationName;
+            Variables.destinationTenantName = destinationName;
+
+            UpdateTenantStatusUI(isSource: true, isSignedIn: true, sourceName);
+            UpdateTenantStatusUI(isSource: false, isSignedIn: true, destinationName);
+
+            AppLogger.Info("Demo Mode enabled: Source and Destination are now backed by fictitious sample data (no live Graph connection, no sign-in performed).", appFunction.Main);
+        }
+
         #endregion
 
         #region Event Handlers
@@ -225,6 +249,11 @@ namespace IntuneTools.Pages
         private async void SourceLoginButton_Click(object sender, RoutedEventArgs e)
         {
             await AuthenticateToTenantAsync(isSource: true);
+        }
+
+        private void EnableDemoModeButton_Click(object sender, RoutedEventArgs e)
+        {
+            EnableDemoMode();
         }
 
         private async void SourceViewPermissionsButton_Click(object sender, RoutedEventArgs e)
