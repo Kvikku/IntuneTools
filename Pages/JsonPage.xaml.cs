@@ -121,7 +121,13 @@ namespace IntuneTools.Pages
             InitializeComponent();
             RightClickMenu.AttachDataGridContextMenu(JsonDataGrid, () => sourceGraphServiceClient);
             LogConsole.ItemsSource = LogEntries;
+
+            // Restore the last search query so it doesn't need to be retyped after every restart.
+            InputTextBox.Text = PageStatePersistence.LoadLastSearchQuery(PageStateKey);
         }
+
+        // Key used to persist this page's last search query.
+        private const string PageStateKey = "Json";
 
         protected override string UnauthenticatedMessage => "Authenticate with a tenant to load items, or use 'Import from JSON' to load from a file.";
 
@@ -744,6 +750,7 @@ namespace IntuneTools.Pages
                 AppendToDetailsRichTextBlock("Please enter a search query.");
                 return;
             }
+            PageStatePersistence.SaveLastSearchQuery(PageStateKey, searchQuery);
             await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
         }
 

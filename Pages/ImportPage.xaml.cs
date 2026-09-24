@@ -58,6 +58,9 @@ namespace IntuneTools.Pages
         private bool _suppressOptionEvents = false;
         private bool _suppressSelectAllEvents = false;
 
+        // Key used to persist this page's content-type filter selection and last search query.
+        private const string PageStateKey = "Import";
+
         // Progress tracking for import operations
         private int _importTotal;
         private int _importCurrent;
@@ -92,11 +95,40 @@ namespace IntuneTools.Pages
         public ImportPage()
         {
             this.InitializeComponent();
-            SelectAll_Checked(LoadingOverlay, null); // Initialize the 'Select all' checkbox to checked state
+            ApplyPersistedOrDefaultContentTypeSelection();
             NewControlsPanel.Visibility = Visibility.Collapsed;
             LogConsole.ItemsSource = LogEntries;
             LogInfo("Console output");
             RightClickMenu.AttachDataGridContextMenu(ContentDataGrid, () => sourceGraphServiceClient);
+
+            // Restore the last search query so it doesn't need to be retyped after every restart.
+            SearchQueryTextBox.Text = PageStatePersistence.LoadLastSearchQuery(PageStateKey);
+        }
+
+        /// <summary>
+        /// Restores the content-type checkboxes from the last saved selection. If nothing has
+        /// been saved yet (first run), defaults to selecting everything, matching prior behavior.
+        /// </summary>
+        private void ApplyPersistedOrDefaultContentTypeSelection()
+        {
+            var saved = PageStatePersistence.LoadContentTypeSelection(PageStateKey);
+
+            _suppressOptionEvents = true;
+            foreach (var cb in OptionsPanel.Children.OfType<CheckBox>().Where(cb => cb.Name != "OptionsAllCheckBox"))
+            {
+                cb.IsChecked = saved == null || saved.Contains(cb.Name);
+            }
+            _suppressOptionEvents = false;
+
+            UpdateSelectAllCheckBox();
+        }
+
+        /// <summary>
+        /// Persists the currently checked content-type filters so they're remembered next launch.
+        /// </summary>
+        private void SaveContentTypeSelection()
+        {
+            PageStatePersistence.SaveContentTypeSelection(PageStateKey, GetCheckedOptionNames());
         }
 
         protected override appFunction PageLogFunction => appFunction.Import;
@@ -717,12 +749,14 @@ namespace IntuneTools.Pages
         {
             if (_suppressOptionEvents) return;
             UpdateSelectAllCheckBox();
+            SaveContentTypeSelection();
         }
 
         private void Option_Unchecked(object sender, RoutedEventArgs e)
         {
             if (_suppressOptionEvents) return;
             UpdateSelectAllCheckBox();
+            SaveContentTypeSelection();
         }
 
         private async void SearchButton_Click(object sender, RoutedEventArgs e)
@@ -730,6 +764,7 @@ namespace IntuneTools.Pages
             var searchQuery = SearchQueryTextBox.Text?.Trim();
             if (!string.IsNullOrEmpty(searchQuery))
             {
+                PageStatePersistence.SaveLastSearchQuery(PageStateKey, searchQuery);
                 await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
             }
             else
@@ -750,6 +785,7 @@ namespace IntuneTools.Pages
                 }
             }
             _suppressOptionEvents = false;
+            SaveContentTypeSelection();
         }
 
         private void SelectAll_Indeterminate(object sender, RoutedEventArgs e)
@@ -769,6 +805,7 @@ namespace IntuneTools.Pages
                 }
             }
             _suppressOptionEvents = false;
+            SaveContentTypeSelection();
         }
 
         private void UpdateSelectAllCheckBox()
