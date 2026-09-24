@@ -135,6 +135,23 @@ namespace IntuneTools.Pages
 
         protected override appFunction PageLogFunction => appFunction.Import;
 
+        /// <summary>
+        /// Auto-runs the remembered search the first time this page is shown while
+        /// authenticated in a session, if nothing is staged yet. Content-type checkboxes are
+        /// already restored by the constructor before this fires, so the search respects
+        /// whatever was last selected.
+        /// </summary>
+        protected override async void OnFirstAuthenticatedEntry()
+        {
+            if (ContentList.Count > 0) return;
+
+            var savedQuery = PageStatePersistence.LoadLastSearchQuery(PageStateKey);
+            if (string.IsNullOrWhiteSpace(savedQuery)) return;
+
+            AppendToLog($"Auto-loading remembered search: '{savedQuery}'.");
+            await SearchOrchestrator(sourceGraphServiceClient, savedQuery);
+        }
+
         protected override string[] GetManagedControlNames() => new[]
         {
             "SearchQueryTextBox", "Search", "ListAll", "ClearSelected", "ClearAll",

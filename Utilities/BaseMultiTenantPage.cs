@@ -62,11 +62,24 @@ namespace IntuneTools.Utilities
         /// </summary>
         protected virtual string UnauthenticatedMessage => "You must authenticate with a tenant before using this feature.";
 
+        /// <summary>
+        /// Set once <see cref="OnFirstAuthenticatedEntry"/> has fired, so it never fires twice.
+        /// With NavigationCacheMode="Required" pages, the page instance (and this flag) live
+        /// for the whole app session, so this is effectively a once-per-session gate.
+        /// </summary>
+        private bool _firstAuthenticatedEntryHandled = false;
+
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
             AppLogger.RegisterUiHandler(AddLogEntry, DispatcherQueue);
             ValidateAuthenticationState();
+
+            if (!_firstAuthenticatedEntryHandled && IsPageAuthenticated())
+            {
+                _firstAuthenticatedEntryHandled = true;
+                OnFirstAuthenticatedEntry();
+            }
         }
 
         protected override void OnNavigatedFrom(NavigationEventArgs e)
@@ -76,16 +89,35 @@ namespace IntuneTools.Utilities
         }
 
         /// <summary>
-        /// Validates tenant authentication and updates UI accordingly.
+        /// True when the tenant(s) this page requires are currently authenticated
+        /// (source only, or source + destination when <see cref="RequiresBothTenants"/> is true).
         /// </summary>
-        protected virtual void ValidateAuthenticationState()
+        protected bool IsPageAuthenticated()
         {
             bool isSourceAuthenticated = !string.IsNullOrEmpty(Variables.sourceTenantName);
             bool isDestinationAuthenticated = !string.IsNullOrEmpty(Variables.destinationTenantName);
 
-            bool isAuthenticated = RequiresBothTenants
+            return RequiresBothTenants
                 ? isSourceAuthenticated && isDestinationAuthenticated
                 : isSourceAuthenticated;
+        }
+
+        /// <summary>
+        /// Called at most once per app session, the first time this page navigates in while
+        /// its required tenant(s) are authenticated. Pages that remember a last search query
+        /// via <see cref="PageStatePersistence"/> override this to auto-run it when nothing is
+        /// staged yet, removing the "click List All / Search" step on first visit each session.
+        /// Does nothing by default. Never auto-runs a full "List All" — only a query the user
+        /// explicitly searched for previously.
+        /// </summary>
+        protected virtual void OnFirstAuthenticatedEntry() { }
+
+        /// <summary>
+        /// Validates tenant authentication and updates UI accordingly.
+        /// </summary>
+        protected virtual void ValidateAuthenticationState()
+        {
+            bool isAuthenticated = IsPageAuthenticated();
 
             var tenantInfoBar = FindName("TenantInfoBar") as InfoBar;
             if (tenantInfoBar != null)

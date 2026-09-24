@@ -73,6 +73,22 @@ namespace IntuneTools.Pages
         // Key used to persist this page's last search query.
         private const string PageStateKey = "Renaming";
 
+        /// <summary>
+        /// Auto-runs the remembered search the first time this page is shown while
+        /// authenticated in a session, if nothing is staged yet. See
+        /// BaseMultiTenantPage.OnFirstAuthenticatedEntry for the once-per-session contract.
+        /// </summary>
+        protected override async void OnFirstAuthenticatedEntry()
+        {
+            if (ContentList.Count > 0) return;
+
+            var savedQuery = PageStatePersistence.LoadLastSearchQuery(PageStateKey);
+            if (string.IsNullOrWhiteSpace(savedQuery)) return;
+
+            AppendToLog($"Auto-loading remembered search: '{savedQuery}'.");
+            await SearchOrchestrator(sourceGraphServiceClient, savedQuery);
+        }
+
         protected override string UnauthenticatedMessage => "You must authenticate with a tenant before using renaming features.";
 
         protected override appFunction PageLogFunction => appFunction.Rename;

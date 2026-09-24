@@ -148,6 +148,23 @@ namespace IntuneTools.Pages
 
         protected override appFunction PageLogFunction => appFunction.Delete;
 
+        /// <summary>
+        /// Auto-runs the remembered Delete-panel search the first time this page is shown
+        /// while authenticated in a session, if nothing is staged yet. Never auto-runs
+        /// "List All" or the duplicate scan — both are left as explicit actions given this
+        /// page stages content for permanent deletion.
+        /// </summary>
+        protected override async void OnFirstAuthenticatedEntry()
+        {
+            if (ContentList.Count > 0) return;
+
+            var savedQuery = PageStatePersistence.LoadLastSearchQuery(SearchStateKey);
+            if (string.IsNullOrWhiteSpace(savedQuery)) return;
+
+            AppendToDetailsRichTextBlock($"Auto-loading remembered search: '{savedQuery}'.");
+            await SearchOrchestrator(sourceGraphServiceClient, savedQuery);
+        }
+
         protected override IEnumerable<string> GetManagedControlNames() => new[]
         {
             "InputTextBox", "SearchButton", "ListAllButton", "FindUnassignedButton",
