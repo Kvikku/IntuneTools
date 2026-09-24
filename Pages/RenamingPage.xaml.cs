@@ -2,10 +2,8 @@ using CommunityToolkit.WinUI.UI.Controls;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 using System.ComponentModel;
-using Windows.System;
 using static IntuneTools.Graph.EntraHelperClasses.GroupHelperClass;
 using static IntuneTools.Graph.IntuneHelperClasses.AppleBYODEnrollmentProfileHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.ApplicationHelper;
@@ -67,7 +65,7 @@ namespace IntuneTools.Pages
             LogConsole.ItemsSource = LogEntries;
 
             // Restore the last search query so it doesn't need to be retyped after every restart.
-            SearchQueryTextBox.Text = PageStatePersistence.LoadLastSearchQuery(PageStateKey);
+            SearchStagingBar.SearchText = PageStatePersistence.LoadLastSearchQuery(PageStateKey);
         }
 
         // Key used to persist this page's last search query.
@@ -95,9 +93,8 @@ namespace IntuneTools.Pages
 
         protected override IEnumerable<string> GetManagedControlNames() => new[]
         {
-            "SearchQueryTextBox", "SearchButton", "ListAllButton", "ClearSelectedButton",
-            "ClearAllButton", "NewNameTextBox", "PrefixButton", "RenameButton",
-            "RenamingDataGrid", "ClearLogButton", "RenameModeComboBox", "ExportCsvButton"
+            "SearchStagingBar", "NewNameTextBox", "PrefixButton", "RenameButton",
+            "RenamingDataGrid", "RenameModeComboBox"
         };
 
         #endregion
@@ -107,15 +104,13 @@ namespace IntuneTools.Pages
         protected override void ShowLoading(string message = "Loading data from Microsoft Graph...")
         {
             base.ShowLoading(message);
-            ListAllButton.IsEnabled = false;
-            SearchButton.IsEnabled = false;
+            SearchStagingBar.SetSearchAndListEnabled(false);
         }
 
         protected override void HideLoading()
         {
             base.HideLoading();
-            ListAllButton.IsEnabled = true;
-            SearchButton.IsEnabled = true;
+            SearchStagingBar.SetSearchAndListEnabled(true);
         }
 
         #endregion
@@ -765,9 +760,9 @@ namespace IntuneTools.Pages
             HandleDataGridSorting(sender, e);
         }
 
-        private async void SearchButton_Click(object sender, RoutedEventArgs e)
+        private async void SearchStagingBar_SearchRequested(object sender, RoutedEventArgs e)
         {
-            string searchQuery = SearchQueryTextBox.Text.Trim();
+            string searchQuery = SearchStagingBar.SearchText.Trim();
             if (string.IsNullOrEmpty(searchQuery))
             {
                 LogWarning("Please enter a search query.");
@@ -775,15 +770,6 @@ namespace IntuneTools.Pages
             }
             PageStatePersistence.SaveLastSearchQuery(PageStateKey, searchQuery);
             await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
-        }
-
-        private void SearchQueryTextBox_KeyDown(object sender, KeyRoutedEventArgs e)
-        {
-            if (e.Key == VirtualKey.Enter && SearchButton.IsEnabled)
-            {
-                e.Handled = true;
-                SearchButton_Click(SearchButton, e);
-            }
         }
 
         private async void ExportCsvButton_Click(object sender, RoutedEventArgs e)

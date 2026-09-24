@@ -115,7 +115,51 @@ embed a `FontIcon` (`FontSize="16"`) plus a `TextBlock`, separated by a
   `BaseMultiTenantPage`. Do not invent new spinners.
 - Use `InfoBar` (not custom yellow rectangles) for staging-area guidance.
 
-## 7. Side panels
+## 7. Search & Staging toolbar
+
+Every data page that supports search plus staged bulk actions (Renaming,
+Cleanup's Delete panel, Manage Assignments, Import, JSON) uses the shared
+`IntuneTools.Utilities.SearchStagingBar` `UserControl` instead of hand-rolling
+the TextBox + Search / List All / Clear Selected / Clear All / Clear Log /
+Export CSV button cluster. Drop it into the "Search & Staging" card:
+
+```xml
+<utilities:SearchStagingBar x:Name="SearchStagingBar"
+                             SearchRequested="SearchStagingBar_SearchRequested"
+                             ListAllRequested="ListAllButton_Click"
+                             ClearSelectedRequested="ClearSelectedButton_Click"
+                             ClearAllRequested="ClearAllButton_Click"
+                             ClearLogRequested="ClearLogButton_Click"
+                             ExportCsvRequested="ExportCsvButton_Click"/>
+```
+
+The control raises events rather than performing any Graph or staging logic
+itself — each page keeps its own validation, `PageStatePersistence` calls,
+and orchestrator calls in the event handler, exactly as before. Useful
+members:
+
+- `SearchText` — get/set the search box text (used to restore the last
+  saved query on page load).
+- `SetSearchAndListEnabled(bool)` — replaces the old
+  `SearchButton.IsEnabled = ...; ListAllButton.IsEnabled = ...;` pairs in
+  `ShowLoading`/`HideLoading` overrides.
+- `SetClearButtonsEnabled(bool)` — for pages that lock staging edits during
+  a multi-step scan (e.g. Cleanup's Find Unassigned).
+- `ExtraButtons` — a `UIElement` inserted between "List All" and "Clear
+  Selected" for a page-specific verb that belongs in this cluster (Cleanup's
+  "Find Unassigned" button, Import's "Content Types" flyout). Set it via
+  property-element syntax (`<utilities:SearchStagingBar.ExtraButtons>`).
+
+Because `SearchStagingBar` is a single named control, list just
+`"SearchStagingBar"` in `GetManagedControlNames()` instead of each individual
+button — `IsEnabled = false` on the control cascades to every child
+automatically.
+
+Pages with a fundamentally different search UX (Assignment's `AutoSuggestBox`,
+which filters already-loaded content client-side rather than calling Graph)
+keep their own toolbar and are not migrated to this control.
+
+## 8. Side panels
 
 - The right-hand side panel uses a `GridSplitter` with `Width="8"` and
   `Background="Transparent"`.
@@ -125,7 +169,7 @@ embed a `FontIcon` (`FontSize="16"`) plus a `TextBlock`, separated by a
 - The log `ListView` uses `LogListViewItemContainerStyle` and the three
   `Log*TextBlockStyle` styles for timestamp / level / message.
 
-## 8. Naming conventions (controls referenced from code-behind)
+## 9. Naming conventions (controls referenced from code-behind)
 
 These names are part of the implicit contract with `BaseDataOperationPage`
 and `BaseMultiTenantPage` and **must not be renamed** when migrating a page:
@@ -136,7 +180,11 @@ under `IntuneTools.Utilities`; pages that still use a hand-rolled overlay
 must additionally keep `LoadingProgressRing` and `LoadingStatusText` so the
 legacy fallback in `BaseMultiTenantPage` still works.)
 
-## 9. Migration checklist for a page
+`SearchStagingBar` follows the same rule on pages that use it (see section 7)
+— its name is referenced directly in `GetManagedControlNames()` and in
+`ShowLoading`/`HideLoading` overrides.
+
+## 10. Migration checklist for a page
 
 When migrating an existing page to this standard:
 
@@ -158,7 +206,7 @@ When migrating an existing page to this standard:
 
 Track per-page progress in `docs/todo.md`.
 
-## 10. HomePage feature cards
+## 11. HomePage feature cards
 
 The HomePage "Get started" tiles are clickable `Button`s styled to look like
 cards. Use `FeatureCardButtonStyle` instead of hand-rolling the

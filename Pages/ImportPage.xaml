@@ -50,56 +50,52 @@
                 <StackPanel Spacing="8">
                     <TextBlock Text="Search &amp; Staging"
                                Style="{StaticResource CardSectionLabelTextBlockStyle}"/>
-                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                        <TextBox x:Name="SearchQueryTextBox"
-                                 PlaceholderText="Enter search query..."
-                                 Width="250"
-                                 VerticalAlignment="Center"
-                                 KeyDown="SearchQueryTextBox_KeyDown"/>
-                        <AppBarButton x:Name="Search" Icon="Find" Label="Search" Click="SearchButton_Click" ToolTipService.ToolTip="Search for specific items."/>
-                        <AppBarButton x:Name="ListAll" Icon="ViewAll" Label="List All" Click="ListAllButton_Click" ToolTipService.ToolTip="List all items."/>
-                        <AppBarSeparator/>
-                        <AppBarButton x:Name="ContentTypesButton" Label="Content Types">
-                            <AppBarButton.Icon>
-                                <FontIcon Glyph="&#xE71C;"/>
-                            </AppBarButton.Icon>
-                            <AppBarButton.Flyout>
-                                <Flyout Placement="BottomEdgeAlignedLeft">
-                                    <StackPanel x:Name="OptionsPanel" Orientation="Vertical" MinWidth="300">
-                                        <TextBlock Text="Content Types"
-                                                   Style="{StaticResource SubsectionLabelTextBlockStyle}"/>
-                                        <CheckBox x:Name="OptionsAllCheckBox"
-                                                  Content="Select all"
-                                                  IsThreeState="False"
-                                                  Checked="SelectAll_Checked"
-                                                  Unchecked="SelectAll_Unchecked"
-                                                  Indeterminate="SelectAll_Indeterminate"/>
-                                        <CheckBox x:Name="SettingsCatalog" Content="Settings Catalog" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                        <CheckBox x:Name="DeviceCompliance" Content="Device Compliance" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                        <CheckBox x:Name="EntraGroups" Content="Entra Groups" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                        <CheckBox x:Name="DeviceConfiguration" Content="Device Configuration" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                        <CheckBox x:Name="AppleBYODEnrollmentProfile" Content="Apple BYOD enrollment profile" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                        <CheckBox x:Name="Filters" Content="Filters" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                        <CheckBox x:Name="PowerShellScript" Content="PowerShell Scripts" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                        <CheckBox x:Name="ProactiveRemediation" Content="Remediation Scripts" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                        <CheckBox x:Name="macOSShellScript" Content="macOS Shell Scripts" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                        <CheckBox x:Name="WindowsAutopilot" Content="Windows Autopilot" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                        <CheckBox x:Name="WindowsDriverUpdate" Content="Windows Driver Update" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                        <CheckBox x:Name="WindowsFeatureUpdate" Content="Windows Feature Update" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                        <CheckBox x:Name="WindowsQualityUpdatePolicy" Content="Windows Quality Update Policy" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                        <CheckBox x:Name="WindowsQualityUpdateProfile" Content="Windows Quality Update Profile" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
-                                    </StackPanel>
-                                </Flyout>
-                            </AppBarButton.Flyout>
-                        </AppBarButton>
-                        <AppBarSeparator/>
-                        <AppBarButton x:Name="ClearSelected" Icon="Remove" Label="Clear Selected" Click="ClearSelectedButton_Click" ToolTipService.ToolTip="Remove selected items from staging area."/>
-                        <AppBarButton x:Name="ClearAll" Icon="Clear" Label="Clear All" Click="ClearAllButton_Click" ToolTipService.ToolTip="Clear all items from staging area."/>
-                        <AppBarSeparator/>
-                        <AppBarButton x:Name="ClearLogButton" Icon="Delete" Label="Clear Log" Click="ClearLogButton_Click" ToolTipService.ToolTip="Clear the log console."/>
-                        <AppBarSeparator/>
-                        <AppBarButton x:Name="ExportCsvButton" Icon="Save" Label="Export CSV" Click="ExportCsvButton_Click" ToolTipService.ToolTip="Export the current list to a CSV file."/>
-                    </StackPanel>
+                    <utilities:SearchStagingBar x:Name="SearchStagingBar"
+                                                 SearchRequested="SearchStagingBar_SearchRequested"
+                                                 ListAllRequested="ListAllButton_Click"
+                                                 ClearSelectedRequested="ClearSelectedButton_Click"
+                                                 ClearAllRequested="ClearAllButton_Click"
+                                                 ClearLogRequested="ClearLogButton_Click"
+                                                 ExportCsvRequested="ExportCsvButton_Click">
+                        <utilities:SearchStagingBar.ExtraButtons>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <AppBarSeparator/>
+                                <AppBarButton x:Name="ContentTypesButton" Label="Content Types">
+                                    <AppBarButton.Icon>
+                                        <FontIcon Glyph="&#xE71C;"/>
+                                    </AppBarButton.Icon>
+                                    <AppBarButton.Flyout>
+                                        <Flyout Placement="BottomEdgeAlignedLeft">
+                                            <StackPanel x:Name="OptionsPanel" Orientation="Vertical" MinWidth="300">
+                                                <TextBlock Text="Content Types"
+                                                           Style="{StaticResource SubsectionLabelTextBlockStyle}"/>
+                                                <CheckBox x:Name="OptionsAllCheckBox"
+                                                          Content="Select all"
+                                                          IsThreeState="False"
+                                                          Checked="SelectAll_Checked"
+                                                          Unchecked="SelectAll_Unchecked"
+                                                          Indeterminate="SelectAll_Indeterminate"/>
+                                                <CheckBox x:Name="SettingsCatalog" Content="Settings Catalog" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                                <CheckBox x:Name="DeviceCompliance" Content="Device Compliance" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                                <CheckBox x:Name="EntraGroups" Content="Entra Groups" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                                <CheckBox x:Name="DeviceConfiguration" Content="Device Configuration" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                                <CheckBox x:Name="AppleBYODEnrollmentProfile" Content="Apple BYOD enrollment profile" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                                <CheckBox x:Name="Filters" Content="Filters" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                                <CheckBox x:Name="PowerShellScript" Content="PowerShell Scripts" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                                <CheckBox x:Name="ProactiveRemediation" Content="Remediation Scripts" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                                <CheckBox x:Name="macOSShellScript" Content="macOS Shell Scripts" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                                <CheckBox x:Name="WindowsAutopilot" Content="Windows Autopilot" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                                <CheckBox x:Name="WindowsDriverUpdate" Content="Windows Driver Update" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                                <CheckBox x:Name="WindowsFeatureUpdate" Content="Windows Feature Update" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                                <CheckBox x:Name="WindowsQualityUpdatePolicy" Content="Windows Quality Update Policy" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                                <CheckBox x:Name="WindowsQualityUpdateProfile" Content="Windows Quality Update Profile" Margin="24,0,0,0" Checked="Option_Checked" Unchecked="Option_Unchecked"/>
+                                            </StackPanel>
+                                        </Flyout>
+                                    </AppBarButton.Flyout>
+                                </AppBarButton>
+                            </StackPanel>
+                        </utilities:SearchStagingBar.ExtraButtons>
+                    </utilities:SearchStagingBar>
                 </StackPanel>
             </Border>
 

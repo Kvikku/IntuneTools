@@ -2,9 +2,7 @@ using CommunityToolkit.WinUI.UI.Controls;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
 using System.ComponentModel;
-using Windows.System;
 using static IntuneTools.Graph.EntraHelperClasses.GroupHelperClass;
 using static IntuneTools.Graph.IntuneHelperClasses.AppleBYODEnrollmentProfileHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceCompliancePolicyHelper;
@@ -104,7 +102,7 @@ namespace IntuneTools.Pages
             RightClickMenu.AttachDataGridContextMenu(ContentDataGrid, () => sourceGraphServiceClient);
 
             // Restore the last search query so it doesn't need to be retyped after every restart.
-            SearchQueryTextBox.Text = PageStatePersistence.LoadLastSearchQuery(PageStateKey);
+            SearchStagingBar.SearchText = PageStatePersistence.LoadLastSearchQuery(PageStateKey);
         }
 
         /// <summary>
@@ -154,10 +152,9 @@ namespace IntuneTools.Pages
 
         protected override string[] GetManagedControlNames() => new[]
         {
-            "SearchQueryTextBox", "Search", "ListAll", "ClearSelected", "ClearAll",
-            "ContentTypesButton", "GroupsCheckBox", "FiltersCheckBox", "ContentDataGrid",
-            "Import", "FilterSelectionComboBox", "GroupSearchTextBox", "NewButton1",
-            "NewButton2", "GroupDataGrid", "ClearLogButton", "ExportCsvButton"
+            "SearchStagingBar", "ContentTypesButton", "GroupsCheckBox", "FiltersCheckBox",
+            "ContentDataGrid", "Import", "FilterSelectionComboBox", "GroupSearchTextBox",
+            "NewButton1", "NewButton2", "GroupDataGrid"
         };
 
         private void LoadFilterOptions()
@@ -778,9 +775,9 @@ namespace IntuneTools.Pages
             SaveContentTypeSelection();
         }
 
-        private async void SearchButton_Click(object sender, RoutedEventArgs e)
+        private async void SearchStagingBar_SearchRequested(object sender, RoutedEventArgs e)
         {
-            var searchQuery = SearchQueryTextBox.Text?.Trim();
+            var searchQuery = SearchStagingBar.SearchText?.Trim();
             if (!string.IsNullOrEmpty(searchQuery))
             {
                 PageStatePersistence.SaveLastSearchQuery(PageStateKey, searchQuery);
@@ -789,15 +786,6 @@ namespace IntuneTools.Pages
             else
             {
                 AppendToLog("Search query cannot be empty.");
-            }
-        }
-
-        private void SearchQueryTextBox_KeyDown(object sender, KeyRoutedEventArgs e)
-        {
-            if (e.Key == VirtualKey.Enter && Search.IsEnabled)
-            {
-                e.Handled = true;
-                SearchButton_Click(Search, e);
             }
         }
 
