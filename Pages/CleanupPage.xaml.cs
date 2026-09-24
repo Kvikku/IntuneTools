@@ -2,8 +2,6 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.WinUI.UI.Controls;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Input;
-using Windows.System;
 using static IntuneTools.Graph.EntraHelperClasses.GroupHelperClass;
 using static IntuneTools.Graph.IntuneHelperClasses.AppleBYODEnrollmentProfileHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.ApplicationHelper;
@@ -113,7 +111,7 @@ namespace IntuneTools.Pages
             PopulateContentTypeFilter();
 
             // Restore the last search query so it doesn't need to be retyped after every restart.
-            InputTextBox.Text = PageStatePersistence.LoadLastSearchQuery(SearchStateKey);
+            SearchStagingBar.SearchText = PageStatePersistence.LoadLastSearchQuery(SearchStateKey);
         }
 
         /// <summary>
@@ -167,8 +165,7 @@ namespace IntuneTools.Pages
 
         protected override IEnumerable<string> GetManagedControlNames() => new[]
         {
-            "InputTextBox", "SearchButton", "ListAllButton", "FindUnassignedButton",
-            "ClearSelectedButton", "ClearAllButton", "DeleteButton", "CleanupDataGrid", "ClearLogButton", "ExportCsvButton",
+            "SearchStagingBar", "FindUnassignedButton", "DeleteButton", "CleanupDataGrid",
             "ScanDuplicatesButton", "ContentTypeFilterButton", "SelectOlderButton", "SelectUnassignedButton",
             "ClearDuplicateSelectionButton", "DeleteDuplicatesButton", "DuplicatesDataGrid",
             "DuplicatesClearLogButton", "DuplicatesExportCsvButton"
@@ -181,16 +178,14 @@ namespace IntuneTools.Pages
         protected override void ShowLoading(string message = "Loading data from Microsoft Graph...")
         {
             base.ShowLoading(message);
-            ListAllButton.IsEnabled = false;
-            SearchButton.IsEnabled = false;
+            SearchStagingBar.SetSearchAndListEnabled(false);
             FindUnassignedButton.IsEnabled = false;
         }
 
         protected override void HideLoading()
         {
             base.HideLoading();
-            ListAllButton.IsEnabled = true;
-            SearchButton.IsEnabled = true;
+            SearchStagingBar.SetSearchAndListEnabled(true);
             FindUnassignedButton.IsEnabled = true;
         }
 
@@ -477,8 +472,7 @@ namespace IntuneTools.Pages
         {
             ShowLoading("Loading content from Microsoft Graph...");
             DeleteButton.IsEnabled = false;
-            ClearSelectedButton.IsEnabled = false;
-            ClearAllButton.IsEnabled = false;
+            SearchStagingBar.SetClearButtonsEnabled(false);
             AppendToDetailsRichTextBlock("Loading all assignable content types. This may take a while...");
             try
             {
@@ -545,8 +539,7 @@ namespace IntuneTools.Pages
             {
                 HideLoading();
                 DeleteButton.IsEnabled = true;
-                ClearSelectedButton.IsEnabled = true;
-                ClearAllButton.IsEnabled = true;
+                SearchStagingBar.SetClearButtonsEnabled(true);
             }
         }
 
@@ -638,9 +631,9 @@ namespace IntuneTools.Pages
             await FindUnassignedOrchestrator(sourceGraphServiceClient);
         }
 
-        private async void SearchButton_Click(object sender, RoutedEventArgs e)
+        private async void SearchStagingBar_SearchRequested(object sender, RoutedEventArgs e)
         {
-            var searchQuery = InputTextBox.Text.Trim();
+            var searchQuery = SearchStagingBar.SearchText.Trim();
             if (string.IsNullOrWhiteSpace(searchQuery))
             {
                 AppendToDetailsRichTextBlock("Please enter a search query.");
@@ -648,15 +641,6 @@ namespace IntuneTools.Pages
             }
             PageStatePersistence.SaveLastSearchQuery(SearchStateKey, searchQuery);
             await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
-        }
-
-        private void InputTextBox_KeyDown(object sender, KeyRoutedEventArgs e)
-        {
-            if (e.Key == VirtualKey.Enter && SearchButton.IsEnabled)
-            {
-                e.Handled = true;
-                SearchButton_Click(SearchButton, e);
-            }
         }
 
         private async void ExportCsvButton_Click(object sender, RoutedEventArgs e)

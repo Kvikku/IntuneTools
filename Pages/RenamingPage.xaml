@@ -49,22 +49,13 @@
                 <StackPanel Spacing="8">
                     <TextBlock Text="Search &amp; Staging"
                                Style="{StaticResource CardSectionLabelTextBlockStyle}"/>
-                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                        <TextBox x:Name="SearchQueryTextBox"
-                                 PlaceholderText="Enter search query..."
-                                 Width="250"
-                                 VerticalAlignment="Center"
-                                 KeyDown="SearchQueryTextBox_KeyDown"/>
-                        <AppBarButton x:Name="SearchButton" Icon="Find" Label="Search" Click="SearchButton_Click" ToolTipService.ToolTip="Search for specific items."/>
-                        <AppBarButton x:Name="ListAllButton" Icon="ViewAll" Label="List All" Click="ListAllButton_Click" ToolTipService.ToolTip="List all items."/>
-                        <AppBarSeparator/>
-                        <AppBarButton x:Name="ClearSelectedButton" Icon="Remove" Label="Clear Selected" Click="ClearSelectedButton_Click" ToolTipService.ToolTip="Remove selected items from staging area."/>
-                        <AppBarButton x:Name="ClearAllButton" Icon="Clear" Label="Clear All" Click="ClearAllButton_Click" ToolTipService.ToolTip="Clear all items from staging area."/>
-                        <AppBarSeparator/>
-                        <AppBarButton x:Name="ClearLogButton" Icon="Delete" Label="Clear Log" Click="ClearLogButton_Click" ToolTipService.ToolTip="Clear the log console."/>
-                        <AppBarSeparator/>
-                        <AppBarButton x:Name="ExportCsvButton" Icon="Save" Label="Export CSV" Click="ExportCsvButton_Click" ToolTipService.ToolTip="Export the current list to a CSV file."/>
-                    </StackPanel>
+                    <utilities:SearchStagingBar x:Name="SearchStagingBar"
+                                                 SearchRequested="SearchStagingBar_SearchRequested"
+                                                 ListAllRequested="ListAllButton_Click"
+                                                 ClearSelectedRequested="ClearSelectedButton_Click"
+                                                 ClearAllRequested="ClearAllButton_Click"
+                                                 ClearLogRequested="ClearLogButton_Click"
+                                                 ExportCsvRequested="ExportCsvButton_Click"/>
                 </StackPanel>
             </Border>
 
