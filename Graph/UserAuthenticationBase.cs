@@ -9,7 +9,7 @@ namespace IntuneTools.Graph;
 /// </summary>
 internal sealed class UserAuthenticationBase
 {
-    private const string PublicClientId = "14d82eec-204b-4c2f-b7e8-296a70dab67e";
+    public const string PublicClientId = "14d82eec-204b-4c2f-b7e8-296a70dab67e";
     private const string AuthorityOrganizations = "https://login.microsoftonline.com/organizations";
 
     private readonly string[] _defaultScopes;
