@@ -16,6 +16,12 @@ namespace IntuneTools.Pages
     {
         #region Constructor & Navigation
 
+        // Tracks whether the last permission check for each tenant found missing scopes, so the
+        // warning survives navigating away from and back to this page (NavigationCacheMode="Required"
+        // keeps this page instance, and its fields, alive for the whole app session).
+        private bool _sourceHasPermissionWarning;
+        private bool _destinationHasPermissionWarning;
+
         public SettingsPage()
         {
             this.InitializeComponent();
@@ -38,18 +44,20 @@ namespace IntuneTools.Pages
             UpdateTenantStatusUI(
                 isSource: true,
                 isSignedIn: sourceSignedIn,
-                tenantName: Variables.sourceTenantName);
+                tenantName: Variables.sourceTenantName,
+                hasPermissionWarning: sourceSignedIn && _sourceHasPermissionWarning);
 
             UpdateTenantStatusUI(
                 isSource: false,
                 isSignedIn: destinationSignedIn,
-                tenantName: Variables.destinationTenantName);
+                tenantName: Variables.destinationTenantName,
+                hasPermissionWarning: destinationSignedIn && _destinationHasPermissionWarning);
         }
 
         /// <summary>
         /// Updates the status UI elements for a specific tenant.
         /// </summary>
-        private void UpdateTenantStatusUI(bool isSource, bool isSignedIn, string? tenantName)
+        private void UpdateTenantStatusUI(bool isSource, bool isSignedIn, string? tenantName, bool hasPermissionWarning = false)
         {
             var statusImage = isSource ? SourceLoginStatusImage : DestinationLoginStatusImage;
             var statusText = isSource ? SourceLoginStatusText : DestinationLoginStatusText;
@@ -57,7 +65,7 @@ namespace IntuneTools.Pages
             if (statusText != null)
             {
                 statusText.Text = isSignedIn
-                    ? $"Signed in: {tenantName}"
+                    ? (hasPermissionWarning ? $"Signed in: {tenantName} — missing permissions" : $"Signed in: {tenantName}")
                     : "Not signed in";
             }
 
@@ -99,6 +107,11 @@ namespace IntuneTools.Pages
 
                 AppLogger.Info($"{tenantLabel} Tenant Name: {tenantName}", appFunction.Main);
                 UpdateTenantStatusUI(isSource, isSignedIn: true, tenantName);
+
+                // Verify all required Graph permissions were actually granted right away, rather
+                // than letting the user discover a gap later as a cryptic failure deep in some
+                // other page's operation.
+                await CheckPermissionsAfterSignInAsync(isSource, tenantName);
             }
             else
             {
@@ -134,12 +147,14 @@ namespace IntuneTools.Pages
                         sourceGraphServiceClient = null;
                         sourceTenantName = null;
                         Variables.sourceTenantName = string.Empty;
+                        _sourceHasPermissionWarning = false;
                     }
                     else
                     {
                         destinationGraphServiceClient = null;
                         destinationTenantName = null;
                         Variables.destinationTenantName = string.Empty;
+                        _destinationHasPermissionWarning = false;
                     }
 
                     UpdateTenantStatusUI(isSource, isSignedIn: false, tenantName: null);
@@ -170,8 +185,12 @@ namespace IntuneTools.Pages
                 (destinationTenantID, sourceTenantID);
 
             // Swap client IDs
-            (sourceClientID, destinationClientID) = 
+            (sourceClientID, destinationClientID) =
                 (destinationClientID, sourceClientID);
+
+            // Swap permission-warning state so it stays attached to the tenant it describes
+            (_sourceHasPermissionWarning, _destinationHasPermissionWarning) =
+                (_destinationHasPermissionWarning, _sourceHasPermissionWarning);
 
             // Update UI to reflect the swap
             RefreshLoginStatusUI();
@@ -195,6 +214,11 @@ namespace IntuneTools.Pages
             destinationGraphServiceClient = destinationClient;
             destinationTenantName = destinationName;
             Variables.destinationTenantName = destinationName;
+
+            // Demo Mode bypasses MSAL/Graph entirely, so any permission warning from a prior
+            // real sign-in no longer applies.
+            _sourceHasPermissionWarning = false;
+            _destinationHasPermissionWarning = false;
 
             UpdateTenantStatusUI(isSource: true, isSignedIn: true, sourceName);
             UpdateTenantStatusUI(isSource: false, isSignedIn: true, destinationName);
@@ -271,15 +295,106 @@ namespace IntuneTools.Pages
         #region Permissions
 
         /// <summary>
+        /// Result of comparing a tenant's granted Graph scopes against the app's required scopes.
+        /// </summary>
+        private sealed record PermissionCheckResult(
+            bool IsAuthenticated,
+            string? Error,
+            int GrantedCount,
+            int MissingCount,
+            List<string> RelevantScopes,
+            HashSet<string> GrantedSet);
+
+        /// <summary>
+        /// Compares a tenant's currently granted Graph scopes against
+        /// <see cref="SourceUserAuthentication.DefaultScopes"/>/<see cref="DestinationUserAuthentication.DefaultScopes"/>.
+        /// Used both by the manual "View Permissions" dialog and the automatic post-sign-in check.
+        /// </summary>
+        private async Task<PermissionCheckResult> CheckTenantPermissionsAsync(bool isSource)
+        {
+            var tenantName = isSource ? sourceTenantName : destinationTenantName;
+            var requiredScopes = isSource
+                ? SourceUserAuthentication.DefaultScopes
+                : DestinationUserAuthentication.DefaultScopes;
+
+            var relevantScopes = requiredScopes
+                .Where(s => !s.Equals("openid", StringComparison.OrdinalIgnoreCase)
+                         && !s.Equals("offline_access", StringComparison.OrdinalIgnoreCase))
+                .OrderBy(s => s)
+                .ToList();
+
+            if (string.IsNullOrWhiteSpace(tenantName))
+                return new PermissionCheckResult(false, null, 0, 0, relevantScopes, new HashSet<string>());
+
+            string[] grantedScopes;
+            try
+            {
+                grantedScopes = isSource
+                    ? await SourceUserAuthentication.GetGrantedScopesAsync()
+                    : await DestinationUserAuthentication.GetGrantedScopesAsync();
+            }
+            catch (Exception ex)
+            {
+                return new PermissionCheckResult(true, ex.Message, 0, relevantScopes.Count, relevantScopes, new HashSet<string>());
+            }
+
+            var grantedSet = grantedScopes.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var missingCount = relevantScopes.Count(s => !grantedSet.Contains(s));
+            var grantedCount = relevantScopes.Count - missingCount;
+
+            return new PermissionCheckResult(true, null, grantedCount, missingCount, relevantScopes, grantedSet);
+        }
+
+        /// <summary>
+        /// Runs automatically right after a successful sign-in so permission gaps surface
+        /// immediately instead of as a confusing failure later in some other page. Stays quiet
+        /// (just a log line) when everything is granted; proactively opens the permissions
+        /// dialog and flags the tenant's status row when something is missing.
+        /// </summary>
+        private async Task CheckPermissionsAfterSignInAsync(bool isSource, string? tenantName)
+        {
+            var result = await CheckTenantPermissionsAsync(isSource);
+            if (!result.IsAuthenticated) return;
+
+            var tenantLabel = isSource ? "source" : "destination";
+
+            if (result.Error != null)
+            {
+                AppLogger.Warning($"Could not verify permissions for the {tenantLabel} tenant: {result.Error}", appFunction.Main);
+                return;
+            }
+
+            if (isSource)
+                _sourceHasPermissionWarning = result.MissingCount > 0;
+            else
+                _destinationHasPermissionWarning = result.MissingCount > 0;
+
+            if (result.MissingCount > 0)
+            {
+                AppLogger.Warning(
+                    $"The {tenantLabel} tenant '{tenantName}' is missing {result.MissingCount} of {result.RelevantScopes.Count} required Graph permission(s).",
+                    appFunction.Main);
+                UpdateTenantStatusUI(isSource, isSignedIn: true, tenantName, hasPermissionWarning: true);
+                await ShowPermissionsDialogAsync(isSource, result);
+            }
+            else
+            {
+                AppLogger.Info($"All required Graph permissions are granted for the {tenantLabel} tenant '{tenantName}'.", appFunction.Main);
+            }
+        }
+
+        /// <summary>
         /// Shows a dialog displaying the granted vs required permissions for a tenant.
         /// </summary>
-        private async Task ShowPermissionsDialogAsync(bool isSource)
+        /// <param name="precomputedResult">
+        /// Reuses a check already performed by <see cref="CheckPermissionsAfterSignInAsync"/> to
+        /// avoid a redundant token fetch; the manual "View Permissions" button always passes null
+        /// so it re-checks fresh.
+        /// </param>
+        private async Task ShowPermissionsDialogAsync(bool isSource, PermissionCheckResult? precomputedResult = null)
         {
             var tenantLabel = isSource ? "Source" : "Destination";
             var tenantName = isSource ? sourceTenantName : destinationTenantName;
-            var requiredScopes = isSource 
-                ? SourceUserAuthentication.DefaultScopes 
-                : DestinationUserAuthentication.DefaultScopes;
 
             // Create dialog controls programmatically
             var infoBar = new InfoBar
@@ -323,8 +438,9 @@ namespace IntuneTools.Pages
                 Content = contentGrid
             };
 
-            // Check if authenticated
-            if (string.IsNullOrWhiteSpace(tenantName))
+            var result = precomputedResult ?? await CheckTenantPermissionsAsync(isSource);
+
+            if (!result.IsAuthenticated)
             {
                 infoBar.Severity = InfoBarSeverity.Warning;
                 infoBar.Title = "Not Authenticated";
@@ -333,50 +449,28 @@ namespace IntuneTools.Pages
                 return;
             }
 
-            // Get granted scopes
-            string[] grantedScopes;
-            try
-            {
-                grantedScopes = isSource
-                    ? await SourceUserAuthentication.GetGrantedScopesAsync()
-                    : await DestinationUserAuthentication.GetGrantedScopesAsync();
-            }
-            catch (Exception ex)
+            if (result.Error != null)
             {
                 infoBar.Severity = InfoBarSeverity.Error;
                 infoBar.Title = "Error";
-                infoBar.Message = $"Failed to retrieve permissions: {ex.Message}";
+                infoBar.Message = $"Failed to retrieve permissions: {result.Error}";
                 await dialog.ShowAsync();
                 return;
             }
 
-            // Build permissions list
-            var grantedSet = grantedScopes.ToHashSet(StringComparer.OrdinalIgnoreCase);
-            
-            // Filter out non-permission scopes for display
-            var relevantScopes = requiredScopes
-                .Where(s => !s.Equals("openid", StringComparison.OrdinalIgnoreCase) 
-                         && !s.Equals("offline_access", StringComparison.OrdinalIgnoreCase))
-                .OrderBy(s => s)
-                .ToList();
-
-            int grantedCount = 0;
-            int missingCount = 0;
-
-            foreach (var scope in relevantScopes)
+            foreach (var scope in result.RelevantScopes)
             {
-                var isGranted = grantedSet.Contains(scope);
-                if (isGranted) grantedCount++; else missingCount++;
+                var isGranted = result.GrantedSet.Contains(scope);
 
                 var itemPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-                
+
                 var icon = new FontIcon
                 {
                     Glyph = isGranted ? "\uE73E" : "\uE711", // Checkmark or X
                     FontSize = 14,
                     Foreground = new SolidColorBrush(isGranted ? Colors.Green : Colors.Red)
                 };
-                
+
                 var text = new TextBlock
                 {
                     Text = scope,
@@ -391,18 +485,18 @@ namespace IntuneTools.Pages
 
             // Update dialog header
             dialog.Title = $"{tenantLabel} Tenant Permissions - {tenantName}";
-            
-            if (missingCount == 0)
+
+            if (result.MissingCount == 0)
             {
                 infoBar.Severity = InfoBarSeverity.Success;
                 infoBar.Title = "All Permissions Granted";
-                infoBar.Message = $"{grantedCount} of {grantedCount} required permissions are granted.";
+                infoBar.Message = $"{result.GrantedCount} of {result.GrantedCount} required permissions are granted.";
             }
             else
             {
                 infoBar.Severity = InfoBarSeverity.Warning;
                 infoBar.Title = "Missing Permissions";
-                infoBar.Message = $"{grantedCount} granted, {missingCount} missing. Some features may not work correctly.";
+                infoBar.Message = $"{result.GrantedCount} granted, {result.MissingCount} missing. Some features may not work correctly.";
             }
 
             await dialog.ShowAsync();
