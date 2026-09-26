@@ -153,6 +153,43 @@ Once you are happy with the selection, click **Delete Selected** in the Duplicat
 
 ---
 
+## Finding and Deleting Stale Devices
+
+The **Stale Devices** mode helps you find Intune managed devices and Entra ID device objects that have gone quiet — no check-in, no sign-in — and are likely abandoned, decommissioned, or replaced hardware cluttering your tenant.
+
+> **Warning:** Deleting an Intune managed device record does **not** wipe or retire the physical device — it only removes it from Intune management, and the device can silently re-enroll on its own if it's still active. Deleting an Entra ID device object is recoverable from Deleted items for 30 days, but a **hybrid-joined** device will likely reappear via AD Connect sync unless it is also removed on-premises. Always review the list before deleting — a device with a "Never" last-activity value may simply have incomplete activity data rather than being genuinely abandoned.
+
+### How It Works
+
+Intune managed devices and Entra ID devices are scanned and deleted as two **independent lists** — switch between them using the source toggle in the toolbar. Each source has its own staleness signal:
+
+| Source | Staleness signal |
+|---|---|
+| Intune Managed Devices | `lastSyncDateTime` — when the device last checked in with Intune |
+| Entra ID Devices | `approximateLastSignInDateTime` — the device's last approximate sign-in |
+
+A device that has never synced or signed in is always treated as stale.
+
+1. Choose a source (**Intune Managed Devices** or **Entra ID Devices**) and a **Stale after** threshold (30–180 days).
+2. Click **Scan**. This loads every device from that source and filters to only those older than the threshold — same staging-area model as the rest of the page.
+3. Review the grid. Use **Clear Selected** or **Clear All** to remove devices you want to keep.
+4. Click **Delete All**. As with bulk content deletion, 10 or more items triggers an extra warning, followed by a confirmation dialog that explains the source-specific consequences described above.
+
+### Toolbar Reference
+
+| Button | Description |
+|---|---|
+| **Intune Managed Devices / Entra ID Devices** | Selects which independent device list is being scanned, displayed, and deleted |
+| **Stale after** | Threshold (in days) used to classify a device as stale |
+| **Scan** | Loads devices from the selected source and filters to those past the threshold |
+| **Clear Selected** | Remove selected rows from the staging area |
+| **Clear All** | Remove all rows from the staging area |
+| **Clear Log** | Clear the log console panel |
+| **Delete All** (red) | Permanently delete all staged devices from the selected source |
+| **Export CSV** | Export the current grid contents to a CSV file |
+
+---
+
 ## Toolbar Reference
 
 | Button | Description |
@@ -186,6 +223,7 @@ You can select log entries and use **Clear Log** to reset the console.
 - **Start small.** Use Search with a specific query before using List All, especially in large tenants.
 - **Find stale content.** Use Find Unassigned to discover policies and scripts that may no longer be needed.
 - **Clean up duplicates.** Use Find Duplicates after bulk imports to catch any accidental double-imports.
+- **Retire ghost devices.** Use Stale Devices to find Intune and Entra ID devices that haven't checked in or signed in for a while — but confirm a device is truly abandoned (not just quiet) before deleting it.
 - **Double-check the grid** before clicking Delete All. Remember, everything in the staging area will be deleted.
 - **Watch the log console** during deletion to catch any errors or skipped items in real time.
 - **Use multi-select** (Ctrl+Click or Shift+Click) to efficiently remove items you want to keep from the staging area.

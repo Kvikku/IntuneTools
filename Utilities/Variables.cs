@@ -62,6 +62,7 @@ namespace IntuneTools.Utilities
             Delete,         // Delete operations
             FindUnassigned, // Find Unassigned scan
             FindDuplicates, // Duplicate detection scan
+            FindStaleDevices, // Stale device scan
             JsonExport,     // JSON export/import operations
             AuditLog,       // Audit log operations
             ManageAssignment,

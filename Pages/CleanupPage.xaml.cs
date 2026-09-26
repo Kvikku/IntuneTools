@@ -1,7 +1,10 @@
+using System.ComponentModel;
 using System.Collections.ObjectModel;
 using CommunityToolkit.WinUI.UI.Controls;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Data;
+using static IntuneTools.Graph.EntraHelperClasses.EntraDeviceHelper;
 using static IntuneTools.Graph.EntraHelperClasses.GroupHelperClass;
 using static IntuneTools.Graph.IntuneHelperClasses.AppleBYODEnrollmentProfileHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.ApplicationHelper;
@@ -9,6 +12,7 @@ using static IntuneTools.Graph.IntuneHelperClasses.DeviceCompliancePolicyHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.DeviceConfigurationHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.FilterHelperClass;
 using static IntuneTools.Graph.IntuneHelperClasses.macOSShellScript;
+using static IntuneTools.Graph.IntuneHelperClasses.ManagedDeviceHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.PowerShellScriptsHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.ProactiveRemediationsHelper;
 using static IntuneTools.Graph.IntuneHelperClasses.SettingsCatalogHelper;
@@ -31,6 +35,10 @@ namespace IntuneTools.Pages
 
         // Duplicate detection results
         private readonly ObservableCollection<DuplicateContentInfo> DuplicateContentList = new();
+
+        // Stale device scan results — two independent lists, one per source
+        private readonly ObservableCollection<StaleManagedDeviceInfo> IntuneStaleDeviceList = new();
+        private readonly ObservableCollection<StaleEntraDeviceInfo> EntraStaleDeviceList = new();
 
         // Content type filter for duplicate scan
         private readonly HashSet<string> _selectedContentTypes = new(SupportedContentTypes);
@@ -106,8 +114,12 @@ namespace IntuneTools.Pages
             InitializeComponent();
             RightClickMenu.AttachDataGridContextMenu(CleanupDataGrid, () => sourceGraphServiceClient);
             RightClickMenu.AttachDataGridContextMenu(DuplicatesDataGrid, () => sourceGraphServiceClient);
+            RightClickMenu.AttachDataGridContextMenu(IntuneStaleDevicesDataGrid);
+            RightClickMenu.AttachDataGridContextMenu(EntraStaleDevicesDataGrid);
             LogConsole.ItemsSource = LogEntries;
             DuplicatesDataGrid.ItemsSource = DuplicateContentList;
+            IntuneStaleDevicesDataGrid.ItemsSource = IntuneStaleDeviceList;
+            EntraStaleDevicesDataGrid.ItemsSource = EntraStaleDeviceList;
             PopulateContentTypeFilter();
 
             // Restore the last search query so it doesn't need to be retyped after every restart.
@@ -168,7 +180,11 @@ namespace IntuneTools.Pages
             "SearchStagingBar", "FindUnassignedButton", "DeleteButton", "CleanupDataGrid",
             "ScanDuplicatesButton", "ContentTypeFilterButton", "SelectOlderButton", "SelectUnassignedButton",
             "ClearDuplicateSelectionButton", "DeleteDuplicatesButton", "DuplicatesDataGrid",
-            "DuplicatesClearLogButton", "DuplicatesExportCsvButton"
+            "DuplicatesClearLogButton", "DuplicatesExportCsvButton",
+            "IntuneSourceRadio", "EntraSourceRadio", "StaleThresholdComboBox", "ScanStaleDevicesButton",
+            "ClearSelectedStaleButton", "ClearAllStaleButton", "DeleteStaleDevicesButton",
+            "IntuneStaleDevicesDataGrid", "EntraStaleDevicesDataGrid",
+            "StaleDevicesClearLogButton", "StaleDevicesExportCsvButton"
         };
 
         #endregion
@@ -668,11 +684,12 @@ namespace IntuneTools.Pages
 
         private void CleanupModeSegmented_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (DeletePanel is null || DuplicatesPanel is null) return;
+            if (DeletePanel is null || DuplicatesPanel is null || StaleDevicesPanel is null) return;
 
-            var isDuplicates = CleanupModeSegmented.SelectedIndex == 1;
-            DeletePanel.Visibility = isDuplicates ? Visibility.Collapsed : Visibility.Visible;
-            DuplicatesPanel.Visibility = isDuplicates ? Visibility.Visible : Visibility.Collapsed;
+            var index = CleanupModeSegmented.SelectedIndex;
+            DeletePanel.Visibility = index == 0 ? Visibility.Visible : Visibility.Collapsed;
+            DuplicatesPanel.Visibility = index == 1 ? Visibility.Visible : Visibility.Collapsed;
+            StaleDevicesPanel.Visibility = index == 2 ? Visibility.Visible : Visibility.Collapsed;
         }
 
         #endregion
@@ -1123,6 +1140,341 @@ namespace IntuneTools.Pages
                 return (p?.CreatedDateTime, p?.LastModifiedDateTime);
             },
         };
+
+        #endregion
+
+        #region Stale Devices
+
+        /// <summary>
+        /// True when the "Entra ID Devices" source is selected; false means "Intune Managed Devices".
+        /// </summary>
+        private bool IsEntraSourceSelected => EntraSourceRadio?.IsChecked == true;
+
+        private int GetSelectedStaleThresholdDays()
+        {
+            if (StaleThresholdComboBox.SelectedItem is ComboBoxItem item &&
+                int.TryParse(item.Tag?.ToString(), out var days))
+            {
+                return days;
+            }
+            return 90;
+        }
+
+        private void StaleDeviceSource_Changed(object sender, RoutedEventArgs e)
+        {
+            if (IntuneStaleDevicesDataGrid is null || EntraStaleDevicesDataGrid is null) return;
+
+            var isEntra = IsEntraSourceSelected;
+            IntuneStaleDevicesDataGrid.Visibility = isEntra ? Visibility.Collapsed : Visibility.Visible;
+            EntraStaleDevicesDataGrid.Visibility = isEntra ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private async void ScanStaleDevicesButton_Click(object sender, RoutedEventArgs e)
+        {
+            await ScanStaleDevicesOrchestrator();
+        }
+
+        private async Task ScanStaleDevicesOrchestrator()
+        {
+            var staleDays = GetSelectedStaleThresholdDays();
+            var isEntra = IsEntraSourceSelected;
+
+            ScanStaleDevicesButton.IsEnabled = false;
+            StaleDevicesLoadingOverlay.Show(isEntra
+                ? "Loading Entra ID devices from Microsoft Graph..."
+                : "Loading Intune managed devices from Microsoft Graph...");
+            try
+            {
+                if (isEntra)
+                {
+                    EntraStaleDeviceList.Clear();
+                    var results = await GetStaleEntraDevicesAsync(sourceGraphServiceClient, staleDays);
+                    foreach (var item in results) EntraStaleDeviceList.Add(item);
+                    UserInterfaceHelper.RebindDataGrid(EntraStaleDevicesDataGrid, EntraStaleDeviceList);
+                    AppLogger.Info($"Found {results.Count} Entra ID device(s) inactive for {staleDays}+ days.", appFunction.FindStaleDevices);
+                    ShowOperationSuccess($"Found {results.Count} stale Entra ID device(s).");
+                }
+                else
+                {
+                    IntuneStaleDeviceList.Clear();
+                    var results = await GetStaleManagedDevicesAsync(sourceGraphServiceClient, staleDays);
+                    foreach (var item in results) IntuneStaleDeviceList.Add(item);
+                    UserInterfaceHelper.RebindDataGrid(IntuneStaleDevicesDataGrid, IntuneStaleDeviceList);
+                    AppLogger.Info($"Found {results.Count} Intune managed device(s) inactive for {staleDays}+ days.", appFunction.FindStaleDevices);
+                    ShowOperationSuccess($"Found {results.Count} stale Intune managed device(s).");
+                }
+            }
+            catch (Exception ex)
+            {
+                LogError($"Error scanning for stale devices: {ex.Message}");
+                ShowOperationError($"Error: {ex.Message}");
+            }
+            finally
+            {
+                StaleDevicesLoadingOverlay.Hide();
+                ScanStaleDevicesButton.IsEnabled = true;
+            }
+        }
+
+        private void ClearSelectedStaleButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (IsEntraSourceSelected)
+            {
+                var selected = EntraStaleDevicesDataGrid.SelectedItems?.Cast<StaleEntraDeviceInfo>().ToList();
+                if (selected == null || selected.Count == 0)
+                {
+                    LogWarning("No items selected to clear.");
+                    return;
+                }
+                foreach (var item in selected) EntraStaleDeviceList.Remove(item);
+                LogInfo($"Cleared {selected.Count} selected item(s) from the list.");
+            }
+            else
+            {
+                var selected = IntuneStaleDevicesDataGrid.SelectedItems?.Cast<StaleManagedDeviceInfo>().ToList();
+                if (selected == null || selected.Count == 0)
+                {
+                    LogWarning("No items selected to clear.");
+                    return;
+                }
+                foreach (var item in selected) IntuneStaleDeviceList.Remove(item);
+                LogInfo($"Cleared {selected.Count} selected item(s) from the list.");
+            }
+        }
+
+        private void ClearAllStaleButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (IsEntraSourceSelected)
+            {
+                EntraStaleDeviceList.Clear();
+                UserInterfaceHelper.RebindDataGrid(EntraStaleDevicesDataGrid, EntraStaleDeviceList);
+            }
+            else
+            {
+                IntuneStaleDeviceList.Clear();
+                UserInterfaceHelper.RebindDataGrid(IntuneStaleDevicesDataGrid, IntuneStaleDeviceList);
+            }
+            LogInfo("All items cleared from the list.");
+        }
+
+        /// <summary>
+        /// Confirms and deletes every device currently staged in the active source's list.
+        /// Deliberately shows source-specific consequences (Intune: record-only delete, device
+        /// can re-enroll; Entra: 30-day recoverable delete, hybrid-joined devices resync) rather
+        /// than a generic "are you sure?", per the same pattern as DeleteButton_Click.
+        /// </summary>
+        private async void DeleteStaleDevicesButton_Click(object sender, RoutedEventArgs e)
+        {
+            var isEntra = IsEntraSourceSelected;
+            var count = isEntra ? EntraStaleDeviceList.Count : IntuneStaleDeviceList.Count;
+
+            if (count == 0)
+            {
+                LogWarning("No stale devices staged for deletion.");
+                return;
+            }
+
+            if (count >= 10)
+            {
+                var bulkWarning = new ContentDialog
+                {
+                    Title = "⚠ Large Bulk Delete",
+                    Content = $"You are about to delete {count} device records. This is a large operation and cannot be undone. Are you sure you want to continue?",
+                    PrimaryButtonText = "Continue",
+                    CloseButtonText = "Cancel",
+                    DefaultButton = ContentDialogButton.Close,
+                    XamlRoot = this.XamlRoot
+                };
+
+                var bulkResult = await bulkWarning.ShowAsync().AsTask();
+                if (bulkResult != ContentDialogResult.Primary)
+                {
+                    AppendToDetailsRichTextBlock("Bulk delete cancelled by user.");
+                    return;
+                }
+            }
+
+            var consequenceText = isEntra
+                ? $"Are you sure you want to permanently delete {count} Entra ID device object(s)?\n\n"
+                  + "This removes each device from Entra ID. Deleted devices are recoverable from Deleted items for 30 days. "
+                  + "Hybrid-joined devices will likely reappear via AD Connect sync unless also removed on-premises. "
+                  + "Any Conditional Access or Intune enrollment tied to these devices will be affected immediately."
+                : $"Are you sure you want to permanently delete {count} Intune managed device record(s)?\n\n"
+                  + "This removes the device from Intune management only — it does NOT wipe, retire, or remove the physical device. "
+                  + "A device that is still active can silently re-enroll on its own.";
+
+            var dialog = new ContentDialog
+            {
+                Title = isEntra ? "Delete Entra ID device objects?" : "Delete Intune managed devices?",
+                Content = consequenceText,
+                PrimaryButtonText = "Delete",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync().AsTask();
+            if (result == ContentDialogResult.Primary)
+            {
+                await DeleteStaleDevicesAsync(isEntra);
+            }
+        }
+
+        private async Task DeleteStaleDevicesAsync(bool isEntra)
+        {
+            var total = isEntra ? EntraStaleDeviceList.Count : IntuneStaleDeviceList.Count;
+            var current = 0;
+            var success = 0;
+            var errors = 0;
+
+            ShowOperationProgress("Preparing to delete devices...", 0, total);
+
+            if (isEntra)
+            {
+                foreach (var device in EntraStaleDeviceList.ToList())
+                {
+                    current++;
+                    ShowOperationProgress($"Deleting Entra ID device ({current}/{total})", current, total);
+
+                    if (string.IsNullOrEmpty(device.DeviceObjectId)) continue;
+                    try
+                    {
+                        await DeleteEntraDeviceAsync(sourceGraphServiceClient, device.DeviceObjectId);
+                        AppLogger.Info($"Deleted Entra ID device: '{device.DisplayName}'", appFunction.Delete);
+                        UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
+                        EntraStaleDeviceList.Remove(device);
+                        success++;
+                    }
+                    catch (Exception ex)
+                    {
+                        errors++;
+                        AppLogger.Error($"Failed to delete Entra ID device '{device.DisplayName}': {ex.Message}", appFunction.Delete);
+                    }
+                }
+                UserInterfaceHelper.RebindDataGrid(EntraStaleDevicesDataGrid, EntraStaleDeviceList);
+            }
+            else
+            {
+                foreach (var device in IntuneStaleDeviceList.ToList())
+                {
+                    current++;
+                    ShowOperationProgress($"Deleting Intune managed device ({current}/{total})", current, total);
+
+                    if (string.IsNullOrEmpty(device.DeviceId)) continue;
+                    try
+                    {
+                        await DeleteManagedDeviceAsync(sourceGraphServiceClient, device.DeviceId);
+                        AppLogger.Info($"Deleted Intune managed device: '{device.DeviceName}'", appFunction.Delete);
+                        UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
+                        IntuneStaleDeviceList.Remove(device);
+                        success++;
+                    }
+                    catch (Exception ex)
+                    {
+                        errors++;
+                        AppLogger.Error($"Failed to delete Intune managed device '{device.DeviceName}': {ex.Message}", appFunction.Delete);
+                    }
+                }
+                UserInterfaceHelper.RebindDataGrid(IntuneStaleDevicesDataGrid, IntuneStaleDeviceList);
+            }
+
+            if (errors == 0)
+                ShowOperationSuccess($"Successfully deleted {success} device(s).");
+            else
+                ShowOperationError($"Completed with {errors} error(s). {success} device(s) deleted successfully.");
+        }
+
+        private async void StaleDevicesExportCsvButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (IsEntraSourceSelected)
+            {
+                if (EntraStaleDeviceList.Count == 0)
+                {
+                    LogWarning("Nothing to export — run a scan first.");
+                    return;
+                }
+                var exportList = EntraStaleDeviceList.Select(d => new CustomContentInfo
+                {
+                    ContentName = d.DisplayName,
+                    ContentType = "Entra ID Device",
+                    ContentPlatform = d.OperatingSystem,
+                    ContentId = d.DeviceObjectId,
+                    ContentDescription = $"Join type: {d.JoinTypeDisplay} | Enabled: {d.EnabledDisplay} | Last sign-in: {d.LastSignInDisplay}"
+                }).ToList();
+                await ExportStaleDevicesCsvAsync(exportList);
+            }
+            else
+            {
+                if (IntuneStaleDeviceList.Count == 0)
+                {
+                    LogWarning("Nothing to export — run a scan first.");
+                    return;
+                }
+                var exportList = IntuneStaleDeviceList.Select(d => new CustomContentInfo
+                {
+                    ContentName = d.DeviceName,
+                    ContentType = "Managed Device",
+                    ContentPlatform = d.OperatingSystem,
+                    ContentId = d.DeviceId,
+                    ContentDescription = $"User: {d.UserPrincipalName} | Compliance: {d.ComplianceState} | Last sync: {d.LastSyncDisplay}"
+                }).ToList();
+                await ExportStaleDevicesCsvAsync(exportList);
+            }
+        }
+
+        private async Task ExportStaleDevicesCsvAsync(List<CustomContentInfo> exportList)
+        {
+            try
+            {
+                var path = await CsvExporter.ExportContentListAsync(exportList, "StaleDevices");
+                if (path != null)
+                    ShowOperationSuccess($"Exported {exportList.Count} items to CSV.", path);
+            }
+            catch (Exception ex)
+            {
+                LogError($"CSV export failed: {ex.Message}");
+            }
+        }
+
+        private void StaleDevicesDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
+        {
+            if (IsEntraSourceSelected)
+                SortStaleDeviceGrid(EntraStaleDevicesDataGrid, EntraStaleDeviceList, e);
+            else
+                SortStaleDeviceGrid(IntuneStaleDevicesDataGrid, IntuneStaleDeviceList, e);
+        }
+
+        /// <summary>
+        /// Generic column-sort for the stale-device grids. BaseDataOperationPage.HandleDataGridSorting
+        /// is hard-typed to CustomContentInfo/ContentList, so it can't sort these collections.
+        /// </summary>
+        private static void SortStaleDeviceGrid<T>(DataGrid dataGrid, ObservableCollection<T> list, DataGridColumnEventArgs e)
+        {
+            if (list.Count == 0) return;
+
+            var binding = (e.Column as DataGridTextColumn)?.Binding as Binding;
+            var sortProperty = binding?.Path?.Path;
+            if (string.IsNullOrEmpty(sortProperty)) return;
+
+            var propInfo = typeof(T).GetProperty(sortProperty);
+            if (propInfo == null) return;
+
+            var direction = e.Column.SortDirection == DataGridSortDirection.Ascending
+                ? ListSortDirection.Descending
+                : ListSortDirection.Ascending;
+
+            var sorted = direction == ListSortDirection.Ascending
+                ? list.OrderBy(x => propInfo.GetValue(x, null) ?? string.Empty).ToList()
+                : list.OrderByDescending(x => propInfo.GetValue(x, null) ?? string.Empty).ToList();
+
+            list.Clear();
+            foreach (var item in sorted) list.Add(item);
+
+            foreach (var col in dataGrid.Columns) col.SortDirection = null;
+            e.Column.SortDirection = direction == ListSortDirection.Ascending
+                ? DataGridSortDirection.Ascending
+                : DataGridSortDirection.Descending;
+        }
 
         #endregion
     }
