@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using System.Diagnostics;
+using static IntuneTools.Graph.EntraHelperClasses.PermissionGrantHelper;
 
 namespace IntuneTools.Pages
 {
@@ -297,17 +298,25 @@ namespace IntuneTools.Pages
         /// <summary>
         /// Result of comparing a tenant's granted Graph scopes against the app's required scopes.
         /// </summary>
+        /// <param name="ExtraScopes">
+        /// Scopes the tenant has actually consented to for this app that aren't in
+        /// <paramref name="RelevantScopes"/> — permission creep from an older version of the
+        /// tool, or a broader grant than needed. Null when this couldn't be determined (e.g. the
+        /// app's service principal wasn't found, or the check itself lacked permission).
+        /// </param>
         private sealed record PermissionCheckResult(
             bool IsAuthenticated,
             string? Error,
             int GrantedCount,
             int MissingCount,
             List<string> RelevantScopes,
-            HashSet<string> GrantedSet);
+            HashSet<string> GrantedSet,
+            List<string>? ExtraScopes);
 
         /// <summary>
         /// Compares a tenant's currently granted Graph scopes against
-        /// <see cref="SourceUserAuthentication.DefaultScopes"/>/<see cref="DestinationUserAuthentication.DefaultScopes"/>.
+        /// <see cref="SourceUserAuthentication.DefaultScopes"/>/<see cref="DestinationUserAuthentication.DefaultScopes"/>,
+        /// and separately checks the tenant's actual consent grant for unnecessary/extra scopes.
         /// Used both by the manual "View Permissions" dialog and the automatic post-sign-in check.
         /// </summary>
         private async Task<PermissionCheckResult> CheckTenantPermissionsAsync(bool isSource)
@@ -324,7 +333,7 @@ namespace IntuneTools.Pages
                 .ToList();
 
             if (string.IsNullOrWhiteSpace(tenantName))
-                return new PermissionCheckResult(false, null, 0, 0, relevantScopes, new HashSet<string>());
+                return new PermissionCheckResult(false, null, 0, 0, relevantScopes, new HashSet<string>(), null);
 
             string[] grantedScopes;
             try
@@ -335,14 +344,28 @@ namespace IntuneTools.Pages
             }
             catch (Exception ex)
             {
-                return new PermissionCheckResult(true, ex.Message, 0, relevantScopes.Count, relevantScopes, new HashSet<string>());
+                return new PermissionCheckResult(true, ex.Message, 0, relevantScopes.Count, relevantScopes, new HashSet<string>(), null);
             }
 
             var grantedSet = grantedScopes.ToHashSet(StringComparer.OrdinalIgnoreCase);
             var missingCount = relevantScopes.Count(s => !grantedSet.Contains(s));
             var grantedCount = relevantScopes.Count - missingCount;
 
-            return new PermissionCheckResult(true, null, grantedCount, missingCount, relevantScopes, grantedSet);
+            // Best-effort: the token's own "scp" claim only ever reflects the intersection of
+            // what we requested and what's granted, so it can never reveal extra/unused consent.
+            // Reading the tenant's actual consent grant for our service principal is the only way
+            // to see that, and it's a secondary hygiene signal — never let a failure here block
+            // the primary missing-permissions result above.
+            List<string>? extraScopes = null;
+            var client = isSource ? sourceGraphServiceClient : destinationGraphServiceClient;
+            if (client != null)
+            {
+                var consentedScopes = await GetConsentedAppScopesAsync(client, UserAuthenticationBase.PublicClientId);
+                if (consentedScopes != null)
+                    extraScopes = FindUnnecessaryScopes(consentedScopes, relevantScopes);
+            }
+
+            return new PermissionCheckResult(true, null, grantedCount, missingCount, relevantScopes, grantedSet, extraScopes);
         }
 
         /// <summary>
@@ -375,11 +398,21 @@ namespace IntuneTools.Pages
                     $"The {tenantLabel} tenant '{tenantName}' is missing {result.MissingCount} of {result.RelevantScopes.Count} required Graph permission(s).",
                     appFunction.Main);
                 UpdateTenantStatusUI(isSource, isSignedIn: true, tenantName, hasPermissionWarning: true);
+                // Auto-popup is reserved for missing permissions (something may actually break);
+                // extra/unnecessary ones are a lower-urgency hygiene note, surfaced in the log
+                // and in this same dialog rather than a popup of their own.
                 await ShowPermissionsDialogAsync(isSource, result);
             }
             else
             {
                 AppLogger.Info($"All required Graph permissions are granted for the {tenantLabel} tenant '{tenantName}'.", appFunction.Main);
+            }
+
+            if (result.ExtraScopes is { Count: > 0 })
+            {
+                AppLogger.Info(
+                    $"The {tenantLabel} tenant '{tenantName}' has consented to {result.ExtraScopes.Count} permission(s) this version of the tool doesn't use: {string.Join(", ", result.ExtraScopes)}",
+                    appFunction.Main);
             }
         }
 
@@ -483,20 +516,61 @@ namespace IntuneTools.Pages
                 permissionsPanel.Children.Add(itemPanel);
             }
 
+            // Unnecessary permissions: scopes the tenant actually consented to for this app that
+            // this version of the tool doesn't request. Shown as a lower-urgency hygiene note
+            // below the required-permissions list, not folded into the granted/missing counts.
+            if (result.ExtraScopes is { Count: > 0 })
+            {
+                permissionsPanel.Children.Add(new TextBlock
+                {
+                    Text = "Also granted, but not used by this version of the tool:",
+                    Margin = new Thickness(0, 12, 0, 4),
+                    Opacity = 0.8,
+                    TextWrapping = TextWrapping.Wrap
+                });
+
+                foreach (var scope in result.ExtraScopes)
+                {
+                    var itemPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+
+                    var icon = new FontIcon
+                    {
+                        Glyph = "", // Info
+                        FontSize = 14,
+                        Foreground = new SolidColorBrush(Colors.Orange)
+                    };
+
+                    var text = new TextBlock
+                    {
+                        Text = scope,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        Opacity = 0.8
+                    };
+
+                    itemPanel.Children.Add(icon);
+                    itemPanel.Children.Add(text);
+                    permissionsPanel.Children.Add(itemPanel);
+                }
+            }
+
             // Update dialog header
             dialog.Title = $"{tenantLabel} Tenant Permissions - {tenantName}";
+
+            var extraNote = result.ExtraScopes is { Count: > 0 }
+                ? $" {result.ExtraScopes.Count} unnecessary permission(s) are also granted — see below."
+                : string.Empty;
 
             if (result.MissingCount == 0)
             {
                 infoBar.Severity = InfoBarSeverity.Success;
                 infoBar.Title = "All Permissions Granted";
-                infoBar.Message = $"{result.GrantedCount} of {result.GrantedCount} required permissions are granted.";
+                infoBar.Message = $"{result.GrantedCount} of {result.GrantedCount} required permissions are granted.{extraNote}";
             }
             else
             {
                 infoBar.Severity = InfoBarSeverity.Warning;
                 infoBar.Title = "Missing Permissions";
-                infoBar.Message = $"{result.GrantedCount} granted, {result.MissingCount} missing. Some features may not work correctly.";
+                infoBar.Message = $"{result.GrantedCount} granted, {result.MissingCount} missing. Some features may not work correctly.{extraNote}";
             }
 
             await dialog.ShowAsync();
