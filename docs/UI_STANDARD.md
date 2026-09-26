@@ -220,3 +220,29 @@ For dashboard widgets, prefer `StatHeroValueTextBlockStyle` /
 for compact key/value rows. Use `MutedCaptionTextBlockStyle` for small,
 low-emphasis labels (e.g. "Tenant" above a tenant name).
 
+## 12. SettingsPage pattern
+
+`Pages/SettingsPage.xaml` uses the WinUI Community Toolkit's
+`SettingsCard`/`SettingsExpander` controls (`CommunityToolkit.WinUI.Controls.SettingsControls`
+package, `xmlns:ctk="using:CommunityToolkit.WinUI.Controls"`) instead of
+hand-rolled cards, matching the native Windows 11 Settings app row pattern.
+This is the extensibility point for future settings:
+
+- Content sits in a `ScrollViewer` (settings lists grow over time) wrapping a
+  `StackPanel Spacing="32"` of **groups**.
+- Each group is a `TextBlock Style="{StaticResource SectionTitleTextBlockStyle}"`
+  label (e.g. "Tenants", "Application") followed by a `StackPanel Spacing="12"`
+  of `SettingsCard`/`SettingsExpander` rows.
+- A `SettingsCard` is a single-action row: `Header`, `Description`, optional
+  `HeaderIcon` (`FontIcon`), and one control (typically a `Button` styled with
+  `PrimaryActionButtonStyle`/`SecondaryActionButtonStyle`) as its direct child.
+- A `SettingsExpander` is for a row with sub-actions: the same `Header`/
+  `Description`/`HeaderIcon`, a compact "at a glance" status as its direct
+  child (shown even when collapsed — e.g. the signed-in/not-signed-in
+  indicator), and one `SettingsCard` per sub-action under
+  `<ctk:SettingsExpander.Items>`.
+
+To add a new setting: drop another `SettingsCard` into an existing group's
+`StackPanel`, or add a new `TextBlock` + `StackPanel` group for a new
+category. No layout rework needed — the `ScrollViewer` absorbs growth.
+
