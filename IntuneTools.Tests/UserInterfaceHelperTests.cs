@@ -143,4 +143,49 @@ public class UserInterfaceHelperTests : IDisposable
 
         Assert.Equal(0, count);
     }
+
+    private static readonly DateTimeOffset Now = new(2026, 9, 26, 12, 0, 0, TimeSpan.Zero);
+
+    [Fact]
+    public void IsDeviceStale_NullLastActivity_ReturnsTrue()
+    {
+        Assert.True(UserInterfaceHelper.IsDeviceStale(null, 90, Now));
+    }
+
+    [Fact]
+    public void IsDeviceStale_LastActivityOlderThanThreshold_ReturnsTrue()
+    {
+        var lastActivity = Now.AddDays(-91);
+
+        Assert.True(UserInterfaceHelper.IsDeviceStale(lastActivity, 90, Now));
+    }
+
+    [Fact]
+    public void IsDeviceStale_LastActivityExactlyAtThreshold_ReturnsTrue()
+    {
+        var lastActivity = Now.AddDays(-90);
+
+        Assert.True(UserInterfaceHelper.IsDeviceStale(lastActivity, 90, Now));
+    }
+
+    [Fact]
+    public void IsDeviceStale_LastActivityWithinThreshold_ReturnsFalse()
+    {
+        var lastActivity = Now.AddDays(-30);
+
+        Assert.False(UserInterfaceHelper.IsDeviceStale(lastActivity, 90, Now));
+    }
+
+    [Fact]
+    public void IsDeviceStale_ZeroThreshold_OnlyFlagsPastActivity()
+    {
+        Assert.True(UserInterfaceHelper.IsDeviceStale(Now, 0, Now));
+        Assert.False(UserInterfaceHelper.IsDeviceStale(Now.AddSeconds(1), 0, Now));
+    }
+
+    [Fact]
+    public void IsDeviceStale_NegativeThreshold_Throws()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => UserInterfaceHelper.IsDeviceStale(Now, -1, Now));
+    }
 }

@@ -69,6 +69,20 @@ namespace IntuneTools.Utilities
         }
 
         /// <summary>
+        /// Determines whether a device counts as stale: its last activity timestamp (Intune
+        /// lastSyncDateTime or Entra approximateLastSignInDateTime) is older than the threshold,
+        /// or missing entirely (a device that has never checked in/signed in is the clearest
+        /// abandonment signal, so null always counts as stale).
+        /// </summary>
+        public static bool IsDeviceStale(DateTimeOffset? lastActivity, int staleDays, DateTimeOffset nowUtc)
+        {
+            if (staleDays < 0)
+                throw new ArgumentOutOfRangeException(nameof(staleDays), "Stale-day threshold cannot be negative.");
+
+            return lastActivity is null || lastActivity.Value <= nowUtc.AddDays(-staleDays);
+        }
+
+        /// <summary>
         /// Executes a batch operation on a list of IDs with logging and time tracking.
         /// </summary>
         public static async Task<int> ExecuteBatchOperationAsync(
