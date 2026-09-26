@@ -186,6 +186,7 @@ internal sealed class DemoDataStore
         store.AddPolicy("mobileApps", "#microsoft.graph.androidManagedStoreApp", "displayName", "Slack", "Android managed store app.");
 
         store.SeedAuditEvents();
+        store.SeedDevices();
 
         return store;
     }
@@ -310,6 +311,62 @@ internal sealed class DemoDataStore
                 ["deviceAndAppManagementAssignmentFilterType"] = "none"
             }
         });
+
+    /// <summary>
+    /// Seeds a mix of Intune managed devices and Entra ID device objects with varied
+    /// last-activity timestamps (fresh, stale, and never-synced/signed-in) so the Cleanup
+    /// page's Stale Devices scan has something realistic to find in Demo Mode.
+    /// </summary>
+    private void SeedDevices()
+    {
+        AddManagedDevice("DESKTOP-SALES01", "Windows", "10.0.19045", 5, "alice@contosodemo.onmicrosoft.com", "compliant", "Dell Inc.", "OptiPlex 7090", "DEMO-SN-001");
+        AddManagedDevice("DESKTOP-IT02", "Windows", "10.0.22631", 10, "bob@contosodemo.onmicrosoft.com", "compliant", "Dell Inc.", "Latitude 5540", "DEMO-SN-002");
+        AddManagedDevice("LAPTOP-FIN03", "Windows", "10.0.19045", 120, "carol@contosodemo.onmicrosoft.com", "compliant", "HP", "EliteBook 840", "DEMO-SN-003");
+        AddManagedDevice("MACBOOK-SALES04", "macOS", "14.5", 200, "dave@contosodemo.onmicrosoft.com", "noncompliant", "Apple", "MacBook Pro", "DEMO-SN-004");
+        AddManagedDevice("IPAD-EXEC05", "iOS", "17.4", null, "erin@contosodemo.onmicrosoft.com", "unknown", "Apple", "iPad Pro", "DEMO-SN-005");
+        AddManagedDevice("DESKTOP-OLD06", "Windows", "10.0.19045", 400, "frank@contosodemo.onmicrosoft.com", "noncompliant", "Dell Inc.", "OptiPlex 7050", "DEMO-SN-006");
+
+        AddEntraDevice("DESKTOP-SALES01", "Windows", "10.0.19045", "AzureAd", true, 5);
+        AddEntraDevice("DESKTOP-IT02", "Windows", "10.0.22631", "AzureAd", true, 15);
+        AddEntraDevice("LAPTOP-FIN03", "Windows", "10.0.19045", "ServerAd", true, 95);
+        AddEntraDevice("MACBOOK-SALES04", "macOS", "14.5", "Workplace", true, 150);
+        AddEntraDevice("OLD-SURFACE07", "Windows", "10.0.19045", "AzureAd", false, null);
+    }
+
+    private void AddManagedDevice(string deviceName, string operatingSystem, string osVersion, int? daysSinceSync,
+        string userPrincipalName, string complianceState, string manufacturer, string model, string serialNumber)
+    {
+        Add("managedDevices", new JsonObject
+        {
+            ["id"] = Guid.NewGuid().ToString(),
+            ["@odata.type"] = "#microsoft.graph.managedDevice",
+            ["deviceName"] = deviceName,
+            ["operatingSystem"] = operatingSystem,
+            ["osVersion"] = osVersion,
+            ["lastSyncDateTime"] = daysSinceSync.HasValue ? DateTimeOffset.UtcNow.AddDays(-daysSinceSync.Value).ToString("o") : null,
+            ["userPrincipalName"] = userPrincipalName,
+            ["complianceState"] = complianceState,
+            ["manufacturer"] = manufacturer,
+            ["model"] = model,
+            ["serialNumber"] = serialNumber
+        });
+    }
+
+    private void AddEntraDevice(string displayName, string operatingSystem, string operatingSystemVersion,
+        string trustType, bool accountEnabled, int? daysSinceSignIn)
+    {
+        Add("devices", new JsonObject
+        {
+            ["id"] = Guid.NewGuid().ToString(),
+            ["@odata.type"] = "#microsoft.graph.device",
+            ["displayName"] = displayName,
+            ["operatingSystem"] = operatingSystem,
+            ["operatingSystemVersion"] = operatingSystemVersion,
+            ["trustType"] = trustType,
+            ["accountEnabled"] = accountEnabled,
+            ["approximateLastSignInDateTime"] = daysSinceSignIn.HasValue ? DateTimeOffset.UtcNow.AddDays(-daysSinceSignIn.Value).ToString("o") : null
+        });
+    }
 
     private void SeedAuditEvents()
     {

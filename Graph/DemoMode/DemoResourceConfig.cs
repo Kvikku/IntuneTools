@@ -37,8 +37,10 @@ internal static class DemoResourceCatalog
         new("deviceManagement", "windowsQualityUpdateProfiles", "displayName", "#microsoft.graph.windowsQualityUpdateProfile"),
         new("deviceManagement", "assignmentFilters", "displayName", "#microsoft.graph.deviceAndAppManagementAssignmentFilter", SupportsAssign: false),
         new("deviceManagement", "auditEvents", "displayName", "#microsoft.graph.auditEvent", SupportsCreate: false, SupportsMutation: false, SupportsAssign: false),
+        new("deviceManagement", "managedDevices", "deviceName", "#microsoft.graph.managedDevice", SupportsCreate: false, SupportsAssign: false),
         new("deviceAppManagement", "mobileApps", "displayName", "#microsoft.graph.win32LobApp", SupportsCreate: false),
         new(null, "groups", "displayName", "#microsoft.graph.group", SupportsAssign: false),
+        new(null, "devices", "displayName", "#microsoft.graph.device", SupportsCreate: false, SupportsAssign: false),
         new(null, "organization", "displayName", "#microsoft.graph.organization", SupportsCreate: false, SupportsMutation: false, SupportsAssign: false),
     };
 
