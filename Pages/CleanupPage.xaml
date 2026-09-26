@@ -345,7 +345,7 @@
                         <controls:DataGrid.Columns>
                             <controls:DataGridTextColumn Header="Device Name" Binding="{Binding DeviceName}" Width="2*"/>
                             <controls:DataGridTextColumn Header="OS" Binding="{Binding OperatingSystem}" Width="*"/>
-                            <controls:DataGridTextColumn Header="User" Binding="{Binding UserPrincipalName}" Width="1.5*"/>
+                            <controls:DataGridTextColumn Header="User" Binding="{Binding UserPrincipalName}" Width="*"/>
                             <controls:DataGridTextColumn Header="Compliance" Binding="{Binding ComplianceState}" Width="*"/>
                             <controls:DataGridTextColumn Header="Last Sync" Binding="{Binding LastSyncDisplay}" Width="*"/>
                             <controls:DataGridTextColumn Header="Days Inactive" Binding="{Binding DaysInactiveDisplay}" Width="Auto"/>
