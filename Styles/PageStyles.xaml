@@ -101,6 +101,24 @@
         <Setter Property="Foreground" Value="White"/>
     </Style>
 
+    <!-- ===== Contextual help =====
+         The small "?" button inside IntuneTools.Utilities.HelpTip. Deliberately
+         subtle (transparent, no border) so it reads as an affordance next to a
+         label rather than competing with real actions. -->
+    <Style x:Key="HelpIconButtonStyle" TargetType="Button">
+        <Setter Property="Width" Value="18"/>
+        <Setter Property="Height" Value="18"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="CornerRadius" Value="9"/>
+        <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="FontSize" Value="10"/>
+    </Style>
+
     <!-- ===== Log console ===== -->
     <Style x:Key="LogTimestampTextBlockStyle" TargetType="TextBlock">
         <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}"/>

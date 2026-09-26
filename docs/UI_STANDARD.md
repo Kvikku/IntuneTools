@@ -246,3 +246,34 @@ To add a new setting: drop another `SettingsCard` into an existing group's
 `StackPanel`, or add a new `TextBlock` + `StackPanel` group for a new
 category. No layout rework needed — the `ScrollViewer` absorbs growth.
 
+## 13. Contextual help (HelpTip)
+
+`IntuneTools.Utilities.HelpTip` is a small "?" icon that shows a `TeachingTip`
+(WinUI's native flyout-with-a-dismiss-button control) with a short
+explanation on click. It exists because the wiki documents every page in
+depth, but most users never open it — guidance only changes behavior when
+it shows up *in the workflow*, at the moment someone's confused, without
+making them leave the page.
+
+```xml
+<utilities:HelpTip Title="Search &amp; Staging"
+                    Text="Short 1-3 sentence explanation..."/>
+```
+
+Rules for using it:
+
+- **Sparingly.** One per genuinely non-obvious concept, not one per button —
+  a single-control tooltip via `ToolTipService.ToolTip` already covers a
+  one-liner on hover. `HelpTip` is for things a tooltip can't explain: the
+  relationship between several controls, a page's overall mental model, a
+  non-obvious consequence of an action.
+- **Next to the thing it explains**, inline in a horizontal `StackPanel`
+  with the label it's attached to (a page title, or a
+  `CardSectionLabelTextBlockStyle` section label) — never floating alone.
+- **Keep `Text` to 1-3 sentences.** It's a quick answer, not a copy of the
+  wiki page.
+
+First tried out on `Pages/CleanupPage.xaml` (page-level "About this page"
+overview, plus one per non-obvious card section) before rolling out to
+other pages.
+

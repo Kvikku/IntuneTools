@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="IntuneTools.Utilities.HelpTip"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <!--
+        Small "?" affordance for contextual, in-app guidance — click it, get a short
+        explanation in a TeachingTip, dismiss it. Intended for the handful of genuinely
+        non-obvious spots on a page (not every button — hover tooltips already cover
+        single-control one-liners). See docs/UI_STANDARD.md section 13.
+
+        Usage:
+            <utilities:HelpTip Title="Find Unassigned"
+                                Text="Short 1-2 sentence explanation..."/>
+    -->
+    <Grid>
+        <Button x:Name="HelpButton"
+                Style="{StaticResource HelpIconButtonStyle}"
+                Click="HelpButton_Click"
+                ToolTipService.ToolTip="Help">
+            <FontIcon Glyph="&#xE897;" FontSize="10"/>
+        </Button>
+        <TeachingTip x:Name="Tip"
+                     CloseButtonContent="Got it"/>
+    </Grid>
+</UserControl>

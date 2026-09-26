@@ -22,8 +22,13 @@
 
         <!-- ===== Header ===== -->
         <StackPanel Grid.Row="0" Margin="{StaticResource PageHeaderBottomMargin}">
-            <TextBlock Text="Intune Cleanup"
-                       Style="{StaticResource PageTitleTextBlockStyle}"/>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="Intune Cleanup"
+                           Style="{StaticResource PageTitleTextBlockStyle}"/>
+                <utilities:HelpTip Margin="0,10,0,0"
+                                    Title="About this page"
+                                    Text="Delete Content: search or list content, then bulk-delete what you stage. Find Duplicates: scans for same-named content and pre-selects the older/unassigned copy for removal. Stale Devices: finds Intune and Entra ID devices that have gone quiet so you can clear out ghost hardware. Switch modes with the tabs below."/>
+            </StackPanel>
             <TextBlock Text="Bulk delete policies and configurations from a tenant."
                        Style="{StaticResource PageSubtitleTextBlockStyle}"/>
             <InfoBar x:Name="TenantInfoBar"
@@ -82,8 +87,12 @@
 
                         <Border Style="{StaticResource CardBorderStyle}">
                             <StackPanel Spacing="8">
-                                <TextBlock Text="Search &amp; Staging"
-                                           Style="{StaticResource CardSectionLabelTextBlockStyle}"/>
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock Text="Search &amp; Staging"
+                                               Style="{StaticResource CardSectionLabelTextBlockStyle}"/>
+                                    <utilities:HelpTip Title="Search &amp; Staging"
+                                                        Text="Search or List All loads content into the grid below — trim it with Clear Selected/Clear All before deleting. Find Unassigned re-checks every loaded item for group assignments; that's a per-item API call, so it can take a while in large tenants."/>
+                                </StackPanel>
                                 <utilities:SearchStagingBar x:Name="SearchStagingBar"
                                                              SearchRequested="SearchStagingBar_SearchRequested"
                                                              ListAllRequested="ListAllButton_Click"
@@ -272,8 +281,12 @@
 
                         <Border Style="{StaticResource CardBorderStyle}">
                             <StackPanel Spacing="8">
-                                <TextBlock Text="Scan"
-                                           Style="{StaticResource CardSectionLabelTextBlockStyle}"/>
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock Text="Scan"
+                                               Style="{StaticResource CardSectionLabelTextBlockStyle}"/>
+                                    <utilities:HelpTip Title="Stale Devices"
+                                                        Text="Intune Managed Devices and Entra ID Devices are two independent scans — a device stale in one may still be healthy in the other. Intune uses last sync time; Entra uses approximate last sign-in. Devices that have never checked in are always treated as stale."/>
+                                </StackPanel>
                                 <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                                     <RadioButton x:Name="IntuneSourceRadio" Content="Intune Managed Devices" GroupName="StaleDeviceSource" IsChecked="True" Checked="StaleDeviceSource_Changed"/>
                                     <RadioButton x:Name="EntraSourceRadio" Content="Entra ID Devices" GroupName="StaleDeviceSource" Checked="StaleDeviceSource_Changed"/>
