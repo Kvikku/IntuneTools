@@ -103,7 +103,6 @@ namespace IntuneTools.Utilities
         // Generic App Deployment Options
         public static string _selectedDeploymentMode = string.Empty;
         public static string _selectedIntent = string.Empty;
-        public static InstallIntent _selectedInstallIntent;
         public static InstallIntent _selectedAppDeploymentIntent;
 
         // Windows specific
