@@ -475,28 +475,6 @@ namespace IntuneTools.Pages
         #endregion
 
         #region Group / Filter retrieval
-        private void UpdateSelectedInstallIntent()
-        {
-            if (AssignmentIntentComboBox.SelectedItem is ComboBoxItem selectedItem && selectedItem.Content is string intent)
-            {
-                if (Enum.TryParse(intent, out InstallIntent parsedIntent))
-                {
-                    _selectedInstallIntent = parsedIntent;
-                    AppLogger.UiOnly($"Intent: {_selectedInstallIntent}");
-                }
-                else
-                {
-                    AppLogger.UiOnly($"Warning: Could not parse assignment intent '{intent}'. Defaulting to 'Required'.");
-                    _selectedInstallIntent = InstallIntent.Required;
-                }
-            }
-            else
-            {
-                AppLogger.UiOnly("Warning: No assignment intent selected. Defaulting to 'Required'.");
-                _selectedInstallIntent = InstallIntent.Required;
-            }
-        }
-
         /// <summary>
         /// Loads all Entra ID groups from Microsoft Graph into the GroupList.
         /// </summary>
@@ -778,11 +756,6 @@ namespace IntuneTools.Pages
             }
         }
 
-        private void IntentComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            // Intent is now configured in the deployment options dialog
-        }
-
         #endregion
 
         #region Helpers
@@ -1047,7 +1020,7 @@ namespace IntuneTools.Pages
                     GetInstallIntent(_selectedIntent);
 
                     // Validate: Available intent cannot target All Devices
-                    if (_selectedInstallIntent == InstallIntent.Available && _includeAllDevices)
+                    if (_selectedAppDeploymentIntent == InstallIntent.Available && _includeAllDevices)
                     {
                         AppDeployment.Hide();
                         await ShowValidationDialogAsync("Invalid Assignment",
@@ -1072,7 +1045,7 @@ namespace IntuneTools.Pages
                     iOSAppDeploymentSettings = iOSOptions;
 
                     AppLogger.UiOnly("Deployment options configured:");
-                    AppLogger.UiOnly($" - Intent: {_selectedInstallIntent}");
+                    AppLogger.UiOnly($" - Intent: {_selectedAppDeploymentIntent}");
                     AppLogger.UiOnly($" - Notifications: {_selectedNotificationSetting}");
                     AppLogger.UiOnly($" - Delivery Opt: {_selectedDeliveryOptimizationPriority}");
 
