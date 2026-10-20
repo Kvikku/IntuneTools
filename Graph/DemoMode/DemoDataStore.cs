@@ -184,6 +184,7 @@ internal sealed class DemoDataStore
 
         store.AddPolicy("mobileApps", "#microsoft.graph.iosStoreApp", "displayName", "Microsoft Teams", "iOS store app.");
         store.AddPolicy("mobileApps", "#microsoft.graph.androidManagedStoreApp", "displayName", "Slack", "Android managed store app.");
+        store.AddPolicy("mobileApps", "#microsoft.graph.iosVppApp", "displayName", "Adobe Acrobat Reader", "iOS volume-purchased (VPP) app.");
 
         store.SeedAuditEvents();
         store.SeedDevices();
