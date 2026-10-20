@@ -429,6 +429,16 @@ namespace IntuneTools.Pages
             var tenantLabel = isSource ? "Source" : "Destination";
             var tenantName = isSource ? sourceTenantName : destinationTenantName;
 
+            // Demo Mode bypasses MSAL, so there is no token to read an "scp" claim from and no
+            // consent grant to query — a check here would report every required scope as missing
+            // and log a failure for the unnecessary-scope lookup. Say that plainly instead of
+            // showing a wall of red crosses that means nothing.
+            if (DemoModeService.IsDemoClient(isSource ? sourceGraphServiceClient : destinationGraphServiceClient))
+            {
+                await ShowDemoModePermissionsDialogAsync(tenantLabel, tenantName);
+                return;
+            }
+
             // Create dialog controls programmatically
             var infoBar = new InfoBar
             {
@@ -572,6 +582,39 @@ namespace IntuneTools.Pages
                 infoBar.Title = "Missing Permissions";
                 infoBar.Message = $"{result.GrantedCount} granted, {result.MissingCount} missing. Some features may not work correctly.{extraNote}";
             }
+
+            await dialog.ShowAsync();
+        }
+
+        /// <summary>
+        /// Stand-in for the permissions dialog when a tenant is backed by Demo Mode sample data,
+        /// where Graph permissions don't apply at all.
+        /// </summary>
+        private async Task ShowDemoModePermissionsDialogAsync(string tenantLabel, string? tenantName)
+        {
+            var infoBar = new InfoBar
+            {
+                IsOpen = true,
+                IsClosable = false,
+                Severity = InfoBarSeverity.Informational,
+                Title = "Demo Mode",
+                Message = $"The {tenantLabel.ToLower()} tenant is backed by in-memory sample data, "
+                        + "so there are no Graph permissions to check. Sign in to a real tenant to review permissions."
+            };
+
+            var contentGrid = new Grid { MinWidth = 500 };
+            contentGrid.Children.Add(infoBar);
+
+            var dialog = new ContentDialog
+            {
+                Title = string.IsNullOrWhiteSpace(tenantName)
+                    ? $"{tenantLabel} Tenant Permissions"
+                    : $"{tenantLabel} Tenant Permissions - {tenantName}",
+                CloseButtonText = "Close",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot,
+                Content = contentGrid
+            };
 
             await dialog.ShowAsync();
         }
