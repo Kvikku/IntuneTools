@@ -2,12 +2,18 @@ name: CI Build
 
 on:
   push:
-    branches: [master]
+    branches: ['**']
   pull_request:
-    branches: [master]
 
 permissions:
   contents: read
+
+# A branch with an open PR would otherwise build twice per push (once for the
+# push, once for the PR). Both land in the same group here, so the newer run
+# supersedes the older one instead of queueing beside it.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 
 jobs:
   build:
