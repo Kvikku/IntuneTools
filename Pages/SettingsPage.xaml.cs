@@ -326,11 +326,7 @@ namespace IntuneTools.Pages
                 ? SourceUserAuthentication.DefaultScopes
                 : DestinationUserAuthentication.DefaultScopes;
 
-            var relevantScopes = requiredScopes
-                .Where(s => !s.Equals("openid", StringComparison.OrdinalIgnoreCase)
-                         && !s.Equals("offline_access", StringComparison.OrdinalIgnoreCase))
-                .OrderBy(s => s)
-                .ToList();
+            var relevantScopes = GetRelevantScopes(requiredScopes);
 
             if (string.IsNullOrWhiteSpace(tenantName))
                 return new PermissionCheckResult(false, null, 0, 0, relevantScopes, new HashSet<string>(), null);
@@ -348,7 +344,7 @@ namespace IntuneTools.Pages
             }
 
             var grantedSet = grantedScopes.ToHashSet(StringComparer.OrdinalIgnoreCase);
-            var missingCount = relevantScopes.Count(s => !grantedSet.Contains(s));
+            var missingCount = FindMissingScopes(relevantScopes, grantedSet).Count;
             var grantedCount = relevantScopes.Count - missingCount;
 
             // Best-effort: the token's own "scp" claim only ever reflects the intersection of

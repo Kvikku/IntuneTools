@@ -83,6 +83,16 @@ namespace IntuneTools.Utilities
         }
 
         /// <summary>
+        /// Whether an app assignment intent can be used with the selected targets. Intune
+        /// rejects 'Available' for the All Devices virtual group (an available app has to be
+        /// offered to a user), so the deployment dialog blocks that combination up front.
+        /// </summary>
+        public static bool IsAppAssignmentIntentAllowed(InstallIntent intent, bool includesAllDevices)
+        {
+            return !(includesAllDevices && intent == InstallIntent.Available);
+        }
+
+        /// <summary>
         /// Executes a batch operation on a list of IDs with logging and time tracking.
         /// </summary>
         public static async Task<int> ExecuteBatchOperationAsync(

@@ -16,6 +16,12 @@ internal sealed class DemoGraphMessageHandler : HttpMessageHandler
 {
     private static readonly Regex ContainsFilterRegex = new(@"contains\(([\w./]+),\s*'(.*)'\)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
+    /// <summary>
+    /// Page size when a list request has no $top, matching Graph's usual default. The seed data
+    /// is smaller than this, so only large test fixtures ever see a second page.
+    /// </summary>
+    private const int DefaultPageSize = 100;
+
     private readonly DemoDataStore _store;
 
     public DemoGraphMessageHandler(DemoDataStore store)
@@ -137,13 +143,39 @@ internal sealed class DemoGraphMessageHandler : HttpMessageHandler
             }
         }
 
-        if (query.TryGetValue("$top", out var topStr) && int.TryParse(topStr, out var top) && top >= 0)
+        // Like Graph, $top sets the page size rather than capping the result, and the rest is
+        // reached by following @odata.nextLink (PageIterator does this).
+        var pageSize = query.TryGetValue("$top", out var topStr) && int.TryParse(topStr, out var top) && top > 0
+            ? top
+            : DefaultPageSize;
+        var offset = query.TryGetValue("$skiptoken", out var skipStr) && int.TryParse(skipStr, out var skip) && skip > 0
+            ? skip
+            : 0;
+
+        var matching = items.ToList();
+        var value = new JsonArray(matching.Skip(offset).Take(pageSize).Select(n => n!.DeepClone()).ToArray());
+        var response = new JsonObject { ["value"] = value };
+
+        if (offset + pageSize < matching.Count)
         {
-            items = items.Take(top);
+            response["@odata.nextLink"] = BuildNextLink(request.RequestUri!, offset + pageSize);
         }
 
-        var value = new JsonArray(items.Select(n => n!.DeepClone()).ToArray());
-        return JsonResponse(HttpStatusCode.OK, new JsonObject { ["value"] = value });
+        return JsonResponse(HttpStatusCode.OK, response);
+    }
+
+    /// <summary>
+    /// Rebuilds the request URL with a $skiptoken holding the next page's offset, keeping the
+    /// original $top/$filter/$select so every page is filtered and sized the same way.
+    /// </summary>
+    private static string BuildNextLink(Uri requestUri, int nextOffset)
+    {
+        var pairs = requestUri.Query.TrimStart('?')
+            .Split('&', StringSplitOptions.RemoveEmptyEntries)
+            .Where(p => !Uri.UnescapeDataString(p.Split('=')[0]).Equals("$skiptoken", StringComparison.OrdinalIgnoreCase))
+            .Append($"$skiptoken={nextOffset}");
+
+        return $"{requestUri.GetLeftPart(UriPartial.Path)}?{string.Join("&", pairs)}";
     }
 
     private HttpResponseMessage HandleGetById(DemoResourceConfig config, string id)
@@ -154,7 +186,7 @@ internal sealed class DemoGraphMessageHandler : HttpMessageHandler
 
     private HttpResponseMessage HandleCreate(DemoResourceConfig config, string? body)
     {
-        var node = (!string.IsNullOrWhiteSpace(body) ? JsonNode.Parse(body) as JsonObject : null) ?? new JsonObject();
+        var node = ParseBody(body) as JsonObject ?? new JsonObject();
         node["id"] = Guid.NewGuid().ToString();
         node["createdDateTime"] = DateTimeOffset.UtcNow.ToString("o");
         node["lastModifiedDateTime"] = DateTimeOffset.UtcNow.ToString("o");
@@ -169,7 +201,7 @@ internal sealed class DemoGraphMessageHandler : HttpMessageHandler
         var existing = _store.GetById(config.CollectionSegment, id);
         if (existing == null) return NotFoundError();
 
-        if (!string.IsNullOrWhiteSpace(body) && JsonNode.Parse(body) is JsonObject patch)
+        if (ParseBody(body) is JsonObject patch)
         {
             foreach (var (key, value) in patch)
             {
@@ -205,7 +237,7 @@ internal sealed class DemoGraphMessageHandler : HttpMessageHandler
     {
         var newAssignments = new JsonArray();
 
-        if (!string.IsNullOrWhiteSpace(body) && JsonNode.Parse(body) is JsonObject obj)
+        if (ParseBody(body) is JsonObject obj)
         {
             var assignmentsNode = (obj["assignments"] ?? obj["mobileAppAssignments"]) as JsonArray;
             if (assignmentsNode != null)
@@ -230,6 +262,41 @@ internal sealed class DemoGraphMessageHandler : HttpMessageHandler
         var match = list.OfType<JsonObject>().FirstOrDefault(o => (string?)o["id"] == assignmentId);
         if (match != null) list.Remove(match);
         return new HttpResponseMessage(HttpStatusCode.NoContent);
+    }
+
+    /// <summary>
+    /// Parses a request body. The Graph SDK writes a property that was explicitly set to null
+    /// twice (e.g. "settings":null,"settings":null), which <see cref="JsonObject"/> rejects, so
+    /// the body is rebuilt from a <see cref="JsonDocument"/> — which tolerates repeated keys —
+    /// keeping the last value for each key.
+    /// </summary>
+    private static JsonNode? ParseBody(string? body)
+    {
+        if (string.IsNullOrWhiteSpace(body)) return null;
+
+        using var document = JsonDocument.Parse(body);
+        return ToNode(document.RootElement);
+    }
+
+    private static JsonNode? ToNode(JsonElement element)
+    {
+        switch (element.ValueKind)
+        {
+            case JsonValueKind.Object:
+                var obj = new JsonObject();
+                foreach (var property in element.EnumerateObject())
+                {
+                    obj[property.Name] = ToNode(property.Value);
+                }
+                return obj;
+            case JsonValueKind.Array:
+                return new JsonArray(element.EnumerateArray().Select(ToNode).ToArray());
+            case JsonValueKind.Null:
+            case JsonValueKind.Undefined:
+                return null;
+            default:
+                return JsonValue.Create(element.Clone());
+        }
     }
 
     private static string[] GetPathSegments(Uri uri)

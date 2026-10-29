@@ -15,7 +15,7 @@ internal sealed class DemoDataStore
     public string TenantDisplayName { get; }
     public string TenantId { get; } = Guid.NewGuid().ToString();
 
-    private DemoDataStore(string tenantDisplayName)
+    internal DemoDataStore(string tenantDisplayName)
     {
         TenantDisplayName = tenantDisplayName;
     }

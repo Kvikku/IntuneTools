@@ -87,9 +87,9 @@ Branch: `test/1.8-live-tenant-verification`
 `Device.ReadWrite.All` was added to `SourceUserAuthentication.DefaultScopes` for
 Entra device deletion. Everyone who consented under 1.7 must re-consent.
 
-- [ ] Returning 1.7 user signs in to source → **missing 1 of 18** scopes
+- [ ] Returning 1.7 user signs in to source → **missing 1 of 17** scopes (dialog: 16 granted, 1 missing)
 - [ ] Non-admin in a tenant requiring admin consent → graceful failure
-- [ ] Destination shows **17** scopes and never prompts for `Device.ReadWrite.All`
+- [ ] Destination shows **16 of 16** granted and never prompts for `Device.ReadWrite.All`
       (correct: `CleanupPage` only ever uses `sourceGraphServiceClient`)
 
 ### Stale device cleanup — destructive, no undo

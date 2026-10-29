@@ -1020,7 +1020,7 @@ namespace IntuneTools.Pages
                     GetInstallIntent(_selectedIntent);
 
                     // Validate: Available intent cannot target All Devices
-                    if (_selectedAppDeploymentIntent == InstallIntent.Available && _includeAllDevices)
+                    if (!UserInterfaceHelper.IsAppAssignmentIntentAllowed(_selectedAppDeploymentIntent, _includeAllDevices))
                     {
                         AppDeployment.Hide();
                         await ShowValidationDialogAsync("Invalid Assignment",

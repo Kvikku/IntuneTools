@@ -58,6 +58,28 @@ namespace IntuneTools.Graph.EntraHelperClasses
         }
 
         /// <summary>
+        /// The scopes a tenant permission check compares against: the app's requested scopes
+        /// minus the OIDC ones every sign-in is granted anyway, sorted for display.
+        /// </summary>
+        public static List<string> GetRelevantScopes(IEnumerable<string> requestedScopes)
+        {
+            return requestedScopes
+                .Where(s => !NonPermissionScopes.Contains(s, StringComparer.OrdinalIgnoreCase))
+                .OrderBy(s => s)
+                .ToList();
+        }
+
+        /// <summary>
+        /// Returns the relevant scopes that are not in the granted set — what a tenant still
+        /// needs to consent to before every feature of this version works.
+        /// </summary>
+        public static List<string> FindMissingScopes(IEnumerable<string> relevantScopes, IEnumerable<string> grantedScopes)
+        {
+            var granted = new HashSet<string>(grantedScopes, StringComparer.OrdinalIgnoreCase);
+            return relevantScopes.Where(s => !granted.Contains(s)).ToList();
+        }
+
+        /// <summary>
         /// Filters consented scopes down to ones not present in the app's currently
         /// required set — permissions the tenant has granted that this version of the
         /// tool doesn't actually use.
