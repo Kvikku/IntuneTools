@@ -103,7 +103,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add IntuneTools.csproj Package.appxmanifest
-          git diff --cached --quiet && echo "No version changes to commit" && exit 0
+          # `exit` can't follow && in pwsh, so check the exit code explicitly
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) { echo "No version changes to commit"; exit 0 }
           git commit -m "Bump version to ${{ steps.version.outputs.VERSION }}"
           git push origin HEAD:master
 
