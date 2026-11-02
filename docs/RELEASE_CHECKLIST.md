@@ -36,21 +36,21 @@ is consented, how large tenants paginate, or how the packaged app behaves.
 
 ### Consent and permissions
 
-- [ ] Sign in to **source** with an account that consented under the *previous*
+- [x] Sign in to **source** with an account that consented under the *previous*
       released version. If this release added a scope, expect the post-sign-in
       check to auto-open and report it missing.
-- [ ] Grant consent, confirm the warning clears and the tenant status row
+- [x] Grant consent, confirm the warning clears and the tenant status row
       returns to normal
 - [ ] Sign in as a **non-admin in a tenant that requires admin consent** —
       confirm a readable failure, no crash, no half-initialised client
-- [ ] Sign in to **destination** and confirm its scope list is as intended
+- [x] Sign in to **destination** and confirm its scope list is as intended
       (it deliberately differs from source — see `DestinationUserAuthentication.DefaultScopes`)
 - [ ] Confirm a permission warning survives navigating away from Settings and
       back (the page is `NavigationCacheMode="Required"`)
 
 ### Destructive operations
 
-- [ ] For each delete path touched this release: delete **one throwaway object**
+- [x] For each delete path touched this release: delete **one throwaway object**
       and confirm only what was intended was removed
 - [ ] Confirm the confirmation dialog states the actual consequence, and that
       the bulk warning fires above 10 items
@@ -87,36 +87,36 @@ Branch: `test/1.8-live-tenant-verification`
 `Device.ReadWrite.All` was added to `SourceUserAuthentication.DefaultScopes` for
 Entra device deletion. Everyone who consented under 1.7 must re-consent.
 
-- [ ] Returning 1.7 user signs in to source → **missing 1 of 17** scopes (dialog: 16 granted, 1 missing)
+- [x] Returning 1.7 user signs in to source → **missing 1 of 17** scopes (dialog: 16 granted, 1 missing)
 - [ ] Non-admin in a tenant requiring admin consent → graceful failure
-- [ ] Destination shows **16 of 16** granted and never prompts for `Device.ReadWrite.All`
+- [x] Destination shows **16 of 16** granted and never prompts for `Device.ReadWrite.All`
       (correct: `CleanupPage` only ever uses `sourceGraphServiceClient`)
 
 ### Stale device cleanup — destructive, no undo
 
-- [ ] Reconcile both scan counts against the portal. Intune uses
+- [x] Reconcile both scan counts against the portal. Intune uses
       `lastSyncDateTime`, Entra uses `approximateLastSignInDateTime`, and
       **null/never counts as stale**.
 - [ ] All threshold presets (30/60/90/120/180) move the counts sensibly
 - [ ] Threshold persists across an app restart
-- [ ] Delete one throwaway **Intune** device record → record removed, device
+- [x] Delete one throwaway **Intune** device record → record removed, device
       **not** retired or wiped
-- [ ] Delete one throwaway **Entra** device object → this is the call needing
+- [x] Delete one throwaway **Entra** device object → this is the call needing
       the new scope
 - [ ] Tenant with 1000+ devices — paging through `managedDevices` and `devices`
       is untested
 
 ### App assignment — issue #104
 
-- [ ] All Devices + **Required** → succeeds
-- [ ] All Devices + **Uninstall** → succeeds
-- [ ] All Devices + **Available** → still blocked by the validation dialog
-- [ ] **iOS VPP app, device licensing True, All Devices, Required** — the
+- [x] All Devices + **Required** → succeeds
+- [x] All Devices + **Uninstall** → succeeds
+- [x] All Devices + **Available** → still blocked by the validation dialog
+- [x] **iOS VPP app, device licensing True, All Devices, Required** — the
       reporter's exact case. Confirms Graph accepts it, not just that the
       client-side guard passes.
-- [ ] Assign to an app that **already has assignments** → existing ones survive
+- [x] Assign to an app that **already has assignments** → existing ones survive
       (`assign` is a full replace, so the merge step is the risk)
-- [ ] Log reads `- Intent: Required`, not `Available`
+- [x] Log reads `- Intent: Required`, not `Available`
 
 ### Permission reporting
 

@@ -24,33 +24,9 @@ InToolz uses the built-in **Microsoft Graph Command Line Tools** enterprise appl
 
 All permissions are **Delegated** (not Application). The scopes are requested automatically at sign-in via the Microsoft Graph Command Line Tools enterprise app.
 
-### Source tenant (read-only)
+### Both tenants
 
-The source tenant is where you **read** existing Intune content from.
-
-| Scope | Purpose |
-|-------|---------|
-| `openid`, `offline_access` | Authentication & token refresh |
-| `User.Read` | Read signed-in user profile |
-| `Directory.Read.All` | Resolve tenant name and directory objects |
-| `Policy.Read.All` | Read conditional access and auth policies |
-| `AuditLog.Read.All` | Read audit logs |
-| `Reports.Read.All` | Read usage reports |
-| `RoleManagement.Read.All` | Read role assignments |
-| `Application.Read.All` | Read app registrations |
-| `DelegatedPermissionGrant.Read.All` | Read delegated permission grants |
-| `DeviceManagementApps.Read.All` | Read Intune app management |
-| `DeviceManagementCloudCA.Read.All` | Read cloud-attached device config |
-| `DeviceManagementConfiguration.Read.All` | Read device configuration & policies |
-| `DeviceManagementManagedDevices.Read.All` | Read managed device info |
-| `DeviceManagementRBAC.Read.All` | Read Intune RBAC settings |
-| `DeviceManagementScripts.Read.All` | Read PowerShell & shell scripts |
-| `DeviceManagementServiceConfig.Read.All` | Read Intune service configuration |
-| `Group.ReadWrite.All` | Read groups for assignment lookups |
-
-### Destination tenant (read-write)
-
-The destination tenant is where InToolz **creates, assigns, renames, and deletes** content.
+Both the source and the destination tenant request the same set of scopes. The source tenant is where InToolz **reads** content from, and also where Cleanup, Renaming and Assignment make their changes. The destination tenant is where imported content is **created**.
 
 | Scope | Purpose |
 |-------|---------|
@@ -72,7 +48,15 @@ The destination tenant is where InToolz **creates, assigns, renames, and deletes
 | `DeviceManagementServiceConfig.ReadWrite.All` | Manage Intune service configuration |
 | `Group.ReadWrite.All` | Manage groups for assignment |
 
-> **Tip:** The only difference between the two tenants is that **DeviceManagement\*** scopes are `Read.All` on the source and `ReadWrite.All` on the destination.
+### Source tenant only
+
+| Scope | Purpose |
+|-------|---------|
+| `Device.ReadWrite.All` | Delete stale Entra ID device objects (Cleanup → Stale Devices) |
+
+> **Upgrading from 1.7 or earlier?** `Device.ReadWrite.All` is new in 1.8, so a source tenant you consented to with an earlier version will report it as missing the next time you sign in. Grant the new permission when prompted — in tenants that require admin consent, an admin needs to approve it. Until then, deleting Entra ID devices from Stale Devices will fail.
+
+After you sign in, InToolz checks the permissions that were granted against the ones it needs and opens the permissions dialog if any are missing. See [Settings](Settings) for details.
 
 ---
 

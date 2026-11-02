@@ -12,6 +12,8 @@ Start with **[Getting Started](Getting-started)** — it covers the prerequisite
 
 After that, head to **[Settings](Settings)** to authenticate, then pick the feature you need from the list below.
 
+No tenant to try it on? **Demo Mode** in [Settings](Settings) loads sample data so you can explore every page without signing in.
+
 ---
 
 ## What can InToolz do?
@@ -26,10 +28,11 @@ Read policies and profiles from a source tenant and recreate them in a destinati
 
 ### Delete in bulk → [Cleanup](Cleanup)
 
-Stage items for deletion and remove them in a single confirmed operation. Three ways to find what to delete:
+Stage items for deletion and remove them in a single confirmed operation. Four ways to find what to delete:
 - **List All** — load everything and pick what to remove
 - **Find Unassigned** — surface policies and scripts with no group assignments
 - **Find Duplicates** — detect items with the same name in the same content type, auto-select the extras, and clean them up in one go
+- **Stale Devices** — find Intune managed devices and Entra ID devices that haven't synced or signed in for 30–180 days, and remove them
 
 ### Rename with precision → [Renaming](Renaming)
 
