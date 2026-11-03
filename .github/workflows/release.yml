@@ -137,7 +137,7 @@ jobs:
             echo "As always, the app and this new update is available on the [Microsoft Store](https://apps.microsoft.com/detail/9phqrcx3gkxd)."
             echo ""
             echo "## Manual install"
-            echo "If you prefer to install manually and not use the store, I've attached a zip of the packaged version of the app. Install the root certificate and run the install.ps1 to install it."
+            echo "If you prefer to install manually and not use the store, I've attached a zip of the self-contained app. Extract it and run \`IntuneTools.exe\`."
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 

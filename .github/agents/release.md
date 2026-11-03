@@ -140,7 +140,7 @@ When composing or suggesting release notes, follow this structure. The "What's C
 As always, the app and this new update are available on the [Microsoft Store](https://apps.microsoft.com/detail/9phqrcx3gkxd).
 
 ## Manual install
-If you prefer to install manually and not use the store, I've attached a zip of the packaged version of the app. Install the root certificate and run the install.ps1 to install it.
+If you prefer to install manually and not use the store, I've attached a zip of the self-contained app. Extract it and run `IntuneTools.exe`.
 ```
 
 ### Writing good highlights
@@ -164,6 +164,7 @@ When asked to "create a release", "bump the version", or "prepare a new version"
 - [ ] Push to `master`
 - [ ] Instruct the user to trigger the release workflow (`gh workflow run release.yml -f version=<version>`)
 - [ ] Remind the user to review and publish the draft release on GitHub
+- [ ] Remind the user to build and submit the Microsoft Store package (see "Microsoft Store package" in `.github/RELEASE_GUIDE.md`)
 - [ ] Optionally: draft release-note highlights based on merged PRs since the last tag
 
 ---
@@ -177,7 +178,7 @@ A: The workflow auto-increments the *patch* segment from whatever is in `IntuneT
 A: Yes — the workflow will stamp the version itself. However, doing the bump in a commit first keeps the repo in sync immediately and makes the git history cleaner.
 
 **Q: What about the Microsoft Store submission?**
-A: The Store submission is a separate manual process. The GitHub release and Store release are independent. Remind the user to also submit the new version to the Store if applicable.
+A: The Store submission is a separate manual process. The GitHub release and Store release are independent, and the GitHub zip is not what the Store receives — the Store package is built from the `IntuneToolsPackaged` project. Remind the user to also submit the new version to the Store if applicable, and point them to "Microsoft Store package" in `.github/RELEASE_GUIDE.md`.
 
 **Q: What if CI is failing on `master`?**
 A: Do not release. Fix CI first. The release workflow does not gate on CI, but shipping a broken build is bad practice.
