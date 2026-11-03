@@ -35,7 +35,7 @@ jobs:
       skip: ${{ steps.published.outputs.SKIP }}
 
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
           fetch-depth: 0   # full history and tags: needed to check the commit is on master and the version is new
 
@@ -142,7 +142,7 @@ jobs:
       version: ${{ needs.validate.outputs.version }}
 
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
 
       - name: Update version in project files
         shell: pwsh
@@ -209,7 +209,7 @@ jobs:
     environment: ${{ (github.ref_name == 'master' || github.ref_type == 'tag') && 'release' || '' }}
 
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
 
       - name: Update version in project files
         shell: pwsh
