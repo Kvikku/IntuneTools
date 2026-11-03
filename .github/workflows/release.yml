@@ -10,6 +10,10 @@ on:
       version:
         description: 'Version number (e.g. 1.4.0.0). Leave empty to auto-increment patch.'
         required: false
+      dry_run:
+        description: 'Dry run: check, build and zip, but do not push the version bump or create the draft release'
+        type: boolean
+        default: false
 
 permissions:
   contents: write        # needed to create releases and upload assets
@@ -19,24 +23,37 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
-    runs-on: windows-latest
+  # Fails fast, before anything is stamped, built or pushed, when the release looks unintended.
+  # The checks live in .github/scripts/ReleaseGuard.ps1, which has its own tests.
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read      # to look up CI runs for the commit
     outputs:
       version: ${{ steps.version.outputs.VERSION }}
 
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0   # full history and tags: needed to check the commit is on master and the version is new
 
       - name: Determine version
         id: version
         shell: pwsh
+        env:
+          EVENT: ${{ github.event_name }}
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          if ("${{ github.event_name }}" -eq "workflow_dispatch" -and "${{ github.event.inputs.version }}" -ne "") {
-            $ver = "${{ github.event.inputs.version }}"
-          } elseif ("${{ github.event_name }}" -eq "push") {
-            $ver = "${{ github.ref_name }}"
+          $explicit = 'true'
+          if ($env:EVENT -eq 'workflow_dispatch' -and $env:INPUT_VERSION -ne '') {
+            $ver = $env:INPUT_VERSION
+          } elseif ($env:EVENT -eq 'push') {
+            $ver = $env:REF_NAME
           } else {
             # Auto-increment: read current version from csproj and bump patch
+            $explicit = 'false'
             $csproj = Get-Content InToolz.csproj -Raw
             if ($csproj -match '<Version>(\d+)\.(\d+)\.(\d+)\.(\d+)</Version>') {
               $major = [int]$Matches[1]
@@ -49,13 +66,62 @@ jobs:
               exit 1
             }
           }
+          # Later jobs put the version into commands and file names, so a malformed one stops here
+          # even in a dry run.
+          if ($ver -notmatch '^\d+\.\d+\.\d+\.\d+$') {
+            Write-Host "::error::Version '$ver' is not in major.minor.patch.build form (for example 1.9.0.0)."
+            exit 1
+          }
           echo "VERSION=$ver" >> $env:GITHUB_OUTPUT
+          echo "EXPLICIT=$explicit" >> $env:GITHUB_OUTPUT
           echo "Version: $ver"
+
+      - name: Check this release is intended
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.VERSION }}
+          EXPLICIT: ${{ steps.version.outputs.EXPLICIT }}
+          SHA: ${{ github.sha }}
+          REPOSITORY: ${{ github.repository }}
+          CURRENT_TAG: ${{ github.event_name == 'push' && github.ref_name || '' }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          . ./.github/scripts/ReleaseGuard.ps1
+          $dryRun = $env:DRY_RUN -eq 'true'
+          $problems = @(Test-ReleaseIntent -Version $env:VERSION -Sha $env:SHA -Repository $env:REPOSITORY `
+            -CurrentTag $env:CURRENT_TAG -VersionWasExplicit ($env:EXPLICIT -eq 'true'))
+
+          if ($problems.Count -eq 0) {
+            "Release checks passed for $($env:VERSION) at $($env:SHA.Substring(0, 7))." | Tee-Object -FilePath $env:GITHUB_STEP_SUMMARY -Append
+            exit 0
+          }
+
+          foreach ($p in $problems) {
+            if ($dryRun) { Write-Host "::warning::$p (dry run: this would have stopped a real release)" }
+            else         { Write-Host "::error::$p" }
+          }
+          $heading = if ($dryRun) { 'Release checks would have failed (dry run)' } else { 'Release checks failed' }
+          "### $heading`n" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          $problems | ForEach-Object { "- $_" } | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          # Exit explicitly: the runner would otherwise exit with the last git/gh command's code.
+          if ($dryRun) { exit 0 } else { exit 1 }
+
+  build:
+    needs: validate
+    runs-on: windows-latest
+    outputs:
+      version: ${{ needs.validate.outputs.version }}
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Update version in project files
         shell: pwsh
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
         run: |
-          $ver = "${{ steps.version.outputs.VERSION }}"
+          $ver = $env:VERSION
           # Update InToolz.csproj
           $csproj = Get-Content InToolz.csproj -Raw
           $csproj = $csproj -replace '<Version>[^<]+</Version>', "<Version>$ver</Version>"
@@ -77,7 +143,7 @@ jobs:
           --runtime win-x64
           --self-contained true
           -p:Platform=x64
-          -p:Version=${{ steps.version.outputs.VERSION }}
+          -p:Version=${{ needs.validate.outputs.version }}
           -p:WindowsAppSDKSelfContained=true
           -p:PublishReadyToRun=false
           -p:PublishTrimmed=false
@@ -86,7 +152,7 @@ jobs:
         shell: pwsh
         run: |
           $publishDir = "bin\x64\Release\net8.0-windows10.0.22621.0\win-x64\publish"
-          $zipName = "InToolz_${{ steps.version.outputs.VERSION }}_x64.zip"
+          $zipName = "InToolz_${{ needs.validate.outputs.version }}_x64.zip"
           Compress-Archive -Path "$publishDir\*" -DestinationPath $zipName
           echo "ZIP_NAME=$zipName" >> $env:GITHUB_OUTPUT
         id: zip
@@ -98,6 +164,8 @@ jobs:
           path: ${{ steps.zip.outputs.ZIP_NAME }}
 
       - name: Commit version bump
+        # Never from a dry run, and never from a branch other than master: this step pushes to master.
+        if: ${{ !inputs.dry_run && (github.ref_type == 'tag' || github.ref_name == 'master') }}
         shell: pwsh
         run: |
           git config user.name "github-actions[bot]"
@@ -106,7 +174,7 @@ jobs:
           # `exit` can't follow && in pwsh, so check the exit code explicitly
           git diff --cached --quiet
           if ($LASTEXITCODE -eq 0) { echo "No version changes to commit"; exit 0 }
-          git commit -m "Bump version to ${{ steps.version.outputs.VERSION }}"
+          git commit -m "Bump version to ${{ needs.validate.outputs.version }}"
           git push origin HEAD:master
 
   release:
@@ -141,7 +209,21 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
+      - name: Preview release notes (dry run)
+        if: ${{ inputs.dry_run }}
+        env:
+          BODY: ${{ steps.notes.outputs.BODY }}
+        run: |
+          {
+            echo "## Dry run: release notes preview for ${{ needs.build.outputs.version }}"
+            echo ""
+            echo "No draft release was created and nothing was pushed to master."
+            echo ""
+            echo "$BODY"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Create GitHub Release
+        if: ${{ !inputs.dry_run }}
         uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2
         with:
           tag_name: ${{ needs.build.outputs.version }}
