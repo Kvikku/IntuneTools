@@ -1,4 +1,4 @@
-# Contributing to IntuneTools
+# Contributing to InToolz
 
 Thanks for contributing! A few project conventions to be aware of.
 
@@ -18,7 +18,7 @@ centralizes its common imports. **Do not re-add these to individual files.**
    `InToolz.Tests.csproj`). This is the single source of truth — there is
    no `GlobalUsing.cs` file. Currently globalized:
 
-   - `IntuneTools.Utilities`
+   - `InToolz.Utilities`
    - `Microsoft.Graph.Beta`, `Microsoft.Graph.Beta.Models`
    - `System.Collections.ObjectModel`, `System.Text`, `System.Text.Json`
    - `Microsoft.Kiota.Serialization.Json`

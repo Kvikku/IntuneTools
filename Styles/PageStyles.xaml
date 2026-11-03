@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Unified UI standard for IntuneTools pages.
+    Unified UI standard for InToolz pages.
 
     See docs/UI_STANDARD.md for the full design guidance and rollout status.
     Pages should consume these named styles instead of hard-coding sizes,

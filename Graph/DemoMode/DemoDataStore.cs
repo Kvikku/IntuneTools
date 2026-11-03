@@ -402,7 +402,7 @@ internal sealed class DemoDataStore
                     ["@odata.type"] = "#microsoft.graph.auditActor",
                     ["type"] = "ItPro",
                     ["userPermissions"] = new JsonArray(),
-                    ["applicationDisplayName"] = "IntuneTools",
+                    ["applicationDisplayName"] = "InToolz",
                     ["userPrincipalName"] = "admin@contosodemo.onmicrosoft.com",
                     ["userDisplayName"] = "Demo Administrator",
                     ["ipAddress"] = "203.0.113.10"

@@ -1,12 +1,12 @@
 {
   "profiles": {
-    "IntuneTools (Package)": {
+    "InToolz (Package)": {
       "commandName": "MsixPackage"
     },
-    "IntuneTools (Unpackaged)": {
+    "InToolz (Unpackaged)": {
       "commandName": "Project"
     },
-    "IntuneTools (Debug)": {
+    "InToolz (Debug)": {
       "commandName": "Project"
     }
   }

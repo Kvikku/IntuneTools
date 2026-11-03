@@ -1,6 +1,6 @@
-# IntuneTools Developer Guide — Adding New Pages
+# InToolz Developer Guide — Adding New Pages
 
-This guide documents the design patterns, base classes, and reusable components in the IntuneTools codebase. Reference it when adding new pages to ensure consistency and maximize code reuse.
+This guide documents the design patterns, base classes, and reusable components in the InToolz codebase. Reference it when adding new pages to ensure consistency and maximize code reuse.
 
 ---
 
@@ -105,7 +105,7 @@ Create `Pages/MyNewPage.xaml`. See [XAML Templates](#xaml-templates) below for t
 Create `Pages/MyNewPage.xaml.cs`:
 
 ```csharp
-namespace IntuneTools.Pages;
+namespace InToolz.Pages;
 
 public sealed partial class MyNewPage : BaseDataOperationPage
 {
@@ -240,10 +240,10 @@ The base class handles authentication validation, loading overlays, logging, pro
 
 ```xml
 <local:BaseDataOperationPage
-    x:Class="IntuneTools.Pages.MyNewPage"
+    x:Class="InToolz.Pages.MyNewPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:IntuneTools"
+    xmlns:local="using:InToolz"
     xmlns:toolkit="using:CommunityToolkit.WinUI.UI.Controls"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
@@ -339,7 +339,7 @@ When you need to support a new Intune content type (e.g., a new policy category)
 Create `Graph/IntuneHelperClasses/MyNewPolicyHelper.cs`:
 
 ```csharp
-namespace IntuneTools;
+namespace InToolz;
 
 public class MyNewPolicyHelper
 {
@@ -584,7 +584,7 @@ SDK-default BCL set: `System`, `System.Collections.Generic`, `System.IO`,
 
 You don't need to add `using` statements for:
 
-- `IntuneTools.Utilities`
+- `InToolz.Utilities`
 - `Microsoft.Graph.Beta` and `Microsoft.Graph.Beta.Models`
 - `System.Collections.ObjectModel`, `System.Text`, `System.Text.Json`
 - `Microsoft.Kiota.Serialization.Json`

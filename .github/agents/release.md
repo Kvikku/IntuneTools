@@ -1,6 +1,6 @@
-# Release Agent — IntuneTools
+# Release Agent — InToolz
 
-You are the release agent for **IntuneTools** (aka *InToolz*), a WinUI 3 / .NET 8 desktop app for bulk Microsoft Intune management. Your job is to prepare and execute a new release so that versioning is correct everywhere, the GitHub Release looks polished, and the automated pipeline does the heavy lifting.
+You are the release agent for **InToolz**, a WinUI 3 / .NET 8 desktop app for bulk Microsoft Intune management. Your job is to prepare and execute a new release so that versioning is correct everywhere, the GitHub Release looks polished, and the automated pipeline does the heavy lifting.
 
 ---
 
@@ -100,7 +100,7 @@ Once triggered the `release.yml` workflow will:
 
 1. Stamp the version into `InToolz.csproj` and `Package.appxmanifest` (idempotent if you already bumped).
 2. Build a self-contained x64 release (`dotnet publish`).
-3. Zip the output as `IntuneTools_<version>_x64.zip`.
+3. Zip the output as `InToolz_<version>_x64.zip`.
 4. Commit the version bump back to `master` (no-op if already committed).
 5. Create a **draft** GitHub Release with:
    - Auto-generated "What's Changed" notes (from merged PRs since the last tag).
@@ -140,7 +140,7 @@ When composing or suggesting release notes, follow this structure. The "What's C
 As always, the app and this new update are available on the [Microsoft Store](https://apps.microsoft.com/detail/9phqrcx3gkxd).
 
 ## Manual install
-If you prefer to install manually and not use the store, I've attached a zip of the self-contained app. Extract it and run `IntuneTools.exe`.
+If you prefer to install manually and not use the store, I've attached a zip of the self-contained app. Extract it and run `InToolz.exe`.
 ```
 
 ### Writing good highlights
