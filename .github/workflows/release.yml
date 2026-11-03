@@ -311,6 +311,18 @@ jobs:
           name: InToolz-x64
           path: artifacts
 
+      # The release step below attaches artifacts/*.zip, which a dry run never reaches. Prove the file is
+      # where that pattern expects it, and stop here rather than publish a draft without its zip.
+      - name: Check the release zip is there
+        run: |
+          shopt -s nullglob
+          files=(artifacts/*.zip)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::No release zip was downloaded into artifacts/."
+            exit 1
+          fi
+          ls -l "${files[@]}"
+
       - name: Generate release notes
         id: notes
         env:
