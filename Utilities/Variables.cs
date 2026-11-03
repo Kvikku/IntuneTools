@@ -87,10 +87,6 @@ namespace InToolz.Utilities
         // Graph authentication variables
         public static string sourceTenantName = string.Empty;
         public static string destinationTenantName = string.Empty;
-        public static string sourceTenantID = string.Empty;
-        public static string destinationTenantID = string.Empty;
-        public static string sourceClientID = string.Empty;
-        public static string destinationClientID = string.Empty;
 
 
         // Filter variables for Graph API
@@ -102,7 +98,6 @@ namespace InToolz.Utilities
 
 
         // Generic App Deployment Options
-        public static string _selectedDeploymentMode = string.Empty;
         public static string _selectedIntent = string.Empty;
         public static InstallIntent _selectedAppDeploymentIntent;
 
