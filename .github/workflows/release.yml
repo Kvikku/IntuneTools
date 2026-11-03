@@ -37,7 +37,7 @@ jobs:
             $ver = "${{ github.ref_name }}"
           } else {
             # Auto-increment: read current version from csproj and bump patch
-            $csproj = Get-Content IntuneTools.csproj -Raw
+            $csproj = Get-Content InToolz.csproj -Raw
             if ($csproj -match '<Version>(\d+)\.(\d+)\.(\d+)\.(\d+)</Version>') {
               $major = [int]$Matches[1]
               $minor = [int]$Matches[2]
@@ -45,7 +45,7 @@ jobs:
               $build = [int]$Matches[4]
               $ver = "$major.$minor.$patch.$build"
             } else {
-              Write-Error "Could not read version from IntuneTools.csproj"
+              Write-Error "Could not read version from InToolz.csproj"
               exit 1
             }
           }
@@ -56,10 +56,10 @@ jobs:
         shell: pwsh
         run: |
           $ver = "${{ steps.version.outputs.VERSION }}"
-          # Update IntuneTools.csproj
-          $csproj = Get-Content IntuneTools.csproj -Raw
+          # Update InToolz.csproj
+          $csproj = Get-Content InToolz.csproj -Raw
           $csproj = $csproj -replace '<Version>[^<]+</Version>', "<Version>$ver</Version>"
-          Set-Content IntuneTools.csproj $csproj -NoNewline
+          Set-Content InToolz.csproj $csproj -NoNewline
           # Update Package.appxmanifest
           $manifest = Get-Content Package.appxmanifest -Raw
           $manifest = $manifest -replace '(Identity[^>]*Version=")[^"]+(")', "`${1}$ver`${2}"
@@ -72,7 +72,7 @@ jobs:
 
       - name: Publish self-contained app
         run: >
-          dotnet publish IntuneTools.csproj
+          dotnet publish InToolz.csproj
           --configuration Release
           --runtime win-x64
           --self-contained true
@@ -86,7 +86,7 @@ jobs:
         shell: pwsh
         run: |
           $publishDir = "bin\x64\Release\net8.0-windows10.0.22621.0\win-x64\publish"
-          $zipName = "IntuneTools_${{ steps.version.outputs.VERSION }}_x64.zip"
+          $zipName = "InToolz_${{ steps.version.outputs.VERSION }}_x64.zip"
           Compress-Archive -Path "$publishDir\*" -DestinationPath $zipName
           echo "ZIP_NAME=$zipName" >> $env:GITHUB_OUTPUT
         id: zip
@@ -94,7 +94,7 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: IntuneTools-x64
+          name: InToolz-x64
           path: ${{ steps.zip.outputs.ZIP_NAME }}
 
       - name: Commit version bump
@@ -102,7 +102,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add IntuneTools.csproj Package.appxmanifest
+          git add InToolz.csproj Package.appxmanifest
           # `exit` can't follow && in pwsh, so check the exit code explicitly
           git diff --cached --quiet
           if ($LASTEXITCODE -eq 0) { echo "No version changes to commit"; exit 0 }
@@ -137,7 +137,7 @@ jobs:
             echo "As always, the app and this new update is available on the [Microsoft Store](https://apps.microsoft.com/detail/9phqrcx3gkxd)."
             echo ""
             echo "## Manual install"
-            echo "If you prefer to install manually and not use the store, I've attached a zip of the self-contained app. Extract it and run \`IntuneTools.exe\`."
+            echo "If you prefer to install manually and not use the store, I've attached a zip of the self-contained app. Extract it and run \`InToolz.exe\`."
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 

@@ -1,7 +1,7 @@
 using Microsoft.Graph;
 using Microsoft.Graph.Beta.Models.ODataErrors;
 
-namespace IntuneTools.Graph.IntuneHelperClasses
+namespace InToolz.Graph.IntuneHelperClasses
 {
     public class AppleBYODEnrollmentProfileHelper
     {

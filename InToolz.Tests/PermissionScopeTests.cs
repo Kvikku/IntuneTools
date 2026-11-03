@@ -1,7 +1,7 @@
-using IntuneTools.Graph;
-using static IntuneTools.Graph.EntraHelperClasses.PermissionGrantHelper;
+using InToolz.Graph;
+using static InToolz.Graph.EntraHelperClasses.PermissionGrantHelper;
 
-namespace IntuneTools.Tests;
+namespace InToolz.Tests;
 
 /// <summary>
 /// The scope lists each tenant requests, and the missing-scope count the post-sign-in permission

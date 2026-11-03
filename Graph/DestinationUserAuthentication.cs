@@ -1,6 +1,6 @@
 ﻿using Microsoft.Identity.Client;
 
-namespace IntuneTools.Graph;
+namespace InToolz.Graph;
 /// <summary>
 /// Provides destination-tenant (read-write) authentication against Microsoft Graph.
 /// Thin static façade that delegates to the shared <see cref="UserAuthenticationBase"/>.

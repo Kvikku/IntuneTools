@@ -2,7 +2,7 @@ using CommunityToolkit.WinUI.UI.Controls;
 using Microsoft.UI.Xaml.Data;
 using System.ComponentModel;
 
-namespace IntuneTools.Utilities
+namespace InToolz.Utilities
 {
     /// <summary>
     /// Base class for pages that perform data operations on content collections.

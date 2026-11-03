@@ -13,7 +13,7 @@
   <!-- Mirror the main project's global-using policy. -->
   <ItemGroup>
     <Using Include="Xunit" />
-    <Using Include="IntuneTools.Utilities" />
+    <Using Include="InToolz.Utilities" />
     <Using Include="System.Collections.ObjectModel" />
   </ItemGroup>
 
@@ -27,7 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\IntuneTools.csproj" />
+    <ProjectReference Include="..\InToolz.csproj" />
   </ItemGroup>
 
 </Project>

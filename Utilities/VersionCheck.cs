@@ -1,6 +1,6 @@
 ﻿using System.Net.Http.Headers;
 
-namespace IntuneTools.Utilities
+namespace InToolz.Utilities
 {
     public static class VersionCheck
     {
@@ -149,7 +149,7 @@ namespace IntuneTools.Utilities
             {
                 Timeout = TimeSpan.FromSeconds(10)
             };
-            client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("IntuneTools", "1.0"));
+            client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("InToolz", "1.0"));
             client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("(compatible; +https://github.com/Kvikku/IntuneTools)"));
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
             return client;

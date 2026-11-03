@@ -1,6 +1,6 @@
 using Microsoft.Graph;
 
-namespace IntuneTools.Graph.EntraHelperClasses
+namespace InToolz.Graph.EntraHelperClasses
 {
     public class GroupHelperClass
     {

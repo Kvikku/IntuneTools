@@ -1,11 +1,11 @@
-using IntuneTools.Pages;
+using InToolz.Pages;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
 
 
-namespace IntuneTools
+namespace InToolz
 {
     /// <summary>
     /// An empty window that can be used on its own or navigated to within a Frame.
@@ -55,7 +55,7 @@ namespace IntuneTools
             NavView.IsPaneOpen = false;
             // Navigate to the Home page by default
             NavView.SelectedItem = NavView.MenuItems.OfType<NavigationViewItem>().FirstOrDefault(x => x.Tag.ToString() == "Home");
-            ContentFrame.Navigate(typeof(IntuneTools.Pages.HomePage));
+            ContentFrame.Navigate(typeof(InToolz.Pages.HomePage));
         }
 
         private void myButton_Click(object sender, RoutedEventArgs e)

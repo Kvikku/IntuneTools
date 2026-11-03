@@ -1,7 +1,7 @@
 using Microsoft.UI.Dispatching;
 using System.Diagnostics;
 
-namespace IntuneTools.Utilities
+namespace InToolz.Utilities
 {
     /// <summary>
     /// Unified logging hub. Every log call writes to the appropriate .log file and,

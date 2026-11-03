@@ -1,7 +1,7 @@
-# IntuneTools - UI Standard
+# InToolz - UI Standard
 
 This document defines the unified visual and UX standard that every page in
-IntuneTools should follow. The goal is to make the app feel like a single,
+InToolz should follow. The goal is to make the app feel like a single,
 modern, sleek Fluent application rather than a collection of pages that each
 made their own decisions.
 
@@ -105,11 +105,11 @@ embed a `FontIcon` (`FontSize="16"`) plus a `TextBlock`, separated by a
 
 - Every data page exposes a `TenantInfoBar` (informational, hidden by
   default) and an `OperationStatusBar` (the shared
-  `IntuneTools.Utilities.OperationStatusBar` `UserControl`) for bulk-operation
+  `InToolz.Utilities.OperationStatusBar` `UserControl`) for bulk-operation
   feedback. Names must stay constant so `BaseDataOperationPage` /
   `BaseMultiTenantPage` can find and dispatch to them.
 - Long operations show the `LoadingOverlay` (the shared
-  `IntuneTools.Utilities.LoadingOverlay` `UserControl`). Pages with bespoke
+  `InToolz.Utilities.LoadingOverlay` `UserControl`). Pages with bespoke
   overlay needs (e.g. `AuditLogPage`'s full-screen overlay with a Cancel
   button) keep their hand-rolled overlay and rely on the legacy fallback in
   `BaseMultiTenantPage`. Do not invent new spinners.
@@ -119,7 +119,7 @@ embed a `FontIcon` (`FontSize="16"`) plus a `TextBlock`, separated by a
 
 Every data page that supports search plus staged bulk actions (Renaming,
 Cleanup's Delete panel, Manage Assignments, Import, JSON) uses the shared
-`IntuneTools.Utilities.SearchStagingBar` `UserControl` instead of hand-rolling
+`InToolz.Utilities.SearchStagingBar` `UserControl` instead of hand-rolling
 the TextBox + Search / List All / Clear Selected / Clear All / Clear Log /
 Export CSV button cluster. Drop it into the "Search & Staging" card:
 
@@ -176,7 +176,7 @@ and `BaseMultiTenantPage` and **must not be renamed** when migrating a page:
 
 `TenantInfoBar`, `OperationStatusBar`, `LoadingOverlay`, `LogConsole`.
 (`OperationStatusBar` and `LoadingOverlay` are the shared `UserControl`s
-under `IntuneTools.Utilities`; pages that still use a hand-rolled overlay
+under `InToolz.Utilities`; pages that still use a hand-rolled overlay
 must additionally keep `LoadingProgressRing` and `LoadingStatusText` so the
 legacy fallback in `BaseMultiTenantPage` still works.)
 
@@ -248,7 +248,7 @@ category. No layout rework needed — the `ScrollViewer` absorbs growth.
 
 ## 13. Contextual help (HelpTip)
 
-`IntuneTools.Utilities.HelpTip` is a small "?" icon that shows a `TeachingTip`
+`InToolz.Utilities.HelpTip` is a small "?" icon that shows a `TeachingTip`
 (WinUI's native flyout-with-a-dismiss-button control) with a short
 explanation on click. It exists because the wiki documents every page in
 depth, but most users never open it — guidance only changes behavior when

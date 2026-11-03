@@ -1,4 +1,4 @@
-namespace IntuneTools.Tests;
+namespace InToolz.Tests;
 
 public class ContentTypeRegistryTests
 {

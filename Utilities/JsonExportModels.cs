@@ -1,5 +1,5 @@
 
-namespace IntuneTools.Utilities
+namespace InToolz.Utilities
 {
     /// <summary>
     /// Root document for JSON export/import. Contains metadata and a list of exported items.

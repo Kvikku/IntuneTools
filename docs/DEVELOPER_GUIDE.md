@@ -1,6 +1,6 @@
-# IntuneTools Developer Guide — Adding New Pages
+# InToolz Developer Guide — Adding New Pages
 
-This guide documents the design patterns, base classes, and reusable components in the IntuneTools codebase. Reference it when adding new pages to ensure consistency and maximize code reuse.
+This guide documents the design patterns, base classes, and reusable components in the InToolz codebase. Reference it when adding new pages to ensure consistency and maximize code reuse.
 
 ---
 
@@ -27,11 +27,11 @@ This guide documents the design patterns, base classes, and reusable components 
 From the repository root:
 
 ```powershell
-dotnet build IntuneTools.csproj
-dotnet test IntuneTools.Tests/IntuneTools.Tests.csproj
+dotnet build InToolz.csproj
+dotnet test InToolz.Tests/InToolz.Tests.csproj
 ```
 
-`dotnet build` / `dotnet test` with no path also work: they pick up `IntuneTools.sln`, which maps its `Any CPU` configurations to `x64`.
+`dotnet build` / `dotnet test` with no path also work: they pick up `InToolz.sln`, which maps its `Any CPU` configurations to `x64`.
 
 ### Platform selection
 
@@ -40,11 +40,11 @@ The projects only support `x86`, `x64` and `ARM64`; there is no `AnyCPU` build. 
 To choose one explicitly, pass `-p:Platform`. An explicit value always wins over the default:
 
 ```powershell
-dotnet build IntuneTools.csproj -p:Platform=x64
-dotnet test IntuneTools.Tests/IntuneTools.Tests.csproj -p:Platform=x64
+dotnet build InToolz.csproj -p:Platform=x64
+dotnet test InToolz.Tests/InToolz.Tests.csproj -p:Platform=x64
 ```
 
-CI and `release.yml` always pass `-p:Platform=x64`, and Visual Studio passes the platform selected in the toolbar, so the default never applies there. `IntuneToolsPackaged.wapproj` is not affected by the default.
+CI and `release.yml` always pass `-p:Platform=x64`, and Visual Studio passes the platform selected in the toolbar, so the default never applies there. `InToolzPackaged.wapproj` is not affected by the default.
 
 **ARM64 machines:** with the native Arm64 .NET SDK, the project commands above build and test `ARM64` natively (the solution-based `dotnet build` / `dotnet test` still use `x64`). Use `-p:Platform=x64` to reproduce what CI builds; running the tests as `x64` additionally requires the x64 .NET 8 runtime to be installed.
 
@@ -105,7 +105,7 @@ Create `Pages/MyNewPage.xaml`. See [XAML Templates](#xaml-templates) below for t
 Create `Pages/MyNewPage.xaml.cs`:
 
 ```csharp
-namespace IntuneTools.Pages;
+namespace InToolz.Pages;
 
 public sealed partial class MyNewPage : BaseDataOperationPage
 {
@@ -240,10 +240,10 @@ The base class handles authentication validation, loading overlays, logging, pro
 
 ```xml
 <local:BaseDataOperationPage
-    x:Class="IntuneTools.Pages.MyNewPage"
+    x:Class="InToolz.Pages.MyNewPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:IntuneTools"
+    xmlns:local="using:InToolz"
     xmlns:toolkit="using:CommunityToolkit.WinUI.UI.Controls"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
@@ -339,7 +339,7 @@ When you need to support a new Intune content type (e.g., a new policy category)
 Create `Graph/IntuneHelperClasses/MyNewPolicyHelper.cs`:
 
 ```csharp
-namespace IntuneTools;
+namespace InToolz;
 
 public class MyNewPolicyHelper
 {
@@ -576,7 +576,7 @@ LogEntry.Error("Failed");           // Red, ✖ prefix
 ### Global usings
 
 Common namespaces are pre-imported globally via `<Using Include="…" />` items
-in `IntuneTools.csproj` (and mirrored in `IntuneTools.Tests.csproj`). There is
+in `InToolz.csproj` (and mirrored in `InToolz.Tests.csproj`). There is
 no longer a `Utilities/GlobalUsing.cs` file — the project file is the single
 source of truth, alongside `<ImplicitUsings>` (which already pulls in the
 SDK-default BCL set: `System`, `System.Collections.Generic`, `System.IO`,
@@ -584,7 +584,7 @@ SDK-default BCL set: `System`, `System.Collections.Generic`, `System.IO`,
 
 You don't need to add `using` statements for:
 
-- `IntuneTools.Utilities`
+- `InToolz.Utilities`
 - `Microsoft.Graph.Beta` and `Microsoft.Graph.Beta.Models`
 - `System.Collections.ObjectModel`, `System.Text`, `System.Text.Json`
 - `Microsoft.Kiota.Serialization.Json`

@@ -1,8 +1,8 @@
 using System.Text.Json.Nodes;
-using IntuneTools.Graph.IntuneHelperClasses;
+using InToolz.Graph.IntuneHelperClasses;
 using Microsoft.Graph.Beta.Models;
 
-namespace IntuneTools.Tests;
+namespace InToolz.Tests;
 
 /// <summary>
 /// App assignment, issue #104: All Devices with Required/Uninstall must go through while

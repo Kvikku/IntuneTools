@@ -4,7 +4,7 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using Windows.System;
 
-namespace IntuneTools.Pages
+namespace InToolz.Pages
 {
     public sealed partial class HomePage : Page
     {

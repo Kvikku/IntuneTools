@@ -1,20 +1,20 @@
-using static IntuneTools.Graph.EntraHelperClasses.GroupHelperClass;
-using static IntuneTools.Graph.IntuneHelperClasses.AppleBYODEnrollmentProfileHelper;
-using static IntuneTools.Graph.IntuneHelperClasses.ApplicationHelper;
-using static IntuneTools.Graph.IntuneHelperClasses.DeviceCompliancePolicyHelper;
-using static IntuneTools.Graph.IntuneHelperClasses.DeviceConfigurationHelper;
-using static IntuneTools.Graph.IntuneHelperClasses.FilterHelperClass;
-using static IntuneTools.Graph.IntuneHelperClasses.macOSShellScript;
-using static IntuneTools.Graph.IntuneHelperClasses.PowerShellScriptsHelper;
-using static IntuneTools.Graph.IntuneHelperClasses.ProactiveRemediationsHelper;
-using static IntuneTools.Graph.IntuneHelperClasses.SettingsCatalogHelper;
-using static IntuneTools.Graph.IntuneHelperClasses.WindowsAutoPilotHelper;
-using static IntuneTools.Graph.IntuneHelperClasses.WindowsDriverUpdateHelper;
-using static IntuneTools.Graph.IntuneHelperClasses.WindowsFeatureUpdateHelper;
-using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdatePolicyHandler;
-using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHelper;
+using static InToolz.Graph.EntraHelperClasses.GroupHelperClass;
+using static InToolz.Graph.IntuneHelperClasses.AppleBYODEnrollmentProfileHelper;
+using static InToolz.Graph.IntuneHelperClasses.ApplicationHelper;
+using static InToolz.Graph.IntuneHelperClasses.DeviceCompliancePolicyHelper;
+using static InToolz.Graph.IntuneHelperClasses.DeviceConfigurationHelper;
+using static InToolz.Graph.IntuneHelperClasses.FilterHelperClass;
+using static InToolz.Graph.IntuneHelperClasses.macOSShellScript;
+using static InToolz.Graph.IntuneHelperClasses.PowerShellScriptsHelper;
+using static InToolz.Graph.IntuneHelperClasses.ProactiveRemediationsHelper;
+using static InToolz.Graph.IntuneHelperClasses.SettingsCatalogHelper;
+using static InToolz.Graph.IntuneHelperClasses.WindowsAutoPilotHelper;
+using static InToolz.Graph.IntuneHelperClasses.WindowsDriverUpdateHelper;
+using static InToolz.Graph.IntuneHelperClasses.WindowsFeatureUpdateHelper;
+using static InToolz.Graph.IntuneHelperClasses.WindowsQualityUpdatePolicyHandler;
+using static InToolz.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHelper;
 
-namespace IntuneTools.Utilities
+namespace InToolz.Utilities
 {
     /// <summary>
     /// Defines load and search operations for a content type.

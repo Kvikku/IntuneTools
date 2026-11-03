@@ -1,8 +1,8 @@
-using IntuneTools.Graph.DemoMode;
-using IntuneTools.Graph.EntraHelperClasses;
-using IntuneTools.Graph.IntuneHelperClasses;
+using InToolz.Graph.DemoMode;
+using InToolz.Graph.EntraHelperClasses;
+using InToolz.Graph.IntuneHelperClasses;
 
-namespace IntuneTools.Tests;
+namespace InToolz.Tests;
 
 /// <summary>
 /// The Cleanup page's Stale Devices scan, run through the Graph SDK against Demo Mode's store:

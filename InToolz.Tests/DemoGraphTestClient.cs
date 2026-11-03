@@ -1,11 +1,11 @@
 using System.Net;
 using System.Text;
 using System.Text.Json.Nodes;
-using IntuneTools.Graph.DemoMode;
+using InToolz.Graph.DemoMode;
 using Microsoft.Graph.Beta;
 using Microsoft.Kiota.Abstractions.Authentication;
 
-namespace IntuneTools.Tests;
+namespace InToolz.Tests;
 
 /// <summary>
 /// A real <see cref="GraphServiceClient"/> backed by Demo Mode's in-memory store, so tests run the

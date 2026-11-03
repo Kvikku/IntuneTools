@@ -1,6 +1,6 @@
-using static IntuneTools.Utilities.Variables;
+using static InToolz.Utilities.Variables;
 
-namespace IntuneTools.Tests;
+namespace InToolz.Tests;
 
 public class UserInterfaceHelperTests : IDisposable
 {

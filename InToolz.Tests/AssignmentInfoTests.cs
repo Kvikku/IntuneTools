@@ -1,6 +1,6 @@
 using Microsoft.Graph.Beta.Models;
 
-namespace IntuneTools.Tests;
+namespace InToolz.Tests;
 
 public class AssignmentInfoTests
 {

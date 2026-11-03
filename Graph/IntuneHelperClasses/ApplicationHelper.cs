@@ -1,7 +1,7 @@
-﻿using IntuneTools.Pages;
+﻿using InToolz.Pages;
 using Microsoft.Graph;
 
-namespace IntuneTools.Graph.IntuneHelperClasses
+namespace InToolz.Graph.IntuneHelperClasses
 {
     public class ApplicationHelper
     {

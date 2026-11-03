@@ -1,6 +1,6 @@
 ﻿using CommunityToolkit.WinUI.UI.Controls;
 
-namespace IntuneTools.Utilities
+namespace InToolz.Utilities
 {
     public static class UserInterfaceHelper
     {

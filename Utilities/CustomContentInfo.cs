@@ -1,4 +1,4 @@
-namespace IntuneTools.Utilities
+namespace InToolz.Utilities
 {
     public class CustomContentInfo
     {

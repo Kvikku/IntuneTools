@@ -1,4 +1,4 @@
-namespace IntuneTools.Utilities
+namespace InToolz.Utilities
 {
     /// <summary>
     /// Persists lightweight, per-page UI preferences — selected content-type filters and
@@ -6,7 +6,7 @@ namespace IntuneTools.Utilities
     /// same checkboxes or retype the same query every time they open a page.
     ///
     /// Deliberately avoids Windows.Storage.ApplicationData: InToolz can run unpackaged
-    /// (see the GitHub Releases build, and IntuneTools.csproj has EnableMsixTooling=false —
+    /// (see the GitHub Releases build, and InToolz.csproj has EnableMsixTooling=false —
     /// packaging is a separate wrapper project). ApplicationData.Current throws for processes
     /// without package identity, so a plain JSON file next to the app's log folder is used
     /// instead, matching the pattern HelperClass/Variables already use for the log directory.

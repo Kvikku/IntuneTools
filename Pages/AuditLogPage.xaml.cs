@@ -1,10 +1,10 @@
-using IntuneTools.Graph.IntuneHelperClasses;
+using InToolz.Graph.IntuneHelperClasses;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System.Diagnostics;
 using Windows.Storage.Pickers;
 
-namespace IntuneTools.Pages
+namespace InToolz.Pages
 {
     /// <summary>
     /// View model for displaying audit events in the DataGrid.

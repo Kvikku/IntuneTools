@@ -1,4 +1,4 @@
-namespace IntuneTools.Utilities
+namespace InToolz.Utilities
 {
     /// <summary>
     /// Represents a single assignment target for a content item.
