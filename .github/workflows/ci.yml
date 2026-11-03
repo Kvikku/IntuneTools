@@ -40,3 +40,7 @@ jobs:
 
       - name: Run tests
         run: dotnet test InToolz.Tests/InToolz.Tests.csproj --no-build --configuration Release -p:Platform=x64 --verbosity normal
+
+      - name: Test release guard
+        shell: pwsh
+        run: ./.github/scripts/ReleaseGuard.Tests.ps1
