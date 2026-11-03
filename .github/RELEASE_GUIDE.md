@@ -54,6 +54,26 @@ This auto-bumps the patch version (e.g. `1.4.0.0` → `1.4.1.0`) and commits the
 
 The workflow auto-generates "What's Changed" from merged PRs. For polished releases, add a **Highlights** section above the auto-generated content summarising the most important user-facing changes in 2-4 bullet points.
 
+## Microsoft Store package
+
+The GitHub release only attaches a self-contained zip. The Store gets a different package, built from the `IntuneToolsPackaged` project and uploaded by hand in Partner Center. The two releases are independent.
+
+Build it from the release commit, after the version in `IntuneTools.csproj` is the release version. The project needs Visual Studio's MSBuild (`dotnet build` can't build a `.wapproj`), so run this from a Developer Command Prompt for VS:
+
+```
+msbuild IntuneToolsPackaged\IntuneToolsPackaged.wapproj /restore /p:Configuration=Release /p:Platform=x64 /p:UapAppxPackageBuildMode=StoreUpload /p:AppxBundle=Always /p:AppxBundlePlatforms=x64 /p:AppxAutoIncrementPackageRevision=False /p:GenerateAppxPackageOnBuild=true
+```
+
+The file to upload is `IntuneToolsPackaged\AppPackages\IntuneToolsPackaged_<version>_x64_bundle.msixupload`. Everything under `AppPackages` is gitignored.
+
+Before uploading, check that:
+
+- the version in the file name matches the release and ends in `.0` — the Store reserves the last part, so a `.1` means something auto-incremented it (`AppxAutoIncrementPackageRevision` must be `False`)
+- the package identity name and publisher match `IntuneToolsPackaged\Package.StoreAssociation.xml`
+- `git status` is clean afterwards (the build should not modify tracked files)
+
+The build also writes an `..._Test` folder with an `Install.ps1` and a temporary certificate. That is a sideload package with the **same identity as the Store app**, so installing it over a Store install means uninstalling the Store version first and losing its local settings.
+
 ## Wiki / user documentation
 
 Wiki pages live in `wiki/` in the main repo and are automatically synced to the GitHub Wiki on every push to `master` (via `.github/workflows/wiki-sync.yml`). The wiki should be kept in sync with the code — update it in the same PR as the feature.
