@@ -6,16 +6,47 @@ This guide documents the design patterns, base classes, and reusable components 
 
 ## Table of Contents
 
-1. [Architecture Overview](#architecture-overview)
-2. [Choose Your Base Class](#choose-your-base-class)
-3. [Step-by-Step: Add a New Page](#step-by-step-add-a-new-page)
-4. [Base Class Reference](#base-class-reference)
-5. [XAML Templates](#xaml-templates)
-6. [Adding a New Content Type](#adding-a-new-content-type)
-7. [Graph Helper Patterns](#graph-helper-patterns)
-8. [Reusable Utilities](#reusable-utilities)
-9. [Naming Conventions](#naming-conventions)
-10. [Checklist](#checklist)
+1. [Building and Testing](#building-and-testing)
+2. [Architecture Overview](#architecture-overview)
+3. [Choose Your Base Class](#choose-your-base-class)
+4. [Step-by-Step: Add a New Page](#step-by-step-add-a-new-page)
+5. [Base Class Reference](#base-class-reference)
+6. [XAML Templates](#xaml-templates)
+7. [Adding a New Content Type](#adding-a-new-content-type)
+8. [Graph Helper Patterns](#graph-helper-patterns)
+9. [Reusable Utilities](#reusable-utilities)
+10. [Naming Conventions](#naming-conventions)
+11. [Checklist](#checklist)
+
+---
+
+## Building and Testing
+
+**Prerequisites:** Windows 10 or 11, the .NET 8 SDK and the Windows 10 SDK (build 22621). CI builds with the latest .NET `8.0.x` SDK. The repository has no `global.json`, so a newer installed SDK is used if present; it builds the `net8.0` targets too. The Windows App SDK is restored from NuGet.
+
+From the repository root:
+
+```powershell
+dotnet build IntuneTools.csproj
+dotnet test IntuneTools.Tests/IntuneTools.Tests.csproj
+```
+
+`dotnet build` / `dotnet test` with no path also work: they pick up `IntuneTools.sln`, which maps its `Any CPU` configurations to `x64`.
+
+### Platform selection
+
+The projects only support `x86`, `x64` and `ARM64`; there is no `AnyCPU` build. When no platform is given, `Directory.Build.props` picks the architecture of the .NET SDK running the build (`x64` on most machines, `ARM64` on Windows on Arm) and falls back to `x64`. Output goes to `bin\<Platform>\<Configuration>\`.
+
+To choose one explicitly, pass `-p:Platform`. An explicit value always wins over the default:
+
+```powershell
+dotnet build IntuneTools.csproj -p:Platform=x64
+dotnet test IntuneTools.Tests/IntuneTools.Tests.csproj -p:Platform=x64
+```
+
+CI and `release.yml` always pass `-p:Platform=x64`, and Visual Studio passes the platform selected in the toolbar, so the default never applies there. `IntuneToolsPackaged.wapproj` is not affected by the default.
+
+**ARM64 machines:** with the native Arm64 .NET SDK, the project commands above build and test `ARM64` natively (the solution-based `dotnet build` / `dotnet test` still use `x64`). Use `-p:Platform=x64` to reproduce what CI builds; running the tests as `x64` additionally requires the x64 .NET 8 runtime to be installed.
 
 ---
 

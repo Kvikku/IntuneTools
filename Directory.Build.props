@@ -1,0 +1,24 @@
+<Project>
+
+  <!--
+    Default Platform for bare command-line builds, e.g. `dotnet build IntuneTools.csproj`
+    or `dotnet test IntuneTools.Tests/IntuneTools.Tests.csproj`.
+
+    The projects only define x86, x64 and ARM64. Without a Platform the SDK falls back to
+    AnyCPU, and the Windows App SDK fails with "WindowsAppSDKSelfContained requires a
+    supported Windows architecture". This file is imported before the SDK applies that
+    fallback, so pick the architecture of the running .NET host instead (x64 otherwise).
+
+    - A Platform passed on the command line (-p:Platform=...) or by Visual Studio is a
+      global property; MSBuild ignores the assignments below, so it always wins.
+    - Any other value that isn't a supported architecture, such as a stray PLATFORM
+      environment variable, is treated as unset.
+    - Only C# projects are affected. IntuneToolsPackaged.wapproj keeps its own defaults.
+  -->
+  <PropertyGroup Condition="'$(MSBuildProjectExtension)' == '.csproj' and '$(Platform)' != 'x86' and '$(Platform)' != 'x64' and '$(Platform)' != 'ARM64'">
+    <Platform>x64</Platform>
+    <Platform Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture)' == 'Arm64'">ARM64</Platform>
+    <Platform Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture)' == 'X86'">x86</Platform>
+  </PropertyGroup>
+
+</Project>
