@@ -1,0 +1,44 @@
+# Keeps NuGet packages and the SHA-pinned GitHub Actions current.
+#
+# Minor and patch updates arrive as one grouped PR per ecosystem; major updates
+# come one package at a time so each can be reviewed on its own. CI builds every
+# branch, so each PR is built and tested before anyone looks at it.
+version: 2
+updates:
+  - package-ecosystem: "nuget"
+    directories:
+      - "/"
+      - "/InToolz.Tests"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    groups:
+      nuget-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
+        exclude-patterns:
+          # A preview SDK against a beta Graph API surface: always review its
+          # updates on their own instead of inside a grouped PR.
+          - "Microsoft.Graph.Beta"
+    ignore:
+      # A preview major must never arrive unannounced.
+      - dependency-name: "Microsoft.Graph.Beta"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    groups:
+      actions-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
