@@ -104,13 +104,13 @@ Once triggered the `release.yml` workflow will:
 2. Stamp the version into `InToolz.csproj` and `Package.appxmanifest` (idempotent if you already bumped).
 3. Build a self-contained x64 release (`dotnet publish`).
 4. Zip the output as `InToolz_<version>_x64.zip`.
-5. In parallel, build the Store upload package and a sideload package from `InToolzPackaged` (workflow artifacts `InToolz-store` and `InToolz-sideload`) and check the Store package's identity, version and contents.
+5. In parallel, build the Store upload package and a signed sideload package from `InToolzPackaged` (workflow artifacts `InToolz-store`, `InToolz-sideload` and `InToolz-sideload-cert`) and check the Store package's identity, version and contents. On `master` or a tag, the sideload package is signed with the persistent certificate kept in the `release` environment (see "Sideload signing certificate" in `.github/RELEASE_GUIDE.md`), so it's the same certificate release after release.
 6. Commit the version bump back to `master` (no-op if already committed).
 7. Create a **draft** GitHub Release with:
    - Auto-generated "What's Changed" notes (from merged PRs since the last tag).
    - A **Download** section linking to the Microsoft Store.
    - A **Manual install** section.
-   - The zip artifact attached.
+   - The self-contained zip, the signed sideload zip and its `.cer` attached.
 
 ### Step 6 — Review & publish the draft release
 
@@ -144,7 +144,9 @@ When composing or suggesting release notes, follow this structure. The "What's C
 As always, the app and this new update are available on the [Microsoft Store](https://apps.microsoft.com/detail/9phqrcx3gkxd).
 
 ## Manual install
-If you prefer to install manually and not use the store, I've attached a zip of the self-contained app. Extract it and run `InToolz.exe`.
+If you prefer to install manually and not use the store, two options are attached:
+- A zip of the self-contained app. Extract it and run `InToolz.exe`.
+- A signed sideload package (`*_sideload.zip`) with its certificate (`*.cer`) and an `Install.ps1` that installs both. This behaves like a real install (Start menu entry, in-place updates) rather than a loose exe.
 ```
 
 ### Writing good highlights
