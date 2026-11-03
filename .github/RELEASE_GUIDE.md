@@ -84,14 +84,17 @@ The workflow auto-generates "What's Changed" from merged PRs. For polished relea
 
 ## Microsoft Store package
 
-The GitHub release attaches a self-contained zip. The Store gets a different package, built from the `InToolzPackaged` project. The release run builds it for you, so nobody builds it by hand any more; uploading it in Partner Center is still a manual step. The two releases are independent.
+The GitHub release attaches a self-contained zip, a signed sideload package, and its certificate. The Store gets a different package, built from the same `InToolzPackaged` project. The release run builds all of it for you, so nobody builds packages by hand any more; uploading the Store package in Partner Center is still a manual step. The GitHub release and the Store submission are independent.
 
-Every release run, dry runs included, produces two workflow artifacts:
+Every release run, dry runs included, produces three workflow artifacts:
 
 | Artifact | Contents |
 |---|---|
 | `InToolz-store` | `InToolzPackaged_<version>_x64_bundle.msixupload`, the file to upload in Partner Center |
 | `InToolz-sideload` | `InToolz_<version>_x64_sideload.zip`: a signed `.msixbundle`, `Install.ps1`, the certificate and the framework dependencies |
+| `InToolz-sideload-cert` | `InToolz_<version>_x64.cer`, the same certificate on its own |
+
+The real release (not a dry run) also attaches the sideload zip and the `.cer` to the GitHub release itself, alongside the zip of the self-contained app.
 
 Download the Store package from the run:
 
@@ -103,7 +106,15 @@ Artifacts are kept for 90 days, so submit before then or run the release again.
 
 Before the package can be uploaded, the run checks it (`.github/scripts/StorePackage.ps1`, which has its own tests). The identity name and publisher must match `InToolzPackaged/Package.StoreAssociation.xml`, the version must be the release version, the package must be x64 only, the `Application Id` must be `App` (part of the app's identity, so pins and shortcuts survive an update), the executable must be in the package, and the `runFullTrust` capability must be present. A package that fails stops the run, even a dry run.
 
-The sideload package is **not attached to the release yet**. It is signed with a certificate that is generated fresh for every build, so users would have to trust a different certificate each time. It has the **same identity as the Store app**, so installing it over a Store install means uninstalling the Store version first and losing its local settings.
+The sideload package has the **same identity as the Store app**, so installing it over a Store install means uninstalling the Store version first and losing its local settings.
+
+### Sideload signing certificate
+
+The sideload package is signed with a persistent self-signed certificate (`CN=548133C8-71E9-434E-BD81-2DCFE6F02BD1`, matching the app's `Publisher` — a signing certificate's subject must match the manifest's `Publisher` or the package won't validate). Because it's the same certificate on every release, users who installed one release only ever need to trust its `.cer` once.
+
+The certificate lives as two secrets, `SIDELOAD_CERT_PFX_BASE64` and `SIDELOAD_CERT_PASSWORD`, in the **`release`** GitHub Environment, which is restricted to deployments from `master` or a version tag (`*.*.*.*`). The `package` job only requests that environment on those refs (`environment: ${{ (github.ref_name == 'master' || github.ref_type == 'tag') && 'release' || '' }}`), so the secrets are never reachable from a feature branch, and a dry run from a branch falls back to a certificate generated for that build only — the same thing that happened before this certificate existed.
+
+The certificate itself (generated 2026-11-03, expires 2029-11-03) is **exportable**, so it can be rotated before it expires: generate a new one with the same `Subject`, export it to a `.pfx`, and overwrite the two secrets. The release after a rotation signs with the new certificate, and prior installs need to trust its new `.cer` once more — call that out in the release notes when it happens.
 
 ### Building it locally
 

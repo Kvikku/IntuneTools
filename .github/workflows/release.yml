@@ -202,6 +202,11 @@ jobs:
     needs: validate
     if: ${{ needs.validate.outputs.skip != 'true' }}
     runs-on: windows-latest
+    # Only master and tags may deploy to "release" (see the environment's deployment branch policy),
+    # so this resolves to no environment elsewhere, and the signing step below falls back to a
+    # certificate generated on the fly, same as before that environment existed. This keeps a dry
+    # run from a feature branch able to test everything in this job except real signing.
+    environment: ${{ (github.ref_name == 'master' || github.ref_type == 'tag') && 'release' || '' }}
 
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -217,8 +222,29 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
+      - name: Decode the sideload signing certificate
+        id: cert
+        shell: pwsh
+        env:
+          CERT_B64: ${{ secrets.SIDELOAD_CERT_PFX_BASE64 }}
+        run: |
+          # Set only by the "release" environment, so only reachable from master or a tag. Everywhere
+          # else, and until the secret is first configured, this is empty and the build step below
+          # signs with a certificate generated for this build only, exactly as before this existed.
+          if ($env:CERT_B64) {
+            $path = Join-Path $env:RUNNER_TEMP 'sideload.pfx'
+            [IO.File]::WriteAllBytes($path, [Convert]::FromBase64String($env:CERT_B64))
+            echo "PFX_PATH=$path" >> $env:GITHUB_OUTPUT
+            Write-Host "Signing with the persistent sideload certificate."
+          } else {
+            Write-Host "No persistent sideload certificate available here; signing with a certificate generated for this build only."
+          }
+
       - name: Build the Store package
         shell: pwsh
+        env:
+          PFX_PATH: ${{ steps.cert.outputs.PFX_PATH }}
+          CERT_PASSWORD: ${{ secrets.SIDELOAD_CERT_PASSWORD }}
         run: |
           # The packaging project (.wapproj) needs Visual Studio's MSBuild and its Desktop Bridge targets;
           # `dotnet build` cannot build it.
@@ -241,12 +267,17 @@ jobs:
           $toolchain | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           $toolchain | ForEach-Object { Write-Host $_ }
 
+          $signingArgs = @()
+          if ($env:PFX_PATH) {
+            $signingArgs = @("/p:PackageCertificateKeyFile=$env:PFX_PATH", "/p:PackageCertificatePassword=$env:CERT_PASSWORD")
+          }
+
           $out = Join-Path $PWD 'AppPackages'
           & $msbuild InToolzPackaged\InToolzPackaged.wapproj /restore /nologo /v:minimal `
             /p:Configuration=Release /p:Platform=x64 `
             /p:UapAppxPackageBuildMode=StoreUpload /p:AppxBundle=Always /p:AppxBundlePlatforms=x64 `
             /p:AppxAutoIncrementPackageRevision=False /p:GenerateAppxPackageOnBuild=true `
-            "/p:AppxPackageDir=$out\"
+            "/p:AppxPackageDir=$out\" @signingArgs
           if ($LASTEXITCODE -ne 0) { throw "MSBuild failed with exit code $LASTEXITCODE." }
 
       - name: Verify the Store package
@@ -276,13 +307,21 @@ jobs:
         env:
           VERSION: ${{ needs.validate.outputs.version }}
         run: |
-          # Signed with a temporary certificate that is generated per build, so it is not attached to
-          # the release yet: users would have to trust a different certificate every time.
+          # On master or a tag this is signed with the persistent certificate kept in the "release"
+          # environment (see the signing step above), so the certificate below is the same one across
+          # releases and users only ever need to trust it once. Elsewhere it's a certificate generated
+          # for this build only, as before.
           $folder = Get-ChildItem AppPackages -Directory -Filter '*_Test' | Select-Object -First 1
           if (-not $folder) { throw 'The build produced no sideload folder.' }
           $zip = "InToolz_$($env:VERSION)_x64_sideload.zip"
           Compress-Archive -Path "$($folder.FullName)\*" -DestinationPath $zip
           echo "ZIP_NAME=$zip" >> $env:GITHUB_OUTPUT
+
+          $cer = Get-ChildItem $folder.FullName -Filter *.cer | Select-Object -First 1
+          if (-not $cer) { throw 'The sideload folder has no certificate (.cer).' }
+          $cerName = "InToolz_$($env:VERSION)_x64.cer"
+          Copy-Item $cer.FullName $cerName
+          echo "CER_NAME=$cerName" >> $env:GITHUB_OUTPUT
           exit 0
 
       - name: Upload the Store package
@@ -300,6 +339,13 @@ jobs:
           compression-level: 0
           if-no-files-found: error
 
+      - name: Upload the sideload certificate
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: InToolz-sideload-cert
+          path: ${{ steps.sideload.outputs.CER_NAME }}
+          if-no-files-found: error
+
   release:
     needs: [build, package]
     runs-on: ubuntu-latest
@@ -311,14 +357,27 @@ jobs:
           name: InToolz-x64
           path: artifacts
 
-      # The release step below attaches artifacts/*.zip, which a dry run never reaches. Prove the file is
-      # where that pattern expects it, and stop here rather than publish a draft without its zip.
-      - name: Check the release zip is there
+      - name: Download the sideload package
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: InToolz-sideload
+          path: artifacts
+
+      - name: Download the sideload certificate
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: InToolz-sideload-cert
+          path: artifacts
+
+      # The release step below attaches artifacts/*.zip and artifacts/*.cer, which a dry run never
+      # reaches. Prove the files are where those patterns expect them, and stop here rather than
+      # publish a draft missing an asset.
+      - name: Check the release assets are there
         run: |
           shopt -s nullglob
-          files=(artifacts/*.zip)
-          if [ ${#files[@]} -eq 0 ]; then
-            echo "::error::No release zip was downloaded into artifacts/."
+          files=(artifacts/*.zip artifacts/*.cer)
+          if [ ${#files[@]} -lt 3 ]; then
+            echo "::error::Expected two zips and a certificate in artifacts/, found ${#files[@]}."
             exit 1
           fi
           ls -l "${files[@]}"
@@ -341,7 +400,9 @@ jobs:
             echo "As always, the app and this new update is available on the [Microsoft Store](https://apps.microsoft.com/detail/9phqrcx3gkxd)."
             echo ""
             echo "## Manual install"
-            echo "If you prefer to install manually and not use the store, I've attached a zip of the self-contained app. Extract it and run \`InToolz.exe\`."
+            echo "If you prefer to install manually and not use the store, two options are attached:"
+            echo "- A zip of the self-contained app. Extract it and run \`InToolz.exe\`."
+            echo "- A signed sideload package (\`*_sideload.zip\`) with its certificate (\`*.cer\`) and an \`Install.ps1\` that installs both. This behaves like a real install (Start menu entry, in-place updates) rather than a loose exe."
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
@@ -366,4 +427,6 @@ jobs:
           name: ${{ needs.build.outputs.version }}
           draft: true
           body: ${{ steps.notes.outputs.BODY }}
-          files: artifacts/*.zip
+          files: |
+            artifacts/*.zip
+            artifacts/*.cer
