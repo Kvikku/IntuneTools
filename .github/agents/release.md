@@ -170,7 +170,7 @@ When asked to "create a release", "bump the version", or "prepare a new version"
 - [ ] Push to `master`
 - [ ] Instruct the user to trigger the release workflow (`gh workflow run release.yml -f version=<version>`)
 - [ ] Remind the user to review and publish the draft release on GitHub
-- [ ] Remind the user to download the `InToolz-store` artifact from the release run and submit it in Partner Center (see "Microsoft Store package" in `.github/RELEASE_GUIDE.md`)
+- [ ] Remind the user to submit the `InToolz-store` artifact to Partner Center, either via `gh workflow run store-submit.yml -f run_id=<release run ID> -f version=<version> -f dry_run=false` or by hand (see "Submitting to the Microsoft Store" in `.github/RELEASE_GUIDE.md`)
 - [ ] Optionally: draft release-note highlights based on merged PRs since the last tag
 
 ---
@@ -184,7 +184,7 @@ A: The workflow auto-increments the *patch* segment from whatever is in `InToolz
 A: Only with auto-increment (no version given), where the workflow stamps the version itself. If you pass a version, `InToolz.csproj` at that commit must already say it, and the release stops otherwise — bump and merge first.
 
 **Q: What about the Microsoft Store submission?**
-A: The Store submission is a separate manual process. The GitHub release and Store release are independent, and the GitHub zip is not what the Store receives — the Store package is built by the release run from the `InToolzPackaged` project (artifact `InToolz-store`). Remind the user to also submit it in Partner Center, and point them to "Microsoft Store package" in `.github/RELEASE_GUIDE.md`.
+A: The GitHub release and the Store submission are independent, and the GitHub zip is not what the Store receives — the Store package is built by the release run from the `InToolzPackaged` project (artifact `InToolz-store`). Submitting it is a separate, deliberately-triggered workflow (`store-submit.yml`): `gh workflow run store-submit.yml -f run_id=<release run ID> -f version=<version> -f dry_run=false`. It needs a human approval (the `store-submit` environment's required reviewer) before it can run at all, and `dry_run` defaults to `true`, so nothing reaches Partner Center by accident. See "Submitting to the Microsoft Store" in `.github/RELEASE_GUIDE.md`.
 
 **Q: What if CI is failing on `master`?**
 A: Do not release. Fix CI first. The release workflow refuses to run when `ci.yml` has no successful run for the commit.

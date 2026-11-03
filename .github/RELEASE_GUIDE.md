@@ -126,6 +126,54 @@ msbuild InToolzPackaged\InToolzPackaged.wapproj /restore /p:Configuration=Releas
 
 The result is `InToolzPackaged\AppPackages\InToolzPackaged_<version>_x64_bundle.msixupload` (gitignored). `AppxAutoIncrementPackageRevision` must stay `False`: the Store reserves the last part of the version, so a `.1` means something auto-incremented it. `git status` should be clean afterwards.
 
+## Submitting to the Microsoft Store
+
+`.github/workflows/store-submit.yml` submits an already-built `InToolz-store` artifact to Partner Center using the [Microsoft Store Developer CLI](https://learn.microsoft.com/windows/apps/publish/msstore-dev-cli/overview) (`msstore`). It's deliberately independent of `release.yml`: the package is built once per release, and submitting it is a separate, re-runnable act — nothing is rebuilt or re-signed to submit it.
+
+```
+gh workflow run store-submit.yml -f run_id=<release run ID> -f version=<version> -f dry_run=false
+```
+
+- `run_id` — the `release.yml` run whose `InToolz-store` artifact to submit (same run ID you'd pass to `gh run download`). Artifacts are kept for 90 days.
+- `version` — checked against the downloaded package via the same `StorePackage.ps1` check `release.yml` already runs, so a mismatched or stale artifact is refused.
+- `dry_run` — **defaults to `true`**. A dry run only validates the four Partner Center credentials and the package (`msstore info`, `msstore apps get`) and makes no Partner Center changes at all. Only `dry_run=false` touches anything.
+
+### The two-step submission, and why
+
+| Step | Command | Reversible? |
+|---|---|---|
+| Stage | `msstore publish . -i <package> -id <appId> --noCommit` | Yes — uploads the package into the draft submission, but the draft can still be discarded or edited in Partner Center. |
+| Commit | `msstore submission publish <appId>` | No — starts certification. This is the point of no easy return. |
+
+Both steps only run when `dry_run=false`.
+
+### Two independent gates before a real submission
+
+1. **The `store-submit` GitHub Environment** is restricted to the `master` branch and has a required reviewer (currently `Kvikku`) — every run, dry run or not, pauses for that approval before the job can even start, since that's also when the environment's secrets become reachable.
+2. **`dry_run` defaults to `true`** — submitting for real needs an explicit `-f dry_run=false`, on top of the approval above.
+
+### One-time setup
+
+The app's first publication to the Store must already have happened through the Partner Center UI (it has — 1.8.0.0 is live). After that, the CLI handles every subsequent update. To get the four credentials:
+
+1. **Register a Microsoft Entra ID application** (if one doesn't already exist for this): [entra.microsoft.com](https://entra.microsoft.com/) → Identity → Applications → App registrations → New registration. No redirect URI is needed.
+2. **Tenant ID**: Identity → Overview → "Tenant ID".
+3. **Client ID**: the app registration's "Application (client) ID".
+4. **Client secret**: the app registration → Certificates & secrets → New client secret. Copy the value immediately — it's only shown once.
+5. **Associate the app with Partner Center**: [partner.microsoft.com/dashboard](https://partner.microsoft.com/dashboard) → Account settings → User management → Microsoft Entra applications → Add Azure AD application → select the app from step 1 → assign it the **Manager** role.
+6. **Seller ID**: Partner Center → Account settings → Developer settings (or Organization profile → Identifiers) → "Seller ID" / "Publisher ID".
+
+Store all four as secrets in the `store-submit` environment (never as plain repo secrets — that would skip the branch restriction):
+
+```
+gh secret set PARTNER_CENTER_TENANT_ID --env store-submit
+gh secret set PARTNER_CENTER_SELLER_ID --env store-submit
+gh secret set PARTNER_CENTER_CLIENT_ID --env store-submit
+gh secret set PARTNER_CENTER_CLIENT_SECRET --env store-submit
+```
+
+The Store product ID doesn't need a secret — it's public (it's the same ID in the Store listing URL) and already set as the `STORE_APP_ID` variable on the `store-submit` environment, read from `InToolzPackaged/Package.StoreAssociation.xml`'s `LandingUrl`.
+
 ## Wiki / user documentation
 
 Wiki pages live in `wiki/` in the main repo and are automatically synced to the GitHub Wiki on every push to `master` (via `.github/workflows/wiki-sync.yml`). The wiki should be kept in sync with the code — update it in the same PR as the feature.
