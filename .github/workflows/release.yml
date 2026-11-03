@@ -148,16 +148,7 @@ jobs:
         shell: pwsh
         env:
           VERSION: ${{ needs.validate.outputs.version }}
-        run: |
-          $ver = $env:VERSION
-          # Update InToolz.csproj
-          $csproj = Get-Content InToolz.csproj -Raw
-          $csproj = $csproj -replace '<Version>[^<]+</Version>', "<Version>$ver</Version>"
-          Set-Content InToolz.csproj $csproj -NoNewline
-          # Update Package.appxmanifest
-          $manifest = Get-Content Package.appxmanifest -Raw
-          $manifest = $manifest -replace '(Identity[^>]*Version=")[^"]+(")', "`${1}$ver`${2}"
-          Set-Content Package.appxmanifest $manifest -NoNewline
+        run: ./.github/scripts/Set-ReleaseVersion.ps1 -Version $env:VERSION
 
       - name: Setup .NET
         uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
@@ -198,22 +189,139 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add InToolz.csproj Package.appxmanifest
+          git add InToolz.csproj Package.appxmanifest InToolzPackaged/Package.appxmanifest
           # `exit` can't follow && in pwsh, so check the exit code explicitly
           git diff --cached --quiet
           if ($LASTEXITCODE -eq 0) { echo "No version changes to commit"; exit 0 }
           git commit -m "Bump version to ${{ needs.validate.outputs.version }}"
           git push origin HEAD:master
 
+  # Builds the Microsoft Store package, and a sideload package, from the repo. The file submitted to the
+  # Store no longer depends on whoever builds it by hand, and is checked before anyone can upload it.
+  package:
+    needs: validate
+    if: ${{ needs.validate.outputs.skip != 'true' }}
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Update version in project files
+        shell: pwsh
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: ./.github/scripts/Set-ReleaseVersion.ps1 -Version $env:VERSION
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Build the Store package
+        shell: pwsh
+        run: |
+          # The packaging project (.wapproj) needs Visual Studio's MSBuild and its Desktop Bridge targets;
+          # `dotnet build` cannot build it.
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+          $vsRoot = & $vswhere -latest -products * -requires Microsoft.Component.MSBuild -property installationPath
+          $msbuild = Join-Path $vsRoot 'MSBuild\Current\Bin\MSBuild.exe'
+          $bridge = Join-Path $vsRoot 'MSBuild\Microsoft\DesktopBridge\Microsoft.DesktopBridge.targets'
+          if (-not (Test-Path $msbuild)) { throw "MSBuild was not found under '$vsRoot'." }
+          if (-not (Test-Path $bridge)) { throw "The Visual Studio on this runner has no Desktop Bridge packaging targets ('$bridge')." }
+
+          # Record what built it: the runner image drifts, and this is the first thing to look at if a package ever differs
+          $vsVersion = & $vswhere -latest -products * -property catalog_productDisplayVersion
+          $msbuildVersion = (& $msbuild -version -nologo) | Select-Object -Last 1
+          $toolchain = @(
+            '### Store package build',
+            '',
+            "- Visual Studio $vsVersion, MSBuild $msbuildVersion",
+            "- .NET SDK $(dotnet --version)"
+          )
+          $toolchain | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          $toolchain | ForEach-Object { Write-Host $_ }
+
+          $out = Join-Path $PWD 'AppPackages'
+          & $msbuild InToolzPackaged\InToolzPackaged.wapproj /restore /nologo /v:minimal `
+            /p:Configuration=Release /p:Platform=x64 `
+            /p:UapAppxPackageBuildMode=StoreUpload /p:AppxBundle=Always /p:AppxBundlePlatforms=x64 `
+            /p:AppxAutoIncrementPackageRevision=False /p:GenerateAppxPackageOnBuild=true `
+            "/p:AppxPackageDir=$out\"
+          if ($LASTEXITCODE -ne 0) { throw "MSBuild failed with exit code $LASTEXITCODE." }
+
+      - name: Verify the Store package
+        shell: pwsh
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          . ./.github/scripts/StorePackage.ps1
+          $upload = Get-ChildItem AppPackages -Filter *.msixupload | Select-Object -First 1
+          if (-not $upload) { throw 'The build produced no .msixupload.' }
+
+          # Not softened in a dry run: a package that fails this must never be uploaded to the Store.
+          $problems = @(Test-StorePackage -Path $upload.FullName -Version $env:VERSION -AssociationFile InToolzPackaged/Package.StoreAssociation.xml)
+          if ($problems.Count -gt 0) {
+            foreach ($p in $problems) { Write-Host "::error::$p" }
+            "### Store package check failed`n" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+            $problems | ForEach-Object { "- $_" } | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+            exit 1
+          }
+          "- ``$($upload.Name)`` ($([math]::Round($upload.Length / 1MB, 1)) MB) passed the Store package check: identity, publisher and version match, x64 only, executable present" |
+            Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          exit 0
+
+      - name: Zip the sideload package
+        id: sideload
+        shell: pwsh
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          # Signed with a temporary certificate that is generated per build, so it is not attached to
+          # the release yet: users would have to trust a different certificate every time.
+          $folder = Get-ChildItem AppPackages -Directory -Filter '*_Test' | Select-Object -First 1
+          if (-not $folder) { throw 'The build produced no sideload folder.' }
+          $zip = "InToolz_$($env:VERSION)_x64_sideload.zip"
+          Compress-Archive -Path "$($folder.FullName)\*" -DestinationPath $zip
+          echo "ZIP_NAME=$zip" >> $env:GITHUB_OUTPUT
+          exit 0
+
+      - name: Upload the Store package
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: InToolz-store
+          path: AppPackages/*.msixupload
+          if-no-files-found: error
+
+      - name: Upload the sideload package
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: InToolz-sideload
+          path: ${{ steps.sideload.outputs.ZIP_NAME }}
+          compression-level: 0
+          if-no-files-found: error
+
   release:
-    needs: build
+    needs: [build, package]
     runs-on: ubuntu-latest
 
     steps:
-      - name: Download all artifacts
+      - name: Download the release zip
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
+          name: InToolz-x64
           path: artifacts
+
+      # The release step below attaches artifacts/*.zip, which a dry run never reaches. Prove the file is
+      # where that pattern expects it, and stop here rather than publish a draft without its zip.
+      - name: Check the release zip is there
+        run: |
+          shopt -s nullglob
+          files=(artifacts/*.zip)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::No release zip was downloaded into artifacts/."
+            exit 1
+          fi
+          ls -l "${files[@]}"
 
       - name: Generate release notes
         id: notes
@@ -258,4 +366,4 @@ jobs:
           name: ${{ needs.build.outputs.version }}
           draft: true
           body: ${{ steps.notes.outputs.BODY }}
-          files: artifacts/**/*.zip
+          files: artifacts/*.zip

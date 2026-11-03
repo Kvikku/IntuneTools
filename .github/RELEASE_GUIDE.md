@@ -45,8 +45,9 @@ This auto-bumps the patch version (e.g. `1.4.0.0` → `1.4.1.0`) and commits the
 ## What happens automatically
 
 - Release checks run first and stop the release if the commit or version looks unintended
-- Version is stamped in `InToolz.csproj` and `Package.appxmanifest`
+- Version is stamped in `InToolz.csproj` and both `Package.appxmanifest` files
 - App is built, published as self-contained x64, and zipped
+- In parallel, the Store package and a sideload package are built from `InToolzPackaged`, and the Store package is checked (see *Microsoft Store package*)
 - Version bump is committed back to `master`
 - Draft GitHub release is created with:
   - "What's Changed" (auto-generated from PRs) at the top
@@ -73,7 +74,7 @@ To try the pipeline without releasing anything, add `dry_run`:
 gh workflow run release.yml -f version=1.9.0.0 -f dry_run=true
 ```
 
-A dry run reports the checks as warnings, so you can see what would have stopped a real release, then builds and zips the app and previews the release notes in the run summary. It does not push the version bump or create the draft release. Add `--ref <branch>` to run it from a branch, which is how to test changes to the pipeline itself.
+A dry run reports the checks as warnings, so you can see what would have stopped a real release, then builds and zips the app, builds and checks the Store package, and previews the release notes in the run summary. It does not push the version bump or create the draft release. Add `--ref <branch>` to run it from a branch, which is how to test changes to the pipeline itself.
 
 The checks have their own tests, which CI also runs: `pwsh -NoProfile -File .github/scripts/ReleaseGuard.Tests.ps1`.
 
@@ -83,23 +84,36 @@ The workflow auto-generates "What's Changed" from merged PRs. For polished relea
 
 ## Microsoft Store package
 
-The GitHub release only attaches a self-contained zip. The Store gets a different package, built from the `InToolzPackaged` project and uploaded by hand in Partner Center. The two releases are independent.
+The GitHub release attaches a self-contained zip. The Store gets a different package, built from the `InToolzPackaged` project. The release run builds it for you, so nobody builds it by hand any more; uploading it in Partner Center is still a manual step. The two releases are independent.
 
-Build it from the release commit, after the version in `InToolz.csproj` is the release version. The project needs Visual Studio's MSBuild (`dotnet build` can't build a `.wapproj`), so run this from a Developer Command Prompt for VS:
+Every release run, dry runs included, produces two workflow artifacts:
+
+| Artifact | Contents |
+|---|---|
+| `InToolz-store` | `InToolzPackaged_<version>_x64_bundle.msixupload`, the file to upload in Partner Center |
+| `InToolz-sideload` | `InToolz_<version>_x64_sideload.zip`: a signed `.msixbundle`, `Install.ps1`, the certificate and the framework dependencies |
+
+Download the Store package from the run:
+
+```
+gh run download <run-id> -n InToolz-store
+```
+
+Artifacts are kept for 90 days, so submit before then or run the release again.
+
+Before the package can be uploaded, the run checks it (`.github/scripts/StorePackage.ps1`, which has its own tests). The identity name and publisher must match `InToolzPackaged/Package.StoreAssociation.xml`, the version must be the release version, the package must be x64 only, the `Application Id` must be `App` (part of the app's identity, so pins and shortcuts survive an update), the executable must be in the package, and the `runFullTrust` capability must be present. A package that fails stops the run, even a dry run.
+
+The sideload package is **not attached to the release yet**. It is signed with a certificate that is generated fresh for every build, so users would have to trust a different certificate each time. It has the **same identity as the Store app**, so installing it over a Store install means uninstalling the Store version first and losing its local settings.
+
+### Building it locally
+
+The release run uses this same command. It needs Visual Studio's MSBuild (`dotnet build` can't build a `.wapproj`), so run it from a Developer Command Prompt for VS, at the release commit, once the version in `InToolz.csproj` is the release version:
 
 ```
 msbuild InToolzPackaged\InToolzPackaged.wapproj /restore /p:Configuration=Release /p:Platform=x64 /p:UapAppxPackageBuildMode=StoreUpload /p:AppxBundle=Always /p:AppxBundlePlatforms=x64 /p:AppxAutoIncrementPackageRevision=False /p:GenerateAppxPackageOnBuild=true
 ```
 
-The file to upload is `InToolzPackaged\AppPackages\InToolzPackaged_<version>_x64_bundle.msixupload`. Everything under `AppPackages` is gitignored.
-
-Before uploading, check that:
-
-- the version in the file name matches the release and ends in `.0` — the Store reserves the last part, so a `.1` means something auto-incremented it (`AppxAutoIncrementPackageRevision` must be `False`)
-- the package identity name and publisher match `InToolzPackaged\Package.StoreAssociation.xml`
-- `git status` is clean afterwards (the build should not modify tracked files)
-
-The build also writes an `..._Test` folder with an `Install.ps1` and a temporary certificate. That is a sideload package with the **same identity as the Store app**, so installing it over a Store install means uninstalling the Store version first and losing its local settings.
+The result is `InToolzPackaged\AppPackages\InToolzPackaged_<version>_x64_bundle.msixupload` (gitignored). `AppxAutoIncrementPackageRevision` must stay `False`: the Store reserves the last part of the version, so a `.1` means something auto-incremented it. `git status` should be clean afterwards.
 
 ## Wiki / user documentation
 

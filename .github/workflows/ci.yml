@@ -44,3 +44,7 @@ jobs:
       - name: Test release guard
         shell: pwsh
         run: ./.github/scripts/ReleaseGuard.Tests.ps1
+
+      - name: Test Store package check
+        shell: pwsh
+        run: ./.github/scripts/StorePackage.Tests.ps1

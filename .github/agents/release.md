@@ -104,8 +104,9 @@ Once triggered the `release.yml` workflow will:
 2. Stamp the version into `InToolz.csproj` and `Package.appxmanifest` (idempotent if you already bumped).
 3. Build a self-contained x64 release (`dotnet publish`).
 4. Zip the output as `InToolz_<version>_x64.zip`.
-5. Commit the version bump back to `master` (no-op if already committed).
-6. Create a **draft** GitHub Release with:
+5. In parallel, build the Store upload package and a sideload package from `InToolzPackaged` (workflow artifacts `InToolz-store` and `InToolz-sideload`) and check the Store package's identity, version and contents.
+6. Commit the version bump back to `master` (no-op if already committed).
+7. Create a **draft** GitHub Release with:
    - Auto-generated "What's Changed" notes (from merged PRs since the last tag).
    - A **Download** section linking to the Microsoft Store.
    - A **Manual install** section.
@@ -167,7 +168,7 @@ When asked to "create a release", "bump the version", or "prepare a new version"
 - [ ] Push to `master`
 - [ ] Instruct the user to trigger the release workflow (`gh workflow run release.yml -f version=<version>`)
 - [ ] Remind the user to review and publish the draft release on GitHub
-- [ ] Remind the user to build and submit the Microsoft Store package (see "Microsoft Store package" in `.github/RELEASE_GUIDE.md`)
+- [ ] Remind the user to download the `InToolz-store` artifact from the release run and submit it in Partner Center (see "Microsoft Store package" in `.github/RELEASE_GUIDE.md`)
 - [ ] Optionally: draft release-note highlights based on merged PRs since the last tag
 
 ---
@@ -181,7 +182,7 @@ A: The workflow auto-increments the *patch* segment from whatever is in `InToolz
 A: Only with auto-increment (no version given), where the workflow stamps the version itself. If you pass a version, `InToolz.csproj` at that commit must already say it, and the release stops otherwise — bump and merge first.
 
 **Q: What about the Microsoft Store submission?**
-A: The Store submission is a separate manual process. The GitHub release and Store release are independent, and the GitHub zip is not what the Store receives — the Store package is built from the `InToolzPackaged` project. Remind the user to also submit the new version to the Store if applicable, and point them to "Microsoft Store package" in `.github/RELEASE_GUIDE.md`.
+A: The Store submission is a separate manual process. The GitHub release and Store release are independent, and the GitHub zip is not what the Store receives — the Store package is built by the release run from the `InToolzPackaged` project (artifact `InToolz-store`). Remind the user to also submit it in Partner Center, and point them to "Microsoft Store package" in `.github/RELEASE_GUIDE.md`.
 
 **Q: What if CI is failing on `master`?**
 A: Do not release. Fix CI first. The release workflow refuses to run when `ci.yml` has no successful run for the commit.
