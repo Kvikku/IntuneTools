@@ -190,12 +190,6 @@ namespace InToolz.Utilities
             };
         }
 
-        public static void GetDeploymentMode(string input)
-        {
-            // TODO when fixing exclusion assignments
-            _selectedDeploymentMode = input;
-        }
-
         public static void GetInstallIntent(string input)
         {
             _selectedAppDeploymentIntent = input switch

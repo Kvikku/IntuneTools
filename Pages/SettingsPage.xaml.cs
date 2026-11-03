@@ -181,14 +181,6 @@ namespace InToolz.Pages
             (sourceTenantName, destinationTenantName) = 
                 (destinationTenantName, sourceTenantName);
 
-            // Swap tenant IDs
-            (sourceTenantID, destinationTenantID) = 
-                (destinationTenantID, sourceTenantID);
-
-            // Swap client IDs
-            (sourceClientID, destinationClientID) =
-                (destinationClientID, sourceClientID);
-
             // Swap permission-warning state so it stays attached to the tenant it describes
             (_sourceHasPermissionWarning, _destinationHasPermissionWarning) =
                 (_destinationHasPermissionWarning, _sourceHasPermissionWarning);
