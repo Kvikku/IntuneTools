@@ -232,12 +232,14 @@ jobs:
           # Record what built it: the runner image drifts, and this is the first thing to look at if a package ever differs
           $vsVersion = & $vswhere -latest -products * -property catalog_productDisplayVersion
           $msbuildVersion = (& $msbuild -version -nologo) | Select-Object -Last 1
-          @(
+          $toolchain = @(
             '### Store package build',
             '',
             "- Visual Studio $vsVersion, MSBuild $msbuildVersion",
             "- .NET SDK $(dotnet --version)"
-          ) | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          )
+          $toolchain | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          $toolchain | ForEach-Object { Write-Host $_ }
 
           $out = Join-Path $PWD 'AppPackages'
           & $msbuild InToolzPackaged\InToolzPackaged.wapproj /restore /nologo /v:minimal `
