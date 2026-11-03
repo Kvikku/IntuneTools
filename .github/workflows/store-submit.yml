@@ -75,8 +75,8 @@ jobs:
         # Read-only: 'info' and 'apps get' never touch a submission. Always run, dry run or not - this
         # is the actual proof the four secrets and the app ID are correct.
         run: |
-          msstore info
-          msstore apps get ${{ vars.STORE_APP_ID }}
+          msstore info -v
+          msstore apps get ${{ vars.STORE_APP_ID }} -v
 
       - name: Dry run summary
         if: ${{ inputs.dry_run }}
