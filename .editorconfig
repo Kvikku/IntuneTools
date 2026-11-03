@@ -17,7 +17,7 @@ dotnet_separate_import_directive_groups = true
 
 # IDE0005: Remove unnecessary using directives.
 # Only fires when <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild> is set
-# in the project file (already enabled in IntuneTools.csproj and
-# IntuneTools.Tests.csproj). Treated as a warning so new files don't quietly
+# in the project file (already enabled in InToolz.csproj and
+# InToolz.Tests.csproj). Treated as a warning so new files don't quietly
 # re-introduce the boilerplate that PR #85 cleaned up.
 dotnet_diagnostic.IDE0005.severity = warning

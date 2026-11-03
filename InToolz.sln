@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
 VisualStudioVersion = 18.0.11217.181
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IntuneTools", "IntuneTools.csproj", "{02C93EA9-C478-4299-847B-F1910EC0B571}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IntuneTools", "InToolz.csproj", "{02C93EA9-C478-4299-847B-F1910EC0B571}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IntuneTools.Tests", "IntuneTools.Tests\IntuneTools.Tests.csproj", "{3F5A4E50-4F91-450D-96F7-1AA7D05996A3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InToolz.Tests", "InToolz.Tests\InToolz.Tests.csproj", "{3F5A4E50-4F91-450D-96F7-1AA7D05996A3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

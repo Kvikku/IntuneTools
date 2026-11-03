@@ -8,10 +8,10 @@ You are the release agent for **IntuneTools** (aka *InToolz*), a WinUI 3 / .NET 
 
 | Item | Location / value |
 |---|---|
-| Solution | `IntuneTools.sln` |
-| Main project | `IntuneTools.csproj` |
+| Solution | `InToolz.sln` |
+| Main project | `InToolz.csproj` |
 | App manifest | `Package.appxmanifest` |
-| Version property | `<Version>` in `IntuneTools.csproj` (4-part: `major.minor.patch.build`) |
+| Version property | `<Version>` in `InToolz.csproj` (4-part: `major.minor.patch.build`) |
 | Manifest version | `Identity … Version="…"` in `Package.appxmanifest` (kept in sync by an MSBuild target and by the release workflow) |
 | CI workflow | `.github/workflows/ci.yml` — builds + tests on every push/PR to `master` |
 | Release workflow | `.github/workflows/release.yml` — triggered by version tags (`*.*.*.*`) or `workflow_dispatch` |
@@ -42,7 +42,7 @@ Ask the user (or inspect the request) for the **release type**:
 | **minor** | `1.4.0.0` → `1.5.0.0` | New features |
 | **major** | `1.4.0.0` → `2.0.0.0` | Breaking / milestone release |
 
-Read the current version from `IntuneTools.csproj`:
+Read the current version from `InToolz.csproj`:
 
 ```xml
 <Version>1.4.0.0</Version>
@@ -52,7 +52,7 @@ Compute the next version by incrementing the appropriate segment and resetting l
 
 ### Step 2 — Bump the version in source
 
-**`IntuneTools.csproj`** is the single source of truth for the version. Edit the `<Version>` element:
+**`InToolz.csproj`** is the single source of truth for the version. Edit the `<Version>` element:
 
 ```diff
 - <Version>1.4.0.0</Version>
@@ -98,7 +98,7 @@ The workflow triggers on tags matching `*.*.*.*`.
 
 Once triggered the `release.yml` workflow will:
 
-1. Stamp the version into `IntuneTools.csproj` and `Package.appxmanifest` (idempotent if you already bumped).
+1. Stamp the version into `InToolz.csproj` and `Package.appxmanifest` (idempotent if you already bumped).
 2. Build a self-contained x64 release (`dotnet publish`).
 3. Zip the output as `IntuneTools_<version>_x64.zip`.
 4. Commit the version bump back to `master` (no-op if already committed).
@@ -156,10 +156,10 @@ If you prefer to install manually and not use the store, I've attached a zip of 
 
 When asked to "create a release", "bump the version", or "prepare a new version", follow this checklist:
 
-- [ ] Read current version from `IntuneTools.csproj`
+- [ ] Read current version from `InToolz.csproj`
 - [ ] Determine release type (major / minor / patch) — ask user if unclear
 - [ ] Compute the new version number
-- [ ] Update `<Version>` in `IntuneTools.csproj` (source of truth; `Package.appxmanifest` is synced automatically by MSBuild)
+- [ ] Update `<Version>` in `InToolz.csproj` (source of truth; `Package.appxmanifest` is synced automatically by MSBuild)
 - [ ] Commit with message `Bump version to <version>` (include `Package.appxmanifest` if it changed on disk)
 - [ ] Push to `master`
 - [ ] Instruct the user to trigger the release workflow (`gh workflow run release.yml -f version=<version>`)
@@ -172,13 +172,13 @@ When asked to "create a release", "bump the version", or "prepare a new version"
 ## FAQ / edge cases
 
 **Q: What if the workflow dispatch is used without a version?**
-A: The workflow auto-increments the *patch* segment from whatever is in `IntuneTools.csproj`. This is fine for quick patch releases but won't work for minor/major bumps.
+A: The workflow auto-increments the *patch* segment from whatever is in `InToolz.csproj`. This is fine for quick patch releases but won't work for minor/major bumps.
 
 **Q: Can I skip the manual version bump and just trigger the workflow?**
 A: Yes — the workflow will stamp the version itself. However, doing the bump in a commit first keeps the repo in sync immediately and makes the git history cleaner.
 
 **Q: What about the Microsoft Store submission?**
-A: The Store submission is a separate manual process. The GitHub release and Store release are independent, and the GitHub zip is not what the Store receives — the Store package is built from the `IntuneToolsPackaged` project. Remind the user to also submit the new version to the Store if applicable, and point them to "Microsoft Store package" in `.github/RELEASE_GUIDE.md`.
+A: The Store submission is a separate manual process. The GitHub release and Store release are independent, and the GitHub zip is not what the Store receives — the Store package is built from the `InToolzPackaged` project. Remind the user to also submit the new version to the Store if applicable, and point them to "Microsoft Store package" in `.github/RELEASE_GUIDE.md`.
 
 **Q: What if CI is failing on `master`?**
 A: Do not release. Fix CI first. The release workflow does not gate on CI, but shipping a broken build is bad practice.

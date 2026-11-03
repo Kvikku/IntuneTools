@@ -27,7 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\IntuneTools.csproj" />
+    <ProjectReference Include="..\InToolz.csproj" />
   </ItemGroup>
 
 </Project>

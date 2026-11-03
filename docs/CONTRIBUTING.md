@@ -8,14 +8,14 @@ To keep file headers focused on what's actually file-specific, this project
 centralizes its common imports. **Do not re-add these to individual files.**
 
 1. **BCL namespaces** are pulled in by `<ImplicitUsings>enable</ImplicitUsings>`
-   in both `IntuneTools.csproj` and `IntuneTools.Tests/IntuneTools.Tests.csproj`.
+   in both `InToolz.csproj` and `InToolz.Tests/InToolz.Tests.csproj`.
    The SDK-default set includes `System`, `System.Collections.Generic`,
    `System.IO`, `System.Linq`, `System.Net.Http`, `System.Threading`, and
    `System.Threading.Tasks`.
 
 2. **Project-wide globals** live in the `<ItemGroup>` of `<Using Include="…" />`
-   entries inside `IntuneTools.csproj` (and mirrored in
-   `IntuneTools.Tests.csproj`). This is the single source of truth — there is
+   entries inside `InToolz.csproj` (and mirrored in
+   `InToolz.Tests.csproj`). This is the single source of truth — there is
    no `GlobalUsing.cs` file. Currently globalized:
 
    - `IntuneTools.Utilities`

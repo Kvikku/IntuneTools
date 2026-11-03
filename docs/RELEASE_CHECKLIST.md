@@ -64,7 +64,7 @@ is consented, how large tenants paginate, or how the packaged app behaves.
 
 ### Packaging and Store
 
-- [ ] Version stamped correctly in `IntuneTools.csproj`, and `Package.appxmanifest`
+- [ ] Version stamped correctly in `InToolz.csproj`, and `Package.appxmanifest`
       picked it up via the `SyncAppxManifestVersion` target
 - [ ] **Fresh install with no prior app data** — first-run paths, persisted-state
       defaults, log folder creation under `LocalApplicationData`

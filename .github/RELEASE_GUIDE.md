@@ -15,7 +15,7 @@ The project uses **4-part versions**: `major.minor.patch.build` (e.g. `1.4.0.0`)
 | **Patch** | Bug fixes, small improvements, dependency bumps |
 | **Build** | Conventionally `0` (reserved); the workflow preserves whatever value is in `<Version>` |
 
-The source of truth is `IntuneTools.csproj` (`<Version>` element). `Package.appxmanifest` is kept in sync automatically by the `SyncAppxManifestVersion` MSBuild target during build/publish.
+The source of truth is `InToolz.csproj` (`<Version>` element). `Package.appxmanifest` is kept in sync automatically by the `SyncAppxManifestVersion` MSBuild target during build/publish.
 
 ## Option A: Auto-increment patch version (recommended for quick fixes)
 
@@ -33,7 +33,7 @@ This auto-bumps the patch version (e.g. `1.4.0.0` → `1.4.1.0`) and commits the
 ## Option B: Specify a version (for minor/major bumps)
 
 1. Make sure all changes are merged to `master`
-2. Bump `<Version>` in `IntuneTools.csproj`, commit (include `Package.appxmanifest` if it changed), and push to `master`
+2. Bump `<Version>` in `InToolz.csproj`, commit (include `Package.appxmanifest` if it changed), and push to `master`
 3. Run:
    ```
    gh workflow run release.yml -f version=2.0.0.0
@@ -42,7 +42,7 @@ This auto-bumps the patch version (e.g. `1.4.0.0` → `1.4.1.0`) and commits the
 
 ## What happens automatically
 
-- Version is stamped in `IntuneTools.csproj` and `Package.appxmanifest`
+- Version is stamped in `InToolz.csproj` and `Package.appxmanifest`
 - App is built, published as self-contained x64, and zipped
 - Version bump is committed back to `master`
 - Draft GitHub release is created with:
@@ -56,20 +56,20 @@ The workflow auto-generates "What's Changed" from merged PRs. For polished relea
 
 ## Microsoft Store package
 
-The GitHub release only attaches a self-contained zip. The Store gets a different package, built from the `IntuneToolsPackaged` project and uploaded by hand in Partner Center. The two releases are independent.
+The GitHub release only attaches a self-contained zip. The Store gets a different package, built from the `InToolzPackaged` project and uploaded by hand in Partner Center. The two releases are independent.
 
-Build it from the release commit, after the version in `IntuneTools.csproj` is the release version. The project needs Visual Studio's MSBuild (`dotnet build` can't build a `.wapproj`), so run this from a Developer Command Prompt for VS:
+Build it from the release commit, after the version in `InToolz.csproj` is the release version. The project needs Visual Studio's MSBuild (`dotnet build` can't build a `.wapproj`), so run this from a Developer Command Prompt for VS:
 
 ```
-msbuild IntuneToolsPackaged\IntuneToolsPackaged.wapproj /restore /p:Configuration=Release /p:Platform=x64 /p:UapAppxPackageBuildMode=StoreUpload /p:AppxBundle=Always /p:AppxBundlePlatforms=x64 /p:AppxAutoIncrementPackageRevision=False /p:GenerateAppxPackageOnBuild=true
+msbuild InToolzPackaged\InToolzPackaged.wapproj /restore /p:Configuration=Release /p:Platform=x64 /p:UapAppxPackageBuildMode=StoreUpload /p:AppxBundle=Always /p:AppxBundlePlatforms=x64 /p:AppxAutoIncrementPackageRevision=False /p:GenerateAppxPackageOnBuild=true
 ```
 
-The file to upload is `IntuneToolsPackaged\AppPackages\IntuneToolsPackaged_<version>_x64_bundle.msixupload`. Everything under `AppPackages` is gitignored.
+The file to upload is `InToolzPackaged\AppPackages\InToolzPackaged_<version>_x64_bundle.msixupload`. Everything under `AppPackages` is gitignored.
 
 Before uploading, check that:
 
 - the version in the file name matches the release and ends in `.0` — the Store reserves the last part, so a `.1` means something auto-incremented it (`AppxAutoIncrementPackageRevision` must be `False`)
-- the package identity name and publisher match `IntuneToolsPackaged\Package.StoreAssociation.xml`
+- the package identity name and publisher match `InToolzPackaged\Package.StoreAssociation.xml`
 - `git status` is clean afterwards (the build should not modify tracked files)
 
 The build also writes an `..._Test` folder with an `Install.ps1` and a temporary certificate. That is a sideload package with the **same identity as the Store app**, so installing it over a Store install means uninstalling the Store version first and losing its local settings.
