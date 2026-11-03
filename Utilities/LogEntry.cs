@@ -1,7 +1,7 @@
 using Microsoft.UI;
 using Microsoft.UI.Xaml.Media;
 
-namespace IntuneTools.Utilities
+namespace InToolz.Utilities
 {
     /// <summary>
     /// Log severity levels for the log console.

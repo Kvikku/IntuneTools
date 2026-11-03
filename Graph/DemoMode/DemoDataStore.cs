@@ -1,6 +1,6 @@
 using System.Text.Json.Nodes;
 
-namespace IntuneTools.Graph.DemoMode;
+namespace InToolz.Graph.DemoMode;
 
 /// <summary>
 /// In-memory fake tenant backing Demo Mode. Holds one JSON array per Graph collection plus a

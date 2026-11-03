@@ -1,4 +1,4 @@
-namespace IntuneTools.Utilities
+namespace InToolz.Utilities
 {
     /// <summary>
     /// A stale-device scan result for an Intune managed device.

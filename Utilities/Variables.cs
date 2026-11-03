@@ -1,7 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Reflection;
 
-namespace IntuneTools.Utilities
+namespace InToolz.Utilities
 {
     public class Variables
     {

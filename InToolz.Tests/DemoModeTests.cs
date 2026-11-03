@@ -1,10 +1,10 @@
 using System.Text.Json.Nodes;
-using IntuneTools.Graph.DemoMode;
+using InToolz.Graph.DemoMode;
 using Microsoft.Graph.Beta;
 using Microsoft.Graph.Beta.Models;
 using Microsoft.Kiota.Abstractions.Authentication;
 
-namespace IntuneTools.Tests;
+namespace InToolz.Tests;
 
 /// <summary>
 /// Demo Mode's fake Graph backend itself: telling demo clients apart from live ones, and list

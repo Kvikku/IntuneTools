@@ -1,4 +1,4 @@
-namespace IntuneTools.Utilities
+namespace InToolz.Utilities
 {
     /// <summary>
     /// Persists lightweight, per-page UI preferences — selected content-type filters and

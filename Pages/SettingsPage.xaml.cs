@@ -1,14 +1,14 @@
-using IntuneTools.Graph;
-using IntuneTools.Graph.DemoMode;
+using InToolz.Graph;
+using InToolz.Graph.DemoMode;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using System.Diagnostics;
-using static IntuneTools.Graph.EntraHelperClasses.PermissionGrantHelper;
+using static InToolz.Graph.EntraHelperClasses.PermissionGrantHelper;
 
-namespace IntuneTools.Pages
+namespace InToolz.Pages
 {
     /// <summary>
     /// Settings page for tenant authentication and application configuration.

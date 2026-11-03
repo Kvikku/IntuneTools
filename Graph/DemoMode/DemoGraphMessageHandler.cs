@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
-namespace IntuneTools.Graph.DemoMode;
+namespace InToolz.Graph.DemoMode;
 
 /// <summary>
 /// Terminal <see cref="HttpMessageHandler"/> for Demo Mode. Instead of calling

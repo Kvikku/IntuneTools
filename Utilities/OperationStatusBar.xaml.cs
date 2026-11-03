@@ -2,7 +2,7 @@
 using Microsoft.UI.Xaml.Controls;
 using System.Diagnostics;
 
-namespace IntuneTools.Utilities
+namespace InToolz.Utilities
 {
     /// <summary>
     /// Shared status bar shown in the page header during bulk operations.

@@ -1,8 +1,8 @@
-using IntuneTools.Pages;
+using InToolz.Pages;
 using System.Globalization;
 using System.Text.Encodings.Web;
 
-namespace IntuneTools.Utilities
+namespace InToolz.Utilities
 {
     /// <summary>
     /// Generates a self-contained HTML dashboard report from audit log events.

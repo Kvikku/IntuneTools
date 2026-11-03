@@ -1,7 +1,7 @@
 using System.Text;
 using Windows.Storage.Pickers;
 
-namespace IntuneTools.Utilities
+namespace InToolz.Utilities
 {
     public static class CsvExporter
     {

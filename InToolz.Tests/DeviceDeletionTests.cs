@@ -1,9 +1,9 @@
 using System.Net;
-using IntuneTools.Graph.EntraHelperClasses;
-using IntuneTools.Graph.IntuneHelperClasses;
+using InToolz.Graph.EntraHelperClasses;
+using InToolz.Graph.IntuneHelperClasses;
 using Microsoft.Graph.Beta.Models.ODataErrors;
 
-namespace IntuneTools.Tests;
+namespace InToolz.Tests;
 
 /// <summary>
 /// Stale device deletion has no undo, so these pin down exactly which Graph calls are made, and

@@ -1,6 +1,6 @@
 ﻿using Microsoft.UI.Xaml;
 
-namespace IntuneTools
+namespace InToolz
 {
     /// <summary>
     /// Provides application-specific behavior to supplement the default Application class.

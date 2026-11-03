@@ -1,7 +1,7 @@
 ﻿using Microsoft.Identity.Client;
 using Microsoft.Kiota.Abstractions.Authentication;
 
-namespace IntuneTools.Graph;
+namespace InToolz.Graph;
 /// <summary>
 /// Encapsulates reusable user-interactive authentication against Microsoft Graph (delegated) using MSAL PublicClientApplication.
 /// Wraps acquisition logic and returns a GraphServiceClient configured with a token provider that silently refreshes tokens.

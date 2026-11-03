@@ -1,6 +1,6 @@
-using static IntuneTools.Utilities.Variables;
+using static InToolz.Utilities.Variables;
 
-namespace IntuneTools.Tests;
+namespace InToolz.Tests;
 
 /// <summary>
 /// Tests for TimeSaved counter logic. Each test resets global state to avoid cross-test pollution.

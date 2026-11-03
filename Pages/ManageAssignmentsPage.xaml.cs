@@ -3,22 +3,22 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Text;
-using static IntuneTools.Graph.IntuneHelperClasses.AppleBYODEnrollmentProfileHelper;
-using static IntuneTools.Graph.IntuneHelperClasses.DeviceCompliancePolicyHelper;
-using static IntuneTools.Graph.IntuneHelperClasses.DeviceConfigurationHelper;
-using static IntuneTools.Graph.IntuneHelperClasses.macOSShellScript;
-using static IntuneTools.Graph.IntuneHelperClasses.PowerShellScriptsHelper;
-using static IntuneTools.Graph.IntuneHelperClasses.ProactiveRemediationsHelper;
-using static IntuneTools.Graph.IntuneHelperClasses.SettingsCatalogHelper;
-using static IntuneTools.Graph.IntuneHelperClasses.WindowsAutoPilotHelper;
-using static IntuneTools.Graph.IntuneHelperClasses.WindowsDriverUpdateHelper;
-using static IntuneTools.Graph.IntuneHelperClasses.WindowsFeatureUpdateHelper;
-using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdatePolicyHandler;
-using static IntuneTools.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHelper;
-using IntuneTools.Graph.EntraHelperClasses;
-using IntuneTools.Graph.IntuneHelperClasses;
+using static InToolz.Graph.IntuneHelperClasses.AppleBYODEnrollmentProfileHelper;
+using static InToolz.Graph.IntuneHelperClasses.DeviceCompliancePolicyHelper;
+using static InToolz.Graph.IntuneHelperClasses.DeviceConfigurationHelper;
+using static InToolz.Graph.IntuneHelperClasses.macOSShellScript;
+using static InToolz.Graph.IntuneHelperClasses.PowerShellScriptsHelper;
+using static InToolz.Graph.IntuneHelperClasses.ProactiveRemediationsHelper;
+using static InToolz.Graph.IntuneHelperClasses.SettingsCatalogHelper;
+using static InToolz.Graph.IntuneHelperClasses.WindowsAutoPilotHelper;
+using static InToolz.Graph.IntuneHelperClasses.WindowsDriverUpdateHelper;
+using static InToolz.Graph.IntuneHelperClasses.WindowsFeatureUpdateHelper;
+using static InToolz.Graph.IntuneHelperClasses.WindowsQualityUpdatePolicyHandler;
+using static InToolz.Graph.IntuneHelperClasses.WindowsQualityUpdateProfileHelper;
+using InToolz.Graph.EntraHelperClasses;
+using InToolz.Graph.IntuneHelperClasses;
 
-namespace IntuneTools.Pages
+namespace InToolz.Pages
 {
     /// <summary>
     /// Page for viewing and removing group assignments from Intune content.

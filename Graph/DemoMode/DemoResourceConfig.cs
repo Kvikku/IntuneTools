@@ -1,4 +1,4 @@
-namespace IntuneTools.Graph.DemoMode;
+namespace InToolz.Graph.DemoMode;
 
 /// <summary>
 /// Describes one Graph resource collection that <see cref="DemoGraphMessageHandler"/> knows how

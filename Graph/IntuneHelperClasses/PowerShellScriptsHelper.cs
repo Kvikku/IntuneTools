@@ -1,6 +1,6 @@
 using Microsoft.Graph;
 
-namespace IntuneTools.Graph.IntuneHelperClasses
+namespace InToolz.Graph.IntuneHelperClasses
 {
     public class PowerShellScriptsHelper
     {

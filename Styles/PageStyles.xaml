@@ -102,7 +102,7 @@
     </Style>
 
     <!-- ===== Contextual help =====
-         The small "?" button inside IntuneTools.Utilities.HelpTip. Deliberately
+         The small "?" button inside InToolz.Utilities.HelpTip. Deliberately
          subtle (transparent, no border) so it reads as an affordance next to a
          label rather than competing with real actions. -->
     <Style x:Key="HelpIconButtonStyle" TargetType="Button">

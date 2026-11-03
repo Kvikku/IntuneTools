@@ -3,7 +3,7 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows10.0.22621.0</TargetFramework>
 	<TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
-    <RootNamespace>IntuneTools</RootNamespace>
+    <RootNamespace>InToolz</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Platforms>x86;x64;ARM64</Platforms>
     <RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
@@ -34,7 +34,7 @@
   <!-- Project-wide global usings. Single source of truth alongside <ImplicitUsings>. -->
   <ItemGroup>
     <!-- Project namespaces referenced from most files. -->
-    <Using Include="IntuneTools.Utilities" />
+    <Using Include="InToolz.Utilities" />
 
     <!-- Microsoft Graph (Beta SDK is the primary surface used by this app). -->
     <Using Include="Microsoft.Graph.Beta" />
@@ -47,11 +47,11 @@
     <Using Include="Microsoft.Kiota.Serialization.Json" />
 
     <!-- Static helpers that are conceptually "ambient" across the app. -->
-    <Using Include="IntuneTools.Graph.DestinationUserAuthentication" Static="true" />
-    <Using Include="IntuneTools.Graph.SourceUserAuthentication" Static="true" />
-    <Using Include="IntuneTools.Utilities.HelperClass" Static="true" />
-    <Using Include="IntuneTools.Utilities.TimeSaved" Static="true" />
-    <Using Include="IntuneTools.Utilities.Variables" Static="true" />
+    <Using Include="InToolz.Graph.DestinationUserAuthentication" Static="true" />
+    <Using Include="InToolz.Graph.SourceUserAuthentication" Static="true" />
+    <Using Include="InToolz.Utilities.HelperClass" Static="true" />
+    <Using Include="InToolz.Utilities.TimeSaved" Static="true" />
+    <Using Include="InToolz.Utilities.Variables" Static="true" />
   </ItemGroup>
 
   <!-- Exclude nested test project from main compilation (SDK default glob picks up **/*.cs) -->

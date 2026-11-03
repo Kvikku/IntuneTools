@@ -1,9 +1,9 @@
 using System.Net;
 using System.Text.Json.Nodes;
-using IntuneTools.Graph;
-using static IntuneTools.Graph.EntraHelperClasses.PermissionGrantHelper;
+using InToolz.Graph;
+using static InToolz.Graph.EntraHelperClasses.PermissionGrantHelper;
 
-namespace IntuneTools.Tests;
+namespace InToolz.Tests;
 
 /// <summary>
 /// The "Also granted, but not used" report: reading the tenant's consent grant for this app,

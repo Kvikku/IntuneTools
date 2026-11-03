@@ -1,6 +1,6 @@
 using Microsoft.Graph;
 
-namespace IntuneTools.Graph.EntraHelperClasses
+namespace InToolz.Graph.EntraHelperClasses
 {
     /// <summary>
     /// Reads the delegated permission grant actually recorded for this app's own service

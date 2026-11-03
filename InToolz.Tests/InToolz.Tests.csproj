@@ -13,7 +13,7 @@
   <!-- Mirror the main project's global-using policy. -->
   <ItemGroup>
     <Using Include="Xunit" />
-    <Using Include="IntuneTools.Utilities" />
+    <Using Include="InToolz.Utilities" />
     <Using Include="System.Collections.ObjectModel" />
   </ItemGroup>
 

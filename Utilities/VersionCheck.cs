@@ -1,6 +1,6 @@
 ﻿using System.Net.Http.Headers;
 
-namespace IntuneTools.Utilities
+namespace InToolz.Utilities
 {
     public static class VersionCheck
     {

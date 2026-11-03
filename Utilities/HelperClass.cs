@@ -3,7 +3,7 @@ using Microsoft.UI.Xaml.Media.Imaging;
 using System.Globalization;
 using System.Runtime.InteropServices;
 
-namespace IntuneTools.Utilities
+namespace InToolz.Utilities
 {
     public class HelperClass
     {

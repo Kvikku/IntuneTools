@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 using Microsoft.Kiota.Abstractions;
 using Microsoft.Kiota.Abstractions.Authentication;
 
-namespace IntuneTools.Graph.DemoMode;
+namespace InToolz.Graph.DemoMode;
 
 /// <summary>
 /// Entry point for enabling Demo Mode: builds a <see cref="GraphServiceClient"/> wired to an
