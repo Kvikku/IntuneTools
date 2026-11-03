@@ -85,6 +85,8 @@ gh workflow run release.yml -f version=<new_version>
 
 Or navigate to **Actions → Release → Run workflow** in the GitHub UI and enter the version.
 
+When the pipeline itself has changed, suggest a dry run first: `gh workflow run release.yml -f version=<new_version> -f dry_run=true`. It runs the checks, builds and zips, and previews the notes, but pushes nothing and creates no release.
+
 #### Option B — Push a tag
 
 ```bash
@@ -98,11 +100,12 @@ The workflow triggers on tags matching `*.*.*.*`.
 
 Once triggered the `release.yml` workflow will:
 
-1. Stamp the version into `InToolz.csproj` and `Package.appxmanifest` (idempotent if you already bumped).
-2. Build a self-contained x64 release (`dotnet publish`).
-3. Zip the output as `InToolz_<version>_x64.zip`.
-4. Commit the version bump back to `master` (no-op if already committed).
-5. Create a **draft** GitHub Release with:
+1. Check the release is intended and stop if not: the commit is on `master`, the version is greater than the latest release tag, `InToolz.csproj` at that commit already says the version (when one was given), and `ci.yml` passed for the commit.
+2. Stamp the version into `InToolz.csproj` and `Package.appxmanifest` (idempotent if you already bumped).
+3. Build a self-contained x64 release (`dotnet publish`).
+4. Zip the output as `InToolz_<version>_x64.zip`.
+5. Commit the version bump back to `master` (no-op if already committed).
+6. Create a **draft** GitHub Release with:
    - Auto-generated "What's Changed" notes (from merged PRs since the last tag).
    - A **Download** section linking to the Microsoft Store.
    - A **Manual install** section.
@@ -175,10 +178,10 @@ When asked to "create a release", "bump the version", or "prepare a new version"
 A: The workflow auto-increments the *patch* segment from whatever is in `InToolz.csproj`. This is fine for quick patch releases but won't work for minor/major bumps.
 
 **Q: Can I skip the manual version bump and just trigger the workflow?**
-A: Yes — the workflow will stamp the version itself. However, doing the bump in a commit first keeps the repo in sync immediately and makes the git history cleaner.
+A: Only with auto-increment (no version given), where the workflow stamps the version itself. If you pass a version, `InToolz.csproj` at that commit must already say it, and the release stops otherwise — bump and merge first.
 
 **Q: What about the Microsoft Store submission?**
 A: The Store submission is a separate manual process. The GitHub release and Store release are independent, and the GitHub zip is not what the Store receives — the Store package is built from the `InToolzPackaged` project. Remind the user to also submit the new version to the Store if applicable, and point them to "Microsoft Store package" in `.github/RELEASE_GUIDE.md`.
 
 **Q: What if CI is failing on `master`?**
-A: Do not release. Fix CI first. The release workflow does not gate on CI, but shipping a broken build is bad practice.
+A: Do not release. Fix CI first. The release workflow refuses to run when `ci.yml` has no successful run for the commit.

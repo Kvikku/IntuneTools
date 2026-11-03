@@ -40,8 +40,11 @@ This auto-bumps the patch version (e.g. `1.4.0.0` → `1.4.1.0`) and commits the
    ```
 4. Same as steps 3-5 from Option A
 
+**The bump has to come first.** When you give a version, the workflow checks that `InToolz.csproj` at that commit already says it, and stops if not (see *Release checks and dry runs*).
+
 ## What happens automatically
 
+- Release checks run first and stop the release if the commit or version looks unintended
 - Version is stamped in `InToolz.csproj` and `Package.appxmanifest`
 - App is built, published as self-contained x64, and zipped
 - Version bump is committed back to `master`
@@ -49,6 +52,27 @@ This auto-bumps the patch version (e.g. `1.4.0.0` → `1.4.1.0`) and commits the
   - "What's Changed" (auto-generated from PRs) at the top
   - Download/Manual install sections at the bottom
   - Zip artifact attached
+
+## Release checks and dry runs
+
+Before anything is stamped, built or pushed, the workflow checks that the release is likely to be intended (`.github/scripts/ReleaseGuard.ps1`). It stops, with one message per problem, if:
+
+- the commit is not on `master`
+- the version is not greater than the latest release tag (a repeated or older version)
+- you gave a version, but `InToolz.csproj` at that commit does not already say it. This is what a premature tag looks like - the right number on a commit that does not contain the work - and the reason the version bump has to be merged first
+- `ci.yml` has no successful run for the commit
+
+The project-file check does not apply to Option A (no version given), which stamps the version itself.
+
+To try the pipeline without releasing anything, add `dry_run`:
+
+```
+gh workflow run release.yml -f version=1.9.0.0 -f dry_run=true
+```
+
+A dry run reports the checks as warnings, so you can see what would have stopped a real release, then builds and zips the app and previews the release notes in the run summary. It does not push the version bump or create the draft release. Add `--ref <branch>` to run it from a branch, which is how to test changes to the pipeline itself.
+
+The checks have their own tests, which CI also runs: `pwsh -NoProfile -File .github/scripts/ReleaseGuard.Tests.ps1`.
 
 ## Release notes
 
