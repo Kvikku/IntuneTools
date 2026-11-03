@@ -100,7 +100,7 @@ The workflow triggers on tags matching `*.*.*.*`.
 
 Once triggered the `release.yml` workflow will:
 
-1. Check the release is intended and stop if not: the commit is on `master`, the version is greater than the latest release tag, `InToolz.csproj` at that commit already says the version (when one was given), and `ci.yml` passed for the commit.
+1. Check the release is intended and stop if not: the commit is on `master`, the version is greater than the latest release tag, `InToolz.csproj` at that commit already says the version (when one was given), the version is not already published, and `ci.yml` passed for the commit. (Publishing the draft in step 6 creates the tag and starts the workflow once more; that run sees the release is published and does nothing.)
 2. Stamp the version into `InToolz.csproj` and `Package.appxmanifest` (idempotent if you already bumped).
 3. Build a self-contained x64 release (`dotnet publish`).
 4. Zip the output as `InToolz_<version>_x64.zip`.

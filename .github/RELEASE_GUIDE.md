@@ -59,10 +59,13 @@ Before anything is stamped, built or pushed, the workflow checks that the releas
 
 - the commit is not on `master`
 - the version is not greater than the latest release tag (a repeated or older version)
+- that version is already published (a draft with the same version is fine)
 - you gave a version, but `InToolz.csproj` at that commit does not already say it. This is what a premature tag looks like - the right number on a commit that does not contain the work - and the reason the version bump has to be merged first
 - `ci.yml` has no successful run for the commit
 
 The project-file check does not apply to Option A (no version given), which stamps the version itself.
+
+Publishing a draft release creates its tag, and that tag starts this workflow again. That run notices the release is already published and ends without doing anything, so it never rebuilds or overwrites the published release.
 
 To try the pipeline without releasing anything, add `dry_run`:
 

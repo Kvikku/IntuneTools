@@ -104,5 +104,19 @@ function Test-ReleaseIntent {
         $problems.Add("CI (ci.yml) has no successful run for commit $short. Wait for CI to finish or fix it, then release.")
     }
 
+
+    # 6. The version must not already be published. Publishing a draft release creates its tag, and
+    #    that tag push starts this workflow again (release.yml skips that run before it gets here).
+    #    A run that does reach this point for a published version was started by hand, and rebuilding
+    #    would overwrite the published release's notes and zip, as happened to 1.8.0.0. A draft with
+    #    the same version is fine: rerunning the workflow just updates the draft.
+    $published = gh release list --repo $Repository --limit 200 --json tagName,isDraft --jq ('[.[] | select(.tagName == "' + $Version + '" and .isDraft == false)] | length')
+    if ($LASTEXITCODE -ne 0) {
+        $problems.Add("Could not look up existing releases (the GitHub API call failed). Re-run the release.")
+    }
+    elseif ([int]$published -ge 1) {
+        $problems.Add("Release $Version is already published, so it will not be rebuilt. Use a new version number.")
+    }
+
     return $problems
 }

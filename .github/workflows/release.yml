@@ -32,6 +32,7 @@ jobs:
       actions: read      # to look up CI runs for the commit
     outputs:
       version: ${{ steps.version.outputs.VERSION }}
+      skip: ${{ steps.published.outputs.SKIP }}
 
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -76,7 +77,33 @@ jobs:
           echo "EXPLICIT=$explicit" >> $env:GITHUB_OUTPUT
           echo "Version: $ver"
 
+      # Publishing a draft release creates its tag, and that tag push starts this workflow again for a
+      # version that is already out. Rebuilding would overwrite the published release's notes and zip
+      # (it did, for 1.8.0.0), so such a run ends here, quietly. Dispatching an already-published
+      # version by hand is a mistake and still fails loudly in the checks below.
+      - name: Skip the run started by publishing a draft
+        id: published
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          VERSION: ${{ steps.version.outputs.VERSION }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          $skip = 'false'
+          if ($env:EVENT -eq 'push') {
+            $published = gh release list --repo $env:REPOSITORY --limit 200 --json tagName,isDraft --jq ('[.[] | select(.tagName == "' + $env:VERSION + '" and .isDraft == false)] | length')
+            if ($LASTEXITCODE -eq 0 -and [int]$published -ge 1) {
+              $skip = 'true'
+              Write-Host "::notice::Release $($env:VERSION) is already published, so this tag run has nothing to do. Publishing a draft creates its tag, which starts this workflow again."
+              "Release $($env:VERSION) is already published; this run was started by its tag and did nothing." | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+            }
+          }
+          echo "SKIP=$skip" >> $env:GITHUB_OUTPUT
+          exit 0
+
       - name: Check this release is intended
+        if: ${{ steps.published.outputs.SKIP != 'true' }}
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
@@ -109,6 +136,7 @@ jobs:
 
   build:
     needs: validate
+    if: ${{ needs.validate.outputs.skip != 'true' }}
     runs-on: windows-latest
     outputs:
       version: ${{ needs.validate.outputs.version }}

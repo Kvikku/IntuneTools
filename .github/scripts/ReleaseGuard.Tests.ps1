@@ -12,11 +12,14 @@ $ErrorActionPreference = 'Stop'
 $script:failures = 0
 $script:ciPassed = 1      # what the stand-in `gh` reports as successful ci.yml runs
 $script:ghFails = $false  # make the stand-in `gh` fail like an API error
+$script:publishedCount = 0 # how many published (non-draft) releases the stand-in `gh` reports for the version
 
 # Stand-in for the GitHub CLI; a function shadows the real executable.
 function gh {
     $global:LASTEXITCODE = if ($script:ghFails) { 1 } else { 0 }
-    if (-not $script:ghFails) { return $script:ciPassed }
+    if ($script:ghFails) { return }
+    if ($args[0] -eq 'release') { return $script:publishedCount }
+    return $script:ciPassed
 }
 
 function Assert-Guard {
@@ -91,8 +94,13 @@ try {
     $script:ciPassed = 1
 
     $script:ghFails = $true
-    Assert-Guard 'a failed CI lookup is reported, not ignored' (Invoke-Guard '1.8.0.0' $c2 '1.8.0.0') @('Could not look up CI runs')
+    Assert-Guard 'failed GitHub lookups are reported, not ignored' (Invoke-Guard '1.8.0.0' $c2 '1.8.0.0') @('Could not look up CI runs', 'Could not look up existing releases')
     $script:ghFails = $false
+
+    # Publishing a draft creates its tag, which starts the workflow again for a version that is already out.
+    $script:publishedCount = 1
+    Assert-Guard 'a version that is already published is rejected (the run started by publishing)' (Invoke-Guard '1.8.0.0' $c2 '1.8.0.0') @('already published')
+    $script:publishedCount = 0
 
     Use-Commit $c3
     $script:ciPassed = 0
