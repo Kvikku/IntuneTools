@@ -440,11 +440,11 @@ namespace InToolz.Graph.IntuneHelperClasses
             {
                 content.Add(new CustomContentInfo
                 {
-                    ContentName = script.DisplayName,
+                    ContentName = script.DisplayName ?? string.Empty,
                     ContentType = "Proactive Remediation",
                     ContentPlatform = "Windows",
-                    ContentId = script.Id,
-                    ContentDescription = script.Description
+                    ContentId = script.Id ?? string.Empty,
+                    ContentDescription = script.Description ?? string.Empty
                 });
             }
 
@@ -460,11 +460,11 @@ namespace InToolz.Graph.IntuneHelperClasses
             {
                 content.Add(new CustomContentInfo
                 {
-                    ContentName = script.DisplayName,
+                    ContentName = script.DisplayName ?? string.Empty,
                     ContentType = "Proactive Remediation",
                     ContentPlatform = "Windows",
-                    ContentId = script.Id,
-                    ContentDescription = script.Description
+                    ContentId = script.Id ?? string.Empty,
+                    ContentDescription = script.Description ?? string.Empty
                 });
             }
 

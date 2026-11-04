@@ -2,10 +2,10 @@ namespace InToolz.Utilities
 {
     public class DuplicateContentInfo
     {
-        public string? ContentName { get; set; }
-        public string? ContentType { get; set; }
-        public string? ContentId { get; set; }
-        public string? ContentPlatform { get; set; }
+        public string ContentName { get; set; } = string.Empty;
+        public string ContentType { get; set; } = string.Empty;
+        public string ContentId { get; set; } = string.Empty;
+        public string ContentPlatform { get; set; } = string.Empty;
         public DateTimeOffset? CreatedDateTime { get; set; }
         public DateTimeOffset? LastModifiedDateTime { get; set; }
         public bool? HasAssignments { get; set; }

@@ -902,8 +902,8 @@ namespace InToolz.Pages
                         DuplicatesLoadingOverlay.Show($"Fetching metadata... ({processed}/{totalDuplicateItems})");
                         ShowOperationProgress("Fetching duplicate metadata", processed, totalDuplicateItems);
 
-                        var normalizedType = UserInterfaceHelper.IsApplicationContentType(item.ContentType!)
-                            ? ContentTypes.Application : item.ContentType!;
+                        var normalizedType = UserInterfaceHelper.IsApplicationContentType(item.ContentType)
+                            ? ContentTypes.Application : item.ContentType;
 
                         var dupInfo = new DuplicateContentInfo
                         {
@@ -1395,10 +1395,10 @@ namespace InToolz.Pages
                 }
                 var exportList = EntraStaleDeviceList.Select(d => new CustomContentInfo
                 {
-                    ContentName = d.DisplayName,
+                    ContentName = d.DisplayName ?? string.Empty,
                     ContentType = "Entra ID Device",
-                    ContentPlatform = d.OperatingSystem,
-                    ContentId = d.DeviceObjectId,
+                    ContentPlatform = d.OperatingSystem ?? string.Empty,
+                    ContentId = d.DeviceObjectId ?? string.Empty,
                     ContentDescription = $"Join type: {d.JoinTypeDisplay} | Enabled: {d.EnabledDisplay} | Last sign-in: {d.LastSignInDisplay}"
                 }).ToList();
                 await ExportStaleDevicesCsvAsync(exportList);
@@ -1412,10 +1412,10 @@ namespace InToolz.Pages
                 }
                 var exportList = IntuneStaleDeviceList.Select(d => new CustomContentInfo
                 {
-                    ContentName = d.DeviceName,
+                    ContentName = d.DeviceName ?? string.Empty,
                     ContentType = "Managed Device",
-                    ContentPlatform = d.OperatingSystem,
-                    ContentId = d.DeviceId,
+                    ContentPlatform = d.OperatingSystem ?? string.Empty,
+                    ContentId = d.DeviceId ?? string.Empty,
                     ContentDescription = $"User: {d.UserPrincipalName} | Compliance: {d.ComplianceState} | Last sync: {d.LastSyncDisplay}"
                 }).ToList();
                 await ExportStaleDevicesCsvAsync(exportList);

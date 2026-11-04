@@ -451,11 +451,11 @@ namespace InToolz.Graph.IntuneHelperClasses
             {
                 content.Add(new CustomContentInfo
                 {
-                    ContentName = policy.DisplayName,
+                    ContentName = policy.DisplayName ?? string.Empty,
                     ContentType = "Windows Quality Update Policy",
                     ContentPlatform = "Windows",
-                    ContentId = policy.Id,
-                    ContentDescription = policy.Description
+                    ContentId = policy.Id ?? string.Empty,
+                    ContentDescription = policy.Description ?? string.Empty
                 });
             }
 
@@ -471,11 +471,11 @@ namespace InToolz.Graph.IntuneHelperClasses
             {
                 content.Add(new CustomContentInfo
                 {
-                    ContentName = policy.DisplayName,
+                    ContentName = policy.DisplayName ?? string.Empty,
                     ContentType = "Windows Quality Update Policy",
                     ContentPlatform = "Windows",
-                    ContentId = policy.Id,
-                    ContentDescription = policy.Description
+                    ContentId = policy.Id ?? string.Empty,
+                    ContentDescription = policy.Description ?? string.Empty
                 });
             }
 

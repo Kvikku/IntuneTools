@@ -485,11 +485,11 @@ namespace InToolz.Graph.IntuneHelperClasses
             {
                 content.Add(new CustomContentInfo
                 {
-                    ContentName = policy.Name,
+                    ContentName = policy.Name ?? string.Empty,
                     ContentType = "Settings Catalog",
                     ContentPlatform = HelperClass.TranslatePolicyPlatformName(policy.Platforms.ToString()),
-                    ContentId = policy.Id,
-                    ContentDescription = policy.Description
+                    ContentId = policy.Id ?? string.Empty,
+                    ContentDescription = policy.Description ?? string.Empty
                 });
             }
 
@@ -505,11 +505,11 @@ namespace InToolz.Graph.IntuneHelperClasses
             {
                 content.Add(new CustomContentInfo
                 {
-                    ContentName = policy.Name,
+                    ContentName = policy.Name ?? string.Empty,
                     ContentType = "Settings Catalog",
                     ContentPlatform = HelperClass.TranslatePolicyPlatformName(policy.Platforms.ToString()),
-                    ContentId = policy.Id,
-                    ContentDescription = policy.Description
+                    ContentId = policy.Id ?? string.Empty,
+                    ContentDescription = policy.Description ?? string.Empty
                 });
             }
 
