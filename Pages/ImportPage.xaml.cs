@@ -147,7 +147,7 @@ namespace InToolz.Pages
             if (string.IsNullOrWhiteSpace(savedQuery)) return;
 
             AppendToLog($"Auto-loading remembered search: '{savedQuery}'.");
-            await SearchOrchestrator(sourceGraphServiceClient, savedQuery);
+            await SearchOrchestrator(RequireSourceClient(), savedQuery);
         }
 
         protected override string[] GetManagedControlNames() => new[]
@@ -281,7 +281,7 @@ namespace InToolz.Pages
             try
             {
                 // Search for groups using the provided query
-                var groups = await SearchForGroups(destinationGraphServiceClient, searchQuery);
+                var groups = await SearchForGroups(RequireDestinationClient(), searchQuery);
                 // Update GroupList for DataGrid
                 foreach (var group in groups)
                 {
@@ -308,7 +308,7 @@ namespace InToolz.Pages
             try
             {
                 // Retrieve all groups
-                var groups = await GetAllGroups(destinationGraphServiceClient);
+                var groups = await GetAllGroups(RequireDestinationClient());
                 // Update ContentList for DataGrid
                 foreach (var group in groups)
                 {
@@ -345,7 +345,7 @@ namespace InToolz.Pages
                 FilterOptions.Clear();
 
                 // Retrieve all assignment filters
-                var filters = await GetAllAssignmentFilters(destinationGraphServiceClient);
+                var filters = await GetAllAssignmentFilters(RequireDestinationClient());
                 // Update FilterOptions for ComboBox
                 foreach (var filter in filters)
                 {
@@ -374,77 +374,79 @@ namespace InToolz.Pages
         private IEnumerable<ImportTypeDefinition> GetImportTypeRegistry(
             bool isGroupSelected,
             bool isFilterSelected,
-            List<string> groupIds)
+            List<string> groupIds,
+            GraphServiceClient sourceClient,
+            GraphServiceClient destinationClient)
         {
             yield return new ImportTypeDefinition(
                 ContentTypes.EntraGroup,
                 "Entra Groups",
-                async (ids, _) => await ImportMultipleGroups(sourceGraphServiceClient, destinationGraphServiceClient, ids));
+                async (ids, _) => await ImportMultipleGroups(sourceClient, destinationClient, ids));
 
             yield return new ImportTypeDefinition(
                 ContentTypes.SettingsCatalog,
                 "Settings Catalog policies",
-                async (ids, grpIds) => await ImportMultipleSettingsCatalog(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+                async (ids, grpIds) => await ImportMultipleSettingsCatalog(sourceClient, destinationClient, ids, isGroupSelected, isFilterSelected, grpIds));
 
             yield return new ImportTypeDefinition(
                 ContentTypes.DeviceCompliancePolicy,
                 "Device Compliance policies",
-                async (ids, grpIds) => await ImportMultipleDeviceCompliancePolicies(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+                async (ids, grpIds) => await ImportMultipleDeviceCompliancePolicies(sourceClient, destinationClient, ids, isGroupSelected, isFilterSelected, grpIds));
 
             yield return new ImportTypeDefinition(
                 ContentTypes.DeviceConfigurationPolicy,
                 "Device Configuration policies",
-                async (ids, grpIds) => await ImportMultipleDeviceConfigurations(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+                async (ids, grpIds) => await ImportMultipleDeviceConfigurations(sourceClient, destinationClient, ids, isGroupSelected, isFilterSelected, grpIds));
 
             yield return new ImportTypeDefinition(
                 ContentTypes.AppleBYODEnrollmentProfile,
                 "Apple BYOD Enrollment Profiles",
-                async (ids, grpIds) => await ImportMultipleAppleBYODEnrollmentProfiles(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+                async (ids, grpIds) => await ImportMultipleAppleBYODEnrollmentProfiles(sourceClient, destinationClient, ids, isGroupSelected, isFilterSelected, grpIds));
 
             yield return new ImportTypeDefinition(
                 ContentTypes.AssignmentFilter,
                 "Assignment Filters",
-                async (ids, _) => await ImportMultipleAssignmentFilters(sourceGraphServiceClient, destinationGraphServiceClient, ids));
+                async (ids, _) => await ImportMultipleAssignmentFilters(sourceClient, destinationClient, ids));
 
             yield return new ImportTypeDefinition(
                 ContentTypes.PowerShellScript,
                 "PowerShell Scripts",
-                async (ids, grpIds) => await ImportMultiplePowerShellScripts(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+                async (ids, grpIds) => await ImportMultiplePowerShellScripts(sourceClient, destinationClient, ids, isGroupSelected, isFilterSelected, grpIds));
 
             yield return new ImportTypeDefinition(
                 ContentTypes.ProactiveRemediation,
                 "Proactive Remediations",
-                async (ids, grpIds) => await ImportMultipleProactiveRemediations(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+                async (ids, grpIds) => await ImportMultipleProactiveRemediations(sourceClient, destinationClient, ids, isGroupSelected, isFilterSelected, grpIds));
 
             yield return new ImportTypeDefinition(
                 ContentTypes.MacOSShellScript,
                 "macOS Shell Scripts",
-                async (ids, grpIds) => await ImportMultiplemacOSShellScripts(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+                async (ids, grpIds) => await ImportMultiplemacOSShellScripts(sourceClient, destinationClient, ids, isGroupSelected, isFilterSelected, grpIds));
 
             yield return new ImportTypeDefinition(
                 ContentTypes.WindowsAutoPilotProfile,
                 "Windows AutoPilot Profiles",
-                async (ids, grpIds) => await ImportMultipleWindowsAutoPilotProfiles(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+                async (ids, grpIds) => await ImportMultipleWindowsAutoPilotProfiles(sourceClient, destinationClient, ids, isGroupSelected, isFilterSelected, grpIds));
 
             yield return new ImportTypeDefinition(
                 ContentTypes.WindowsDriverUpdate,
                 "Windows Driver Updates",
-                async (ids, grpIds) => await ImportMultipleDriverProfiles(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+                async (ids, grpIds) => await ImportMultipleDriverProfiles(sourceClient, destinationClient, ids, isGroupSelected, isFilterSelected, grpIds));
 
             yield return new ImportTypeDefinition(
                 ContentTypes.WindowsFeatureUpdate,
                 "Windows Feature Updates",
-                async (ids, grpIds) => await ImportMultipleWindowsFeatureUpdateProfiles(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+                async (ids, grpIds) => await ImportMultipleWindowsFeatureUpdateProfiles(sourceClient, destinationClient, ids, isGroupSelected, isFilterSelected, grpIds));
 
             yield return new ImportTypeDefinition(
                 ContentTypes.WindowsQualityUpdatePolicy,
                 "Windows Quality Update Policies",
-                async (ids, grpIds) => await ImportMultipleWindowsQualityUpdatePolicies(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+                async (ids, grpIds) => await ImportMultipleWindowsQualityUpdatePolicies(sourceClient, destinationClient, ids, isGroupSelected, isFilterSelected, grpIds));
 
             yield return new ImportTypeDefinition(
                 ContentTypes.WindowsQualityUpdateProfile,
                 "Windows Quality Update Profiles",
-                async (ids, grpIds) => await ImportMultipleWindowsQualityUpdateProfiles(sourceGraphServiceClient, destinationGraphServiceClient, ids, isGroupSelected, isFilterSelected, grpIds));
+                async (ids, grpIds) => await ImportMultipleWindowsQualityUpdateProfiles(sourceClient, destinationClient, ids, isGroupSelected, isFilterSelected, grpIds));
         }
 
         /// <summary>
@@ -565,7 +567,9 @@ namespace InToolz.Pages
                 .ToList();
 
             // Get import registry with current group/filter selection state
-            var importRegistry = GetImportTypeRegistry(IsGroupSelected, IsFilterSelected, groupIds).ToList();
+            var importRegistry = GetImportTypeRegistry(
+                IsGroupSelected, IsFilterSelected, groupIds,
+                RequireSourceClient(), RequireDestinationClient()).ToList();
 
             // Count total content types to import
             _importTotal = importRegistry.Count(def => HasContentType(def.TypeKey));
@@ -756,7 +760,7 @@ namespace InToolz.Pages
 
         private async void ListAllButton_Click(object sender, RoutedEventArgs e)
         {
-            await ListAllOrchestrator(sourceGraphServiceClient);
+            await ListAllOrchestrator(RequireSourceClient());
         }
 
         private void Option_Checked(object sender, RoutedEventArgs e)
@@ -779,7 +783,7 @@ namespace InToolz.Pages
             if (!string.IsNullOrEmpty(searchQuery))
             {
                 PageStatePersistence.SaveLastSearchQuery(PageStateKey, searchQuery);
-                await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
+                await SearchOrchestrator(RequireSourceClient(), searchQuery);
             }
             else
             {

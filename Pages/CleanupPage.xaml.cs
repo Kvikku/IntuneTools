@@ -172,7 +172,7 @@ namespace InToolz.Pages
             if (string.IsNullOrWhiteSpace(savedQuery)) return;
 
             AppendToDetailsRichTextBlock($"Auto-loading remembered search: '{savedQuery}'.");
-            await SearchOrchestrator(sourceGraphServiceClient, savedQuery);
+            await SearchOrchestrator(RequireSourceClient(), savedQuery);
         }
 
         protected override IEnumerable<string> GetManagedControlNames() => new[]
@@ -230,7 +230,8 @@ namespace InToolz.Pages
 
             ShowOperationProgress("Preparing to delete items...", 0, _deleteTotal);
 
-            foreach (var definition in GetDeleteTypeRegistry())
+            var client = RequireSourceClient();
+            foreach (var definition in GetDeleteTypeRegistry(client))
             {
                 // Applications have per-app ContentType values (e.g., "App - Windows app (Win32)"),
                 // so use the dedicated helper that matches any application content type.
@@ -343,9 +344,9 @@ namespace InToolz.Pages
         /// <summary>
         /// Handles AutoPilot profile deletion with special logic for assignment checking.
         /// </summary>
-        private async Task<bool> HandleAutoPilotProfileDeletion(string id)
+        private async Task<bool> HandleAutoPilotProfileDeletion(GraphServiceClient client, string id)
         {
-            var isAssigned = await CheckIfAutoPilotProfileHasAssignments(sourceGraphServiceClient, id);
+            var isAssigned = await CheckIfAutoPilotProfileHasAssignments(client, id);
 
             if (isAssigned == null)
             {
@@ -368,9 +369,9 @@ namespace InToolz.Pages
 
                 if (result == ContentDialogResult.Primary)
                 {
-                    await DeleteWindowsAutoPilotProfileAssignments(sourceGraphServiceClient, id);
+                    await DeleteWindowsAutoPilotProfileAssignments(client, id);
                     AppLogger.Info($"Deleted assignments for Windows AutoPilot profile with ID: {id}", appFunction.Delete);
-                    await DeleteWindowsAutopilotProfile(sourceGraphServiceClient, id);
+                    await DeleteWindowsAutopilotProfile(client, id);
                     return true;
                 }
                 else
@@ -381,7 +382,7 @@ namespace InToolz.Pages
             }
             else
             {
-                await DeleteWindowsAutopilotProfile(sourceGraphServiceClient, id);
+                await DeleteWindowsAutopilotProfile(client, id);
                 return true;
             }
         }
@@ -389,52 +390,52 @@ namespace InToolz.Pages
         /// <summary>
         /// Returns the delete registry with all content types and their delete operations.
         /// </summary>
-        private IEnumerable<DeleteTypeDefinition> GetDeleteTypeRegistry() =>
+        private IEnumerable<DeleteTypeDefinition> GetDeleteTypeRegistry(GraphServiceClient client) =>
         [
             new(ContentTypes.SettingsCatalog, "Settings Catalog",
-                async id => { await DeleteSettingsCatalog(sourceGraphServiceClient, id); return true; }),
+                async id => { await DeleteSettingsCatalog(client, id); return true; }),
 
             new(ContentTypes.DeviceCompliancePolicy, "Device Compliance Policy",
-                async id => { await DeleteDeviceCompliancePolicy(sourceGraphServiceClient, id); return true; }),
+                async id => { await DeleteDeviceCompliancePolicy(client, id); return true; }),
 
             new(ContentTypes.DeviceConfigurationPolicy, "Device Configuration Policy",
-                async id => { await DeleteDeviceConfigurationPolicy(sourceGraphServiceClient, id); return true; }),
+                async id => { await DeleteDeviceConfigurationPolicy(client, id); return true; }),
 
             new(ContentTypes.AppleBYODEnrollmentProfile, "Apple BYOD Enrollment Profile",
-                async id => { await DeleteAppleBYODEnrollmentProfile(sourceGraphServiceClient, id); return true; }),
+                async id => { await DeleteAppleBYODEnrollmentProfile(client, id); return true; }),
 
             new(ContentTypes.AssignmentFilter, "Assignment Filter",
-                async id => { await DeleteAssignmentFilter(sourceGraphServiceClient, id); return true; }),
+                async id => { await DeleteAssignmentFilter(client, id); return true; }),
 
             new(ContentTypes.EntraGroup, "Entra Group",
-                async id => { await DeleteSecurityGroup(sourceGraphServiceClient, id); return true; }),
+                async id => { await DeleteSecurityGroup(client, id); return true; }),
 
             new(ContentTypes.PowerShellScript, "PowerShell Script",
-                async id => { await DeletePowerShellScript(sourceGraphServiceClient, id); return true; }),
+                async id => { await DeletePowerShellScript(client, id); return true; }),
 
             new(ContentTypes.ProactiveRemediation, "Proactive Remediation",
-                async id => { await DeleteProactiveRemediationScript(sourceGraphServiceClient, id); return true; }),
+                async id => { await DeleteProactiveRemediationScript(client, id); return true; }),
 
             new(ContentTypes.MacOSShellScript, "macOS Shell Script",
-                async id => { await DeleteMacosShellScript(sourceGraphServiceClient, id); return true; }),
+                async id => { await DeleteMacosShellScript(client, id); return true; }),
 
             new(ContentTypes.WindowsAutoPilotProfile, "Windows AutoPilot Profile",
-                HandleAutoPilotProfileDeletion),
+                id => HandleAutoPilotProfileDeletion(client, id)),
 
             new(ContentTypes.WindowsDriverUpdate, "Windows Driver Update",
-                async id => { await DeleteDriverProfile(sourceGraphServiceClient, id); return true; }),
+                async id => { await DeleteDriverProfile(client, id); return true; }),
 
             new(ContentTypes.WindowsFeatureUpdate, "Windows Feature Update",
-                async id => { await DeleteWindowsFeatureUpdateProfile(sourceGraphServiceClient, id); return true; }),
+                async id => { await DeleteWindowsFeatureUpdateProfile(client, id); return true; }),
 
             new(ContentTypes.WindowsQualityUpdatePolicy, "Windows Quality Update Policy",
-                async id => { await DeleteWindowsQualityUpdatePolicy(sourceGraphServiceClient, id); return true; }),
+                async id => { await DeleteWindowsQualityUpdatePolicy(client, id); return true; }),
 
             new(ContentTypes.WindowsQualityUpdateProfile, "Windows Quality Update Profile",
-                async id => { await DeleteWindowsQualityUpdateProfile(sourceGraphServiceClient, id); return true; }),
+                async id => { await DeleteWindowsQualityUpdateProfile(client, id); return true; }),
 
             new(ContentTypes.Application, "Application",
-                async id => { await DeleteApplication(sourceGraphServiceClient, id); return true; }),
+                async id => { await DeleteApplication(client, id); return true; }),
         ];
 
         #endregion
@@ -639,12 +640,12 @@ namespace InToolz.Pages
 
         private async void ListAllButton_Click(object sender, RoutedEventArgs e)
         {
-            await ListAllOrchestrator(sourceGraphServiceClient);
+            await ListAllOrchestrator(RequireSourceClient());
         }
 
         private async void FindUnassignedButton_Click(object sender, RoutedEventArgs e)
         {
-            await FindUnassignedOrchestrator(sourceGraphServiceClient);
+            await FindUnassignedOrchestrator(RequireSourceClient());
         }
 
         private async void SearchStagingBar_SearchRequested(object sender, RoutedEventArgs e)
@@ -656,7 +657,7 @@ namespace InToolz.Pages
                 return;
             }
             PageStatePersistence.SaveLastSearchQuery(SearchStateKey, searchQuery);
-            await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
+            await SearchOrchestrator(RequireSourceClient(), searchQuery);
         }
 
         private async void ExportCsvButton_Click(object sender, RoutedEventArgs e)
@@ -698,7 +699,7 @@ namespace InToolz.Pages
 
         private async void ScanDuplicatesButton_Click(object sender, RoutedEventArgs e)
         {
-            await ScanDuplicatesOrchestrator(sourceGraphServiceClient);
+            await ScanDuplicatesOrchestrator(RequireSourceClient());
         }
 
         private void SelectOlderButton_Click(object sender, RoutedEventArgs e)
@@ -1015,7 +1016,7 @@ namespace InToolz.Pages
             };
             if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
 
-            var deleteRegistry = GetDeleteTypeRegistry().ToDictionary(d => d.TypeKey);
+            var deleteRegistry = GetDeleteTypeRegistry(RequireSourceClient()).ToDictionary(d => d.TypeKey);
             var total = selected.Count;
             var current = 0;
             var success = 0;
@@ -1188,7 +1189,7 @@ namespace InToolz.Pages
                 if (isEntra)
                 {
                     EntraStaleDeviceList.Clear();
-                    var results = await GetStaleEntraDevicesAsync(sourceGraphServiceClient, staleDays);
+                    var results = await GetStaleEntraDevicesAsync(RequireSourceClient(), staleDays);
                     foreach (var item in results) EntraStaleDeviceList.Add(item);
                     UserInterfaceHelper.RebindDataGrid(EntraStaleDevicesDataGrid, EntraStaleDeviceList);
                     AppLogger.Info($"Found {results.Count} Entra ID device(s) inactive for {staleDays}+ days.", appFunction.FindStaleDevices);
@@ -1197,7 +1198,7 @@ namespace InToolz.Pages
                 else
                 {
                     IntuneStaleDeviceList.Clear();
-                    var results = await GetStaleManagedDevicesAsync(sourceGraphServiceClient, staleDays);
+                    var results = await GetStaleManagedDevicesAsync(RequireSourceClient(), staleDays);
                     foreach (var item in results) IntuneStaleDeviceList.Add(item);
                     UserInterfaceHelper.RebindDataGrid(IntuneStaleDevicesDataGrid, IntuneStaleDeviceList);
                     AppLogger.Info($"Found {results.Count} Intune managed device(s) inactive for {staleDays}+ days.", appFunction.FindStaleDevices);
@@ -1331,6 +1332,7 @@ namespace InToolz.Pages
 
             if (isEntra)
             {
+                var client = RequireSourceClient();
                 foreach (var device in EntraStaleDeviceList.ToList())
                 {
                     current++;
@@ -1339,7 +1341,7 @@ namespace InToolz.Pages
                     if (string.IsNullOrEmpty(device.DeviceObjectId)) continue;
                     try
                     {
-                        await DeleteEntraDeviceAsync(sourceGraphServiceClient, device.DeviceObjectId);
+                        await DeleteEntraDeviceAsync(client, device.DeviceObjectId);
                         AppLogger.Info($"Deleted Entra ID device: '{device.DisplayName}'", appFunction.Delete);
                         UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
                         EntraStaleDeviceList.Remove(device);
@@ -1355,6 +1357,7 @@ namespace InToolz.Pages
             }
             else
             {
+                var client = RequireSourceClient();
                 foreach (var device in IntuneStaleDeviceList.ToList())
                 {
                     current++;
@@ -1363,7 +1366,7 @@ namespace InToolz.Pages
                     if (string.IsNullOrEmpty(device.DeviceId)) continue;
                     try
                     {
-                        await DeleteManagedDeviceAsync(sourceGraphServiceClient, device.DeviceId);
+                        await DeleteManagedDeviceAsync(client, device.DeviceId);
                         AppLogger.Info($"Deleted Intune managed device: '{device.DeviceName}'", appFunction.Delete);
                         UpdateTotalTimeSaved(secondsSavedOnDeleting, appFunction.Delete);
                         IntuneStaleDeviceList.Remove(device);

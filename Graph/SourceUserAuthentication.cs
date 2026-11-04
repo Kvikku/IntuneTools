@@ -39,6 +39,12 @@ public static class SourceUserAuthentication
         set => _instance.GraphClient = value;
     }
 
+    /// <summary>
+    /// The source client, guaranteed non-null. Throws if called before sign-in — which should never
+    /// happen from UI code, since <c>BaseMultiTenantPage</c> disables all actions until authenticated.
+    /// </summary>
+    public static GraphServiceClient RequireSourceClient() => _instance.RequireClient("source");
+
     public static IAccount? SignedInAccount => _instance.SignedInAccount;
     public static string? TenantId => _instance.TenantId;
 

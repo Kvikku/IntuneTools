@@ -21,6 +21,14 @@ internal sealed class UserAuthenticationBase
     public IAccount? SignedInAccount { get; private set; }
     public string? TenantId { get; private set; }
 
+    /// <summary>
+    /// Returns the current <see cref="GraphClient"/>, or throws if not signed in. Safe to call from
+    /// any UI action gated by <c>BaseMultiTenantPage.ValidateAuthenticationState</c>, since that gate
+    /// already guarantees a non-null client by the time such an action is reachable.
+    /// </summary>
+    public GraphServiceClient RequireClient(string tenantLabel) =>
+        GraphClient ?? throw new InvalidOperationException($"Not signed in to the {tenantLabel} tenant.");
+
     public UserAuthenticationBase(string[] defaultScopes)
     {
         _defaultScopes = defaultScopes;

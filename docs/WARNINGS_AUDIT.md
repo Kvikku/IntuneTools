@@ -11,6 +11,10 @@ changes — every fix was either an annotation correction matching code that was
 runtime, or an `?? string.Empty` fallback for a Graph field that's genuinely optional. Detail in the
 "Root causes" section below.
 
+**Step 3 (2026-11-04, branch `fix/graphserviceclient-non-null-guarantee`)**: resolved pattern 1 (the
+`graphServiceClient` design question). Result: **197 → 91 unique warning sites**, clean rebuild +
+147/147 tests. Detail in the rewritten pattern-1 section below.
+
 ## How this was measured
 
 ```
@@ -77,7 +81,7 @@ fixing the helpers is many small, repetitive ones.
 The 264 nullability warnings are not 264 separate problems. Nearly all of them trace back to **three**
 underlying causes:
 
-### 1. `graphServiceClient` and its `source`/`destination` variants are typed nullable, but never actually null in practice (100 of 189 CS8604, plus most of CS8602 where one of these is dereferenced directly)
+### 1. `graphServiceClient` and its `source`/`destination` variants are typed nullable, but never actually null in practice (100 of 189 CS8604, plus most of CS8602 where one of these is dereferenced directly) — **fixed 2026-11-04**
 
 This is exactly what #114 originally called out. Every page calls Graph helpers with a client that's
 only ever assigned post-sign-in, but the parameter/property type is nullable (`GraphServiceClient?`),
@@ -92,10 +96,42 @@ async id => (await sourceGraphServiceClient.DeviceManagement.ConfigurationPolici
 `sourceGraphServiceClient.DeviceManagement` is the dereference the compiler flags (CS8602) — the
 client itself is the thing that's nullable here, not anything Graph returns.
 
-**This is the one real design question in the whole audit**: where should "the user is signed in, so
-this is never null" actually be guaranteed? A guard at the top of each page's command handlers? A
-non-nullable property that throws if accessed pre-sign-in? Fixing the annotation without answering
-this just swaps one kind of wrong for another.
+**The design question was: where should "the user is signed in, so this is never null" actually be
+guaranteed?** Traced the invariant through the existing architecture instead of guessing: `SettingsPage`
+sets `sourceGraphServiceClient`/`Variables.sourceTenantName` together on sign-in and clears both
+together on sign-out (same is true for destination and for Demo Mode), and
+`BaseMultiTenantPage.ValidateAuthenticationState()` disables every action-triggering control unless
+`Variables.sourceTenantName`/`destinationTenantName` is non-empty. So the invariant already holds by
+construction — by the time any button handler can fire, the relevant client is guaranteed non-null.
+It just wasn't expressed in the type system.
+
+**The fix**: added a throwing accessor next to each existing nullable static —
+`SourceUserAuthentication.RequireSourceClient()` / `DestinationUserAuthentication.RequireDestinationClient()`
+(implemented once in `UserAuthenticationBase.RequireClient(string tenantLabel)`) — and replaced each
+outermost read of the nullable static (a button click handler, or the point where a per-content-type
+registry of lambdas is built) with a single captured call to the new accessor, threading the resulting
+non-null local through instead of re-reading the nullable static repeatedly. Where a registry-building
+method (`GetImportTypeRegistry`, `GetRenameTypeRegistry`, `GetDeleteTypeRegistry`) needed the client
+inside several closures, it got an added `GraphServiceClient client` parameter instead, so the caller
+captures once. Touched 6 pages: `ImportPage`, `AssignmentPage`, `RenamingPage`, `CleanupPage`,
+`ManageAssignmentsPage`, `JsonPage`.
+
+**One page needed a different answer, not the same fix**: `JsonPage`'s export/import already has an
+explicit `if (sourceGraphServiceClient == null)` check with a graceful fallback (export metadata-only
+JSON without a signed-in tenant is a deliberate feature, not a bug) — that code was left untouched;
+only its `ListAllButton_Click`/`SearchStagingBar_SearchRequested`/auto-run-search, which *are* gated by
+`ValidateAuthenticationState`, got the `RequireSourceClient()` treatment.
+
+**Found but out of scope for this pass**: a separate, smaller cluster of ~7 CS8604 sites
+(`AssignGroupsToSingleX(string xId, ...)` across `AppleBYODEnrollmentProfileHelper`,
+`DeviceCompliancePolicyHelper`, `DeviceConfigurationHelper`, `PowerShellScriptsHelper`,
+`ProactiveRemediationsHelper`, `WindowsAutoPilotHelper`, `macOSShellScript`) where a freshly-created
+Graph object's `.Id` (nullable per the SDK, but always present right after a successful `PostAsync`)
+flows into a non-nullable `string` parameter during import. Same shape as pattern 2/3, different call
+path (import, not list/export) — not discovered until this pass, not part of "pattern 1," left for a
+future session.
+
+**Result**: 197 → 91 unique warning sites, verified via clean rebuild + 147/147 tests.
 
 ### 2 & 3 (merged). `CustomContentInfo`/`DuplicateContentInfo` nullability and the `DisplayName`/`Id`/`Description` call sites that feed them — **fixed 2026-11-04**
 
@@ -162,17 +198,19 @@ resolving pattern 1 or 2 first.
 
 1. ~~Patterns 2 & 3 (`CustomContentInfo`/`DuplicateContentInfo` + `DisplayName`/`Id`/`Description`
    call sites)~~ — **done**, see above. 270 → 197 unique warnings.
-2. **Decide and apply the `graphServiceClient` non-null guarantee** (pattern 1) — the real remaining
-   design work. Prove it on one page end-to-end before repeating it across the other 3 pages and 13
-   helpers.
-3. **Guard the `PageIterator` call sites** (16, isolated, can happen any time, doesn't block on 2).
-4. **`CS0618` and `CS0168`** as their own small, unrelated PRs — not nullability, don't belong in the
-   same narrative as 2-3.
-5. **Long tail** (`CS8625`, `CS8600`, `CS8603`, `CS8619`, `CS8618` — now 12 warnings total after step
-   1; `CS8620` was already resolved as a side effect of step 1): look at these individually once 2-3
-   land; several may turn out to be the same root causes in a slightly different shape (not yet
-   checked in detail).
+2. ~~`graphServiceClient` non-null guarantee (pattern 1)~~ — **done**, see above. 197 → 91 unique
+   warnings.
+3. **The newly-found `AssignGroupsToSingleX` / import-flow `.Id` cluster** (~7 CS8604, found during
+   step 2, same shape as patterns 2/3 but in the import path — see above) — small, same playbook as
+   patterns 2/3 already proved: either a null-check/skip at the point the freshly-created object's
+   `.Id` is read, or confirm it's provably non-null right after `PostAsync` and say so.
+4. **Guard the `PageIterator` call sites** (16, isolated, can happen any time).
+5. **`CS0618` and `CS0168`** as their own small, unrelated PRs — not nullability, don't belong in the
+   same narrative as 3-4.
+6. **Long tail** (`CS8625`, `CS8600`, `CS8603`, `CS8619`, `CS8618` — 14 warnings total): look at these
+   individually; several may turn out to be the same root causes in a slightly different shape (not
+   yet checked in detail).
 
 Each step above should land as its own small, reviewable PR with a CI-enforced warning-count check
-(baseline ratchet) added once step 2 starts, so progress can't silently regress while this is spread
+(baseline ratchet) added once step 3 starts, so progress can't silently regress while this is spread
 across multiple sessions.
