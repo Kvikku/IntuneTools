@@ -73,7 +73,8 @@ namespace InToolz.Graph.IntuneHelperClasses
                     var profileName = profile;
                     try
                     {
-                        var result = await sourceGraphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profile].GetAsync();
+                        var result = await sourceGraphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[profile].GetAsync()
+                            ?? throw new InvalidOperationException($"Windows AutoPilot profile '{profile}' not found in source tenant.");
                         profileName = result.DisplayName ?? profile;
 
                         // Check what Autopilot profile it is
@@ -125,7 +126,8 @@ namespace InToolz.Graph.IntuneHelperClasses
                                     property.SetValue(requestBody, value);
                                 }
                             }
-                            var import = await destinationGraphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles.PostAsync(requestBody);
+                            var import = await destinationGraphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles.PostAsync(requestBody)
+                                ?? throw new InvalidOperationException("Graph returned no object for the newly-created Windows AutoPilot profile.");
                             AppLogger.Info($"Imported '{requestBody.DisplayName}' successfully.", appFunction.Import);
                             if (assignments)
                             {

@@ -99,7 +99,7 @@ namespace InToolz.Graph.IntuneHelperClasses
                         var result = await sourceGraphServiceClient.DeviceManagement.ConfigurationPolicies[policy].GetAsync((requestConfiguration) =>
                         {
                             requestConfiguration.QueryParameters.Expand = new[] { "settings" };
-                        });
+                        }) ?? throw new InvalidOperationException($"Settings catalog policy '{policy}' not found in source tenant.");
 
                         var newPolicy = new DeviceManagementConfigurationPolicy
                         {
@@ -114,7 +114,8 @@ namespace InToolz.Graph.IntuneHelperClasses
 
                         policyName = newPolicy.Name ?? policy;
 
-                        var import = await destinationGraphServiceClient.DeviceManagement.ConfigurationPolicies.PostAsync(newPolicy);
+                        var import = await destinationGraphServiceClient.DeviceManagement.ConfigurationPolicies.PostAsync(newPolicy)
+                            ?? throw new InvalidOperationException("Graph returned no object for the newly-created settings catalog policy.");
 
                         AppLogger.Info($"Imported '{import.Name}' successfully.", appFunction.Import);
 
@@ -344,7 +345,8 @@ namespace InToolz.Graph.IntuneHelperClasses
 
                 if (selectedRenameMode == "Prefix")
                 {
-                    var existingPolicy = await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].GetAsync();
+                    var existingPolicy = await graphServiceClient.DeviceManagement.ConfigurationPolicies[policyID].GetAsync()
+                        ?? throw new InvalidOperationException($"Settings catalog policy '{policyID}' not found.");
 
                     var name = FindPreFixInPolicyName(existingPolicy.Name, newName);
 

@@ -103,7 +103,7 @@ namespace InToolz.Graph.IntuneHelperClasses
                         var result = await sourceGraphServiceClient.DeviceManagement.DeviceCompliancePolicies[policy].GetAsync((requestConfiguration) =>
                         {
                             requestConfiguration.QueryParameters.Expand = new string[] { "scheduledActionsForRule($expand=scheduledActionConfigurations)" };
-                        });
+                        }) ?? throw new InvalidOperationException($"Device compliance policy '{policy}' not found in source tenant.");
 
                         policyName = result.DisplayName;
 
@@ -190,7 +190,8 @@ namespace InToolz.Graph.IntuneHelperClasses
                         };
 
 
-                        var import = await destinationGraphServiceClient.DeviceManagement.DeviceCompliancePolicies.PostAsync(deviceCompliancePolicy);
+                        var import = await destinationGraphServiceClient.DeviceManagement.DeviceCompliancePolicies.PostAsync(deviceCompliancePolicy)
+                            ?? throw new InvalidOperationException("Graph returned no object for the newly-created device compliance policy.");
                         AppLogger.Info($"Imported '{import.DisplayName}' successfully.", appFunction.Import);
 
                         if (assignments)

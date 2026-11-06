@@ -27,6 +27,12 @@ rewritten "Smaller, isolated pattern" section below.
 not-nullability fixes. Result: **67 → 62 unique warning sites**, clean rebuild + 147/147 tests.
 Detail in the rewritten "Not a nullability problem" section below.
 
+**Step 7 (2026-11-06, branch `fix/postasync-result-nullable-dereference`)**: resolved most of the
+CS8602 cluster — `GetAsync()`/`PostAsync()` results dereferenced without a null-check inside
+`ImportMultipleX` methods, plus one genuine latent bug (a correctly-written null-check positioned
+*after* its dereference). Result: **62 → 47 unique warning sites**, clean rebuild + 147/147 tests.
+Detail in the new section below.
+
 ## How this was measured
 
 ```
@@ -271,6 +277,54 @@ null) throw` guard predating this session — left untouched, not flagged, not p
 
 **Result**: 67 → 62 unique warning sites, verified via a clean rebuild. 147/147 tests pass.
 
+### 6. `GetAsync()`/`PostAsync()` results dereferenced without a null-check inside `ImportMultipleX` methods (CS8602) — **fixed 2026-11-06**
+
+The dominant shape in what was left of CS8602: every `ImportMultipleX` method does roughly
+
+```csharp
+var result = await sourceGraphServiceClient.X[id].GetAsync();        // source fetch, nullable
+... reflection copy from result into a new request body ...
+var import = await destinationGraphServiceClient.X.PostAsync(requestBody);  // create, nullable
+AppLogger.Info($"Imported '{import.DisplayName}' successfully.", appFunction.Import);
+```
+
+Same root cause as patterns 2/3 and the `AssignGroupsToSingleX` cluster — the SDK types both the
+single-item `GetAsync()` result and the `PostAsync()` result nullable, but in practice a *found*
+single-item fetch and a *successful* create are never null. Fixed 16 of these across
+`DeviceCompliancePolicyHelper`, `DeviceConfigurationHelper`, `WindowsAutoPilotHelper`,
+`PowerShellScriptsHelper`, `ProactiveRemediationsHelper`, `SettingsCatalogHelper` (import *and*
+rename methods), `AppleBYODEnrollmentProfileHelper`, `FilterHelperClass` with the same `?? throw new
+InvalidOperationException(...)` idiom used in step 4 — each site is already inside a per-item
+`try`/`catch` that logs a failure and continues, so this is a message-quality improvement, not a
+behavior change.
+
+**One site was a genuine latent bug, not an annotation gap**: `GroupHelperClass.ImportMultipleGroups`
+already had the right null-check (`if (sourceGroup == null) { ...skip...; continue; }`) — just
+positioned *after* the dereference (`groupName = sourceGroup.DisplayName`) instead of before it. If a
+group ID ever actually failed to resolve, this would have thrown `NullReferenceException` before ever
+reaching the graceful skip. Fixed by reordering, not by adding a throw — preserving the existing
+graceful-skip design the original author clearly intended, rather than overriding it with the
+`?? throw` idiom used everywhere else in this cluster (which is for cases with *no* existing
+handling).
+
+**Found but deferred, same session**: fixing `WindowsAutoPilotHelper`'s and
+`DeviceConfigurationHelper`'s `result`/`originalConfig` nullability unmasked a *different*, adjacent
+issue on the very next line in both — `result.OdataType.Contains(...)` /
+`originalConfig.OdataType.Equals(...)` dereference `OdataType` itself (not the object it hangs off
+of), which is independently nullable. Same shape as `ApplicationHelper.cs:288`'s
+`assignment.Target.OdataType` (already out of scope for this pass) — a `.OdataType`-nullable cluster
+spotted three times now, worth its own small, well-defined session.
+
+**Also explicitly out of scope, left for later**: the `as T` cast results dereferenced without a
+null-check (`DeviceCompliancePolicyHelper.cs:183`, `DeviceConfigurationHelper.cs:125` — the cast
+should never actually fail since `Activator.CreateInstance` is given a type derived from the same
+object, but that's a different kind of claim than "Graph guarantees this"); the `sender as DataGrid`
+casts in three UI sort handlers (`AssignmentPage.xaml.cs:922,1125`, `ImportPage.xaml.cs:727`); and
+`HelperClass.cs:235`'s `tenantInfo.Value[0]`, which needs its own decision about what an empty
+`Value` array should mean.
+
+**Result**: 62 → 47 unique warning sites, verified via a clean rebuild. 147/147 tests pass.
+
 ## Suggested sequencing
 
 1. ~~Patterns 2 & 3 (`CustomContentInfo`/`DuplicateContentInfo` + `DisplayName`/`Id`/`Description`
@@ -281,19 +335,28 @@ null) throw` guard predating this session — left untouched, not flagged, not p
    warnings.
 4. ~~Guard the `PageIterator` call sites~~ — **done**, see above. 83 → 67 unique warnings.
 5. ~~`CS0618` (3) and `CS0168` (2)~~ — **done**, see above. 67 → 62 unique warnings.
-6. **The `CS8602` dereference-of-`PostAsync`-result cluster** (26 total currently; at least some —
-   e.g. `PowerShellScriptsHelper`/`WindowsAutoPilotHelper`'s import methods — are "`PostAsync`'s
-   return type is itself nullable" rather than one of the already-fixed patterns; not yet sized or
-   categorized beyond that).
-7. **Remaining `CS8604` (8)**: a scattered, not-yet-categorized grab-bag — `ComboBox.SelectedItem`
+6. ~~`GetAsync()`/`PostAsync()` results dereferenced in `ImportMultipleX` methods~~ — **done**, see
+   above. 62 → 47 unique warnings.
+7. **The `.OdataType`-nullable cluster** (3 known sites — `ApplicationHelper.cs:288`,
+   `WindowsAutoPilotHelper.cs:84`, `DeviceConfigurationHelper.cs:90`; there may be more unexamined —
+   not yet fully surveyed): same root-cause shape as steps 1-3 and 6, just on an `OdataType`
+   discriminator string instead of `DisplayName`/`Id`/`Name`. Likely the next cheap, well-understood
+   win.
+8. **Remaining `CS8602`, not part of the `.OdataType` cluster** (8, three shapes): two `as T` casts
+   dereferenced unchecked (`DeviceCompliancePolicyHelper.cs:183`, `DeviceConfigurationHelper.cs:125`);
+   three `sender as DataGrid` UI sort-handler casts (`AssignmentPage.xaml.cs:922,1125`,
+   `ImportPage.xaml.cs:727`); two `script.Publisher.Equals(...)` calls on a possibly-null `Publisher`
+   in `ProactiveRemediationsHelper.cs:21,53`; and `HelperClass.cs:235`'s `tenantInfo.Value[0]`, which
+   needs its own decision about what an empty `Value` array should mean.
+9. **Remaining `CS8604` (8)**: a scattered, not-yet-categorized grab-bag — `ComboBox.SelectedItem`
    style UI inputs flowing into `HelperClass.Get*` setters (`AssignmentPage.xaml.cs`), a couple of
    `Dictionary`/`Collection` operations in `ImportPage.xaml.cs`, `FilterHelperClass.cs:99`,
    `MainWindow.xaml.cs:75`. Unlike the patterns above these don't obviously share one root cause —
    worth auditing individually before deciding on a fix shape.
-8. **Long tail** (`CS8625` 6, `CS8600` 4, `CS8601` 14, `CS8603` 2, `CS8619` 1, `CS8618` 1 — 28 total,
-   not yet investigated at all): look at these individually; several may turn out to be the same root
-   causes in a slightly different shape.
+10. **Long tail** (`CS8625` 6, `CS8600` 4, `CS8601` 14, `CS8603` 2, `CS8619` 1, `CS8618` 1 — 28
+    total, not yet investigated at all): look at these individually; several may turn out to be the
+    same root causes in a slightly different shape.
 
 Each step above should land as its own small, reviewable PR with a CI-enforced warning-count check
-(baseline ratchet) added once step 6 starts, so progress can't silently regress while this is spread
+(baseline ratchet) added once step 7 starts, so progress can't silently regress while this is spread
 across multiple sessions.

@@ -74,7 +74,8 @@ namespace InToolz.Graph.IntuneHelperClasses
                     var scriptName = script;
                     try
                     {
-                        var result = await sourceGraphServiceClient.DeviceManagement.DeviceManagementScripts[script].GetAsync();
+                        var result = await sourceGraphServiceClient.DeviceManagement.DeviceManagementScripts[script].GetAsync()
+                            ?? throw new InvalidOperationException($"PowerShell script '{script}' not found in source tenant.");
 
                         var requestBody = new DeviceManagementScript
                         {
@@ -92,7 +93,8 @@ namespace InToolz.Graph.IntuneHelperClasses
                         requestBody.Id = "";
                         scriptName = requestBody.DisplayName ?? script;
 
-                        var import = await destinationGraphServiceClient.DeviceManagement.DeviceManagementScripts.PostAsync(requestBody);
+                        var import = await destinationGraphServiceClient.DeviceManagement.DeviceManagementScripts.PostAsync(requestBody)
+                            ?? throw new InvalidOperationException("Graph returned no object for the newly-created PowerShell script.");
                         AppLogger.Info($"Imported '{requestBody.DisplayName}' successfully.", appFunction.Import);
 
                         if (assignments)

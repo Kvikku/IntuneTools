@@ -111,7 +111,8 @@ namespace InToolz.Graph.IntuneHelperClasses
                             }
                         }
 
-                        var importedProfile = await destinationGraphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles.PostAsync(newProfile);
+                        var importedProfile = await destinationGraphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles.PostAsync(newProfile)
+                            ?? throw new InvalidOperationException("Graph returned no object for the newly-created Apple BYOD enrollment profile.");
 
                         AppLogger.Info($"Imported '{importedProfile.DisplayName}' successfully.", appFunction.Import);
 

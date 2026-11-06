@@ -80,7 +80,8 @@ namespace InToolz.Graph.IntuneHelperClasses
                     var scriptName = script;
                     try
                     {
-                        var result = await sourceGraphServiceClient.DeviceManagement.DeviceHealthScripts[script].GetAsync();
+                        var result = await sourceGraphServiceClient.DeviceManagement.DeviceHealthScripts[script].GetAsync()
+                            ?? throw new InvalidOperationException($"Proactive remediation script '{script}' not found in source tenant.");
 
                         var requestBody = new DeviceHealthScript
                         {
@@ -99,7 +100,8 @@ namespace InToolz.Graph.IntuneHelperClasses
 
 
                         scriptName = requestBody.DisplayName ?? script;
-                        var import = await destinationGraphServiceClient.DeviceManagement.DeviceHealthScripts.PostAsync(requestBody);
+                        var import = await destinationGraphServiceClient.DeviceManagement.DeviceHealthScripts.PostAsync(requestBody)
+                            ?? throw new InvalidOperationException("Graph returned no object for the newly-created proactive remediation script.");
                         AppLogger.Info($"Imported '{import.DisplayName}' successfully.", appFunction.Import);
 
                         if (assignments)

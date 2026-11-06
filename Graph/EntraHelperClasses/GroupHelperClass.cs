@@ -156,13 +156,13 @@ namespace InToolz.Graph.EntraHelperClasses
                         // Select specific properties to potentially reduce payload size and avoid issues with read-only properties
                         sourceGroup = await sourceGraphServiceClient.Groups[groupId].GetAsync();
 
-                        groupName = sourceGroup.DisplayName ?? "Unnamed Group"; // Use DisplayName or default to "Unnamed Group"
-
                         if (sourceGroup == null)
                         {
                             AppLogger.Info($"Skipping {ItemType} ID {groupId}: Not found in source tenant.", appFunction.Import);
                             continue;
                         }
+
+                        groupName = sourceGroup.DisplayName ?? "Unnamed Group"; // Use DisplayName or default to "Unnamed Group"
 
 
 
