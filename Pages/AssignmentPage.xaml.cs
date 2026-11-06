@@ -352,7 +352,7 @@ namespace InToolz.Pages
 
                     try
                     {
-                        await AssignContentItemAsync(item.Value, groupList, sourceGraphServiceClient);
+                        await AssignContentItemAsync(item.Value, groupList, graphServiceClient);
 
                         _assignSuccessCount++;
                         typeCounts.TryGetValue(item.Value.ContentType, out int existing);
@@ -484,7 +484,7 @@ namespace InToolz.Pages
             ShowLoading("Loading groups from Microsoft Graph...");
             try
             {
-                var groups = await GetAllGroups(sourceGraphServiceClient);
+                var groups = await GetAllGroups(RequireSourceClient());
                 foreach (var group in groups)
                 {
                     GroupList.Add(new AssignmentGroupInfo
@@ -510,7 +510,7 @@ namespace InToolz.Pages
             ShowLoading("Searching for groups in Microsoft Graph...");
             try
             {
-                var groups = await SearchForGroups(sourceGraphServiceClient, searchQuery);
+                var groups = await SearchForGroups(RequireSourceClient(), searchQuery);
                 foreach (var group in groups)
                 {
                     GroupList.Add(new AssignmentGroupInfo
@@ -536,7 +536,7 @@ namespace InToolz.Pages
             try
             {
                 FilterOptions.Clear();
-                var filters = await GetAllAssignmentFilters(sourceGraphServiceClient);
+                var filters = await GetAllAssignmentFilters(RequireSourceClient());
                 foreach (var filter in filters)
                 {
                     FilterOptions.Add(filter);
@@ -603,7 +603,7 @@ namespace InToolz.Pages
 
         private async void ListAllButton_Click(object sender, RoutedEventArgs e)
         {
-            await ListAllOrchestrator(sourceGraphServiceClient);
+            await ListAllOrchestrator(RequireSourceClient());
         }
 
         private void RemoveSelectedButton_Click(object sender, RoutedEventArgs e)
@@ -658,7 +658,7 @@ namespace InToolz.Pages
 
         private async void AssignButton_Click(object sender, RoutedEventArgs e)
         {
-            await MainOrchestrator(sourceGraphServiceClient);
+            await MainOrchestrator(RequireSourceClient());
         }
 
         private async void GroupListAllButton_Click(object sender, RoutedEventArgs e)

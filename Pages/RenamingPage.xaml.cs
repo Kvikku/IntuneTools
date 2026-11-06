@@ -84,7 +84,7 @@ namespace InToolz.Pages
             if (string.IsNullOrWhiteSpace(savedQuery)) return;
 
             AppendToLog($"Auto-loading remembered search: '{savedQuery}'.");
-            await SearchOrchestrator(sourceGraphServiceClient, savedQuery);
+            await SearchOrchestrator(RequireSourceClient(), savedQuery);
         }
 
         protected override string UnauthenticatedMessage => "You must authenticate with a tenant before using renaming features.";
@@ -179,10 +179,11 @@ namespace InToolz.Pages
         {
             try
             {
+                var client = RequireSourceClient();
                 InitializeProgressTracking(totalItems);
                 ShowOperationProgress("Preparing to rename items...", 0, _renameTotal);
 
-                foreach (var definition in GetRenameTypeRegistry())
+                foreach (var definition in GetRenameTypeRegistry(client))
                 {
                     var ids = GetContentIdsByType(definition.TypeKey);
                     if (ids.Count > 0)
@@ -486,80 +487,80 @@ namespace InToolz.Pages
         /// <summary>
         /// Returns the rename registry with all content types and their rename operations.
         /// </summary>
-        private IEnumerable<RenameTypeDefinition> GetRenameTypeRegistry() =>
+        private IEnumerable<RenameTypeDefinition> GetRenameTypeRegistry(GraphServiceClient client) =>
         [
             new(ContentTypes.SettingsCatalog, "Settings Catalog",
-                async (id, p) => await RenameSettingsCatalogPolicy(sourceGraphServiceClient, id, p),
-                async id => (await sourceGraphServiceClient.DeviceManagement.ConfigurationPolicies[id]
+                async (id, p) => await RenameSettingsCatalogPolicy(client, id, p),
+                async id => (await client.DeviceManagement.ConfigurationPolicies[id]
                     .GetAsync(r => r.QueryParameters.Select = new[] { "name" }))?.Name),
 
             new(ContentTypes.DeviceCompliancePolicy, "Device Compliance Policy",
-                async (id, p) => await RenameDeviceCompliancePolicy(sourceGraphServiceClient, id, p),
-                async id => (await sourceGraphServiceClient.DeviceManagement.DeviceCompliancePolicies[id]
+                async (id, p) => await RenameDeviceCompliancePolicy(client, id, p),
+                async id => (await client.DeviceManagement.DeviceCompliancePolicies[id]
                     .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
 
             new(ContentTypes.DeviceConfigurationPolicy, "Device Configuration Policy",
-                async (id, p) => await RenameDeviceConfigurationPolicy(sourceGraphServiceClient, id, p),
-                async id => (await sourceGraphServiceClient.DeviceManagement.DeviceConfigurations[id]
+                async (id, p) => await RenameDeviceConfigurationPolicy(client, id, p),
+                async id => (await client.DeviceManagement.DeviceConfigurations[id]
                     .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
 
             new(ContentTypes.AppleBYODEnrollmentProfile, "Apple BYOD Enrollment Profile",
-                async (id, p) => await RenameAppleBYODEnrollmentProfile(sourceGraphServiceClient, id, p),
-                async id => (await sourceGraphServiceClient.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[id]
+                async (id, p) => await RenameAppleBYODEnrollmentProfile(client, id, p),
+                async id => (await client.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[id]
                     .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
 
             new(ContentTypes.MacOSShellScript, "macOS Shell Script",
-                async (id, p) => await RenameMacOSShellScript(sourceGraphServiceClient, id, p),
-                async id => (await sourceGraphServiceClient.DeviceManagement.DeviceShellScripts[id]
+                async (id, p) => await RenameMacOSShellScript(client, id, p),
+                async id => (await client.DeviceManagement.DeviceShellScripts[id]
                     .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
 
             new(ContentTypes.PowerShellScript, "PowerShell Script",
-                async (id, p) => await RenamePowerShellScript(sourceGraphServiceClient, id, p),
-                async id => (await sourceGraphServiceClient.DeviceManagement.DeviceManagementScripts[id]
+                async (id, p) => await RenamePowerShellScript(client, id, p),
+                async id => (await client.DeviceManagement.DeviceManagementScripts[id]
                     .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
 
             new(ContentTypes.ProactiveRemediation, "Proactive Remediation",
-                async (id, p) => await RenameProactiveRemediation(sourceGraphServiceClient, id, p),
-                async id => (await sourceGraphServiceClient.DeviceManagement.DeviceHealthScripts[id]
+                async (id, p) => await RenameProactiveRemediation(client, id, p),
+                async id => (await client.DeviceManagement.DeviceHealthScripts[id]
                     .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
 
             new(ContentTypes.WindowsAutoPilotProfile, "Windows AutoPilot Profile",
-                async (id, p) => await RenameWindowsAutoPilotProfile(sourceGraphServiceClient, id, p),
-                async id => (await sourceGraphServiceClient.DeviceManagement.WindowsAutopilotDeploymentProfiles[id]
+                async (id, p) => await RenameWindowsAutoPilotProfile(client, id, p),
+                async id => (await client.DeviceManagement.WindowsAutopilotDeploymentProfiles[id]
                     .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
 
             new(ContentTypes.WindowsDriverUpdate, "Windows Driver Update",
-                async (id, p) => await RenameDriverProfile(sourceGraphServiceClient, id, p),
-                async id => (await sourceGraphServiceClient.DeviceManagement.WindowsDriverUpdateProfiles[id]
+                async (id, p) => await RenameDriverProfile(client, id, p),
+                async id => (await client.DeviceManagement.WindowsDriverUpdateProfiles[id]
                     .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
 
             new(ContentTypes.WindowsFeatureUpdate, "Windows Feature Update",
-                async (id, p) => await RenameWindowsFeatureUpdateProfile(sourceGraphServiceClient, id, p),
-                async id => (await sourceGraphServiceClient.DeviceManagement.WindowsFeatureUpdateProfiles[id]
+                async (id, p) => await RenameWindowsFeatureUpdateProfile(client, id, p),
+                async id => (await client.DeviceManagement.WindowsFeatureUpdateProfiles[id]
                     .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
 
             new(ContentTypes.WindowsQualityUpdatePolicy, "Windows Quality Update Policy",
-                async (id, p) => await RenameWindowsQualityUpdatePolicy(sourceGraphServiceClient, id, p),
-                async id => (await sourceGraphServiceClient.DeviceManagement.WindowsQualityUpdatePolicies[id]
+                async (id, p) => await RenameWindowsQualityUpdatePolicy(client, id, p),
+                async id => (await client.DeviceManagement.WindowsQualityUpdatePolicies[id]
                     .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
 
             new(ContentTypes.WindowsQualityUpdateProfile, "Windows Quality Update Profile",
-                async (id, p) => await RenameWindowsQualityUpdateProfile(sourceGraphServiceClient, id, p),
-                async id => (await sourceGraphServiceClient.DeviceManagement.WindowsQualityUpdateProfiles[id]
+                async (id, p) => await RenameWindowsQualityUpdateProfile(client, id, p),
+                async id => (await client.DeviceManagement.WindowsQualityUpdateProfiles[id]
                     .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
 
             new(ContentTypes.AssignmentFilter, "Assignment Filter",
-                async (id, p) => await RenameAssignmentFilter(sourceGraphServiceClient, id, p),
-                async id => (await sourceGraphServiceClient.DeviceManagement.AssignmentFilters[id]
+                async (id, p) => await RenameAssignmentFilter(client, id, p),
+                async id => (await client.DeviceManagement.AssignmentFilters[id]
                     .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
 
             new(ContentTypes.EntraGroup, "Entra Group",
-                async (id, p) => await RenameGroup(sourceGraphServiceClient, id, p),
-                async id => (await sourceGraphServiceClient.Groups[id]
+                async (id, p) => await RenameGroup(client, id, p),
+                async id => (await client.Groups[id]
                     .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
 
             new(ContentTypes.Application, "Application",
-                async (id, p) => await RenameApplication(sourceGraphServiceClient, id, p)),
+                async (id, p) => await RenameApplication(client, id, p)),
         ];
 
         #endregion
@@ -668,7 +669,7 @@ namespace InToolz.Pages
 
         private async void ListAllButton_Click(object sender, RoutedEventArgs e)
         {
-            await ListAllOrchestrator(sourceGraphServiceClient);
+            await ListAllOrchestrator(RequireSourceClient());
         }
 
         private async void RenameButton_Click(object sender, RoutedEventArgs e)
@@ -769,7 +770,7 @@ namespace InToolz.Pages
                 return;
             }
             PageStatePersistence.SaveLastSearchQuery(PageStateKey, searchQuery);
-            await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
+            await SearchOrchestrator(RequireSourceClient(), searchQuery);
         }
 
         private async void ExportCsvButton_Click(object sender, RoutedEventArgs e)

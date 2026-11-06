@@ -143,7 +143,7 @@ namespace InToolz.Pages
             if (string.IsNullOrWhiteSpace(savedQuery)) return;
 
             AppendToDetailsRichTextBlock($"Auto-loading remembered search: '{savedQuery}'.");
-            await SearchOrchestrator(sourceGraphServiceClient, savedQuery);
+            await SearchOrchestrator(RequireSourceClient(), savedQuery);
         }
 
         protected override IEnumerable<string> GetManagedControlNames() => new[]
@@ -751,7 +751,7 @@ namespace InToolz.Pages
 
         private async void ListAllButton_Click(object sender, RoutedEventArgs e)
         {
-            await ListAllOrchestrator(sourceGraphServiceClient);
+            await ListAllOrchestrator(RequireSourceClient());
         }
 
         private async void SearchStagingBar_SearchRequested(object sender, RoutedEventArgs e)
@@ -763,7 +763,7 @@ namespace InToolz.Pages
                 return;
             }
             PageStatePersistence.SaveLastSearchQuery(PageStateKey, searchQuery);
-            await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
+            await SearchOrchestrator(RequireSourceClient(), searchQuery);
         }
 
         private async void ExportCsvButton_Click(object sender, RoutedEventArgs e)

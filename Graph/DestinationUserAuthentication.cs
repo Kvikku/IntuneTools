@@ -40,6 +40,13 @@ public static class DestinationUserAuthentication
         set => _instance.GraphClient = value;
     }
 
+    /// <summary>
+    /// The destination client, guaranteed non-null. Throws if called before sign-in — which should
+    /// never happen from UI code, since <c>BaseMultiTenantPage</c> disables all actions until
+    /// authenticated.
+    /// </summary>
+    public static GraphServiceClient RequireDestinationClient() => _instance.RequireClient("destination");
+
     public static IAccount? SignedInAccount => _instance.SignedInAccount;
     public static string? TenantId => _instance.TenantId;
 

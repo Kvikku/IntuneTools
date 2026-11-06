@@ -100,7 +100,7 @@ namespace InToolz.Pages
             if (string.IsNullOrWhiteSpace(savedQuery)) return;
 
             AppendToLog($"Auto-loading remembered search: '{savedQuery}'.");
-            await SearchOrchestrator(sourceGraphServiceClient, savedQuery);
+            await SearchOrchestrator(RequireSourceClient(), savedQuery);
         }
 
         protected override string UnauthenticatedMessage => "You must authenticate with a tenant before managing assignments.";
@@ -753,7 +753,7 @@ namespace InToolz.Pages
                 try
                 {
                     await removeRegistry[capturedContentType](
-                        sourceGraphServiceClient, capturedContentId, capturedAssignmentId);
+                        RequireSourceClient(), capturedContentId, capturedAssignmentId);
 
                     // Find and remove the row (the button's parent Grid)
                     var row = removeBtn.Parent as Grid;
@@ -904,7 +904,7 @@ namespace InToolz.Pages
 
         private async void ListAllButton_Click(object sender, RoutedEventArgs e)
         {
-            await ListAllOrchestrator(sourceGraphServiceClient);
+            await ListAllOrchestrator(RequireSourceClient());
         }
 
         private async void SearchStagingBar_SearchRequested(object sender, RoutedEventArgs e)
@@ -916,7 +916,7 @@ namespace InToolz.Pages
                 return;
             }
             PageStatePersistence.SaveLastSearchQuery(PageStateKey, searchQuery);
-            await SearchOrchestrator(sourceGraphServiceClient, searchQuery);
+            await SearchOrchestrator(RequireSourceClient(), searchQuery);
         }
 
         private async void ViewAssignmentsButton_Click(object sender, RoutedEventArgs e)
@@ -928,7 +928,7 @@ namespace InToolz.Pages
                 return;
             }
 
-            await ViewAssignmentsOrchestrator(sourceGraphServiceClient, selectedItems);
+            await ViewAssignmentsOrchestrator(RequireSourceClient(), selectedItems);
         }
 
         private async void ExportCsvButton_Click(object sender, RoutedEventArgs e)
@@ -942,6 +942,7 @@ namespace InToolz.Pages
             var viewRegistry = GetViewAssignmentRegistry();
             var rows = new List<(CustomContentInfo, IEnumerable<AssignmentInfo>)>();
             var allGroupIds = new List<string>();
+            var client = RequireSourceClient();
 
             ShowLoading("Fetching assignments for export...");
             try
@@ -957,7 +958,7 @@ namespace InToolz.Pages
 
                     try
                     {
-                        var assignments = await getDetailsFunc(sourceGraphServiceClient, item.ContentId) ?? new List<AssignmentInfo>();
+                        var assignments = await getDetailsFunc(client, item.ContentId) ?? new List<AssignmentInfo>();
                         rows.Add((item, assignments));
                         allGroupIds.AddRange(assignments
                             .Where(a => !string.IsNullOrEmpty(a.GroupId))
@@ -971,7 +972,7 @@ namespace InToolz.Pages
                 }
 
                 var groupNames = allGroupIds.Count > 0
-                    ? await GroupHelperClass.ResolveGroupNamesAsync(sourceGraphServiceClient, allGroupIds.Distinct(StringComparer.OrdinalIgnoreCase).ToList())
+                    ? await GroupHelperClass.ResolveGroupNamesAsync(client, allGroupIds.Distinct(StringComparer.OrdinalIgnoreCase).ToList())
                     : new Dictionary<string, string>();
 
                 var savedPath = await CsvExporter.ExportWithAssignmentsAsync(rows, groupNames, "ManageAssignments");
