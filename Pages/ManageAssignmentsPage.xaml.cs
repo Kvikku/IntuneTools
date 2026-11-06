@@ -209,7 +209,7 @@ namespace InToolz.Pages
             [ContentTypes.DeviceCompliancePolicy] = async (client, id, assignmentId) =>
             {
                 var all = await client.DeviceManagement.DeviceCompliancePolicies[id].Assignments.GetAsync();
-                await client.DeviceManagement.DeviceCompliancePolicies[id].Assign.PostAsync(
+                await client.DeviceManagement.DeviceCompliancePolicies[id].Assign.PostAsAssignPostResponseAsync(
                     new Microsoft.Graph.Beta.DeviceManagement.DeviceCompliancePolicies.Item.Assign.AssignPostRequestBody
                     { Assignments = all?.Value?.Where(a => a.Id != assignmentId).ToList() });
             },

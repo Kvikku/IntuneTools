@@ -234,7 +234,7 @@ namespace InToolz.Utilities
 
                 return tenantInfo.Value[0].DisplayName;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return "UNKNOWN"; // Return "UNKNOWN" if the tenant name cannot be retrieved
             }
