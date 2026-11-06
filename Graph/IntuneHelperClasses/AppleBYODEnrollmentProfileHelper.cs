@@ -117,7 +117,8 @@ namespace InToolz.Graph.IntuneHelperClasses
 
                         if (assignments && groups != null && groups.Any())
                         {
-                            await AssignGroupsToSingleAppleBYODEnrollmentProfile(importedProfile.Id, importedProfile.DisplayName ?? string.Empty, groups, destinationGraphServiceClient);
+                            var newProfileId = importedProfile.Id ?? throw new InvalidOperationException($"Imported profile '{importedProfile.DisplayName}' has no ID.");
+                            await AssignGroupsToSingleAppleBYODEnrollmentProfile(newProfileId, importedProfile.DisplayName ?? string.Empty, groups, destinationGraphServiceClient);
                         }
                     }
                     catch (Exception ex)

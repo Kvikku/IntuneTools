@@ -144,7 +144,8 @@ namespace InToolz.Graph.IntuneHelperClasses
 
                         if (assignments)
                         {
-                            await AssignGroupsToSingleDeviceConfiguration(import.Id, import.DisplayName ?? string.Empty, groups, destinationGraphServiceClient);
+                            var newConfigId = import.Id ?? throw new InvalidOperationException($"Imported configuration '{import.DisplayName}' has no ID.");
+                            await AssignGroupsToSingleDeviceConfiguration(newConfigId, import.DisplayName ?? string.Empty, groups, destinationGraphServiceClient);
                         }
                     }
                     catch (Exception ex)

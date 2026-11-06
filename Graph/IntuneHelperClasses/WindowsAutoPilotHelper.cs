@@ -123,7 +123,8 @@ namespace InToolz.Graph.IntuneHelperClasses
                             AppLogger.Info($"Imported '{requestBody.DisplayName}' successfully.", appFunction.Import);
                             if (assignments)
                             {
-                                await AssignGroupsToSingleWindowsAutoPilotProfile(import.Id, requestBody.DisplayName ?? string.Empty, groups, destinationGraphServiceClient);
+                                var profileId = import.Id ?? throw new InvalidOperationException($"Imported profile '{requestBody.DisplayName}' has no ID.");
+                                await AssignGroupsToSingleWindowsAutoPilotProfile(profileId, requestBody.DisplayName ?? string.Empty, groups, destinationGraphServiceClient);
                             }
                         }
                     }

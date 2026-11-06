@@ -192,7 +192,8 @@ namespace InToolz.Graph.IntuneHelperClasses
 
                         if (assignments)
                         {
-                            await AssignGroupsToSingleDeviceCompliance(import.Id, import.DisplayName ?? string.Empty, groups, destinationGraphServiceClient);
+                            var policyId = import.Id ?? throw new InvalidOperationException($"Imported policy '{import.DisplayName}' has no ID.");
+                            await AssignGroupsToSingleDeviceCompliance(policyId, import.DisplayName ?? string.Empty, groups, destinationGraphServiceClient);
                         }
                     }
                     catch (Exception ex)

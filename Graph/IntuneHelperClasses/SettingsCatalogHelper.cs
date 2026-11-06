@@ -114,7 +114,8 @@ namespace InToolz.Graph.IntuneHelperClasses
 
                         if (assignments)
                         {
-                            await AssignGroupsToSingleSettingsCatalog(import.Id, import.Name ?? string.Empty, groups, destinationGraphServiceClient);
+                            var policyId = import.Id ?? throw new InvalidOperationException($"Imported policy '{import.Name}' has no ID.");
+                            await AssignGroupsToSingleSettingsCatalog(policyId, import.Name ?? string.Empty, groups, destinationGraphServiceClient);
                         }
                     }
                     catch (Exception ex)

@@ -107,7 +107,8 @@ namespace InToolz.Graph.IntuneHelperClasses
                             if (assignments && groups != null && groups.Any())
                             {
                                 // Shell script assignments use a different structure
-                                await AssignGroupsToSingleShellScriptmacOS(importResult.Id, importResult.DisplayName ?? string.Empty, groups, destinationGraphServiceClient);
+                                var newScriptId = importResult.Id ?? throw new InvalidOperationException($"Imported script '{importResult.DisplayName}' has no ID.");
+                                await AssignGroupsToSingleShellScriptmacOS(newScriptId, importResult.DisplayName ?? string.Empty, groups, destinationGraphServiceClient);
                             }
                         }
                         else
