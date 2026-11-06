@@ -23,6 +23,10 @@ sites**, clean rebuild + 147/147 tests. Detail in the new section below.
 call sites. Result: **83 → 67 unique warning sites**, clean rebuild + 147/147 tests. Detail in the
 rewritten "Smaller, isolated pattern" section below.
 
+**Step 6 (2026-11-06, branch `fix/obsolete-api-and-unused-vars`)**: the two mechanical,
+not-nullability fixes. Result: **67 → 62 unique warning sites**, clean rebuild + 147/147 tests.
+Detail in the rewritten "Not a nullability problem" section below.
+
 ## How this was measured
 
 ```
@@ -250,15 +254,22 @@ null) throw` guard predating this session — left untouched, not flagged, not p
 
 **Result**: 83 → 67 unique warning sites, verified via a clean rebuild. 147/147 tests pass.
 
-## Not a nullability problem — separate, unrelated fixes
+## Not a nullability problem — separate, unrelated fixes — **fixed 2026-11-06**
 
 - **`CS0618` (3, obsolete API)**: `AssignRequestBuilder.PostAsync(...)` is obsolete in the current
-  Graph SDK; `PostAsAssignPostResponseAsync` replaces it. All 3 sites are assignment-related
-  (`DeviceCompliancePolicyHelper.cs:346,844`, `ManageAssignmentsPage.xaml.cs:212`). A mechanical API
-  migration, nothing to do with null-reference warnings — worth its own tiny PR rather than folding
-  into this effort.
-- **`CS0168` (2, unused variable)**: `WindowsAutoPilotHelper.cs:327` (`error`), `HelperClass.cs:237`
-  (`ex`). One-line deletes each, same shape as tonight's #116 cleanup.
+  Graph SDK; `PostAsAssignPostResponseAsync` replaces it. All 3 sites were assignment-related
+  (`DeviceCompliancePolicyHelper.cs` ×2, `ManageAssignmentsPage.xaml.cs` ×1) — a mechanical rename,
+  nothing to do with null-reference warnings. One of the three (`ManageAssignmentsPage.xaml.cs`'s
+  `GetRemoveSingleAssignmentRegistry`) was a copy-paste miss sitting right next to its own fix: the
+  `SettingsCatalog`/`DeviceConfigurationPolicy` branches of that same dictionary literal already used
+  `PostAsAssignPostResponseAsync`, only the `DeviceCompliancePolicy` branch in between still called
+  the obsolete `PostAsync`.
+- **`CS0168` (2, unused variable)**: `WindowsAutoPilotHelper.cs` (`catch (ODataError error)`),
+  `HelperClass.cs` (`catch (Exception ex)`) — neither body referenced the caught exception. Dropped
+  the variable name in both (`catch (ODataError)` / `catch (Exception)`), same shape as the #116
+  dead-static cleanup.
+
+**Result**: 67 → 62 unique warning sites, verified via a clean rebuild. 147/147 tests pass.
 
 ## Suggested sequencing
 
@@ -269,8 +280,7 @@ null) throw` guard predating this session — left untouched, not flagged, not p
 3. ~~`AssignGroupsToSingleX` / import-flow `.Id` cluster~~ — **done**, see above. 91 → 83 unique
    warnings.
 4. ~~Guard the `PageIterator` call sites~~ — **done**, see above. 83 → 67 unique warnings.
-5. **`CS0618` (3) and `CS0168` (2)** as their own small, unrelated PRs — not nullability, don't
-   belong in the same narrative as nullability work.
+5. ~~`CS0618` (3) and `CS0168` (2)~~ — **done**, see above. 67 → 62 unique warnings.
 6. **The `CS8602` dereference-of-`PostAsync`-result cluster** (26 total currently; at least some —
    e.g. `PowerShellScriptsHelper`/`WindowsAutoPilotHelper`'s import methods — are "`PostAsync`'s
    return type is itself nullable" rather than one of the already-fixed patterns; not yet sized or
@@ -285,5 +295,5 @@ null) throw` guard predating this session — left untouched, not flagged, not p
    causes in a slightly different shape.
 
 Each step above should land as its own small, reviewable PR with a CI-enforced warning-count check
-(baseline ratchet) added once step 5 starts, so progress can't silently regress while this is spread
+(baseline ratchet) added once step 6 starts, so progress can't silently regress while this is spread
 across multiple sessions.

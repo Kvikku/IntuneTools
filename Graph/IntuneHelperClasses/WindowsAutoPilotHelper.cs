@@ -331,7 +331,7 @@ namespace InToolz.Graph.IntuneHelperClasses
                 }
 
             }
-            catch (ODataError error)
+            catch (ODataError)
             {
                 AppLogger.Error("An error occurred while attempting to delete Autopilot profile assignments", appFunction.Delete);
             }

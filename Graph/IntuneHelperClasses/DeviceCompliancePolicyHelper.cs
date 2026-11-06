@@ -347,7 +347,7 @@ namespace InToolz.Graph.IntuneHelperClasses
 
                 try
                 {
-                    await destinationGraphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyID].Assign.PostAsync(requestBody);
+                    await destinationGraphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyID].Assign.PostAsAssignPostResponseAsync(requestBody);
                     UpdateTotalTimeSaved(assignments.Count * secondsSavedOnAssignments, appFunction.Assignment);
                 }
                 catch (Exception ex)
@@ -845,7 +845,7 @@ namespace InToolz.Graph.IntuneHelperClasses
                 Assignments = new List<DeviceCompliancePolicyAssignment>()
             };
 
-            await graphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyId].Assign.PostAsync(requestBody);
+            await graphServiceClient.DeviceManagement.DeviceCompliancePolicies[policyId].Assign.PostAsAssignPostResponseAsync(requestBody);
         }
     }
 
