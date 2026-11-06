@@ -24,6 +24,10 @@ namespace InToolz.Graph.IntuneHelperClasses
                     });
                     await pageIterator.IterateAsync();
                 }
+                else
+                {
+                    AppLogger.Warning("Graph returned no result when searching for Windows AutoPilot profiles.", appFunction.Main);
+                }
 
                 return profiles;
             }
@@ -52,6 +56,10 @@ namespace InToolz.Graph.IntuneHelperClasses
                         return true;
                     });
                     await pageIterator.IterateAsync();
+                }
+                else
+                {
+                    AppLogger.Warning("Graph returned no result when retrieving Windows AutoPilot profiles.", appFunction.Main);
                 }
 
                 return profiles;

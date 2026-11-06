@@ -34,6 +34,10 @@ namespace InToolz.Graph.EntraHelperClasses
                     // start the iteration
                     await pageIterator.IterateAsync();
                 }
+                else
+                {
+                    AppLogger.Warning("Graph returned no result when retrieving groups.", appFunction.Main);
+                }
 
                 // Add virtual groups for All Users and All Devices
                 var allUsersGroup = new Group
@@ -105,6 +109,10 @@ namespace InToolz.Graph.EntraHelperClasses
                     });
                     // start the iteration
                     await pageIterator.IterateAsync();
+                }
+                else
+                {
+                    AppLogger.Warning("Graph returned no result when searching for groups.", appFunction.Main);
                 }
 
                 // Populate the groupNameAndID dictionary with group names and IDs

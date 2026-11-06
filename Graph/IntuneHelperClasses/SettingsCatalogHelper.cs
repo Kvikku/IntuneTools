@@ -44,6 +44,10 @@ namespace InToolz.Graph.IntuneHelperClasses
                     });
                     await pageIterator.IterateAsync();
                 }
+                else
+                {
+                    AppLogger.Warning("Graph returned no result when searching for settings catalog policies.", appFunction.Main);
+                }
 
                 return configurationPolicies;
             }
@@ -72,6 +76,10 @@ namespace InToolz.Graph.IntuneHelperClasses
                         return true;
                     });
                     await pageIterator.IterateAsync();
+                }
+                else
+                {
+                    AppLogger.Warning("Graph returned no result when retrieving settings catalog policies.", appFunction.Main);
                 }
 
                 return configurationPolicies;

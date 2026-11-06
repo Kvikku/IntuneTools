@@ -33,6 +33,12 @@ CS8602 cluster — `GetAsync()`/`PostAsync()` results dereferenced without a nul
 *after* its dereference). Result: **62 → 47 unique warning sites**, clean rebuild + 147/147 tests.
 Detail in the new section below.
 
+**Pre-merge review (2026-11-06)**: ran a multi-angle review across the full stack (steps 2-7, 6 PRs)
+before merging. Caught one real regression from step 5 and fixed it in the same branch (see step 5's
+section) plus two unrelated trivial simplifications; several architectural/duplication observations
+were documented instead of fixed, to avoid re-touching 9+ files again right before merge — see "Found
+during pre-merge review, deferred" near the bottom.
+
 ## How this was measured
 
 ```
@@ -249,14 +255,23 @@ return items;
 ```
 
 **Fix**: wrapped the `CreatePageIterator`/`IterateAsync` pair in `if (result != null) { ... }` at all
-16 sites — mechanical, uniform, zero behavior change (a null `result` already meant "nothing to
-iterate"; now that's explicit instead of implicit). Deliberately used the same silent-skip shape
-everywhere rather than mixing in the `?? throw` style from pattern 4: these 8 files' `catch` blocks
-aren't uniform (`GroupHelperClass`'s two methods catch only `ODataError`, not a general `Exception`,
-while the other 7 files do catch general `Exception`), so throwing would have been safe in some files
-and an uncaught new exception path in others. The skip avoids depending on that catch-block shape at
-all. (`DeviceCompliancePolicyHelper.GetAllDeviceCompliancePolicies` already had its own `if (result ==
+16 sites — mechanical, uniform. Deliberately used the same silent-skip shape everywhere rather than
+mixing in the `?? throw` style from pattern 4: these 8 files' `catch` blocks aren't uniform
+(`GroupHelperClass`'s two methods catch only `ODataError`, not a general `Exception`, while the other
+7 files do catch general `Exception`), so throwing would have been safe in some files and an uncaught
+new exception path in others. The skip avoids depending on that catch-block shape at all.
+(`DeviceCompliancePolicyHelper.GetAllDeviceCompliancePolicies` already had its own `if (result ==
 null) throw` guard predating this session — left untouched, not flagged, not part of this fix.)
+
+**Correction, caught in pre-merge review (2026-11-06)**: the original claim of "zero behavior change"
+above was wrong. Before this fix, a null `result` meant `CreatePageIterator`/`IterateAsync` would
+dereference it and throw — an exception caught by each method's own enclosing `catch (Exception ex) {
+AppLogger.Error(...); return empty list; }`, so the failure was *logged*. After the fix, a null
+`result` silently produces an empty list with **no log at all** — a real diagnostic regression
+(a transient Graph hiccup now looks identical to "this tenant genuinely has zero items"). Fixed in the
+same branch by adding an `else { AppLogger.Warning(...); }` to all 16 sites, so the "nothing to
+iterate" case is visible again without reintroducing the exception-throwing behavior the skip was
+chosen to avoid.
 
 **Result**: 83 → 67 unique warning sites, verified via a clean rebuild. 147/147 tests pass.
 
@@ -324,6 +339,41 @@ casts in three UI sort handlers (`AssignmentPage.xaml.cs:922,1125`, `ImportPage.
 `Value` array should mean.
 
 **Result**: 62 → 47 unique warning sites, verified via a clean rebuild. 147/147 tests pass.
+
+## Found during pre-merge review, deferred (not a correctness bug — a maintainability observation)
+
+A multi-angle review across the full steps-2-through-7 stack, before merging any of it, repeatedly
+flagged the same shape from independent angles: this effort fixed every site by hand instead of
+introducing a shared helper, even though the fix shape repeats identically dozens of times.
+
+- **The `?? throw new InvalidOperationException("...")` idiom** (pattern 4 + step 7, ~17 sites across
+  9 files) each writes its own ad-hoc message. `UserAuthenticationBase.RequireClient(string
+  tenantLabel)` (pattern 1) is proof the codebase already reaches for a small shared "require non-null
+  or throw" helper when it's worth it — this effort didn't generalize that same idea to Graph
+  SDK call results (e.g. an `EnsureNotNull<T>(this T? value, string what)` extension), so a 10th
+  `PostAsync` call site added later has nothing nudging its author toward the guard.
+- **The `if (result != null) { ...CreatePageIterator...IterateAsync... }` guard** (step 5, 16 sites
+  across 8 files) is identical aside from type parameters. A shared `IterateAllPagesAsync<T,
+  TResponse>(client, result, onItem)` helper could absorb the null-check once, rather than depending
+  on every future copy-paste to retain the wrapping `if`.
+- **`RequireSourceClient()`/`RequireDestinationClient()` is a convention, not a compiler-enforced
+  guarantee.** The raw nullable `sourceGraphServiceClient`/`destinationGraphServiceClient` properties
+  are still public and still used directly in a few places — deliberately, for the `AttachDataGridContextMenu`
+  lazy-getter lambdas (see pattern 1's writeup: changing those to throw was explicitly considered and
+  rejected, since the lambda fires later, at a point this session didn't fully vet). Nothing in the
+  type system stops a future contributor from reading the raw property elsewhere out of habit or IDE
+  autocomplete, silently reintroducing the exact warning this pattern was built to prevent.
+- **`GetImportTypeRegistry`/`GetRenameTypeRegistry`/`GetDeleteTypeRegistry` take the client as a
+  parameter; every other orchestrator method in the same files calls `RequireSourceClient()` inline.**
+  This is deliberate (a registry built once needs the client threaded into many closures; a one-shot
+  orchestrator doesn't), but it's an asymmetry worth a one-line comment for the next person who copies
+  the wrong neighboring pattern.
+
+None of these are correctness bugs — the fixes that exist are all individually correct, verified by
+clean rebuilds and the full test suite at every step. They're flagged here because fixing them *now*
+would mean re-touching 9+ files a second time, right before merging six already-reviewed PRs; better
+as a deliberate follow-up session that extracts the shared helpers once, in one pass, rather than
+folded into warning-count work already in flight.
 
 ## Suggested sequencing
 

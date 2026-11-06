@@ -65,6 +65,10 @@ namespace InToolz.Graph.IntuneHelperClasses
                     // start the iteration
                     await pageIterator.IterateAsync();
                 }
+                else
+                {
+                    AppLogger.Warning("Graph returned no result when searching for device compliance policies.", appFunction.Main);
+                }
 
 
                 // Filter the collected policies based on the searchQuery - Graph API does not allow for server side filtering

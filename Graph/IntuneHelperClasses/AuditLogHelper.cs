@@ -45,6 +45,10 @@ namespace InToolz.Graph.IntuneHelperClasses
 
                     await pageIterator.IterateAsync(cancellationToken);
                 }
+                else
+                {
+                    AppLogger.Warning("Graph returned no result when retrieving audit events.", appFunction.AuditLog);
+                }
 
                 AppLogger.Info($"Retrieved {auditEvents.Count} audit event(s).", appFunction.AuditLog);
 

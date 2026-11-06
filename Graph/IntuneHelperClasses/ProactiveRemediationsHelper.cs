@@ -26,6 +26,10 @@ namespace InToolz.Graph.IntuneHelperClasses
                     });
                     await pageIterator.IterateAsync();
                 }
+                else
+                {
+                    AppLogger.Warning("Graph returned no result when searching for proactive remediation scripts.", appFunction.Main);
+                }
 
                 return healthScripts;
             }
@@ -57,6 +61,10 @@ namespace InToolz.Graph.IntuneHelperClasses
                         return true;
                     });
                     await pageIterator.IterateAsync();
+                }
+                else
+                {
+                    AppLogger.Warning("Graph returned no result when retrieving proactive remediation scripts.", appFunction.Main);
                 }
 
                 return healthScripts;

@@ -27,6 +27,10 @@ namespace InToolz.Graph.IntuneHelperClasses
 
                     await pageIterator.IterateAsync();
                 }
+                else
+                {
+                    AppLogger.Warning("Graph returned no result when searching for device configuration policies.", appFunction.Main);
+                }
 
                 return deviceConfigurations;
             }
@@ -58,6 +62,10 @@ namespace InToolz.Graph.IntuneHelperClasses
                         });
 
                     await pageIterator.IterateAsync();
+                }
+                else
+                {
+                    AppLogger.Warning("Graph returned no result when retrieving device configuration policies.", appFunction.Main);
                 }
 
                 return deviceConfigurations;
