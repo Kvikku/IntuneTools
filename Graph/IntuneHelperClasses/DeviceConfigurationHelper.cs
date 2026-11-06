@@ -95,7 +95,7 @@ namespace InToolz.Graph.IntuneHelperClasses
                             //requestConfiguration.QueryParameters.Expand = new[] { "settings" };
                         }) ?? throw new InvalidOperationException($"Device configuration '{configId}' not found in source tenant.");
 
-                        if (originalConfig.OdataType.Equals("#microsoft.graph.iosDeviceFeaturesConfiguration"))
+                        if (originalConfig.OdataType?.Equals("#microsoft.graph.iosDeviceFeaturesConfiguration") ?? false)
                         {
                             //MessageBox.Show("iOS Device Feature template is currently bugged in graph SDK. Handle manually until this is resolved");
                             //rtb.AppendText("iOS Device Feature template is currently bugged in graph SDK. Handle manually until this is resolved");

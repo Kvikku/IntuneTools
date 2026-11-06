@@ -37,7 +37,11 @@ Detail in the new section below.
 before merging. Caught one real regression from step 5 and fixed it in the same branch (see step 5's
 section) plus two unrelated trivial simplifications; several architectural/duplication observations
 were documented instead of fixed, to avoid re-touching 9+ files again right before merge — see "Found
-during pre-merge review, deferred" near the bottom.
+during pre-merge review, deferred" near the bottom. **Steps 2-7 merged to `master` 2026-11-06.**
+
+**Step 8 (2026-11-06, branch `fix/odatatype-nullable-cluster`)**: resolved the `.OdataType`-nullable
+cluster spotted during step 7's review. Result: **47 → 44 unique warning sites**, clean rebuild +
+147/147 tests. Detail in the new section below.
 
 ## How this was measured
 
@@ -340,6 +344,29 @@ casts in three UI sort handlers (`AssignmentPage.xaml.cs:922,1125`, `ImportPage.
 
 **Result**: 62 → 47 unique warning sites, verified via a clean rebuild. 147/147 tests pass.
 
+### 7. The `.OdataType`-nullable cluster (3 sites) — **fixed 2026-11-06**
+
+Spotted three times while fixing other clusters (see above), it turned out to be two distinct shapes
+rather than one:
+
+- `WindowsAutoPilotHelper.cs`'s `result.OdataType.Contains(...)` and `DeviceConfigurationHelper.cs`'s
+  `originalConfig.OdataType.Equals(...)` are genuinely about `OdataType` itself being nullable — the
+  object it hangs off of (`result`/`originalConfig`) was already proven non-null by step 7's `?? throw`
+  fix, but `OdataType` is its own separately-nullable string. Fixed with
+  `result.OdataType?.Contains(...) ?? false` — if the discriminator is ever actually missing, that's
+  the same as "doesn't match this particular known special case," which is already how the surrounding
+  code treats any other unrecognized `OdataType` value. No behavior change for the actual (always
+  non-null in practice) case.
+- `ApplicationHelper.cs`'s `assignment.Target.OdataType` turned out to be a *different* object
+  entirely — `Target`, not `OdataType`, is what's nullable here. Traced the three places this loop
+  constructs a `MobileAppAssignment` (all-users, all-devices, regular-group branches) and confirmed
+  every single one sets `Target` to a non-null object — so, same story, just one level up. Fixed with
+  `assignment.Target?.OdataType == "..."`, which is actually simpler than a `?? throw` here: comparing
+  a `string?` to a literal via `?.` is already null-safe and reads as "if there's no target, this
+  can't be that specific target type" — exactly the fallback behavior already implicit in the code.
+
+**Result**: 47 → 44 unique warning sites, verified via a clean rebuild. 147/147 tests pass.
+
 ## Found during pre-merge review, deferred (not a correctness bug — a maintainability observation)
 
 A multi-angle review across the full steps-2-through-7 stack, before merging any of it, repeatedly
@@ -387,13 +414,9 @@ folded into warning-count work already in flight.
 5. ~~`CS0618` (3) and `CS0168` (2)~~ — **done**, see above. 67 → 62 unique warnings.
 6. ~~`GetAsync()`/`PostAsync()` results dereferenced in `ImportMultipleX` methods~~ — **done**, see
    above. 62 → 47 unique warnings.
-7. **The `.OdataType`-nullable cluster** (3 known sites — `ApplicationHelper.cs:288`,
-   `WindowsAutoPilotHelper.cs:84`, `DeviceConfigurationHelper.cs:90`; there may be more unexamined —
-   not yet fully surveyed): same root-cause shape as steps 1-3 and 6, just on an `OdataType`
-   discriminator string instead of `DisplayName`/`Id`/`Name`. Likely the next cheap, well-understood
-   win.
-8. **Remaining `CS8602`, not part of the `.OdataType` cluster** (8, three shapes): two `as T` casts
-   dereferenced unchecked (`DeviceCompliancePolicyHelper.cs:183`, `DeviceConfigurationHelper.cs:125`);
+7. ~~The `.OdataType`-nullable cluster~~ — **done**, see above. 47 → 44 unique warnings.
+8. **Remaining `CS8602`** (8, three shapes): two `as T` casts dereferenced unchecked
+   (`DeviceCompliancePolicyHelper.cs:183`, `DeviceConfigurationHelper.cs:125`);
    three `sender as DataGrid` UI sort-handler casts (`AssignmentPage.xaml.cs:922,1125`,
    `ImportPage.xaml.cs:727`); two `script.Publisher.Equals(...)` calls on a possibly-null `Publisher`
    in `ProactiveRemediationsHelper.cs:21,53`; and `HelperClass.cs:235`'s `tenantInfo.Value[0]`, which
@@ -408,5 +431,5 @@ folded into warning-count work already in flight.
     same root causes in a slightly different shape.
 
 Each step above should land as its own small, reviewable PR with a CI-enforced warning-count check
-(baseline ratchet) added once step 7 starts, so progress can't silently regress while this is spread
+(baseline ratchet) added once step 8 starts, so progress can't silently regress while this is spread
 across multiple sessions.

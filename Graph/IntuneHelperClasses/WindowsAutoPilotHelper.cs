@@ -89,7 +89,7 @@ namespace InToolz.Graph.IntuneHelperClasses
 
 
 
-                        if (result.OdataType.Contains("ActiveDirectory", StringComparison.OrdinalIgnoreCase))
+                        if (result.OdataType?.Contains("ActiveDirectory", StringComparison.OrdinalIgnoreCase) ?? false)
                         {
                             AppLogger.Warning("Hybrid Autopilot profiles are currently bugged in Graph API/C# SDK. Please handle manually for now.", appFunction.Import);
 
@@ -120,7 +120,7 @@ namespace InToolz.Graph.IntuneHelperClasses
 
                         }
 
-                        else if (result.OdataType.Contains("azureAD"))
+                        else if (result.OdataType?.Contains("azureAD") ?? false)
                         {
                             var requestBody = new WindowsAutopilotDeploymentProfile
                             {
