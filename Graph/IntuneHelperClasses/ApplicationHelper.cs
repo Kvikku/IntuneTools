@@ -524,11 +524,11 @@ namespace InToolz.Graph.IntuneHelperClasses
             {
                 content.Add(new CustomContentInfo
                 {
-                    ContentName = app.DisplayName,
+                    ContentName = app.DisplayName ?? string.Empty,
                     ContentType = HelperClass.TranslateApplicationType(app.OdataType),
                     ContentPlatform = HelperClass.TranslatePolicyPlatformName(app.OdataType),
-                    ContentId = app.Id,
-                    ContentDescription = app.Description
+                    ContentId = app.Id ?? string.Empty,
+                    ContentDescription = app.Description ?? string.Empty
                 });
             }
 
@@ -622,11 +622,11 @@ namespace InToolz.Graph.IntuneHelperClasses
             {
                 content.Add(new CustomContentInfo
                 {
-                    ContentName = app.DisplayName,
+                    ContentName = app.DisplayName ?? string.Empty,
                     ContentType = HelperClass.TranslateApplicationType(app.OdataType),
                     ContentPlatform = HelperClass.TranslatePolicyPlatformName(app.OdataType),
-                    ContentId = app.Id,
-                    ContentDescription = app.Description
+                    ContentId = app.Id ?? string.Empty,
+                    ContentDescription = app.Description ?? string.Empty
                 });
             }
 

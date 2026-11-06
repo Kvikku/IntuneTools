@@ -64,13 +64,13 @@ namespace InToolz.Utilities
 
         /// Graph helper methods ///
 
-        public static string TranslatePolicyPlatformName(string platformName)
+        public static string TranslatePolicyPlatformName(string? platformName)
         {
             // This method translates the platform name to a user-friendly format
 
             if (string.IsNullOrEmpty(platformName))
             {
-                return platformName;
+                return platformName ?? string.Empty;
             }
 
             // Check for substrings to handle variations
@@ -124,11 +124,11 @@ namespace InToolz.Utilities
             };
         }
 
-        public static string TranslateApplicationType(string odataType)
+        public static string TranslateApplicationType(string? odataType)
         {
             if (string.IsNullOrEmpty(odataType))
             {
-                return odataType;
+                return odataType ?? string.Empty;
             }
 
             return odataType switch
@@ -151,11 +151,11 @@ namespace InToolz.Utilities
             };
         }
 
-        public static string TranslateODataTypeFromApplicationType(string applicationType)
+        public static string TranslateODataTypeFromApplicationType(string? applicationType)
         {
             if (string.IsNullOrEmpty(applicationType))
             {
-                return applicationType;
+                return applicationType ?? string.Empty;
             }
 
             return applicationType switch
@@ -382,10 +382,10 @@ namespace InToolz.Utilities
         /// Removes an exact prefix string from the start of a policy name (case-sensitive).
         /// Trims any leading whitespace left after removal.
         /// </summary>
-        public static string RemoveExactPrefixFromPolicyName(string policyName, string prefix)
+        public static string RemoveExactPrefixFromPolicyName(string? policyName, string prefix)
         {
             if (string.IsNullOrWhiteSpace(policyName) || string.IsNullOrEmpty(prefix))
-                return policyName;
+                return policyName ?? string.Empty;
 
             policyName = policyName.Trim();
             if (policyName.StartsWith(prefix, StringComparison.Ordinal))
@@ -400,7 +400,7 @@ namespace InToolz.Utilities
         /// <summary>
         /// Dispatches to freeform or bracket-style prefix removal based on selectedRemovePrefixString.
         /// </summary>
-        public static string ApplyPrefixRemoval(string policyName) =>
+        public static string ApplyPrefixRemoval(string? policyName) =>
             string.IsNullOrEmpty(selectedRemovePrefixString)
                 ? RemovePrefixFromPolicyName(policyName)
                 : RemoveExactPrefixFromPolicyName(policyName, selectedRemovePrefixString);
@@ -408,7 +408,7 @@ namespace InToolz.Utilities
         /// <summary>
         /// Appends a suffix to a policy name, separated by a space.
         /// </summary>
-        public static string FindSuffixInPolicyName(string policyName, string suffix)
+        public static string FindSuffixInPolicyName(string? policyName, string suffix)
         {
             if (string.IsNullOrWhiteSpace(policyName))
                 return suffix;
@@ -419,10 +419,10 @@ namespace InToolz.Utilities
         /// Removes an exact suffix string from the end of a policy name (case-sensitive).
         /// Trims any trailing whitespace left after removal.
         /// </summary>
-        public static string RemoveExactSuffixFromPolicyName(string policyName, string suffix)
+        public static string RemoveExactSuffixFromPolicyName(string? policyName, string suffix)
         {
             if (string.IsNullOrWhiteSpace(policyName) || string.IsNullOrEmpty(suffix))
-                return policyName;
+                return policyName ?? string.Empty;
 
             policyName = policyName.Trim();
             if (policyName.EndsWith(suffix, StringComparison.Ordinal))
@@ -437,17 +437,17 @@ namespace InToolz.Utilities
         /// <summary>
         /// Removes the configured suffix from a policy name using selectedRemoveSuffixString.
         /// </summary>
-        public static string ApplySuffixRemoval(string policyName) =>
+        public static string ApplySuffixRemoval(string? policyName) =>
             RemoveExactSuffixFromPolicyName(policyName, selectedRemoveSuffixString);
 
         /// <summary>
         /// Replaces all occurrences of selectedFindString with selectedReplaceString (case-sensitive).
         /// Returns policyName unchanged if selectedFindString is empty.
         /// </summary>
-        public static string ApplyFindAndReplace(string policyName)
+        public static string ApplyFindAndReplace(string? policyName)
         {
             if (string.IsNullOrEmpty(selectedFindString) || string.IsNullOrWhiteSpace(policyName))
-                return policyName;
+                return policyName ?? string.Empty;
             return policyName.Replace(selectedFindString, selectedReplaceString, StringComparison.Ordinal);
         }
 
@@ -457,11 +457,11 @@ namespace InToolz.Utilities
         /// </summary>
         /// <param name="policyName">The original policy name with a potential prefix.</param>
         /// <returns>The policy name without the prefix, or the original name if no prefix found.</returns>
-        public static string RemovePrefixFromPolicyName(string policyName)
+        public static string RemovePrefixFromPolicyName(string? policyName)
         {
             if (string.IsNullOrWhiteSpace(policyName))
             {
-                return policyName;
+                return policyName ?? string.Empty;
             }
 
             policyName = policyName.Trim();
@@ -497,7 +497,7 @@ namespace InToolz.Utilities
             return policyName;
         }
 
-        public static string FindPreFixInPolicyName(string policyName, string newPolicyName)
+        public static string FindPreFixInPolicyName(string? policyName, string newPolicyName)
         {
             if (string.IsNullOrWhiteSpace(policyName))
             {

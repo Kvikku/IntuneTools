@@ -222,8 +222,7 @@ namespace InToolz.Pages
                 // Clean up content platform value (operating system names) in ContentList
                 foreach (var content in ContentList)
                 {
-                    var cleanedValue = TranslatePolicyPlatformName(content?.ContentPlatform);
-                    content.ContentPlatform = cleanedValue ?? string.Empty;
+                    content.ContentPlatform = TranslatePolicyPlatformName(content.ContentPlatform);
                 }
 
                 // Bind to DataGrid
@@ -259,8 +258,7 @@ namespace InToolz.Pages
                 // Clean up content platform value (operating system names) in ContentList
                 foreach (var content in ContentList)
                 {
-                    var cleanedValue = TranslatePolicyPlatformName(content?.ContentPlatform);
-                    content.ContentPlatform = cleanedValue ?? string.Empty;
+                    content.ContentPlatform = TranslatePolicyPlatformName(content.ContentPlatform);
                 }
 
                 // Bind to DataGrid

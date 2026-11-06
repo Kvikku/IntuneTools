@@ -435,11 +435,11 @@ namespace InToolz.Graph.EntraHelperClasses
             {
                 content.Add(new CustomContentInfo
                 {
-                    ContentName = group.DisplayName,
+                    ContentName = group.DisplayName ?? string.Empty,
                     ContentType = "Entra Group",
                     ContentPlatform = "Entra group",
-                    ContentId = group.Id,
-                    ContentDescription = group.Description
+                    ContentId = group.Id ?? string.Empty,
+                    ContentDescription = group.Description ?? string.Empty
                 });
             }
 
@@ -455,11 +455,11 @@ namespace InToolz.Graph.EntraHelperClasses
             {
                 content.Add(new CustomContentInfo
                 {
-                    ContentName = group.DisplayName,
+                    ContentName = group.DisplayName ?? string.Empty,
                     ContentType = "Entra Group",
                     ContentPlatform = "Entra group",
-                    ContentId = group.Id,
-                    ContentDescription = group.Description
+                    ContentId = group.Id ?? string.Empty,
+                    ContentDescription = group.Description ?? string.Empty
                 });
             }
 

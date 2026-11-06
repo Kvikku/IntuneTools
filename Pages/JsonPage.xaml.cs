@@ -518,11 +518,11 @@ namespace InToolz.Pages
                     {
                         ContentList.Add(new CustomContentInfo
                         {
-                            ContentName = item.Name,
-                            ContentType = item.Type,
-                            ContentPlatform = item.Platform,
-                            ContentId = item.Id,
-                            ContentDescription = item.Description
+                            ContentName = item.Name ?? string.Empty,
+                            ContentType = item.Type ?? string.Empty,
+                            ContentPlatform = item.Platform ?? string.Empty,
+                            ContentId = item.Id ?? string.Empty,
+                            ContentDescription = item.Description ?? string.Empty
                         });
 
                         if (item.PolicyData.HasValue && !string.IsNullOrEmpty(item.Id))

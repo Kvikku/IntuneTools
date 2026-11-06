@@ -336,11 +336,11 @@ namespace InToolz.Graph.IntuneHelperClasses
             {
                 content.Add(new CustomContentInfo
                 {
-                    ContentName = filter.DisplayName,
+                    ContentName = filter.DisplayName ?? string.Empty,
                     ContentType = PolicyType,
                     ContentPlatform = HelperClass.TranslatePolicyPlatformName(filter.Platform?.ToString() ?? string.Empty),
-                    ContentId = filter.Id,
-                    ContentDescription = filter.Description
+                    ContentId = filter.Id ?? string.Empty,
+                    ContentDescription = filter.Description ?? string.Empty
                 });
             }
 
@@ -356,11 +356,11 @@ namespace InToolz.Graph.IntuneHelperClasses
             {
                 content.Add(new CustomContentInfo
                 {
-                    ContentName = filter.DisplayName,
+                    ContentName = filter.DisplayName ?? string.Empty,
                     ContentType = PolicyType,
                     ContentPlatform = HelperClass.TranslatePolicyPlatformName(filter.Platform?.ToString() ?? string.Empty),
-                    ContentId = filter.Id,
-                    ContentDescription = filter.Description
+                    ContentId = filter.Id ?? string.Empty,
+                    ContentDescription = filter.Description ?? string.Empty
                 });
             }
 

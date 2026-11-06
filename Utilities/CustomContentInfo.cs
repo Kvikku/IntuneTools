@@ -2,10 +2,10 @@ namespace InToolz.Utilities
 {
     public class CustomContentInfo
     {
-        public string? ContentName { get; set; }
-        public string? ContentPlatform { get; set; }
-        public string? ContentType { get; set; }
-        public string? ContentId { get; set; }
-        public string? ContentDescription { get; set; }
+        public string ContentName { get; set; } = string.Empty;
+        public string ContentPlatform { get; set; } = string.Empty;
+        public string ContentType { get; set; } = string.Empty;
+        public string ContentId { get; set; } = string.Empty;
+        public string ContentDescription { get; set; } = string.Empty;
     }
 }

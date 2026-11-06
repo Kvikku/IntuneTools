@@ -438,11 +438,11 @@ namespace InToolz.Graph.IntuneHelperClasses
             {
                 content.Add(new CustomContentInfo
                 {
-                    ContentName = profile.DisplayName,
+                    ContentName = profile.DisplayName ?? string.Empty,
                     ContentType = "Windows Driver Update",
                     ContentPlatform = "Windows",
-                    ContentId = profile.Id,
-                    ContentDescription = profile.Description
+                    ContentId = profile.Id ?? string.Empty,
+                    ContentDescription = profile.Description ?? string.Empty
                 });
             }
 
@@ -458,11 +458,11 @@ namespace InToolz.Graph.IntuneHelperClasses
             {
                 content.Add(new CustomContentInfo
                 {
-                    ContentName = profile.DisplayName,
+                    ContentName = profile.DisplayName ?? string.Empty,
                     ContentType = "Windows Driver Update",
                     ContentPlatform = "Windows",
-                    ContentId = profile.Id,
-                    ContentDescription = profile.Description
+                    ContentId = profile.Id ?? string.Empty,
+                    ContentDescription = profile.Description ?? string.Empty
                 });
             }
 
