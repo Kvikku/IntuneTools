@@ -70,7 +70,7 @@ namespace InToolz.Utilities
 
             if (string.IsNullOrEmpty(platformName))
             {
-                return platformName ?? string.Empty;
+                return string.Empty;
             }
 
             // Check for substrings to handle variations
@@ -128,7 +128,7 @@ namespace InToolz.Utilities
         {
             if (string.IsNullOrEmpty(odataType))
             {
-                return odataType ?? string.Empty;
+                return string.Empty;
             }
 
             return odataType switch
@@ -155,7 +155,7 @@ namespace InToolz.Utilities
         {
             if (string.IsNullOrEmpty(applicationType))
             {
-                return applicationType ?? string.Empty;
+                return string.Empty;
             }
 
             return applicationType switch

@@ -27,6 +27,10 @@ namespace InToolz.Graph.IntuneHelperClasses
 
                     await pageIterator.IterateAsync();
                 }
+                else
+                {
+                    AppLogger.Warning("Graph returned no result when searching for device configuration policies.", appFunction.Main);
+                }
 
                 return deviceConfigurations;
             }
@@ -59,6 +63,10 @@ namespace InToolz.Graph.IntuneHelperClasses
 
                     await pageIterator.IterateAsync();
                 }
+                else
+                {
+                    AppLogger.Warning("Graph returned no result when retrieving device configuration policies.", appFunction.Main);
+                }
 
                 return deviceConfigurations;
             }
@@ -85,7 +93,7 @@ namespace InToolz.Graph.IntuneHelperClasses
                         {
                             // Expand settings if needed
                             //requestConfiguration.QueryParameters.Expand = new[] { "settings" };
-                        });
+                        }) ?? throw new InvalidOperationException($"Device configuration '{configId}' not found in source tenant.");
 
                         if (originalConfig.OdataType.Equals("#microsoft.graph.iosDeviceFeaturesConfiguration"))
                         {
@@ -144,7 +152,8 @@ namespace InToolz.Graph.IntuneHelperClasses
 
                         policyName = deviceConfiguration.DisplayName;
 
-                        var import = await destinationGraphServiceClient.DeviceManagement.DeviceConfigurations.PostAsync(deviceConfiguration);
+                        var import = await destinationGraphServiceClient.DeviceManagement.DeviceConfigurations.PostAsync(deviceConfiguration)
+                            ?? throw new InvalidOperationException("Graph returned no object for the newly-created device configuration.");
 
                         AppLogger.Info($"Imported '{import.DisplayName}' successfully.", appFunction.Import);
 

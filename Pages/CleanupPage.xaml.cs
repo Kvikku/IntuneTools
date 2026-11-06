@@ -1330,9 +1330,10 @@ namespace InToolz.Pages
 
             ShowOperationProgress("Preparing to delete devices...", 0, total);
 
+            var client = RequireSourceClient();
+
             if (isEntra)
             {
-                var client = RequireSourceClient();
                 foreach (var device in EntraStaleDeviceList.ToList())
                 {
                     current++;
@@ -1357,7 +1358,6 @@ namespace InToolz.Pages
             }
             else
             {
-                var client = RequireSourceClient();
                 foreach (var device in IntuneStaleDeviceList.ToList())
                 {
                     current++;

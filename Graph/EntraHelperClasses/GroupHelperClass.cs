@@ -34,6 +34,10 @@ namespace InToolz.Graph.EntraHelperClasses
                     // start the iteration
                     await pageIterator.IterateAsync();
                 }
+                else
+                {
+                    AppLogger.Warning("Graph returned no result when retrieving groups.", appFunction.Main);
+                }
 
                 // Add virtual groups for All Users and All Devices
                 var allUsersGroup = new Group
@@ -106,6 +110,10 @@ namespace InToolz.Graph.EntraHelperClasses
                     // start the iteration
                     await pageIterator.IterateAsync();
                 }
+                else
+                {
+                    AppLogger.Warning("Graph returned no result when searching for groups.", appFunction.Main);
+                }
 
                 // Populate the groupNameAndID dictionary with group names and IDs
                 foreach (var group in groups)
@@ -156,13 +164,13 @@ namespace InToolz.Graph.EntraHelperClasses
                         // Select specific properties to potentially reduce payload size and avoid issues with read-only properties
                         sourceGroup = await sourceGraphServiceClient.Groups[groupId].GetAsync();
 
-                        groupName = sourceGroup.DisplayName ?? "Unnamed Group"; // Use DisplayName or default to "Unnamed Group"
-
                         if (sourceGroup == null)
                         {
                             AppLogger.Info($"Skipping {ItemType} ID {groupId}: Not found in source tenant.", appFunction.Import);
                             continue;
                         }
+
+                        groupName = sourceGroup.DisplayName ?? "Unnamed Group"; // Use DisplayName or default to "Unnamed Group"
 
 
 

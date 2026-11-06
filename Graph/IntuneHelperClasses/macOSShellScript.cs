@@ -28,6 +28,10 @@ namespace InToolz.Graph.IntuneHelperClasses
                     });
                     await pageIterator.IterateAsync();
                 }
+                else
+                {
+                    AppLogger.Warning("Graph returned no result when searching for macOS shell scripts.", appFunction.Main);
+                }
 
                 return shellScripts;
             }
@@ -56,6 +60,10 @@ namespace InToolz.Graph.IntuneHelperClasses
                         return true;
                     });
                     await pageIterator.IterateAsync();
+                }
+                else
+                {
+                    AppLogger.Warning("Graph returned no result when retrieving macOS shell scripts.", appFunction.Main);
                 }
 
                 return shellScripts;

@@ -141,7 +141,8 @@ namespace InToolz.Graph.IntuneHelperClasses
 
 
 
-                        var importedFilter = await destinationGraphServiceClient.DeviceManagement.AssignmentFilters.PostAsync(newFilter);
+                        var importedFilter = await destinationGraphServiceClient.DeviceManagement.AssignmentFilters.PostAsync(newFilter)
+                            ?? throw new InvalidOperationException("Graph returned no object for the newly-created assignment filter.");
 
                         AppLogger.Info($"Imported '{importedFilter.DisplayName}' successfully.", appFunction.Import);
                     }
