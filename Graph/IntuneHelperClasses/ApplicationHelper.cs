@@ -285,7 +285,7 @@ namespace InToolz.Graph.IntuneHelperClasses
                                 break;
                         }
                     }
-                    if (assignment.Intent == InstallIntent.Available && assignment.Target.OdataType == "#microsoft.graph.allDevicesAssignmentTarget")
+                    if (assignment.Intent == InstallIntent.Available && assignment.Target?.OdataType == "#microsoft.graph.allDevicesAssignmentTarget")
                     {
                         // Not supported
                         AppLogger.Info("Assignment settings for 'Available' intent to 'All Devices virtual group' is not supported.", appFunction.Assignment);
