@@ -15,12 +15,15 @@ namespace InToolz.Graph.IntuneHelperClasses
                 });
 
                 List<WindowsAutopilotDeploymentProfile> profiles = new List<WindowsAutopilotDeploymentProfile>();
-                var pageIterator = PageIterator<WindowsAutopilotDeploymentProfile, WindowsAutopilotDeploymentProfileCollectionResponse>.CreatePageIterator(graphServiceClient, result, (profile) =>
+                if (result != null)
                 {
-                    profiles.Add(profile);
-                    return true;
-                });
-                await pageIterator.IterateAsync();
+                    var pageIterator = PageIterator<WindowsAutopilotDeploymentProfile, WindowsAutopilotDeploymentProfileCollectionResponse>.CreatePageIterator(graphServiceClient, result, (profile) =>
+                    {
+                        profiles.Add(profile);
+                        return true;
+                    });
+                    await pageIterator.IterateAsync();
+                }
 
                 return profiles;
             }
@@ -41,12 +44,15 @@ namespace InToolz.Graph.IntuneHelperClasses
                 });
 
                 List<WindowsAutopilotDeploymentProfile> profiles = new List<WindowsAutopilotDeploymentProfile>();
-                var pageIterator = PageIterator<WindowsAutopilotDeploymentProfile, WindowsAutopilotDeploymentProfileCollectionResponse>.CreatePageIterator(graphServiceClient, result, (profile) =>
+                if (result != null)
                 {
-                    profiles.Add(profile);
-                    return true;
-                });
-                await pageIterator.IterateAsync();
+                    var pageIterator = PageIterator<WindowsAutopilotDeploymentProfile, WindowsAutopilotDeploymentProfileCollectionResponse>.CreatePageIterator(graphServiceClient, result, (profile) =>
+                    {
+                        profiles.Add(profile);
+                        return true;
+                    });
+                    await pageIterator.IterateAsync();
+                }
 
                 return profiles;
             }

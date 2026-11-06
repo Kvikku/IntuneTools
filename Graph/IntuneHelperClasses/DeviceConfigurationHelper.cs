@@ -16,14 +16,17 @@ namespace InToolz.Graph.IntuneHelperClasses
                     });
 
                 List<Microsoft.Graph.Beta.Models.DeviceConfiguration> deviceConfigurations = new();
-                var pageIterator = PageIterator<Microsoft.Graph.Beta.Models.DeviceConfiguration, DeviceConfigurationCollectionResponse>
-                    .CreatePageIterator(graphServiceClient, result, (config) =>
-                    {
-                        deviceConfigurations.Add(config);
-                        return true;
-                    });
+                if (result != null)
+                {
+                    var pageIterator = PageIterator<Microsoft.Graph.Beta.Models.DeviceConfiguration, DeviceConfigurationCollectionResponse>
+                        .CreatePageIterator(graphServiceClient, result, (config) =>
+                        {
+                            deviceConfigurations.Add(config);
+                            return true;
+                        });
 
-                await pageIterator.IterateAsync();
+                    await pageIterator.IterateAsync();
+                }
 
                 return deviceConfigurations;
             }
@@ -45,14 +48,17 @@ namespace InToolz.Graph.IntuneHelperClasses
                     });
 
                 List<Microsoft.Graph.Beta.Models.DeviceConfiguration> deviceConfigurations = new();
-                var pageIterator = PageIterator<Microsoft.Graph.Beta.Models.DeviceConfiguration, DeviceConfigurationCollectionResponse>
-                    .CreatePageIterator(graphServiceClient, result, (config) =>
-                    {
-                        deviceConfigurations.Add(config);
-                        return true;
-                    });
+                if (result != null)
+                {
+                    var pageIterator = PageIterator<Microsoft.Graph.Beta.Models.DeviceConfiguration, DeviceConfigurationCollectionResponse>
+                        .CreatePageIterator(graphServiceClient, result, (config) =>
+                        {
+                            deviceConfigurations.Add(config);
+                            return true;
+                        });
 
-                await pageIterator.IterateAsync();
+                    await pageIterator.IterateAsync();
+                }
 
                 return deviceConfigurations;
             }

@@ -55,13 +55,16 @@ namespace InToolz.Graph.IntuneHelperClasses
 
                 List<DeviceCompliancePolicy> compliancePolicies = new List<DeviceCompliancePolicy>();
                 // Iterate through the pages of results
-                var pageIterator = PageIterator<DeviceCompliancePolicy, DeviceCompliancePolicyCollectionResponse>.CreatePageIterator(graphServiceClient, result, (policy) =>
+                if (result != null)
                 {
-                    compliancePolicies.Add(policy);
-                    return true;
-                });
-                // start the iteration
-                await pageIterator.IterateAsync();
+                    var pageIterator = PageIterator<DeviceCompliancePolicy, DeviceCompliancePolicyCollectionResponse>.CreatePageIterator(graphServiceClient, result, (policy) =>
+                    {
+                        compliancePolicies.Add(policy);
+                        return true;
+                    });
+                    // start the iteration
+                    await pageIterator.IterateAsync();
+                }
 
 
                 // Filter the collected policies based on the searchQuery - Graph API does not allow for server side filtering

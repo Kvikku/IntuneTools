@@ -24,13 +24,16 @@ namespace InToolz.Graph.EntraHelperClasses
                 List<Group> groups = new List<Group>();
 
                 // Iterate through the pages of results
-                var pageIterator = PageIterator<Group, GroupCollectionResponse>.CreatePageIterator(graphServiceClient, result, (group) =>
+                if (result != null)
                 {
-                    groups.Add(group);
-                    return true;
-                });
-                // start the iteration
-                await pageIterator.IterateAsync();
+                    var pageIterator = PageIterator<Group, GroupCollectionResponse>.CreatePageIterator(graphServiceClient, result, (group) =>
+                    {
+                        groups.Add(group);
+                        return true;
+                    });
+                    // start the iteration
+                    await pageIterator.IterateAsync();
+                }
 
                 // Add virtual groups for All Users and All Devices
                 var allUsersGroup = new Group
@@ -93,13 +96,16 @@ namespace InToolz.Graph.EntraHelperClasses
                 List<Group> groups = new List<Group>();
 
                 // Iterate through the pages of results
-                var pageIterator = PageIterator<Group, GroupCollectionResponse>.CreatePageIterator(graphServiceClient, result, (group) =>
+                if (result != null)
                 {
-                    groups.Add(group);
-                    return true;
-                });
-                // start the iteration
-                await pageIterator.IterateAsync();
+                    var pageIterator = PageIterator<Group, GroupCollectionResponse>.CreatePageIterator(graphServiceClient, result, (group) =>
+                    {
+                        groups.Add(group);
+                        return true;
+                    });
+                    // start the iteration
+                    await pageIterator.IterateAsync();
+                }
 
                 // Populate the groupNameAndID dictionary with group names and IDs
                 foreach (var group in groups)
