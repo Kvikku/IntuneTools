@@ -98,7 +98,8 @@ namespace InToolz.Graph.IntuneHelperClasses
 
                         if (assignments)
                         {
-                            await AssignGroupsToSingleProactiveRemediation(import.Id, import.DisplayName ?? string.Empty, groups, destinationGraphServiceClient);
+                            var scriptId = import.Id ?? throw new InvalidOperationException($"Imported script '{import.DisplayName}' has no ID.");
+                            await AssignGroupsToSingleProactiveRemediation(scriptId, import.DisplayName ?? string.Empty, groups, destinationGraphServiceClient);
                         }
                     }
                     catch (Exception ex)

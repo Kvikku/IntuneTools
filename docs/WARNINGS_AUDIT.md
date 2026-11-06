@@ -15,6 +15,10 @@ runtime, or an `?? string.Empty` fallback for a Graph field that's genuinely opt
 `graphServiceClient` design question). Result: **197 → 91 unique warning sites**, clean rebuild +
 147/147 tests. Detail in the rewritten pattern-1 section below.
 
+**Step 4 (2026-11-06, branch `fix/assign-groups-import-id-nullability`)**: resolved the
+`AssignGroupsToSingleX` import-flow cluster found during step 3. Result: **91 → 83 unique warning
+sites**, clean rebuild + 147/147 tests. Detail in the new section below.
+
 ## How this was measured
 
 ```
@@ -177,6 +181,39 @@ actually pre-existing warnings whose line numbers shifted by 2 after a 2-line si
 diff clean-build output, not incremental, when checking for regressions this way). 147/147 tests
 still pass. No remaining warnings in either model file.
 
+### 4. `AssignGroupsToSingleX(string xId, ...)` fed a freshly-created Graph object's `.Id` during import (~8 CS8604) — **fixed 2026-11-06**
+
+Found during step 3, not part of pattern 1 — same shape as patterns 2/3 (an SDK model's `.Id` is
+nullable per the type, but provably non-null in this specific context) in a different call path: 8
+import methods (`AppleBYODEnrollmentProfileHelper`, `DeviceCompliancePolicyHelper`,
+`DeviceConfigurationHelper`, `PowerShellScriptsHelper`, `ProactiveRemediationsHelper`,
+`SettingsCatalogHelper`, `WindowsAutoPilotHelper`, `macOSShellScript`) do:
+
+```csharp
+var import = await destinationGraphServiceClient.DeviceManagement.X.PostAsync(newItem);
+AppLogger.Info($"Imported '{import.DisplayName}' successfully.", appFunction.Import);
+if (assignments)
+{
+    await AssignGroupsToSingleX(import.Id, import.DisplayName ?? string.Empty, groups, destinationGraphServiceClient);
+}
+```
+
+`import` is the direct response from a successful `PostAsync` — Microsoft Graph always returns the
+created resource with its `Id` populated on success, even though the SDK model marks `Id` nullable
+(the same model type serves request bodies, where `Id` is legitimately absent).
+
+**Fix**: made the guarantee explicit with `import.Id ?? throw new InvalidOperationException(...)`
+right before each assignment call, instead of a silent cast or a skip. Each of these 8 sites is
+already inside a per-item `try`/`catch` that logs a failure and continues the bulk-import loop — so a
+hypothetical violation surfaces as a clear, logged per-item failure (`"Imported profile 'X' has no
+ID."`) exactly like any other import failure already does, rather than a `NullReferenceException` deep
+in Graph SDK internals. Zero behavior change on the success path, since `Id` is always actually
+present. (One wrinkle: the new local needed a distinct name — `newProfileId`/`newConfigId`/
+`newScriptId` instead of `profileId`/`configId`/`scriptId` — in the 3 files where the enclosing
+`foreach` loop already used that name for the *source*-side ID being imported.)
+
+**Result**: 91 → 83 unique warning sites, verified via a clean rebuild. 147/147 tests pass.
+
 ### Smaller, isolated pattern: `PageIterator.CreatePageIterator`'s `page` parameter (16 of 189 CS8604)
 
 The Graph SDK's own `PageIterator.CreatePageIterator` expects its `page` argument non-null, but the
@@ -200,16 +237,16 @@ resolving pattern 1 or 2 first.
    call sites)~~ — **done**, see above. 270 → 197 unique warnings.
 2. ~~`graphServiceClient` non-null guarantee (pattern 1)~~ — **done**, see above. 197 → 91 unique
    warnings.
-3. **The newly-found `AssignGroupsToSingleX` / import-flow `.Id` cluster** (~7 CS8604, found during
-   step 2, same shape as patterns 2/3 but in the import path — see above) — small, same playbook as
-   patterns 2/3 already proved: either a null-check/skip at the point the freshly-created object's
-   `.Id` is read, or confirm it's provably non-null right after `PostAsync` and say so.
+3. ~~`AssignGroupsToSingleX` / import-flow `.Id` cluster~~ — **done**, see above. 91 → 83 unique
+   warnings.
 4. **Guard the `PageIterator` call sites** (16, isolated, can happen any time).
 5. **`CS0618` and `CS0168`** as their own small, unrelated PRs — not nullability, don't belong in the
-   same narrative as 3-4.
-6. **Long tail** (`CS8625`, `CS8600`, `CS8603`, `CS8619`, `CS8618` — 14 warnings total): look at these
-   individually; several may turn out to be the same root causes in a slightly different shape (not
-   yet checked in detail).
+   same narrative as step 4.
+6. **Long tail** (`CS8625`, `CS8600`, `CS8603`, `CS8619`, `CS8618` — now ~6 of those actually remain;
+   PowerShellScriptsHelper/WindowsAutoPilotHelper's `PostAsync`-result-nullable `CS8602`s surfaced
+   during step 4 are a related but separate "`PostAsync` can return null" cluster, not yet sized):
+   look at these individually; several may turn out to be the same root causes in a slightly
+   different shape (not yet checked in detail).
 
 Each step above should land as its own small, reviewable PR with a CI-enforced warning-count check
 (baseline ratchet) added once step 3 starts, so progress can't silently regress while this is spread

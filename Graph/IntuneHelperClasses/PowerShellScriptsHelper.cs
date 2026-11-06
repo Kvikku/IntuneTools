@@ -91,7 +91,8 @@ namespace InToolz.Graph.IntuneHelperClasses
 
                         if (assignments)
                         {
-                            await AssignGroupsToSinglePowerShellScript(import.Id, requestBody.DisplayName ?? string.Empty, groups, destinationGraphServiceClient);
+                            var scriptId = import.Id ?? throw new InvalidOperationException($"Imported script '{requestBody.DisplayName}' has no ID.");
+                            await AssignGroupsToSinglePowerShellScript(scriptId, requestBody.DisplayName ?? string.Empty, groups, destinationGraphServiceClient);
                         }
                     }
                     catch (Exception ex)
