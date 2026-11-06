@@ -19,6 +19,10 @@ runtime, or an `?? string.Empty` fallback for a Graph field that's genuinely opt
 `AssignGroupsToSingleX` import-flow cluster found during step 3. Result: **91 → 83 unique warning
 sites**, clean rebuild + 147/147 tests. Detail in the new section below.
 
+**Step 5 (2026-11-06, branch `fix/pageiterator-null-guards`)**: guarded all 16 `PageIterator`
+call sites. Result: **83 → 67 unique warning sites**, clean rebuild + 147/147 tests. Detail in the
+rewritten "Smaller, isolated pattern" section below.
+
 ## How this was measured
 
 ```
@@ -214,12 +218,37 @@ present. (One wrinkle: the new local needed a distinct name — `newProfileId`/`
 
 **Result**: 91 → 83 unique warning sites, verified via a clean rebuild. 147/147 tests pass.
 
-### Smaller, isolated pattern: `PageIterator.CreatePageIterator`'s `page` parameter (16 of 189 CS8604)
+### 5. `PageIterator.CreatePageIterator`'s `page` parameter (16 of 189 CS8604) — **fixed 2026-11-06**
 
 The Graph SDK's own `PageIterator.CreatePageIterator` expects its `page` argument non-null, but the
-collection response it's handed can legitimately be null (e.g. an empty result). This is narrow and
-mechanical — each site needs a null-check before constructing the iterator — and doesn't depend on
-resolving pattern 1 or 2 first.
+collection response it's handed (the direct result of `graphServiceClient.X.GetAsync(...)`) can
+legitimately be null. All 16 sites — one `GetAllX`/`SearchForX` pair each in 7 helper files, plus one
+site in `AuditLogHelper` and one already-non-nullable-guarded sibling method in
+`DeviceCompliancePolicyHelper` — follow the exact same shape:
+
+```csharp
+var result = await graphServiceClient.X.GetAsync(...);
+List<T> items = new();
+var pageIterator = PageIterator<T, TResponse>.CreatePageIterator(graphServiceClient, result, (item) =>
+{
+    items.Add(item);
+    return true;
+});
+await pageIterator.IterateAsync();
+return items;
+```
+
+**Fix**: wrapped the `CreatePageIterator`/`IterateAsync` pair in `if (result != null) { ... }` at all
+16 sites — mechanical, uniform, zero behavior change (a null `result` already meant "nothing to
+iterate"; now that's explicit instead of implicit). Deliberately used the same silent-skip shape
+everywhere rather than mixing in the `?? throw` style from pattern 4: these 8 files' `catch` blocks
+aren't uniform (`GroupHelperClass`'s two methods catch only `ODataError`, not a general `Exception`,
+while the other 7 files do catch general `Exception`), so throwing would have been safe in some files
+and an uncaught new exception path in others. The skip avoids depending on that catch-block shape at
+all. (`DeviceCompliancePolicyHelper.GetAllDeviceCompliancePolicies` already had its own `if (result ==
+null) throw` guard predating this session — left untouched, not flagged, not part of this fix.)
+
+**Result**: 83 → 67 unique warning sites, verified via a clean rebuild. 147/147 tests pass.
 
 ## Not a nullability problem — separate, unrelated fixes
 
@@ -239,15 +268,22 @@ resolving pattern 1 or 2 first.
    warnings.
 3. ~~`AssignGroupsToSingleX` / import-flow `.Id` cluster~~ — **done**, see above. 91 → 83 unique
    warnings.
-4. **Guard the `PageIterator` call sites** (16, isolated, can happen any time).
-5. **`CS0618` and `CS0168`** as their own small, unrelated PRs — not nullability, don't belong in the
-   same narrative as step 4.
-6. **Long tail** (`CS8625`, `CS8600`, `CS8603`, `CS8619`, `CS8618` — now ~6 of those actually remain;
-   PowerShellScriptsHelper/WindowsAutoPilotHelper's `PostAsync`-result-nullable `CS8602`s surfaced
-   during step 4 are a related but separate "`PostAsync` can return null" cluster, not yet sized):
-   look at these individually; several may turn out to be the same root causes in a slightly
-   different shape (not yet checked in detail).
+4. ~~Guard the `PageIterator` call sites~~ — **done**, see above. 83 → 67 unique warnings.
+5. **`CS0618` (3) and `CS0168` (2)** as their own small, unrelated PRs — not nullability, don't
+   belong in the same narrative as nullability work.
+6. **The `CS8602` dereference-of-`PostAsync`-result cluster** (26 total currently; at least some —
+   e.g. `PowerShellScriptsHelper`/`WindowsAutoPilotHelper`'s import methods — are "`PostAsync`'s
+   return type is itself nullable" rather than one of the already-fixed patterns; not yet sized or
+   categorized beyond that).
+7. **Remaining `CS8604` (8)**: a scattered, not-yet-categorized grab-bag — `ComboBox.SelectedItem`
+   style UI inputs flowing into `HelperClass.Get*` setters (`AssignmentPage.xaml.cs`), a couple of
+   `Dictionary`/`Collection` operations in `ImportPage.xaml.cs`, `FilterHelperClass.cs:99`,
+   `MainWindow.xaml.cs:75`. Unlike the patterns above these don't obviously share one root cause —
+   worth auditing individually before deciding on a fix shape.
+8. **Long tail** (`CS8625` 6, `CS8600` 4, `CS8601` 14, `CS8603` 2, `CS8619` 1, `CS8618` 1 — 28 total,
+   not yet investigated at all): look at these individually; several may turn out to be the same root
+   causes in a slightly different shape.
 
 Each step above should land as its own small, reviewable PR with a CI-enforced warning-count check
-(baseline ratchet) added once step 3 starts, so progress can't silently regress while this is spread
+(baseline ratchet) added once step 5 starts, so progress can't silently regress while this is spread
 across multiple sessions.

@@ -14,15 +14,18 @@ namespace InToolz.Graph.IntuneHelperClasses
                 });
 
                 List<DeviceHealthScript> healthScripts = new List<DeviceHealthScript>();
-                var pageIterator = PageIterator<DeviceHealthScript, DeviceHealthScriptCollectionResponse>.CreatePageIterator(graphServiceClient, result, (script) =>
+                if (result != null)
                 {
-                    if (!script.Publisher.Equals("Microsoft", StringComparison.OrdinalIgnoreCase))
+                    var pageIterator = PageIterator<DeviceHealthScript, DeviceHealthScriptCollectionResponse>.CreatePageIterator(graphServiceClient, result, (script) =>
                     {
-                        healthScripts.Add(script);
-                    }
-                    return true;
-                });
-                await pageIterator.IterateAsync();
+                        if (!script.Publisher.Equals("Microsoft", StringComparison.OrdinalIgnoreCase))
+                        {
+                            healthScripts.Add(script);
+                        }
+                        return true;
+                    });
+                    await pageIterator.IterateAsync();
+                }
 
                 return healthScripts;
             }
@@ -43,15 +46,18 @@ namespace InToolz.Graph.IntuneHelperClasses
                 });
 
                 List<DeviceHealthScript> healthScripts = new List<DeviceHealthScript>();
-                var pageIterator = PageIterator<DeviceHealthScript, DeviceHealthScriptCollectionResponse>.CreatePageIterator(graphServiceClient, result, (script) =>
+                if (result != null)
                 {
-                    if (!script.Publisher.Equals("Microsoft", StringComparison.OrdinalIgnoreCase))
+                    var pageIterator = PageIterator<DeviceHealthScript, DeviceHealthScriptCollectionResponse>.CreatePageIterator(graphServiceClient, result, (script) =>
                     {
-                        healthScripts.Add(script);
-                    }
-                    return true;
-                });
-                await pageIterator.IterateAsync();
+                        if (!script.Publisher.Equals("Microsoft", StringComparison.OrdinalIgnoreCase))
+                        {
+                            healthScripts.Add(script);
+                        }
+                        return true;
+                    });
+                    await pageIterator.IterateAsync();
+                }
 
                 return healthScripts;
             }

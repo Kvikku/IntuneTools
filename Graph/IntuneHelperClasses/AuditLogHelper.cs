@@ -33,15 +33,18 @@ namespace InToolz.Graph.IntuneHelperClasses
 
                 var auditEvents = new List<AuditEvent>();
 
-                var pageIterator = PageIterator<AuditEvent, AuditEventCollectionResponse>
-                    .CreatePageIterator(graphServiceClient, result, (auditEvent) =>
-                    {
-                        auditEvents.Add(auditEvent);
-                        onProgress?.Invoke(auditEvents.Count);
-                        return true;
-                    });
+                if (result != null)
+                {
+                    var pageIterator = PageIterator<AuditEvent, AuditEventCollectionResponse>
+                        .CreatePageIterator(graphServiceClient, result, (auditEvent) =>
+                        {
+                            auditEvents.Add(auditEvent);
+                            onProgress?.Invoke(auditEvents.Count);
+                            return true;
+                        });
 
-                await pageIterator.IterateAsync(cancellationToken);
+                    await pageIterator.IterateAsync(cancellationToken);
+                }
 
                 AppLogger.Info($"Retrieved {auditEvents.Count} audit event(s).", appFunction.AuditLog);
 

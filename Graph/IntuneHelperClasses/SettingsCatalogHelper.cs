@@ -35,12 +35,15 @@ namespace InToolz.Graph.IntuneHelperClasses
                 });
 
                 List<DeviceManagementConfigurationPolicy> configurationPolicies = new List<DeviceManagementConfigurationPolicy>();
-                var pageIterator = PageIterator<DeviceManagementConfigurationPolicy, DeviceManagementConfigurationPolicyCollectionResponse>.CreatePageIterator(graphServiceClient, result, (policy) =>
+                if (result != null)
                 {
-                    configurationPolicies.Add(policy);
-                    return true;
-                });
-                await pageIterator.IterateAsync();
+                    var pageIterator = PageIterator<DeviceManagementConfigurationPolicy, DeviceManagementConfigurationPolicyCollectionResponse>.CreatePageIterator(graphServiceClient, result, (policy) =>
+                    {
+                        configurationPolicies.Add(policy);
+                        return true;
+                    });
+                    await pageIterator.IterateAsync();
+                }
 
                 return configurationPolicies;
             }
@@ -61,12 +64,15 @@ namespace InToolz.Graph.IntuneHelperClasses
                 });
 
                 List<DeviceManagementConfigurationPolicy> configurationPolicies = new List<DeviceManagementConfigurationPolicy>();
-                var pageIterator = PageIterator<DeviceManagementConfigurationPolicy, DeviceManagementConfigurationPolicyCollectionResponse>.CreatePageIterator(graphServiceClient, result, (policy) =>
+                if (result != null)
                 {
-                    configurationPolicies.Add(policy);
-                    return true;
-                });
-                await pageIterator.IterateAsync();
+                    var pageIterator = PageIterator<DeviceManagementConfigurationPolicy, DeviceManagementConfigurationPolicyCollectionResponse>.CreatePageIterator(graphServiceClient, result, (policy) =>
+                    {
+                        configurationPolicies.Add(policy);
+                        return true;
+                    });
+                    await pageIterator.IterateAsync();
+                }
 
                 return configurationPolicies;
             }

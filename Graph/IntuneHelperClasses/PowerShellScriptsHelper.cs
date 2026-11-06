@@ -14,12 +14,15 @@ namespace InToolz.Graph.IntuneHelperClasses
                 });
 
                 List<DeviceManagementScript> scripts = new List<DeviceManagementScript>();
-                var pageIterator = PageIterator<DeviceManagementScript, DeviceManagementScriptCollectionResponse>.CreatePageIterator(graphServiceClient, result, (script) =>
+                if (result != null)
                 {
-                    scripts.Add(script);
-                    return true;
-                });
-                await pageIterator.IterateAsync();
+                    var pageIterator = PageIterator<DeviceManagementScript, DeviceManagementScriptCollectionResponse>.CreatePageIterator(graphServiceClient, result, (script) =>
+                    {
+                        scripts.Add(script);
+                        return true;
+                    });
+                    await pageIterator.IterateAsync();
+                }
 
                 return scripts;
             }
@@ -40,12 +43,15 @@ namespace InToolz.Graph.IntuneHelperClasses
                 });
 
                 List<DeviceManagementScript> scripts = new List<DeviceManagementScript>();
-                var pageIterator = PageIterator<DeviceManagementScript, DeviceManagementScriptCollectionResponse>.CreatePageIterator(graphServiceClient, result, (script) =>
+                if (result != null)
                 {
-                    scripts.Add(script);
-                    return true;
-                });
-                await pageIterator.IterateAsync();
+                    var pageIterator = PageIterator<DeviceManagementScript, DeviceManagementScriptCollectionResponse>.CreatePageIterator(graphServiceClient, result, (script) =>
+                    {
+                        scripts.Add(script);
+                        return true;
+                    });
+                    await pageIterator.IterateAsync();
+                }
 
                 return scripts;
             }
