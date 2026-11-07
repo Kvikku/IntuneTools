@@ -96,13 +96,11 @@ namespace InToolz.Pages
                 if (isSource)
                 {
                     sourceGraphServiceClient = client;
-                    sourceTenantName = tenantName;
                     Variables.sourceTenantName = tenantName ?? string.Empty;
                 }
                 else
                 {
                     destinationGraphServiceClient = client;
-                    destinationTenantName = tenantName;
                     Variables.destinationTenantName = tenantName ?? string.Empty;
                 }
 
@@ -146,14 +144,12 @@ namespace InToolz.Pages
                     if (isSource)
                     {
                         sourceGraphServiceClient = null;
-                        sourceTenantName = null;
                         Variables.sourceTenantName = string.Empty;
                         _sourceHasPermissionWarning = false;
                     }
                     else
                     {
                         destinationGraphServiceClient = null;
-                        destinationTenantName = null;
                         Variables.destinationTenantName = string.Empty;
                         _destinationHasPermissionWarning = false;
                     }

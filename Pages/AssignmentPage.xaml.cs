@@ -295,7 +295,7 @@ namespace InToolz.Pages
             }
 
             // Build group list: selected grid rows + any active virtual groups
-            List<string> groupList = selectedGroups.Select(g => g.GroupId).ToList();
+            List<string> groupList = selectedGroups.Select(g => g.GroupId).OfType<string>().ToList();
             if (_includeAllUsers)  groupList.Add(allUsersVirtualGroupID);
             if (_includeAllDevices) groupList.Add(allDevicesVirtualGroupID);
 
@@ -871,7 +871,7 @@ namespace InToolz.Pages
             // Get the property name from the column binding
             var textColumn = e.Column as DataGridTextColumn;
             var binding = textColumn?.Binding as Binding;
-            string sortProperty = binding?.Path?.Path;
+            string? sortProperty = binding?.Path?.Path;
             if (string.IsNullOrEmpty(sortProperty))
             {
                 AppLogger.UiOnly("Sorting error: Unable to determine property name from column binding.");
@@ -1001,15 +1001,15 @@ namespace InToolz.Pages
 
                 if (result == ContentDialogResult.Primary)
                 {
-                    Variables._selectedIntent = (AssignmentIntentComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString();
-                    Variables._selectedNotificationSetting = (NotificationSettingsCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
-                    Variables._selectedDeliveryOptimizationPriority = (DeliveryOptimizationCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
-                    Variables._selectedAndroidManagedStoreAutoUpdateMode = (UpdatePriority.SelectedItem as ComboBoxItem)?.Content.ToString();
-                    Variables._licensingType = (UseDeviceLicensingCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
-                    Variables._deviceRemovalAction = (UninstallOnDeviceRemovalCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
-                    Variables._removable = (IsRemovableCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
-                    Variables._preventAutoUpdate = (PreventAutoAppUpdateCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
-                    Variables._preventManagedAppBackup = (PreventManagedAppBackupCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
+                    Variables._selectedIntent = (AssignmentIntentComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? string.Empty;
+                    Variables._selectedNotificationSetting = (NotificationSettingsCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? string.Empty;
+                    Variables._selectedDeliveryOptimizationPriority = (DeliveryOptimizationCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? string.Empty;
+                    Variables._selectedAndroidManagedStoreAutoUpdateMode = (UpdatePriority.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? string.Empty;
+                    Variables._licensingType = (UseDeviceLicensingCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? string.Empty;
+                    Variables._deviceRemovalAction = (UninstallOnDeviceRemovalCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? string.Empty;
+                    Variables._removable = (IsRemovableCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? string.Empty;
+                    Variables._preventAutoUpdate = (PreventAutoAppUpdateCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? string.Empty;
+                    Variables._preventManagedAppBackup = (PreventManagedAppBackupCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? string.Empty;
 
                     bool isDeviceLicensing = bool.TryParse(Variables._licensingType, out bool deviceLicensing) && deviceLicensing;
                     bool uninstallOnDeviceRemoval = bool.TryParse(Variables._deviceRemovalAction, out bool deviceRemoval) && deviceRemoval;
@@ -1074,7 +1074,7 @@ namespace InToolz.Pages
             // Get the property name from the column binding
             var textColumn = e.Column as DataGridTextColumn;
             var binding = textColumn?.Binding as Binding;
-            string sortProperty = binding?.Path?.Path;
+            string? sortProperty = binding?.Path?.Path;
             if (string.IsNullOrEmpty(sortProperty))
             {
                 AppLogger.UiOnly("Sorting error: Unable to determine property name from column binding.");

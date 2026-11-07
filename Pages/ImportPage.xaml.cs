@@ -349,8 +349,9 @@ namespace InToolz.Pages
                 // Update FilterOptions for ComboBox
                 foreach (var filter in filters)
                 {
-                    FilterOptions.Add(filter.DisplayName); // Add filter display name to ComboBox options
-
+                    // Filters without a display name can't be looked up in filterNameAndID later, so don't offer them
+                    if (filter.DisplayName != null)
+                        FilterOptions.Add(filter.DisplayName); // Add filter display name to ComboBox options
                 }
                 // Ensure ComboBox is bound to FilterOptions (though it should be from XAML or initialization)
                 if (FilterSelectionComboBox.ItemsSource != FilterOptions)
@@ -509,7 +510,7 @@ namespace InToolz.Pages
             AppLogger.Info("Applying the following filters:", appFunction.Import);
             if (FilterSelectionComboBox.SelectedItem != null)
             {
-                string selectedFilter = FilterSelectionComboBox.SelectedItem.ToString();
+                string selectedFilter = FilterSelectionComboBox.SelectedItem.ToString() ?? string.Empty;
 
                 SelectedFilterID = filterNameAndID.ContainsKey(selectedFilter) ? filterNameAndID[selectedFilter] : null;
                 deviceAndAppManagementAssignmentFilterType = DeviceAndAppManagementAssignmentFilterType.Include;
@@ -685,7 +686,7 @@ namespace InToolz.Pages
 
             var textColumn = e.Column as DataGridTextColumn;
             var binding = textColumn?.Binding as Binding;
-            string sortProperty = binding?.Path?.Path;
+            string? sortProperty = binding?.Path?.Path;
             if (string.IsNullOrEmpty(sortProperty))
             {
                 AppendToLog("Sorting error: Unable to determine property name from column binding.");

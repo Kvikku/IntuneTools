@@ -49,6 +49,10 @@ cluster spotted during step 7's review. Result: **47 → 44 unique warning sites
 warning sites**, clean rebuild + 147/147 tests. **`CS8602` is now fully resolved** (0 remaining).
 Detail in the new section below.
 
+**Step 10 (2026-11-07, branch `fix/remaining-cs8604-sites`)**: resolved all 36 remaining sites — the
+`CS8604` grab-bag and the whole long tail. Result: **36 → 0 unique `CSxxxx` warning sites**, clean
+rebuild + 147/147 tests. Detail in the new section below.
+
 ## How this was measured
 
 ```
@@ -411,6 +415,59 @@ bug:
 **Result**: 44 → 36 unique warning sites, verified via a clean rebuild. 147/147 tests pass.
 **`CS8602` is now fully resolved** — 0 remaining, down from 47 at the start of this audit.
 
+### 9 & 10. The last 36 sites (`CS8604` grab-bag + long tail) — **fixed 2026-11-07**
+
+As predicted, no single root cause, but they sorted into a handful of shapes, and most of the count
+collapsed into one cause:
+
+- **`ComboBox.SelectedItem` → `Variables._selected*` (`AssignmentPage.xaml.cs`, 13 sites).** Nine
+  assignments of `(x.SelectedItem as ComboBoxItem)?.Content?.ToString()` into `string` statics were the
+  nine `CS8601`s; they also set the fields' flow state to "maybe null", which is why the four
+  `HelperClass.GetInstallIntent(_selectedIntent)`-style calls after them were the four `CS8604`s.
+  Fixed with `?? string.Empty` on the nine assignments, which clears all 13. This is behavior-identical:
+  every consumer is a `switch` whose `_` arm already handles unknown input, or a `bool.TryParse`, and
+  `bool.TryParse("")` and `bool.TryParse(null)` both return false. `string.Empty` is also what the
+  fields are initialized to in `Variables.cs`. One of the nine (`UpdatePriority`) was written
+  `?.Content.ToString()` — missing the second `?.` its eight siblings have — so a `ComboBoxItem` with
+  null `Content` would have thrown into the dialog's catch-all; it now matches the others.
+- **`Variables.SelectedFilterID` is assigned `null` in three places** (collapsing the filter expander,
+  clearing the selection, an unknown filter name on the Import page) while declared `string`. Declared
+  `string?` instead of turning the `null`s into `""`: every consumer assigns it to
+  `DeviceAndAppManagementAssignmentFilterId` (already `string?`), which the Graph serializer omits when
+  null but would send as `""`, so changing the runtime value is not obviously safe. Honest type, zero
+  runtime change, four sites cleared (`AssignmentPage` x3, `ImportPage` x1).
+- **Dead and redundant statics.** `Variables.SelectedGroupID`/`SelectedGroupName` were never read or
+  written anywhere (the two `= null` initializers were the `CS8625`s) — deleted. `SettingsPage` had four
+  `sourceTenantName = ...` / `destinationTenantName = ...` lines that, via the global `using static`,
+  write `Variables.sourceTenantName` — the same static the next line writes again, so the later write
+  always won. Deleted the four earlier writes; final state is unchanged.
+  `iOSAppDeploymentSettings` is genuinely null until the deployment dialog is confirmed, and its one
+  reader already targets a `MobileAppAssignmentSettings?` — declared `?`.
+- **A latent crash, not an annotation gap: `GetAllGroups`/`SearchForGroups` returned `null` on
+  `ODataError`** (the two `CS8603`s) while declared `Task<List<Group>>`. All four page callers
+  (`AssignmentPage` and `ImportPage`, load-all and search) `foreach` the result inside
+  `try { ... } finally { HideLoading(); }` with no `catch`, so a Graph error (e.g. a 403 from a missing
+  permission) became an unhandled `NullReferenceException` instead of the warning the helper had just
+  logged. Fixed by returning an empty list from the helpers, matching the "log and return empty list"
+  convention of the other helper files. This is the one change in this step that alters runtime
+  behavior: a Graph error on group search now shows an empty group list and a log warning instead of
+  throwing.
+- **Four small, independent fixes:** the three `string sortProperty = binding?.Path?.Path;` sort-handler
+  locals are now `string?` (they were already guarded by `string.IsNullOrEmpty` right after);
+  `MainWindow.NavigateToPage` takes `string?` (a `null` tag falls through to its existing `default:`);
+  `RightClickMenu.TryGetLookupUrlTemplate` is now `[NotNullWhen(true)] out string?`, the standard
+  Try-pattern shape; `FilterHelperClass`'s name-to-ID map and `ImportPage`'s filter combo skip a filter
+  with no `Id`/`DisplayName` rather than store a null (the same guard that was already on the line above
+  for `DisplayName`); `selectedGroups.Select(g => g.GroupId).ToList()` uses `.OfType<string>()` so a
+  group row without an ID can't put a null into the list handed to the assign loop.
+
+**Result**: 36 → 0 unique `CSxxxx` warning sites, verified via a clean `--no-incremental` rebuild.
+147/147 tests pass. The build still prints **2 warnings that are not `CSxxxx` codes** and so were never
+in this audit's count (`grep "warning CS"`): `EnableGenerateDocumentationFile` (an IDE0005 notice) and
+`PRI263` (no default resource for `Files/Assets/Square44x44Logo.ico`, which the message says "may
+throw an exception for certain user configurations"). A ratchet should count all of
+`Warning(s)` in the MSBuild summary, not only `CS` codes.
+
 ## Found during pre-merge review, deferred (not a correctness bug — a maintainability observation)
 
 A multi-angle review across the full steps-2-through-7 stack, before merging any of it, repeatedly
@@ -460,15 +517,13 @@ folded into warning-count work already in flight.
    above. 62 → 47 unique warnings.
 7. ~~The `.OdataType`-nullable cluster~~ — **done**, see above. 47 → 44 unique warnings.
 8. ~~Remaining `CS8602`~~ — **done**, see above. 44 → 36 unique warnings. `CS8602` fully resolved.
-9. **Remaining `CS8604` (8)**: a scattered, not-yet-categorized grab-bag — `ComboBox.SelectedItem`
-   style UI inputs flowing into `HelperClass.Get*` setters (`AssignmentPage.xaml.cs`), a couple of
-   `Dictionary`/`Collection` operations in `ImportPage.xaml.cs`, `FilterHelperClass.cs:99`,
-   `MainWindow.xaml.cs:75`. Unlike the patterns above these don't obviously share one root cause —
-   worth auditing individually before deciding on a fix shape.
-10. **Long tail** (`CS8625` 6, `CS8600` 4, `CS8601` 14, `CS8603` 2, `CS8619` 1, `CS8618` 1 — 28
-    total, not yet investigated at all): look at these individually; several may turn out to be the
-    same root causes in a slightly different shape.
+9. ~~Remaining `CS8604` (8)~~ — **done**, see above. 36 → 0 unique warnings together with step 10.
+10. ~~Long tail (`CS8625` 6, `CS8600` 4, `CS8601` 14, `CS8603` 2, `CS8619` 1, `CS8618` 1)~~ — **done**,
+    see above. Most of it was the same `ComboBox.SelectedItem` and `SelectedFilterID` causes as the
+    `CS8604` grab-bag.
+11. **Enforce it.** The `CSxxxx` count is now 0, so the baseline ratchet planned for this point can be
+    the strictest version: fail CI if the build's `Warning(s)` total rises above the current 2 (or fix
+    those two and fail on any). Without it the work above regresses silently. Separate small PR; it
+    touches `ci.yml`, not code.
 
-Each step above should land as its own small, reviewable PR with a CI-enforced warning-count check
-(baseline ratchet) added once step 9 starts, so progress can't silently regress while this is spread
-across multiple sessions.
+Each step above should land as its own small, reviewable PR.

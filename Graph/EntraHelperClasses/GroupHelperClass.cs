@@ -77,7 +77,7 @@ namespace InToolz.Graph.EntraHelperClasses
             {
                 // Log the error message
                 AppLogger.Warning($"ODataError retrieving all groups: {me.Message}", appFunction.Main);
-                return null;
+                return new List<Group>();
             }
         }
 
@@ -132,7 +132,7 @@ namespace InToolz.Graph.EntraHelperClasses
             {
                 // Log the error message
                 AppLogger.Warning($"ODataError searching for groups: {me.Message}", appFunction.Main);
-                return null;
+                return new List<Group>();
             }
         }
 
