@@ -465,8 +465,9 @@ collapsed into one cause:
 147/147 tests pass. The build still prints **2 warnings that are not `CSxxxx` codes** and so were never
 in this audit's count (`grep "warning CS"`): `EnableGenerateDocumentationFile` (an IDE0005 notice) and
 `PRI263` (no default resource for `Files/Assets/Square44x44Logo.ico`, which the message says "may
-throw an exception for certain user configurations"). A ratchet should count all of
-`Warning(s)` in the MSBuild summary, not only `CS` codes.
+throw an exception for certain user configurations"). The ratchet (step 11) therefore counts every
+warning code, not only `CS` ones, and counts unique lines rather than MSBuild's own `Warning(s)`
+total, which repeats a warning 2x-8x for the reasons given under "How this was measured".
 
 ## Found during pre-merge review, deferred (not a correctness bug — a maintainability observation)
 
@@ -521,9 +522,17 @@ folded into warning-count work already in flight.
 10. ~~Long tail (`CS8625` 6, `CS8600` 4, `CS8601` 14, `CS8603` 2, `CS8619` 1, `CS8618` 1)~~ — **done**,
     see above. Most of it was the same `ComboBox.SelectedItem` and `SelectedFilterID` causes as the
     `CS8604` grab-bag.
-11. **Enforce it.** The `CSxxxx` count is now 0, so the baseline ratchet planned for this point can be
-    the strictest version: fail CI if the build's `Warning(s)` total rises above the current 2 (or fix
-    those two and fail on any). Without it the work above regresses silently. Separate small PR; it
-    touches `ci.yml`, not code.
+11. ~~Enforce it~~ — **done** (2026-11-07, branch `ci/warning-ratchet`). CI fails if the build prints
+    more unique warnings than `.github/warning-baseline.txt` allows, currently 2: the two non-`CS`
+    warnings above, which CI's .NET 8.0.427 SDK prints identically to a local build. The check is
+    `.github/scripts/BuildWarnings.ps1`, with tests (`BuildWarnings.Tests.ps1`) that CI also runs. A
+    drop below the baseline is a notice, not a failure, so a dependency update that happens to remove
+    a warning does not fail its own PR; lower the number when you see it.
+12. **Optional: get the baseline to 0.** Both remaining warnings need a decision rather than a fix:
+    `PRI263` comes from the `.ico` app icon being picked up as packaged content (changing that touches
+    the Store package, so verify with a package build), and `EnableGenerateDocumentationFile` means the
+    `.editorconfig`'s `IDE0005 = warning` (unused usings) is not actually enforced on command-line
+    builds today. Turning it on needs `GenerateDocumentationFile` plus a `CS1591` suppression, and will
+    flag every existing unused using.
 
 Each step above should land as its own small, reviewable PR.

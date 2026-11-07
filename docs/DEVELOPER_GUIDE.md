@@ -611,6 +611,16 @@ rules in `.editorconfig`.
 
 ---
 
+## Build warnings
+
+The build is expected to stay quiet, so that a new warning is visible when it appears. CI counts the unique warnings the build prints and fails if there are more than the number in `.github/warning-baseline.txt`. A failing run lists every warning, so look for the one you added and fix it rather than raising the number.
+
+The baseline only goes down. If a change removes a warning, CI prints a notice; lower the number in the same pull request so the improvement can't regress. How the warnings were cleaned up, and what the remaining ones are, is in [WARNINGS_AUDIT.md](WARNINGS_AUDIT.md).
+
+The check is `.github/scripts/BuildWarnings.ps1`, with tests you can run locally: `pwsh -NoProfile -File .github/scripts/BuildWarnings.Tests.ps1`.
+
+---
+
 ## Checklist
 
 Use this checklist when adding a new page:
