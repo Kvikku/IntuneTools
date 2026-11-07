@@ -94,7 +94,7 @@ namespace InToolz.Graph.IntuneHelperClasses
             // Add filter name and ID to the dictionary
             foreach (var filter in assignmentFilters)
             {
-                if (filter.DisplayName != null && !filterNameAndID.ContainsKey(filter.DisplayName))
+                if (filter.DisplayName != null && filter.Id != null && !filterNameAndID.ContainsKey(filter.DisplayName))
                 {
                     filterNameAndID.Add(filter.DisplayName, filter.Id);
                 }
