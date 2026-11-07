@@ -32,11 +32,31 @@ jobs:
           dotnet restore InToolz.csproj -p:Platform=x64
           dotnet restore InToolz.Tests/InToolz.Tests.csproj -p:Platform=x64
 
+      # Both builds are captured so the warnings check below can read them.
       - name: Build
-        run: dotnet build InToolz.csproj --no-restore --configuration Release -p:Platform=x64
+        shell: pwsh
+        run: |
+          dotnet build InToolz.csproj --no-restore --configuration Release -p:Platform=x64 | Tee-Object '${{ runner.temp }}/build-main.log'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Build tests
-        run: dotnet build InToolz.Tests/InToolz.Tests.csproj --no-restore --configuration Release -p:Platform=x64
+        shell: pwsh
+        run: |
+          dotnet build InToolz.Tests/InToolz.Tests.csproj --no-restore --configuration Release -p:Platform=x64 | Tee-Object '${{ runner.temp }}/build-tests.log'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      # The build may not print more unique warnings than .github/warning-baseline.txt allows
+      # (see .github/scripts/BuildWarnings.ps1 and docs/WARNINGS_AUDIT.md).
+      - name: Check build warnings
+        shell: pwsh
+        run: |
+          . ./.github/scripts/BuildWarnings.ps1
+          $result = Test-BuildWarnings -LogPath '${{ runner.temp }}/build-main.log', '${{ runner.temp }}/build-tests.log'
+          Write-Host "Unique build warnings: $($result.Warnings.Count) (baseline $($result.Baseline))"
+          $result.Warnings | ForEach-Object { Write-Host "  $_" }
+          foreach ($notice in $result.Notices) { Write-Host "::notice::$notice" }
+          foreach ($problem in $result.Problems) { Write-Host "::error::$problem" }
+          if ($result.Problems.Count -gt 0) { exit 1 }
 
       - name: Run tests
         run: dotnet test InToolz.Tests/InToolz.Tests.csproj --no-build --configuration Release -p:Platform=x64 --verbosity normal
@@ -48,3 +68,7 @@ jobs:
       - name: Test Store package check
         shell: pwsh
         run: ./.github/scripts/StorePackage.Tests.ps1
+
+      - name: Test build warnings check
+        shell: pwsh
+        run: ./.github/scripts/BuildWarnings.Tests.ps1
