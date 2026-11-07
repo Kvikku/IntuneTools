@@ -41,7 +41,13 @@ during pre-merge review, deferred" near the bottom. **Steps 2-7 merged to `maste
 
 **Step 8 (2026-11-06, branch `fix/odatatype-nullable-cluster`)**: resolved the `.OdataType`-nullable
 cluster spotted during step 7's review. Result: **47 → 44 unique warning sites**, clean rebuild +
-147/147 tests. Detail in the new section below.
+147/147 tests. Detail in the new section below. **Merged to `master` 2026-11-06.**
+
+**Step 9 (2026-11-06, branch `fix/remaining-cs8602-casts-and-nullable-props`)**: resolved the last
+8 `CS8602` sites — two `as T` casts, three UI `sender as DataGrid` sort-handler casts, two
+`Publisher.Equals` nullable-property calls, and one `Value[0]` indexing. Result: **44 → 36 unique
+warning sites**, clean rebuild + 147/147 tests. **`CS8602` is now fully resolved** (0 remaining).
+Detail in the new section below.
 
 ## How this was measured
 
@@ -367,6 +373,44 @@ rather than one:
 
 **Result**: 47 → 44 unique warning sites, verified via a clean rebuild. 147/147 tests pass.
 
+### 8. The last `CS8602` sites (8, three unrelated shapes) — **fixed 2026-11-06**
+
+Unlike every other cluster in this audit, these three shapes don't share one root cause — they were
+grouped together only because they were what was left after steps 1-7, not because they're the same
+bug:
+
+- **Two `as T` casts dereferenced unchecked**, same shape as the `.OdataType`/`Target` story above:
+  `DeviceCompliancePolicyHelper.cs`'s `newPolicy as DeviceCompliancePolicy` and
+  `DeviceConfigurationHelper.cs`'s `testRequestBody as Microsoft.Graph.Beta.Models.DeviceConfiguration`.
+  Both cast an `Activator.CreateInstance(type)` result back to a static type, where `type` is the exact
+  runtime type of the Graph object the loop just fetched — so the cast can't actually fail. Fixed with
+  the same `?? throw new InvalidOperationException(...)` idiom used throughout this audit.
+- **Three UI `sender as DataGrid` sort-handler casts** (`AssignmentPage.xaml.cs`'s
+  `AppDataGrid_Sorting`/`GroupDataGrid_Sorting`, `ImportPage.xaml.cs`'s `GroupDataGrid_Sorting`) are
+  local reimplementations of the sort logic in `BaseDataOperationPage.HandleDataGridSorting` (needed
+  because they sort a different list/type than that shared helper's hardcoded `ContentList`), which
+  already has the right guard (`dataGrid == null || ...`) — the three local copies had just dropped
+  it when copying the pattern. Added `dataGrid == null ||` to each existing early-return condition,
+  matching the shared helper exactly.
+- **Two `script.Publisher.Equals("Microsoft", ...)` calls** in `ProactiveRemediationsHelper.cs`
+  dereference a Graph SDK property that's genuinely nullable (a script can legitimately have no
+  publisher set). Fixed with the static `string.Equals(script.Publisher, "Microsoft", ...)` overload,
+  which handles a null first argument safely by design — simpler than a null-conditional, and
+  correctly treats "no publisher" as "not Microsoft" (so the script gets included), matching the
+  filter's existing intent.
+- **`HelperClass.cs`'s `tenantInfo.Value[0]`** looked at first like a simple `?.` fix, but that would
+  have been a real behavior change: the whole method is wrapped in `catch (Exception) { return
+  "UNKNOWN"; }`, and its one caller (`SettingsPage`) feeds the result into
+  `Variables.sourceTenantName` — which `BaseMultiTenantPage.IsPageAuthenticated()` checks for
+  *non-empty* to decide whether the user is signed in. A naive `tenantInfo?.Value?.FirstOrDefault()?.DisplayName`
+  would return `null` directly instead of hitting the catch block, turning into `""` downstream, and
+  wrongly reporting "not signed in" for an otherwise-successful sign-in with an edge-case-empty
+  organization list. Fixed by throwing explicitly when `Value` is null/empty, so it flows into the
+  *existing* catch block and preserves the exact current "UNKNOWN" fallback.
+
+**Result**: 44 → 36 unique warning sites, verified via a clean rebuild. 147/147 tests pass.
+**`CS8602` is now fully resolved** — 0 remaining, down from 47 at the start of this audit.
+
 ## Found during pre-merge review, deferred (not a correctness bug — a maintainability observation)
 
 A multi-angle review across the full steps-2-through-7 stack, before merging any of it, repeatedly
@@ -415,12 +459,7 @@ folded into warning-count work already in flight.
 6. ~~`GetAsync()`/`PostAsync()` results dereferenced in `ImportMultipleX` methods~~ — **done**, see
    above. 62 → 47 unique warnings.
 7. ~~The `.OdataType`-nullable cluster~~ — **done**, see above. 47 → 44 unique warnings.
-8. **Remaining `CS8602`** (8, three shapes): two `as T` casts dereferenced unchecked
-   (`DeviceCompliancePolicyHelper.cs:183`, `DeviceConfigurationHelper.cs:125`);
-   three `sender as DataGrid` UI sort-handler casts (`AssignmentPage.xaml.cs:922,1125`,
-   `ImportPage.xaml.cs:727`); two `script.Publisher.Equals(...)` calls on a possibly-null `Publisher`
-   in `ProactiveRemediationsHelper.cs:21,53`; and `HelperClass.cs:235`'s `tenantInfo.Value[0]`, which
-   needs its own decision about what an empty `Value` array should mean.
+8. ~~Remaining `CS8602`~~ — **done**, see above. 44 → 36 unique warnings. `CS8602` fully resolved.
 9. **Remaining `CS8604` (8)**: a scattered, not-yet-categorized grab-bag — `ComboBox.SelectedItem`
    style UI inputs flowing into `HelperClass.Get*` setters (`AssignmentPage.xaml.cs`), a couple of
    `Dictionary`/`Collection` operations in `ImportPage.xaml.cs`, `FilterHelperClass.cs:99`,
@@ -431,5 +470,5 @@ folded into warning-count work already in flight.
     same root causes in a slightly different shape.
 
 Each step above should land as its own small, reviewable PR with a CI-enforced warning-count check
-(baseline ratchet) added once step 8 starts, so progress can't silently regress while this is spread
+(baseline ratchet) added once step 9 starts, so progress can't silently regress while this is spread
 across multiple sessions.

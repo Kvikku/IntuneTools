@@ -680,7 +680,7 @@ namespace InToolz.Pages
         private void GroupDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
         {
             var dataGrid = sender as DataGrid;
-            if (GroupList == null || GroupList.Count == 0)
+            if (dataGrid == null || GroupList == null || GroupList.Count == 0)
                 return;
 
             var textColumn = e.Column as DataGridTextColumn;

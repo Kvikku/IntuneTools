@@ -865,7 +865,7 @@ namespace InToolz.Pages
         private void AppDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
         {
             var dataGrid = sender as DataGrid;
-            if (AssignmentList == null || AssignmentList.Count == 0)
+            if (dataGrid == null || AssignmentList == null || AssignmentList.Count == 0)
                 return;
 
             // Get the property name from the column binding
@@ -1068,7 +1068,7 @@ namespace InToolz.Pages
         private void GroupDataGrid_Sorting(object sender, DataGridColumnEventArgs e)
         {
             var dataGrid = sender as DataGrid;
-            if (GroupList == null || GroupList.Count == 0)
+            if (dataGrid == null || GroupList == null || GroupList.Count == 0)
                 return;
 
             // Get the property name from the column binding

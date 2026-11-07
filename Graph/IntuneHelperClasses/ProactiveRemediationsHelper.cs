@@ -18,7 +18,7 @@ namespace InToolz.Graph.IntuneHelperClasses
                 {
                     var pageIterator = PageIterator<DeviceHealthScript, DeviceHealthScriptCollectionResponse>.CreatePageIterator(graphServiceClient, result, (script) =>
                     {
-                        if (!script.Publisher.Equals("Microsoft", StringComparison.OrdinalIgnoreCase))
+                        if (!string.Equals(script.Publisher, "Microsoft", StringComparison.OrdinalIgnoreCase))
                         {
                             healthScripts.Add(script);
                         }
@@ -54,7 +54,7 @@ namespace InToolz.Graph.IntuneHelperClasses
                 {
                     var pageIterator = PageIterator<DeviceHealthScript, DeviceHealthScriptCollectionResponse>.CreatePageIterator(graphServiceClient, result, (script) =>
                     {
-                        if (!script.Publisher.Equals("Microsoft", StringComparison.OrdinalIgnoreCase))
+                        if (!string.Equals(script.Publisher, "Microsoft", StringComparison.OrdinalIgnoreCase))
                         {
                             healthScripts.Add(script);
                         }

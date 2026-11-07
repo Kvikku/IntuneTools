@@ -229,8 +229,12 @@ namespace InToolz.Utilities
                 var tenantInfo = await graphServiceClient.Organization.GetAsync((requestConfiguration) =>
                 {
                     requestConfiguration.QueryParameters.Select = new string[] { "displayName" };
-                });
+                }) ?? throw new InvalidOperationException("Graph returned no organization info.");
 
+                if (tenantInfo.Value == null || tenantInfo.Value.Count == 0)
+                {
+                    throw new InvalidOperationException("Graph returned no organization entries.");
+                }
 
                 return tenantInfo.Value[0].DisplayName;
             }
