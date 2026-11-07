@@ -134,12 +134,24 @@ jobs:
           # Exit explicitly: the runner would otherwise exit with the last git/gh command's code.
           if ($dryRun) { exit 0 } else { exit 1 }
 
+  # The self-contained zips, one per architecture. ARM64 is cross-built on the x64 runner.
   build:
     needs: validate
     if: ${{ needs.validate.outputs.skip != 'true' }}
     runs-on: windows-latest
     outputs:
       version: ${{ needs.validate.outputs.version }}
+    strategy:
+      # A dry run should show how both architectures fare, not stop at the first failure.
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            platform: x64
+            runtime: win-x64
+          - arch: arm64
+            platform: ARM64
+            runtime: win-arm64
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
@@ -159,9 +171,9 @@ jobs:
         run: >
           dotnet publish InToolz.csproj
           --configuration Release
-          --runtime win-x64
+          --runtime ${{ matrix.runtime }}
           --self-contained true
-          -p:Platform=x64
+          -p:Platform=${{ matrix.platform }}
           -p:Version=${{ needs.validate.outputs.version }}
           -p:WindowsAppSDKSelfContained=true
           -p:PublishReadyToRun=false
@@ -170,8 +182,8 @@ jobs:
       - name: Create zip archive
         shell: pwsh
         run: |
-          $publishDir = "bin\x64\Release\net8.0-windows10.0.22621.0\win-x64\publish"
-          $zipName = "InToolz_${{ needs.validate.outputs.version }}_x64.zip"
+          $publishDir = "bin\${{ matrix.platform }}\Release\net8.0-windows10.0.22621.0\${{ matrix.runtime }}\publish"
+          $zipName = "InToolz_${{ needs.validate.outputs.version }}_${{ matrix.arch }}.zip"
           Compress-Archive -Path "$publishDir\*" -DestinationPath $zipName
           echo "ZIP_NAME=$zipName" >> $env:GITHUB_OUTPUT
         id: zip
@@ -179,12 +191,13 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: InToolz-x64
+          name: InToolz-${{ matrix.arch }}
           path: ${{ steps.zip.outputs.ZIP_NAME }}
 
       - name: Commit version bump
         # Never from a dry run, and never from a branch other than master: this step pushes to master.
-        if: ${{ !inputs.dry_run && (github.ref_type == 'tag' || github.ref_name == 'master') }}
+        # Only one architecture does it, or the two legs would race to push the same commit.
+        if: ${{ matrix.arch == 'x64' && !inputs.dry_run && (github.ref_type == 'tag' || github.ref_name == 'master') }}
         shell: pwsh
         run: |
           git config user.name "github-actions[bot]"
@@ -273,9 +286,12 @@ jobs:
           }
 
           $out = Join-Path $PWD 'AppPackages'
+          # One bundle holding both an x64 and an ARM64 application package. Platform=x64 only picks the
+          # configuration MSBuild starts from; AppxBundlePlatforms is what makes it build both. The value
+          # is quoted because an unquoted | would be a pipeline.
           & $msbuild InToolzPackaged\InToolzPackaged.wapproj /restore /nologo /v:minimal `
             /p:Configuration=Release /p:Platform=x64 `
-            /p:UapAppxPackageBuildMode=StoreUpload /p:AppxBundle=Always /p:AppxBundlePlatforms=x64 `
+            /p:UapAppxPackageBuildMode=StoreUpload /p:AppxBundle=Always "/p:AppxBundlePlatforms=x64|ARM64" `
             /p:AppxAutoIncrementPackageRevision=False /p:GenerateAppxPackageOnBuild=true `
             "/p:AppxPackageDir=$out\" @signingArgs
           if ($LASTEXITCODE -ne 0) { throw "MSBuild failed with exit code $LASTEXITCODE." }
@@ -297,7 +313,7 @@ jobs:
             $problems | ForEach-Object { "- $_" } | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
             exit 1
           }
-          "- ``$($upload.Name)`` ($([math]::Round($upload.Length / 1MB, 1)) MB) passed the Store package check: identity, publisher and version match, x64 only, executable present" |
+          "- ``$($upload.Name)`` ($([math]::Round($upload.Length / 1MB, 1)) MB) passed the Store package check: identity, publisher and version match, one x64 and one ARM64 package, each with an executable built for its architecture" |
             Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           exit 0
 
@@ -313,13 +329,14 @@ jobs:
           # for this build only, as before.
           $folder = Get-ChildItem AppPackages -Directory -Filter '*_Test' | Select-Object -First 1
           if (-not $folder) { throw 'The build produced no sideload folder.' }
-          $zip = "InToolz_$($env:VERSION)_x64_sideload.zip"
+          # One package for both architectures: Add-AppDevPackage.ps1 installs the one that matches the PC.
+          $zip = "InToolz_$($env:VERSION)_sideload.zip"
           Compress-Archive -Path "$($folder.FullName)\*" -DestinationPath $zip
           echo "ZIP_NAME=$zip" >> $env:GITHUB_OUTPUT
 
           $cer = Get-ChildItem $folder.FullName -Filter *.cer | Select-Object -First 1
           if (-not $cer) { throw 'The sideload folder has no certificate (.cer).' }
-          $cerName = "InToolz_$($env:VERSION)_x64.cer"
+          $cerName = "InToolz_$($env:VERSION).cer"
           Copy-Item $cer.FullName $cerName
           echo "CER_NAME=$cerName" >> $env:GITHUB_OUTPUT
           exit 0
@@ -351,10 +368,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Download the release zip
+      - name: Download the x64 release zip
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: InToolz-x64
+          path: artifacts
+
+      - name: Download the ARM64 release zip
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: InToolz-arm64
           path: artifacts
 
       - name: Download the sideload package
@@ -376,10 +399,20 @@ jobs:
         run: |
           shopt -s nullglob
           files=(artifacts/*.zip artifacts/*.cer)
-          if [ ${#files[@]} -lt 3 ]; then
-            echo "::error::Expected two zips and a certificate in artifacts/, found ${#files[@]}."
+          if [ ${#files[@]} -ne 4 ]; then
+            echo "::error::Expected three zips (x64, ARM64, sideload) and a certificate in artifacts/, found ${#files[@]}."
+            ls -l artifacts
             exit 1
           fi
+          # By name too, so two zips of the same architecture can't stand in for the missing one.
+          for pattern in 'artifacts/InToolz_*_x64.zip' 'artifacts/InToolz_*_arm64.zip' 'artifacts/InToolz_*_sideload.zip' 'artifacts/InToolz_*.cer'; do
+            matches=($pattern)
+            if [ ${#matches[@]} -ne 1 ]; then
+              echo "::error::Expected exactly one file matching $pattern, found ${#matches[@]}."
+              ls -l artifacts
+              exit 1
+            fi
+          done
           ls -l "${files[@]}"
 
       - name: Generate release notes
@@ -401,8 +434,8 @@ jobs:
             echo ""
             echo "## Manual install"
             echo "If you prefer to install manually and not use the store, two options are attached:"
-            echo "- A zip of the self-contained app. Extract it and run \`InToolz.exe\`."
-            echo "- A signed sideload package (\`*_sideload.zip\`) with its certificate (\`*.cer\`) and an \`Install.ps1\` that installs both. This behaves like a real install (Start menu entry, in-place updates) rather than a loose exe."
+            echo "- A zip of the self-contained app, for x64 PCs (\`*_x64.zip\`) or ARM64 PCs (\`*_arm64.zip\`). Extract it and run \`InToolz.exe\`."
+            echo "- A signed sideload package (\`*_sideload.zip\`) for both architectures, with its certificate (\`*.cer\`) and an \`Install.ps1\` that installs both. It installs the one that matches your PC, and behaves like a real install (Start menu entry, in-place updates) rather than a loose exe."
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 

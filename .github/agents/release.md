@@ -102,15 +102,15 @@ Once triggered the `release.yml` workflow will:
 
 1. Check the release is intended and stop if not: the commit is on `master`, the version is greater than the latest release tag, `InToolz.csproj` at that commit already says the version (when one was given), the version is not already published, and `ci.yml` passed for the commit. (Publishing the draft in step 6 creates the tag and starts the workflow once more; that run sees the release is published and does nothing.)
 2. Stamp the version into `InToolz.csproj` and `Package.appxmanifest` (idempotent if you already bumped).
-3. Build a self-contained x64 release (`dotnet publish`).
-4. Zip the output as `InToolz_<version>_x64.zip`.
-5. In parallel, build the Store upload package and a signed sideload package from `InToolzPackaged` (workflow artifacts `InToolz-store`, `InToolz-sideload` and `InToolz-sideload-cert`) and check the Store package's identity, version and contents. On `master` or a tag, the sideload package is signed with the persistent certificate kept in the `release` environment (see "Sideload signing certificate" in `.github/RELEASE_GUIDE.md`), so it's the same certificate release after release.
+3. Build a self-contained release for x64 and for ARM64 (`dotnet publish`, one job per architecture; ARM64 is cross-built).
+4. Zip each output as `InToolz_<version>_x64.zip` and `InToolz_<version>_arm64.zip`.
+5. In parallel, build the Store upload package and a signed sideload package from `InToolzPackaged`, each holding both an x64 and an ARM64 package (workflow artifacts `InToolz-store`, `InToolz-sideload` and `InToolz-sideload-cert`), and check the Store package's identity, version and contents, including that each package's executable is built for its architecture. On `master` or a tag, the sideload package is signed with the persistent certificate kept in the `release` environment (see "Sideload signing certificate" in `.github/RELEASE_GUIDE.md`), so it's the same certificate release after release.
 6. Commit the version bump back to `master` (no-op if already committed).
 7. Create a **draft** GitHub Release with:
    - Auto-generated "What's Changed" notes (from merged PRs since the last tag).
    - A **Download** section linking to the Microsoft Store.
    - A **Manual install** section.
-   - The self-contained zip, the signed sideload zip and its `.cer` attached.
+   - The x64 and ARM64 self-contained zips, the signed sideload zip and its `.cer` attached.
 
 ### Step 6 — Review & publish the draft release
 
