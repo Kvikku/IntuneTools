@@ -46,13 +46,13 @@ This auto-bumps the patch version (e.g. `1.4.0.0` → `1.4.1.0`) and commits the
 
 - Release checks run first and stop the release if the commit or version looks unintended
 - Version is stamped in `InToolz.csproj` and both `Package.appxmanifest` files
-- App is built, published as self-contained x64, and zipped
-- In parallel, the Store package and a sideload package are built from `InToolzPackaged`, and the Store package is checked (see *Microsoft Store package*)
+- App is built, published as self-contained for x64 and for ARM64 (ARM64 is cross-built on the x64 runner), and zipped, one zip per architecture
+- In parallel, the Store package and a sideload package are built from `InToolzPackaged`, each holding both an x64 and an ARM64 package, and the Store package is checked (see *Microsoft Store package*)
 - Version bump is committed back to `master`
 - Draft GitHub release is created with:
   - "What's Changed" (auto-generated from PRs) at the top
   - Download/Manual install sections at the bottom
-  - Zip artifact attached
+  - The x64 and ARM64 zips, the sideload package and its certificate attached
 
 ## Release checks and dry runs
 
@@ -84,17 +84,19 @@ The workflow auto-generates "What's Changed" from merged PRs. For polished relea
 
 ## Microsoft Store package
 
-The GitHub release attaches a self-contained zip, a signed sideload package, and its certificate. The Store gets a different package, built from the same `InToolzPackaged` project. The release run builds all of it for you, so nobody builds packages by hand any more; uploading the Store package in Partner Center is still a manual step. The GitHub release and the Store submission are independent.
+The GitHub release attaches self-contained zips (x64 and ARM64), a signed sideload package, and its certificate. The Store gets a different package, built from the same `InToolzPackaged` project. The release run builds all of it for you, so nobody builds packages by hand any more; uploading the Store package in Partner Center is still a manual step. The GitHub release and the Store submission are independent.
 
 Every release run, dry runs included, produces three workflow artifacts:
 
 | Artifact | Contents |
 |---|---|
-| `InToolz-store` | `InToolzPackaged_<version>_x64_bundle.msixupload`, the file to upload in Partner Center |
-| `InToolz-sideload` | `InToolz_<version>_x64_sideload.zip`: a signed `.msixbundle`, `Install.ps1`, the certificate and the framework dependencies |
-| `InToolz-sideload-cert` | `InToolz_<version>_x64.cer`, the same certificate on its own |
+| `InToolz-store` | `InToolzPackaged_<version>_x64_ARM64_bundle.msixupload`, the file to upload in Partner Center |
+| `InToolz-sideload` | `InToolz_<version>_sideload.zip`: a signed `.msixbundle` with both architectures, `Install.ps1`, the certificate and the framework dependencies |
+| `InToolz-sideload-cert` | `InToolz_<version>.cer`, the same certificate on its own |
 
-The real release (not a dry run) also attaches the sideload zip and the `.cer` to the GitHub release itself, alongside the zip of the self-contained app.
+The self-contained zips are artifacts too: `InToolz-x64` (`InToolz_<version>_x64.zip`) and `InToolz-arm64` (`InToolz_<version>_arm64.zip`).
+
+The real release (not a dry run) also attaches the sideload zip and the `.cer` to the GitHub release itself, alongside the two zips of the self-contained app. Before it creates the draft, it checks that exactly those four files are there.
 
 Download the Store package from the run:
 
@@ -104,7 +106,11 @@ gh run download <run-id> -n InToolz-store
 
 Artifacts are kept for 90 days, so submit before then or run the release again.
 
-Before the package can be uploaded, the run checks it (`.github/scripts/StorePackage.ps1`, which has its own tests). The identity name and publisher must match `InToolzPackaged/Package.StoreAssociation.xml`, the version must be the release version, the package must be x64 only, the `Application Id` must be `App` (part of the app's identity, so pins and shortcuts survive an update), the executable must be in the package, and the `runFullTrust` capability must be present. A package that fails stops the run, even a dry run.
+Before the package can be uploaded, the run checks it (`.github/scripts/StorePackage.ps1`, which has its own tests). The identity name and publisher must match `InToolzPackaged/Package.StoreAssociation.xml`, the version must be the release version, the bundle must hold exactly one x64 and one ARM64 application package, the `Application Id` must be `App` (part of the app's identity, so pins and shortcuts survive an update), and the `runFullTrust` capability must be present. Each application package is checked on its own, and its executable must be in the package **and built for that package's architecture** (read from the executable's PE header): a package labelled ARM64 around an x64 executable would still install and run, emulated, so nothing else would notice. A package that fails stops the run, even a dry run.
+
+### ARM64
+
+ARM64 is part of the same Store submission and package family, so ARM64 PCs get the native build as an ordinary update and existing x64 users are unaffected. The pipeline builds it on the x64 runner (a cross-build) and checks the result as described above. What it does not prove is that the ARM64 build *works*: that takes a native ARM64 PC, and the part most worth looking at is interactive sign-in (MSAL), the one native-dependent path. Do that with a build from the release run before submitting, until a native ARM64 CI job covers it.
 
 The sideload package has the **same identity as the Store app**, so installing it over a Store install means uninstalling the Store version first and losing its local settings.
 
@@ -121,10 +127,10 @@ The certificate itself (generated 2026-11-03, expires 2029-11-03) is **exportabl
 The release run uses this same command. It needs Visual Studio's MSBuild (`dotnet build` can't build a `.wapproj`), so run it from a Developer Command Prompt for VS, at the release commit, once the version in `InToolz.csproj` is the release version:
 
 ```
-msbuild InToolzPackaged\InToolzPackaged.wapproj /restore /p:Configuration=Release /p:Platform=x64 /p:UapAppxPackageBuildMode=StoreUpload /p:AppxBundle=Always /p:AppxBundlePlatforms=x64 /p:AppxAutoIncrementPackageRevision=False /p:GenerateAppxPackageOnBuild=true
+msbuild InToolzPackaged\InToolzPackaged.wapproj /restore /p:Configuration=Release /p:Platform=x64 /p:UapAppxPackageBuildMode=StoreUpload /p:AppxBundle=Always "/p:AppxBundlePlatforms=x64|ARM64" /p:AppxAutoIncrementPackageRevision=False /p:GenerateAppxPackageOnBuild=true
 ```
 
-The result is `InToolzPackaged\AppPackages\InToolzPackaged_<version>_x64_bundle.msixupload` (gitignored). `AppxAutoIncrementPackageRevision` must stay `False`: the Store reserves the last part of the version, so a `.1` means something auto-incremented it. `git status` should be clean afterwards.
+The result is `InToolzPackaged\AppPackages\InToolzPackaged_<version>_x64_ARM64_bundle.msixupload` (gitignored). `AppxAutoIncrementPackageRevision` must stay `False`: the Store reserves the last part of the version, so a `.1` means something auto-incremented it. `git status` should be clean afterwards.
 
 ## Submitting to the Microsoft Store
 
