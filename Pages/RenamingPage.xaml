@@ -70,13 +70,14 @@
                                   SelectedIndex="0"
                                   ToolTipService.ToolTip="Choose the rename mode."
                                   SelectionChanged="RenameModeComboBox_SelectionChanged">
-                            <ComboBoxItem Content="Add Prefix"/>
-                            <ComboBoxItem Content="Add Suffix"/>
-                            <ComboBoxItem Content="Find &amp; Replace"/>
-                            <ComboBoxItem Content="Update Description"/>
-                            <ComboBoxItem Content="Remove Prefix"/>
-                            <ComboBoxItem Content="Remove Suffix"/>
-                            <ComboBoxItem Content="Remove Description"/>
+                            <!-- Tag is the RenameMode name (see RenameRules.TryParseMode); the order here does not matter. -->
+                            <ComboBoxItem Content="Add Prefix" Tag="Prefix"/>
+                            <ComboBoxItem Content="Add Suffix" Tag="Suffix"/>
+                            <ComboBoxItem Content="Find &amp; Replace" Tag="FindAndReplace"/>
+                            <ComboBoxItem Content="Update Description" Tag="Description"/>
+                            <ComboBoxItem Content="Remove Prefix" Tag="RemovePrefix"/>
+                            <ComboBoxItem Content="Remove Suffix" Tag="RemoveSuffix"/>
+                            <ComboBoxItem Content="Remove Description" Tag="RemoveDescription"/>
                         </ComboBox>
                         <TextBox x:Name="NewNameTextBox"
                                  PlaceholderText="Enter prefix..."
