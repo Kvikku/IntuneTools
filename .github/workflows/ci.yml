@@ -48,3 +48,40 @@ jobs:
       - name: Test Store package check
         shell: pwsh
         run: ./.github/scripts/StorePackage.Tests.ps1
+
+  # The same build and unit tests, run natively on ARM64 hardware (#112). The x64 job above shows the code
+  # compiles and passes for x64; this one shows the ARM64 build does too, where it will actually run,
+  # instead of an ARM64 binary that is cross-compiled and never executed. (windows-11-arm runners are
+  # free for public repositories.)
+  test-arm64:
+    runs-on: windows-11-arm
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 8.0.x
+
+      # So a log can show the tests really ran natively, not under x64 emulation.
+      - name: Show the machine
+        shell: pwsh
+        run: |
+          "OS architecture:      $([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)"
+          "Process architecture: $([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture)"
+          dotnet --info | Select-String -Pattern 'RID:|Architecture:'
+
+      - name: Restore dependencies
+        run: |
+          dotnet restore InToolz.csproj -p:Platform=ARM64
+          dotnet restore InToolz.Tests/InToolz.Tests.csproj -p:Platform=ARM64
+
+      - name: Build
+        run: dotnet build InToolz.csproj --no-restore --configuration Release -p:Platform=ARM64
+
+      - name: Build tests
+        run: dotnet build InToolz.Tests/InToolz.Tests.csproj --no-restore --configuration Release -p:Platform=ARM64
+
+      - name: Run tests
+        run: dotnet test InToolz.Tests/InToolz.Tests.csproj --no-build --configuration Release -p:Platform=ARM64 --verbosity normal
