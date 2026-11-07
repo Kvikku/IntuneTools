@@ -25,7 +25,7 @@ The source of truth is `InToolz.csproj` (`<Version>` element). `Package.appxmani
    gh workflow run release.yml
    ```
 3. Wait for the workflow to complete (~4 min)
-4. Go to [GitHub Releases](https://github.com/Kvikku/IntuneTools/releases) — a **draft** release will be waiting
+4. Go to [GitHub Releases](https://github.com/Kvikku/InToolz/releases) — a **draft** release will be waiting
 5. Review the release notes, edit if needed, then click **Publish release**
 
 This auto-bumps the patch version (e.g. `1.4.0.0` → `1.4.1.0`) and commits the updated version back to master.

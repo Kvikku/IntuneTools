@@ -285,7 +285,7 @@
                                 <TextBlock Text="Documentation" VerticalAlignment="Center"/>
                                 <HyperlinkButton x:Name="GitHubLink"
                                                  Content="View on GitHub"
-                                                 NavigateUri="https://github.com/Kvikku/IntuneTools"
+                                                 NavigateUri="https://github.com/Kvikku/InToolz"
                                                  Click="GitHubLink_Click"
                                                  VerticalAlignment="Center"
                                                  Padding="4,2"/>
@@ -295,7 +295,7 @@
                                 <TextBlock Text="Feedback &amp; Issues" VerticalAlignment="Center"/>
                                 <HyperlinkButton x:Name="GitHubIssuesLink"
                                                  Content="Submit on GitHub"
-                                                 NavigateUri="https://github.com/Kvikku/IntuneTools/issues"
+                                                 NavigateUri="https://github.com/Kvikku/InToolz/issues"
                                                  Click="GitHubLink_Click"
                                                  VerticalAlignment="Center"
                                                  Padding="4,2"/>

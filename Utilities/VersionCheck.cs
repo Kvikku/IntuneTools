@@ -25,7 +25,7 @@ namespace InToolz.Utilities
         /// <returns>The raw tag or release name (e.g., "v1.3.0.0"). Throws on HTTP/network or parse errors.</returns>
         private static async Task<string> GetLatestVersionAsync(CancellationToken cancellationToken = default)
         {
-            const string url = "https://api.github.com/repos/kvikku/IntuneTools/releases/latest";
+            const string url = "https://api.github.com/repos/kvikku/InToolz/releases/latest";
 
             using var request = new HttpRequestMessage(HttpMethod.Get, url);
             using var response = await HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
@@ -150,7 +150,7 @@ namespace InToolz.Utilities
                 Timeout = TimeSpan.FromSeconds(10)
             };
             client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("InToolz", "1.0"));
-            client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("(compatible; +https://github.com/Kvikku/IntuneTools)"));
+            client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("(compatible; +https://github.com/Kvikku/InToolz)"));
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
             return client;
         }

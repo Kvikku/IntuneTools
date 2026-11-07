@@ -152,7 +152,7 @@ namespace InToolz.Pages
 
         private async void OpenGitHubButton_Click(object sender, RoutedEventArgs e)
         {
-            await Launcher.LaunchUriAsync(new Uri("https://github.com/Kvikku/IntuneTools"));
+            await Launcher.LaunchUriAsync(new Uri("https://github.com/Kvikku/InToolz"));
         }
 
         private async void OpenStoreButton_Click(object sender, RoutedEventArgs e)

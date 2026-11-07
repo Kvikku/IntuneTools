@@ -77,12 +77,12 @@ Not every content type is available on every page — see the **Supported Conten
 
 ## Get the app
 
-Available on the **[Microsoft Store](https://apps.microsoft.com/detail/9phqrcx3gkxd)** or as a manual install from the [Releases page](https://github.com/Kvikku/IntuneTools/releases).
+Available on the **[Microsoft Store](https://apps.microsoft.com/detail/9phqrcx3gkxd)** or as a manual install from the [Releases page](https://github.com/Kvikku/InToolz/releases).
 
 ---
 
 ## Questions or feedback?
 
-- **Bug or unexpected behaviour?** [Open an issue](https://github.com/Kvikku/IntuneTools/issues)
-- **Feature request?** Post in the [Discussions tab](https://github.com/Kvikku/IntuneTools/discussions)
+- **Bug or unexpected behaviour?** [Open an issue](https://github.com/Kvikku/InToolz/issues)
+- **Feature request?** Post in the [Discussions tab](https://github.com/Kvikku/InToolz/discussions)
 - **Something missing from this wiki?** Issues and PRs for docs are equally welcome
