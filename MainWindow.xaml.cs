@@ -76,7 +76,7 @@ namespace InToolz
             }
         }
 
-        private void NavigateToPage(string navItemTag)
+        private void NavigateToPage(string? navItemTag)
         {
             switch (navItemTag)
             {

@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Windows.ApplicationModel.DataTransfer;
 using static InToolz.Graph.IntuneHelperClasses.AppleBYODEnrollmentProfileHelper;
@@ -348,7 +349,7 @@ namespace InToolz.Utilities
             return template.Replace("INSERT_ID_HERE", id, StringComparison.Ordinal);
         }
 
-        private static bool TryGetLookupUrlTemplate(string contentType, out string template)
+        private static bool TryGetLookupUrlTemplate(string contentType, [NotNullWhen(true)] out string? template)
         {
             var trimmed = contentType.Trim();
 

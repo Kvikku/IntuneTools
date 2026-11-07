@@ -76,8 +76,6 @@ namespace InToolz.Utilities
 
         // Group variables
         public static bool IsGroupSelected = false;
-        public static string SelectedGroupID = null;
-        public static string SelectedGroupName = null;
         public static Dictionary<string, string> groupNameAndID = new Dictionary<string, string>();
         public static ConcurrentDictionary<string, string> groupIDAndName = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         public static Dictionary<string, string> selectedGroupNameAndID = new Dictionary<string, string>();
@@ -91,7 +89,7 @@ namespace InToolz.Utilities
 
         // Filter variables for Graph API
         public static bool IsFilterSelected = false;
-        public static string SelectedFilterID = string.Empty;
+        public static string? SelectedFilterID = string.Empty; // null when the user clears the filter selection
         public static DeviceAndAppManagementAssignmentFilterType deviceAndAppManagementAssignmentFilterType = DeviceAndAppManagementAssignmentFilterType.None;
         public static Dictionary<string, string> filterNameAndID = new Dictionary<string, string>();
         public static string SelectedFilterName = "";
@@ -119,7 +117,7 @@ namespace InToolz.Utilities
         public static string _removable = string.Empty;
         public static string _preventManagedAppBackup = string.Empty;
         public static string _preventAutoUpdate = string.Empty;
-        public static IosVppAppAssignmentSettings iOSAppDeploymentSettings;
+        public static IosVppAppAssignmentSettings? iOSAppDeploymentSettings; // null until the deployment options dialog is confirmed
 
 
         // Time saved variables

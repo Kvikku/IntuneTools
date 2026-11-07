@@ -1,0 +1,8 @@
+# The most unique warnings the CI build may print. This number only goes down.
+# See docs/DEVELOPER_GUIDE.md (Build warnings) and docs/WARNINGS_AUDIT.md.
+#
+# The 2 that remain are not C# warnings:
+#   EnableGenerateDocumentationFile  IDE0005 (unused usings, set to warning in .editorconfig) cannot
+#                                    run on a command-line build without GenerateDocumentationFile
+#   PRI263                           no default resource for Files/Assets/Square44x44Logo.ico
+2
