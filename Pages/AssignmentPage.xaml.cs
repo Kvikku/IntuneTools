@@ -261,7 +261,7 @@ namespace InToolz.Pages
             var content = GetAllContentFromDatagrid();
 
             // Bulk operation safeguard: warn when assigning 10 or more items
-            if (content.Count >= 10)
+            if (UserInterfaceHelper.RequiresBulkConfirmation(content.Count))
             {
                 var bulkWarning = new ContentDialog
                 {
@@ -978,7 +978,7 @@ namespace InToolz.Pages
                 void ValidateGroupsOnPrimaryClick(ContentDialog _, ContentDialogButtonClickEventArgs args)
                 {
                     var selectedGroups = GroupDataGrid.SelectedItems?.Cast<AssignmentGroupInfo>().ToList() ?? new();
-                    if (selectedGroups.Count == 0 && !_includeAllUsers && !_includeAllDevices)
+                    if (!UserInterfaceHelper.HasAssignmentTarget(selectedGroups.Count, _includeAllUsers, _includeAllDevices))
                     {
                         DialogInfoBar.Severity = InfoBarSeverity.Error;
                         DialogInfoBar.Title = "No Groups Selected";

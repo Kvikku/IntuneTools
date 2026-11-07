@@ -599,7 +599,7 @@ namespace InToolz.Pages
             var numberOfItems = ContentList.Count;
 
             // Bulk operation safeguard: warn when deleting 10 or more items
-            if (numberOfItems >= 10)
+            if (UserInterfaceHelper.RequiresBulkConfirmation(numberOfItems))
             {
                 var bulkWarning = new ContentDialog
                 {
@@ -1275,7 +1275,7 @@ namespace InToolz.Pages
                 return;
             }
 
-            if (count >= 10)
+            if (UserInterfaceHelper.RequiresBulkConfirmation(count))
             {
                 var bulkWarning = new ContentDialog
                 {

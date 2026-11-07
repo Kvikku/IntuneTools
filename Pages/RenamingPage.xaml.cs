@@ -702,7 +702,7 @@ namespace InToolz.Pages
             selectedRenameMode = renameMode.ToString();
 
             // Bulk operation safeguard: warn when renaming 10 or more items
-            if (itemsToRename.Count >= 10)
+            if (UserInterfaceHelper.RequiresBulkConfirmation(itemsToRename.Count))
             {
                 var bulkWarning = new ContentDialog
                 {
