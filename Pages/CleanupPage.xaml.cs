@@ -712,15 +712,7 @@ namespace InToolz.Pages
 
             DuplicatesDataGrid.SelectedItems.Clear();
 
-            var toSelect = new List<DuplicateContentInfo>();
-            foreach (var group in DuplicateContentList
-                .GroupBy(i => (Name: i.ContentName?.Trim().ToUpperInvariant(), Type: i.ContentType, Platform: i.ContentPlatform?.Trim() ?? string.Empty))
-                .Where(g => g.Count() >= 2))
-            {
-                toSelect.AddRange(group
-                    .OrderByDescending(i => i.CreatedDateTime ?? DateTimeOffset.MinValue)
-                    .Skip(1));
-            }
+            var toSelect = DuplicateSelection.SelectOlder(DuplicateContentList);
 
             foreach (var item in toSelect)
                 DuplicatesDataGrid.SelectedItems.Add(item);
@@ -738,13 +730,7 @@ namespace InToolz.Pages
 
             DuplicatesDataGrid.SelectedItems.Clear();
 
-            var toSelect = new List<DuplicateContentInfo>();
-            foreach (var group in DuplicateContentList
-                .GroupBy(i => (Name: i.ContentName?.Trim().ToUpperInvariant(), Type: i.ContentType, Platform: i.ContentPlatform?.Trim() ?? string.Empty))
-                .Where(g => g.Count() >= 2 && g.Any(i => i.HasAssignments == true)))
-            {
-                toSelect.AddRange(group.Where(i => i.HasAssignments == false));
-            }
+            var toSelect = DuplicateSelection.SelectUnassigned(DuplicateContentList);
 
             if (toSelect.Count == 0)
             {
@@ -867,11 +853,8 @@ namespace InToolz.Pages
 
                 var duplicateGroups = allItems
                     .Where(i => !string.IsNullOrWhiteSpace(i.ContentName) && !string.IsNullOrWhiteSpace(i.ContentType))
-                    .GroupBy(i => (
-                        Name: i.ContentName!.Trim().ToUpperInvariant(),
-                        Type: i.ContentType!,
-                        Platform: i.ContentPlatform?.Trim() ?? string.Empty))
-                    .Where(g => g.Count() >= 2)
+                    .GroupBy(i => DuplicateSelection.KeyOf(i.ContentName, i.ContentType, i.ContentPlatform))
+                    .Where(g => g.Count() >= DuplicateSelection.MinimumGroupSize)
                     .ToList();
 
                 if (duplicateGroups.Count == 0)
