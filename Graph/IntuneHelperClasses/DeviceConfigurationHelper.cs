@@ -128,7 +128,8 @@ namespace InToolz.Graph.IntuneHelperClasses
                         }
 
                         // cast the object to a DeviceConfiguration (this is necessary for the PostAsync method)
-                        var deviceConfiguration = testRequestBody as Microsoft.Graph.Beta.Models.DeviceConfiguration;
+                        var deviceConfiguration = testRequestBody as Microsoft.Graph.Beta.Models.DeviceConfiguration
+                            ?? throw new InvalidOperationException($"Could not recreate '{originalConfig.DisplayName}' as a DeviceConfiguration.");
 
                         deviceConfiguration.Assignments = deviceConfiguration.Assignments ?? new List<DeviceConfigurationAssignment>();
                         deviceConfiguration.GroupAssignments = deviceConfiguration.GroupAssignments ?? new List<DeviceConfigurationGroupAssignment>();

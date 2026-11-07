@@ -137,7 +137,8 @@ namespace InToolz.Graph.IntuneHelperClasses
                         }
 
                         // Cast the new policy to DeviceCompliancePolicy
-                        var deviceCompliancePolicy = newPolicy as DeviceCompliancePolicy;
+                        var deviceCompliancePolicy = newPolicy as DeviceCompliancePolicy
+                            ?? throw new InvalidOperationException($"Could not recreate '{result.DisplayName}' as a DeviceCompliancePolicy.");
 
                         // Rebuild ScheduledActionsForRule with clean objects (no server-generated IDs).
                         // The Graph API requires exactly one rule with exactly one Block action.
