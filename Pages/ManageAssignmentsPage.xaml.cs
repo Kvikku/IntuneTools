@@ -408,7 +408,7 @@ namespace InToolz.Pages
                 if (removeAll)
                 {
                     // Bulk safeguard for large operations
-                    if (selectedItems.Count >= 10)
+                    if (UserInterfaceHelper.RequiresBulkConfirmation(selectedItems.Count))
                     {
                         var bulkWarning = new ContentDialog
                         {

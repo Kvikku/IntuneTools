@@ -249,16 +249,19 @@ namespace InToolz.Pages
                 return false;
             }
 
-            if (selectedRenameMode != "RemovePrefix" && selectedRenameMode != "RemoveDescription" && string.IsNullOrWhiteSpace(newName))
+            // selectedRenameMode is the string form of the mode the button handler validated and stored.
+            // One that isn't a known mode stops here, instead of reaching PrepareRenameOperation, whose
+            // default arm would quietly cancel.
+            if (!RenameRules.TryParseMode(selectedRenameMode, out var mode))
             {
-                LogWarning(selectedRenameMode == "FindAndReplace" ? "Find text cannot be empty." : "New name cannot be empty.");
+                LogWarning($"Unknown rename mode '{selectedRenameMode}'. Nothing was renamed.");
                 return false;
             }
 
-            var prefixSymbol = GetSelectedPrefixOption();
-            if (prefixSymbol == null && selectedRenameMode == "Prefix")
+            var problem = RenameRules.Validate(mode, newName, GetSelectedPrefixOption() != null);
+            if (problem != null)
             {
-                LogWarning("Please select a prefix option.");
+                LogWarning(problem);
                 return false;
             }
 
@@ -601,11 +604,15 @@ namespace InToolz.Pages
             return null;
         }
 
-        private RenameMode GetSelectedRenameMode()
+        /// <summary>
+        /// The mode of the selected ComboBox item, read from its Tag; null when nothing is selected or
+        /// the item has no valid mode. (It used to cast the item's index to the enum and turn anything
+        /// out of range into Prefix, so a broken selection renamed things in the wrong mode.)
+        /// </summary>
+        private RenameMode? GetSelectedRenameMode()
         {
-            var index = RenameModeComboBox?.SelectedIndex ?? 0;
-            if (index < 0 || index > 6) index = 0;
-            return (RenameMode)index;
+            var tag = (RenameModeComboBox?.SelectedItem as ComboBoxItem)?.Tag as string;
+            return RenameRules.TryParseMode(tag, out var mode) ? mode : null;
         }
 
         private static string GetOperationDisplayText(string operationText) => operationText switch
@@ -675,7 +682,6 @@ namespace InToolz.Pages
         private async void RenameButton_Click(object sender, RoutedEventArgs e)
         {
             var itemsToRename = CustomContentList.ToList();
-            var renameMode = GetSelectedRenameMode();
 
             if (itemsToRename == null || itemsToRename.Count == 0)
             {
@@ -683,26 +689,25 @@ namespace InToolz.Pages
                 return;
             }
 
-            string newName = NewNameTextBox.Text.Trim();
-
-            if (renameMode != RenameMode.RemovePrefix && renameMode != RenameMode.RemoveDescription && string.IsNullOrEmpty(newName))
+            if (GetSelectedRenameMode() is not RenameMode renameMode)
             {
-                LogWarning(renameMode == RenameMode.FindAndReplace ? "Please enter the text to find." : "Please enter a new name.");
+                LogWarning("Please select a rename mode.");
                 return;
             }
 
-            var prefixSymbol = GetSelectedPrefixOption();
+            string newName = NewNameTextBox.Text.Trim();
 
-            if (prefixSymbol == null && renameMode == RenameMode.Prefix)
+            var problem = RenameRules.Validate(renameMode, newName, GetSelectedPrefixOption() != null);
+            if (problem != null)
             {
-                LogWarning("Please select a prefix option.");
+                LogWarning(problem);
                 return;
             }
 
             selectedRenameMode = renameMode.ToString();
 
             // Bulk operation safeguard: warn when renaming 10 or more items
-            if (itemsToRename.Count >= 10)
+            if (UserInterfaceHelper.RequiresBulkConfirmation(itemsToRename.Count))
             {
                 var bulkWarning = new ContentDialog
                 {
@@ -727,7 +732,8 @@ namespace InToolz.Pages
 
         private void RenameModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            var selectionMode = GetSelectedRenameMode();
+            // Only for showing the right controls; starting a rename needs a real mode (RenameButton_Click).
+            var selectionMode = GetSelectedRenameMode() ?? RenameMode.Prefix;
 
             if (PrefixButton is null || NewNameTextBox is null) return;
 

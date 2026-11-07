@@ -40,7 +40,8 @@ namespace InToolz.Utilities
         public static string timestampedAppFolder = string.Empty; // Mutable, so keep as is or consider property
 
 
-        // Use an enum for clarity and keep integer mapping stable with ComboBox order.
+        // The Renaming page's ComboBox items carry these names as their Tag (RenameRules.TryParseMode),
+        // so the numbers and the order here no longer have to match the XAML.
         public enum RenameMode
         {
             Prefix = 0,

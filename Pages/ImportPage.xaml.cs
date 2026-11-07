@@ -536,7 +536,7 @@ namespace InToolz.Pages
             }
 
             // Bulk operation safeguard: warn when importing 10 or more items
-            if (ContentList.Count >= 10)
+            if (UserInterfaceHelper.RequiresBulkConfirmation(ContentList.Count))
             {
                 var bulkWarning = new ContentDialog
                 {

@@ -93,6 +93,30 @@ namespace InToolz.Utilities
         }
 
         /// <summary>
+        /// A bulk operation (assign, rename, delete) on this many items or more asks the user to
+        /// confirm before it starts. One number, used by every page, so they can't disagree.
+        /// </summary>
+        public const int BulkOperationConfirmationThreshold = 10;
+
+        /// <summary>
+        /// Whether an operation on <paramref name="itemCount"/> items is large enough to need an
+        /// extra "are you sure?" first.
+        /// </summary>
+        public static bool RequiresBulkConfirmation(int itemCount)
+        {
+            return itemCount >= BulkOperationConfirmationThreshold;
+        }
+
+        /// <summary>
+        /// Whether an assignment has anything to assign to: at least one selected group, or one of
+        /// the All Users / All Devices virtual groups.
+        /// </summary>
+        public static bool HasAssignmentTarget(int selectedGroupCount, bool includeAllUsers, bool includeAllDevices)
+        {
+            return selectedGroupCount > 0 || includeAllUsers || includeAllDevices;
+        }
+
+        /// <summary>
         /// Executes a batch operation on a list of IDs with logging and time tracking.
         /// </summary>
         public static async Task<int> ExecuteBatchOperationAsync(

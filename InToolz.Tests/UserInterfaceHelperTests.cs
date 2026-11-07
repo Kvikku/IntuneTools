@@ -188,4 +188,49 @@ public class UserInterfaceHelperTests : IDisposable
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => UserInterfaceHelper.IsDeviceStale(Now, -1, Now));
     }
+
+    // --- Bulk-operation confirmation ---------------------------------------------------------
+    // Six pages used to hardcode "10 or more items" next to their own copy of the dialog. A wrong
+    // answer here means a bulk delete, rename or import without the safety prompt.
+
+    [Theory]
+    [InlineData(0, false)]
+    [InlineData(1, false)]
+    [InlineData(9, false)]
+    [InlineData(10, true)]
+    [InlineData(11, true)]
+    [InlineData(500, true)]
+    public void RequiresBulkConfirmation_AtAndAroundTheThreshold(int itemCount, bool expected)
+    {
+        Assert.Equal(expected, UserInterfaceHelper.RequiresBulkConfirmation(itemCount));
+    }
+
+    [Fact]
+    public void RequiresBulkConfirmation_ThresholdIsTen()
+    {
+        // The number users have been told about ("warn when 10 or more items"). Changing it is a
+        // product decision, not a refactor, so it should take a test edit.
+        Assert.Equal(10, UserInterfaceHelper.BulkOperationConfirmationThreshold);
+    }
+
+    [Fact]
+    public void RequiresBulkConfirmation_NegativeCount_DoesNotRequireConfirmation()
+    {
+        Assert.False(UserInterfaceHelper.RequiresBulkConfirmation(-1));
+    }
+
+    // --- Assignment target -------------------------------------------------------------------
+
+    [Theory]
+    [InlineData(0, false, false, false)]   // nothing chosen: the dialog must not close
+    [InlineData(1, false, false, true)]    // one group
+    [InlineData(25, false, false, true)]   // many groups
+    [InlineData(0, true, false, true)]     // All Users alone
+    [InlineData(0, false, true, true)]     // All Devices alone
+    [InlineData(0, true, true, true)]      // both virtual groups, no real group
+    [InlineData(3, true, true, true)]      // everything
+    public void HasAssignmentTarget_NeedsAGroupOrAVirtualGroup(int selectedGroupCount, bool allUsers, bool allDevices, bool expected)
+    {
+        Assert.Equal(expected, UserInterfaceHelper.HasAssignmentTarget(selectedGroupCount, allUsers, allDevices));
+    }
 }

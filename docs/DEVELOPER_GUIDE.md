@@ -621,6 +621,27 @@ The check is `.github/scripts/BuildWarnings.ps1`, with tests you can run locally
 
 ---
 
+## Decision logic stays out of code-behind
+
+A page can't be created without a UI host, so nothing in its code-behind can be unit-tested. That is how #104 happened: a guard read a static that nothing ever set, and no test could have noticed. Anything that answers "is this allowed?", "which mode is this?" or "which items get selected?" **before a Graph call** belongs in a small pure function (static, no controls, no `Variables` statics) that the page calls with values it has read from its controls.
+
+Existing examples to copy:
+
+| Rule | Where |
+|---|---|
+| Is this intent allowed for these targets? | `UserInterfaceHelper.IsAppAssignmentIntentAllowed` |
+| Is this operation big enough to need confirmation? | `UserInterfaceHelper.RequiresBulkConfirmation` |
+| Is there anything to assign to? | `UserInterfaceHelper.HasAssignmentTarget` |
+| Are these rename inputs enough, and which mode is selected? | `RenameRules.Validate`, `RenameRules.TryParseMode` |
+| What is a duplicate, and what do "Select older" / "Select unassigned" pick? | `DuplicateSelection` |
+
+Two habits that keep these honest:
+
+- **Write a rule once.** If the same check appears in a button handler and again in a helper, they will drift apart. Both should call one function.
+- **Read a ComboBox by `Tag`, not by index.** `SelectedIndex` ties the code to the order of the items in the XAML, and an out-of-range index quietly becomes a default. Give each `ComboBoxItem` a `Tag`, parse it with a function that rejects anything unknown, and refuse to continue when it can't be read. `RenamingPage` and `RenameRulesTests` show the shape, including a test that reads the XAML so the tags and the enum can't drift.
+
+---
+
 ## Checklist
 
 Use this checklist when adding a new page:
@@ -633,6 +654,7 @@ Use this checklist when adding a new page:
 - [ ] **Uses `ExecuteWithLoadingAsync`** — For all async operations (handles loading/errors/completion)
 - [ ] **Uses base class methods** — `LoadContentTypesAsync`, `SearchContentTypesAsync`, `ContentList`, etc.
 - [ ] **Logging via `AppLogger.Info/Success/Warning/Error`** — use `AppLogger` in helpers and for file+UI combined logging; use base class `LogInfo/…` for UI-only messages
+- [ ] **Decision logic is a tested pure function** — "is this allowed?", "which items get selected?" and the like are not written inline in a click handler (see *Decision logic stays out of code-behind*)
 
 If adding a new **content type**:
 
