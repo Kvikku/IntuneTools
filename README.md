@@ -4,18 +4,18 @@
 
 **Bulk management for Microsoft Intune — stop clicking a million times.**
 
-[![GitHub release](https://img.shields.io/github/v/release/Kvikku/IntuneTools?style=flat-square&color=blue)](https://github.com/Kvikku/IntuneTools/releases)
-[![CI Build](https://github.com/Kvikku/IntuneTools/actions/workflows/ci.yml/badge.svg)](https://github.com/Kvikku/IntuneTools/actions/workflows/ci.yml)
+[![GitHub release](https://img.shields.io/github/v/release/Kvikku/InToolz?style=flat-square&color=blue)](https://github.com/Kvikku/InToolz/releases)
+[![CI Build](https://github.com/Kvikku/InToolz/actions/workflows/ci.yml/badge.svg)](https://github.com/Kvikku/InToolz/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE.txt)
 [![Microsoft Store](https://img.shields.io/badge/Microsoft_Store-Available-blue?style=flat-square&logo=microsoft)](https://apps.microsoft.com/detail/9phqrcx3gkxd)
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-purple?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/)
 [![WinUI 3](https://img.shields.io/badge/WinUI-3-blue?style=flat-square&logo=windows)](https://learn.microsoft.com/en-us/windows/apps/winui/winui3/)
-[![GitHub stars](https://img.shields.io/github/stars/Kvikku/IntuneTools?style=flat-square)](https://github.com/Kvikku/IntuneTools/stargazers)
-[![GitHub issues](https://img.shields.io/github/issues/Kvikku/IntuneTools?style=flat-square)](https://github.com/Kvikku/IntuneTools/issues)
+[![GitHub stars](https://img.shields.io/github/stars/Kvikku/InToolz?style=flat-square)](https://github.com/Kvikku/InToolz/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/Kvikku/InToolz?style=flat-square)](https://github.com/Kvikku/InToolz/issues)
 
 Import, assign, rename, clean up, and export Intune policies and profiles in bulk — across tenants, in seconds.
 
-[Get it from the Microsoft Store](https://apps.microsoft.com/detail/9phqrcx3gkxd) · [Wiki](https://github.com/Kvikku/IntuneTools/wiki) · [Releases](https://github.com/Kvikku/IntuneTools/releases)
+[Get it from the Microsoft Store](https://apps.microsoft.com/detail/9phqrcx3gkxd) · [Wiki](https://github.com/Kvikku/InToolz/wiki) · [Releases](https://github.com/Kvikku/InToolz/releases)
 
 </div>
 
@@ -64,19 +64,19 @@ Import, assign, rename, clean up, and export Intune policies and profiles in bul
 
 ## Getting started
 
-1. **Install** — grab it from the [Microsoft Store](https://apps.microsoft.com/detail/9phqrcx3gkxd) or the [Releases page](https://github.com/Kvikku/IntuneTools/releases).
+1. **Install** — grab it from the [Microsoft Store](https://apps.microsoft.com/detail/9phqrcx3gkxd) or the [Releases page](https://github.com/Kvikku/InToolz/releases).
 2. **Authenticate** — go to **Settings** and sign in to your **source** tenant. Sign in to a **destination** tenant too if you plan to import content between tenants.
 3. **Go** — pick an operation (Assignment, Manage Assignments, Import, Cleanup, Renaming, JSON, or Audit Log) and let InToolz do the heavy lifting.
 
-For detailed walkthroughs, check out the [wiki](https://github.com/Kvikku/IntuneTools/wiki).
+For detailed walkthroughs, check out the [wiki](https://github.com/Kvikku/InToolz/wiki).
 
 ## Building from source
 
 **Prerequisites:** .NET 8 SDK · Windows App SDK · Windows 10 SDK (build 22621)
 
 ```powershell
-git clone https://github.com/Kvikku/IntuneTools.git
-cd IntuneTools
+git clone https://github.com/Kvikku/InToolz.git
+cd InToolz
 dotnet build
 ```
 
@@ -87,7 +87,7 @@ dotnet build
 - [ ] JSON export/import for applications
 - [ ] Bulk add objects to groups
 
-Have an idea? [Open an issue](https://github.com/Kvikku/IntuneTools/issues) — community input shapes the roadmap.
+Have an idea? [Open an issue](https://github.com/Kvikku/InToolz/issues) — community input shapes the roadmap.
 
 ## Contributing
 
