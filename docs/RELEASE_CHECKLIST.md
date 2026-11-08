@@ -78,7 +78,89 @@ is consented, how large tenants paginate, or how the packaged app behaves.
 - [ ] Confirm the attached release artifact matches what the release notes tell
       users to do with it
 
-## Current release: 1.8.0.0
+## Current release: 1.9.0.0
+
+A backend and packaging release: the rename to InToolz, a native ARM64 build, and
+a rebuilt release pipeline. **No new Graph scope** (the scope lists are identical to
+1.8's), so there is no re-consent heads-up this time.
+
+### The rename and the in-place upgrade — highest risk
+
+The package identity (`JrgenSundet.IntuneTools`), `Application Id="App"` and the
+publisher are unchanged on purpose, so the Store treats 1.9 as an update of the same
+app. That is checked from the package (the release run's Store package check) but has
+never been seen on a real upgrade.
+
+- [ ] **Upgrade a 1.8 Store install to 1.9** — through a Partner Center package
+      flight to your own account, or a staged rollout. A sideload can't test this: it
+      has the same identity as the Store app, so installing it means uninstalling
+      first. Confirm the app updates in place, the Start menu pin or tile survives,
+      and saved page state and the `%LOCALAPPDATA%\InToolz` data are still there.
+- [ ] The Start menu entry, tile and window title say **InToolz**; the executable
+      is `InToolz.exe`
+- [ ] Home page: the GitHub and Issues links open the renamed repository, and the
+      update indicator still works (it now asks `kvikku/InToolz`)
+- [ ] After the GitHub repository is renamed, and **before releasing**, shipped
+      1.8 installs can still see updates: `curl -sL https://api.github.com/repos/kvikku/IntuneTools/releases/latest`
+      still returns the latest release (they follow GitHub's redirect). Nobody may
+      ever create a new repository called `Kvikku/IntuneTools`.
+
+### ARM64 — a new architecture
+
+- [ ] The release run's Store package check passes: one x64 and one ARM64 package,
+      each with an executable built for its architecture
+- [ ] On a **native ARM64 PC**, run the script in `.github/RELEASE_GUIDE.md`
+      ("Checking a build on an ARM64 PC"): `Process Architecture: Arm64` in
+      `Summary.log`, every page in Demo Mode, one real sign-in
+- [ ] x64 is unaffected: the same Demo Mode pass on an x64 PC from the Store
+      package. The Store picks the package per device, so this is the architecture
+      most users are on.
+- [ ] Partner Center, after uploading: the submission lists both packages
+
+### Sideload package and zips — attached to the release for the first time
+
+1.8 attached only a zip. 1.9 attaches an x64 zip, an ARM64 zip, a signed sideload
+package for both and its certificate.
+
+- [ ] `InToolz_<version>_x64.zip` and `_arm64.zip`: extract, run `InToolz.exe`
+- [ ] `InToolz_<version>_sideload.zip`: trust the `.cer` once, run `Install.ps1`,
+      the app installs with a Start menu entry. (Uninstall the Store version first.)
+- [ ] The **Manual install** section of the release notes matches the files that
+      are actually attached
+
+### Page rules moved out of code-behind (#116)
+
+These had no tests and the UI can't run in CI, so click through them once. Demo Mode
+covers all but the duplicates.
+
+- [ ] **Renaming**, each of the 7 modes in turn: the controls shown match the mode
+      (prefix style button, replace box, placeholder text), and a rename on one
+      throwaway object does what the label says. *Remove Prefix* with the box blank
+      still removes a bracket-style prefix; *Remove Suffix* with the box blank asks
+      for text instead of doing anything.
+- [ ] **Bulk prompts**: assign, rename, import, remove assignments and delete (both
+      paths) each warn at 10 items and not at 9
+- [ ] **Assignment** with no group selected and neither All Users nor All Devices:
+      the dialog refuses to close and says why
+- [ ] **Cleanup, duplicates** (needs two same-named throwaway policies in a test
+      tenant): *Select older* keeps the newest in each group; *Select unassigned*
+      selects only items known to be unassigned, and only in groups where another
+      item is assigned
+
+### Fixed since 1.8
+
+- [ ] Listing or searching groups when Graph returns an error (a source account
+      without `Group.Read.All` consent is one way) logs a warning and shows an empty
+      list instead of ending in an unhandled error
+
+### Release notes
+
+- [ ] **Highlights** written (a draft is in the version-bump PR)
+- [ ] A **heads-up for zip users**: the executable is now `InToolz.exe` (it was
+      `IntuneTools.exe`) and the zip is `InToolz_<version>_x64.zip`, so an AppLocker
+      or Defender rule keyed on the old file name needs updating
+
+## Previous release: 1.8.0.0
 
 Branch: `test/1.8-live-tenant-verification`
 
