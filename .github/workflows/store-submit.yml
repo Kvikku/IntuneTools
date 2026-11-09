@@ -60,7 +60,7 @@ jobs:
           echo "UPLOAD_PATH=$($upload.FullName)" >> $env:GITHUB_ENV
 
       - name: Setup Microsoft Store Developer CLI
-        uses: microsoft/microsoft-store-apppublisher@15abd1c50fcc164b19cb240fb04ef3c49bf715a2 # v1.1
+        uses: microsoft/microsoft-store-apppublisher@cc9910a8d59f2eb55cbb83df0a3800cf3b5300e0 # v1.4
 
       - name: Configure Microsoft Store Developer CLI
         shell: pwsh
