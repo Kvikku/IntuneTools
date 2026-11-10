@@ -25,11 +25,11 @@ The page is divided into three main areas:
 
 ### 1. Set the Time Range
 
-Use the **Time Range** control to select how far back to fetch logs. Available options range from **1 day** to **30 days**. The default is 7 days.
+Use the **Time Range** control to select how far back to fetch logs. Available options range from **1 day** to **30 days**. The default is 1 day.
 
 ### 2. Load Logs
 
-Click **Load Audit Log** to fetch log entries from Microsoft Graph for the selected time range.
+Click **Load Audit Events** to fetch log entries from Microsoft Graph for the selected time range.
 
 A loading overlay appears while data is being fetched. In large tenants with a lot of activity, this can take a moment.
 
@@ -70,7 +70,7 @@ Two export options are available:
 | Control | Description |
 |---|---|
 | **Time Range** | Select the lookback period (1–30 days) |
-| **Load Audit Log** | Fetch log entries from the tenant |
+| **Load Audit Events** | Fetch log entries from the tenant |
 | **Export CSV** | Download the log as a CSV file |
 | **Export Report** | Generate a formatted summary report |
 
@@ -78,7 +78,7 @@ Two export options are available:
 
 ## Tips
 
-- **Start with 7 days.** The default range is a good starting point. Extend to 30 days only if you need to investigate something older — larger ranges take longer to fetch.
+- **Start with the default 1-day range.** Extend to a longer range only if you need to investigate something older — larger ranges take longer to fetch.
 - **Sort by Actor** to quickly see all actions taken by a specific user.
 - **Sort by Result** to surface failed operations — these are often the most actionable entries.
 - **Use the per-actor summary** to spot unexpected activity, such as a service account or unfamiliar user making bulk changes.

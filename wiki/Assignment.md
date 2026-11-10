@@ -22,8 +22,6 @@ The Assignment page supports assigning the following resource types. You can sel
 | Configuration | Device Configuration policies |
 | Compliance | Device Compliance policies |
 | Enrollment | Apple BYOD Enrollment Profiles |
-| Filters | Assignment Filters |
-| Identity | Entra Security Groups |
 | Scripts | PowerShell Scripts |
 | Scripts | Proactive Remediations (Remediation Scripts) |
 | Scripts | macOS Shell Scripts |
@@ -32,6 +30,8 @@ The Assignment page supports assigning the following resource types. You can sel
 | Updates | Windows Feature Updates |
 | Updates | Windows Quality Update Policies |
 | Updates | Windows Quality Update Profiles |
+
+> **Note:** Assignment Filters and Entra Security Groups are not themselves assignable content — a filter is an optional input you apply to an assignment (see **Step B — Configure Assignment Options** below), and groups are the target you assign content *to*, not content you select here.
 
 ---
 

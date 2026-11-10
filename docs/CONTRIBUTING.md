@@ -23,7 +23,7 @@ centralizes its common imports. **Do not re-add these to individual files.**
    - `System.Collections.ObjectModel`, `System.Text`, `System.Text.Json`
    - `Microsoft.Kiota.Serialization.Json`
    - Several `using static …` helpers
-     (`HelperClass`, `TimeSaved`, `Variables`, `CustomContentInfo`,
+     (`HelperClass`, `TimeSaved`, `Variables`,
      `DestinationUserAuthentication`, `SourceUserAuthentication`)
 
 3. **Per-file imports** are still appropriate for namespaces that are only
