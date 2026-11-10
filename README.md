@@ -28,7 +28,7 @@ Import, assign, rename, clean up, and export Intune policies and profiles in bul
 | 📥 | **Import** | Copy policies and profiles from one tenant to another via Microsoft Graph |
 | 🎯 | **Assignment** | Assign Entra groups to policies and apps in bulk, with optional assignment filters. Right-click any item to view its current assignments in a popup. |
 | ✏️ | **Renaming** | Rename items using prefix, suffix, find & replace, or description update — applied in bulk across as many items as you select |
-| 🧹 | **Cleanup** | Mass-delete policies, apps, and other Intune content. **Find Unassigned** surfaces items with no group assignments; **Find Duplicates** detects and auto-selects duplicate names so you can prune them in one go |
+| 🧹 | **Cleanup** | Mass-delete policies, apps, and other Intune content. **Find Unassigned** surfaces items with no group assignments; **Find Duplicates** detects and auto-selects duplicate names so you can prune them in one go; **Stale Devices** finds Intune and Entra ID devices that have gone quiet so you can clear out ghost hardware |
 | 📄 | **JSON Export/Import** | Export policies and Entra groups to JSON files and reimport them — great for backup and version control |
 | 🔗 | **Manage Assignments** | Inspect and remove existing group assignments from Intune content types that support assignments in bulk |
 | 📋 | **Audit Log** | Review recent Intune changes — who made them, what was done, and whether they succeeded — with time-range filters (1–30 days), a per-actor breakdown, and CSV/report export |
@@ -65,7 +65,7 @@ Import, assign, rename, clean up, and export Intune policies and profiles in bul
 ## Getting started
 
 1. **Install** — grab it from the [Microsoft Store](https://apps.microsoft.com/detail/9phqrcx3gkxd) or the [Releases page](https://github.com/Kvikku/InToolz/releases).
-2. **Authenticate** — go to **Settings** and sign in to your **source** tenant. Sign in to a **destination** tenant too if you plan to import content between tenants.
+2. **Authenticate** — go to **Settings** and sign in to your **source** tenant. Sign in to a **destination** tenant too if you plan to import content between tenants. No tenant handy? Turn on **Demo Mode** in Settings to try InToolz against fake data instead.
 3. **Go** — pick an operation (Assignment, Manage Assignments, Import, Cleanup, Renaming, JSON, or Audit Log) and let InToolz do the heavy lifting.
 
 For detailed walkthroughs, check out the [wiki](https://github.com/Kvikku/InToolz/wiki).
