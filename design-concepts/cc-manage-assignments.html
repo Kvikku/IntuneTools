@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>InToolz 2.0 — Manage Assignments</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="topbar">
+  <div class="left">
+    <a class="logo" href="concept-1-command-center.html"><span class="dot"></span> InToolz <span class="version-chip">2.0</span></a>
+  </div>
+  <div class="cmdbox"><span>Search actions, items, tenants…</span><span class="kbd">Ctrl K</span></div>
+  <div class="right">
+    <a class="tenant-pill" href="cc-settings.html"><span class="swatch" style="background:#4ecdc4"></span>Source: <b>Contoso Prod</b></a>
+    <div class="avatar"></div>
+  </div>
+</div>
+<div class="breadcrumb"><a href="concept-1-command-center.html">Dashboard</a><span class="sep">/</span><span class="current">Manage Assignments</span></div>
+
+<div class="page-wrap">
+  <div class="page-head">
+    <h1>Manage Assignments</h1>
+    <p class="sub">Inspect and remove existing group assignments in bulk.</p>
+  </div>
+
+  <div class="toolbar-row">
+    <input type="search" placeholder="Search items…" style="width:280px">
+    <select class="filter-select"><option>All content types</option><option>Settings Catalog</option><option>Compliance Policies</option><option>Applications</option></select>
+    <button>List all</button>
+  </div>
+
+  <div class="content-split">
+    <table class="data">
+      <thead><tr><th></th><th>Name</th><th>Type</th><th>Assigned groups</th></tr></thead>
+      <tbody>
+        <tr class="row selected"><td><input type="checkbox" checked></td><td>Baseline Security Config</td><td class="muted-cell">Settings Catalog</td><td><div class="chip-row"><span class="chip">All Finance Devices</span><span class="chip">Pilot Ring</span><span class="chip">Executives</span></div></td></tr>
+        <tr class="row selected"><td><input type="checkbox" checked></td><td>Corporate Compliance - Win11</td><td class="muted-cell">Compliance</td><td><div class="chip-row"><span class="chip">All Finance Devices</span></div></td></tr>
+        <tr class="row"><td><input type="checkbox"></td><td>Quality Update Ring 1</td><td class="muted-cell">Windows Update</td><td><div class="chip-row"><span class="chip">Pilot Ring</span><span class="chip">IT Team</span></div></td></tr>
+        <tr class="row"><td><input type="checkbox"></td><td>Adobe Acrobat Reader DC</td><td class="muted-cell">Application</td><td><div class="chip-row"><span class="chip">All Finance Devices</span><span class="chip">Executives</span></div></td></tr>
+      </tbody>
+    </table>
+
+    <div class="card side-panel">
+      <h3>Assignments in selection</h3>
+      <p style="font-size:12.5px; color:var(--text-muted); margin:0 0 14px;">Click a chip to stage it for removal. Staged removals apply only to the items they belong to.</p>
+      <div class="chip-row" style="margin-bottom:16px">
+        <span class="chip removable">All Finance Devices ✕</span>
+        <span class="chip removable">Pilot Ring ✕</span>
+        <span class="chip removable">Executives ✕</span>
+      </div>
+      <button class="destructive" style="width:100%; justify-content:center;" data-open-modal="confirm-remove-modal">Remove 4 staged assignments</button>
+    </div>
+  </div>
+</div>
+
+<div class="page-footer-note">
+  <b>Manage Assignments</b> — the side panel aggregates assignments across the whole selection, not one item at a time.
+  <a href="concept-1-command-center.html">← back to dashboard</a>
+</div>
+
+<div class="overlay" id="palette-overlay">
+  <div class="palette">
+    <input type="text" placeholder="Type a command…" autofocus>
+    <div class="results">
+      <a class="result" href="cc-assignment.html"><span class="glyph">🎯</span><span class="label">Assign group to apps or policies…</span><span class="hint">Assignment</span></a>
+      <a class="result" href="cc-cleanup.html"><span class="glyph">🧹</span><span class="label">Find unassigned items…</span><span class="hint">Cleanup</span></a>
+      <a class="result" href="cc-renaming.html"><span class="glyph">✏️</span><span class="label">Rename items…</span><span class="hint">Renaming</span></a>
+      <a class="result" href="cc-import.html"><span class="glyph">📥</span><span class="label">Import policies to another tenant…</span><span class="hint">Import</span></a>
+      <a class="result" href="cc-manage-assignments.html"><span class="glyph">🔗</span><span class="label">Remove existing assignments…</span><span class="hint">Manage Assignments</span></a>
+      <a class="result" href="cc-json.html"><span class="glyph">📄</span><span class="label">Export selected items to JSON…</span><span class="hint">JSON</span></a>
+      <a class="result" href="cc-audit-log.html"><span class="glyph">📋</span><span class="label">View recent tenant changes…</span><span class="hint">Audit Log</span></a>
+      <a class="result" href="cc-settings.html"><span class="glyph">⚙️</span><span class="label">Switch tenants / sign in…</span><span class="hint">Settings</span></a>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="confirm-remove-modal">
+  <div class="modal">
+    <h2>🔗 Remove 4 assignments?</h2>
+    <p>This removes the following group assignments from 2 items in <b>Contoso Prod</b>:</p>
+    <div class="consequence">
+      <b>Baseline Security Config</b> loses: All Finance Devices, Pilot Ring, Executives<br>
+      <b>Corporate Compliance - Win11</b> loses: All Finance Devices
+    </div>
+    <p style="margin-bottom:4px">Devices in these groups will stop receiving these policies. This cannot be undone automatically — you'd need to re-assign manually.</p>
+    <div class="modal-actions">
+      <button data-close-modal>Cancel</button>
+      <button class="destructive" data-close-modal>Remove 4 assignments</button>
+    </div>
+  </div>
+</div>
+
+<script src="shell.js" defer></script>
+</body>
+</html>

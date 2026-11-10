@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Concept 2 — Workbench</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .topbar { justify-content: space-between; }
+  .topbar .right { display: flex; align-items: center; gap: 12px; }
+  .search {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 7px 12px; color: var(--text-muted); width: 260px;
+  }
+  .layout { display: grid; grid-template-columns: 220px 1fr 300px; height: calc(100vh - 56px); }
+  .rail { border-right: 1px solid var(--border); padding: 16px 10px; overflow-y: auto; }
+  .rail .item {
+    display: flex; justify-content: space-between; padding: 9px 12px; border-radius: var(--radius-sm);
+    font-size: 13px; cursor: pointer; color: var(--text-muted);
+  }
+  .rail .item:hover { background: var(--bg-card); color: var(--text); }
+  .rail .item.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .rail .item .count { color: inherit; opacity: .7; }
+  .rail .section-label { font-size: 11px; text-transform: uppercase; color: var(--text-muted); padding: 10px 12px 4px; letter-spacing: .04em; }
+
+  .main { padding: 20px 24px 90px; overflow-y: auto; position: relative; }
+  .main h1 { font-size: 20px; margin: 0 0 2px; }
+  .main .sub { color: var(--text-muted); font-size: 12.5px; margin-bottom: 16px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: var(--text-muted); font-weight: 600; font-size: 11.5px; text-transform: uppercase; letter-spacing: .03em; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  td { padding: 10px 10px; border-bottom: 1px solid var(--border); }
+  tr.row:hover td { background: var(--bg-card); }
+  tr.row.selected td { background: var(--accent-soft); }
+  tr.row { cursor: pointer; }
+  .platform-badge { font-size: 11px; color: var(--text-muted); }
+  .assign-count { display: inline-flex; align-items: center; gap: 4px; }
+
+  .action-bar {
+    position: fixed; left: 220px; right: 300px; bottom: 0;
+    background: var(--bg-elevated); border-top: 1px solid var(--border);
+    padding: 14px 24px; display: flex; align-items: center; gap: 10px;
+  }
+  .action-bar .count { font-weight: 600; margin-right: 12px; }
+  .action-bar .spacer { flex: 1; }
+
+  .inspector { border-left: 1px solid var(--border); padding: 20px; overflow-y: auto; }
+  .inspector h2 { font-size: 16px; margin: 0 0 4px; }
+  .inspector .type { color: var(--text-muted); font-size: 12px; margin-bottom: 18px; }
+  .inspector dl { margin: 0 0 18px; }
+  .inspector dt { font-size: 11px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 2px; }
+  .inspector dd { margin: 0 0 12px; font-size: 13px; }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { background: var(--bg-card); border: 1px solid var(--border); border-radius: 999px; padding: 4px 10px; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="logo"><span class="dot"></span> InToolz <span class="version-chip">2.0</span></div>
+  <input class="search" placeholder="Filter current view…">
+  <div class="right">
+    <div class="tenant-pill"><span class="swatch" style="background:#4ecdc4"></span>Contoso Prod</div>
+    <div class="avatar"></div>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="rail">
+    <div class="section-label">Content</div>
+    <div class="item active"><span>All items</span><span class="count">312</span></div>
+    <div class="item"><span>Settings Catalog</span><span class="count">84</span></div>
+    <div class="item"><span>Compliance Policies</span><span class="count">46</span></div>
+    <div class="item"><span>Autopilot Profiles</span><span class="count">12</span></div>
+    <div class="item"><span>Applications</span><span class="count">97</span></div>
+    <div class="item"><span>Scripts</span><span class="count">18</span></div>
+    <div class="item"><span>Assignment Filters</span><span class="count">9</span></div>
+    <div class="item"><span>Entra Groups</span><span class="count">46</span></div>
+    <div class="section-label">Devices</div>
+    <div class="item"><span>Intune Devices</span><span class="count">1,204</span></div>
+    <div class="item"><span>Stale (90d+)</span><span class="count">7</span></div>
+  </div>
+
+  <div class="main">
+    <h1>All items</h1>
+    <div class="sub">312 items across Contoso Prod · 3 selected</div>
+    <table>
+      <thead>
+        <tr><th></th><th>Name</th><th>Type</th><th>Platform</th><th>Assignments</th><th>Modified</th></tr>
+      </thead>
+      <tbody>
+        <tr class="row selected" onclick="this.classList.toggle('selected'); updateCount()"><td><input type="checkbox" checked></td><td>Baseline Security Config</td><td class="platform-badge">Settings Catalog</td><td>Windows</td><td class="assign-count">🎯 3 groups</td><td>2 days ago</td></tr>
+        <tr class="row selected" onclick="this.classList.toggle('selected'); updateCount()"><td><input type="checkbox" checked></td><td>Corporate Compliance - Win11</td><td class="platform-badge">Compliance</td><td>Windows</td><td class="assign-count">🎯 1 group</td><td>5 days ago</td></tr>
+        <tr class="row" onclick="this.classList.toggle('selected'); updateCount()"><td><input type="checkbox"></td><td>Finance Device Autopilot</td><td class="platform-badge">Autopilot</td><td>Windows</td><td class="assign-count">—</td><td>12 days ago</td></tr>
+        <tr class="row selected" onclick="this.classList.toggle('selected'); updateCount()"><td><input type="checkbox" checked></td><td>Adobe Acrobat Reader DC</td><td class="platform-badge">Application</td><td>Win32</td><td class="assign-count">🎯 2 groups</td><td>1 month ago</td></tr>
+        <tr class="row" onclick="this.classList.toggle('selected'); updateCount()"><td><input type="checkbox"></td><td>Remove Temp Files</td><td class="platform-badge">PowerShell Script</td><td>Windows</td><td class="assign-count">🎯 1 group</td><td>2 months ago</td></tr>
+        <tr class="row" onclick="this.classList.toggle('selected'); updateCount()"><td><input type="checkbox"></td><td>BYOD - iOS Enrollment</td><td class="platform-badge">Enrollment Profile</td><td>iOS</td><td class="assign-count">—</td><td>3 months ago</td></tr>
+        <tr class="row" onclick="this.classList.toggle('selected'); updateCount()"><td><input type="checkbox"></td><td>Quality Update Ring 1</td><td class="platform-badge">Windows Update</td><td>Windows</td><td class="assign-count">🎯 4 groups</td><td>4 months ago</td></tr>
+        <tr class="row" onclick="this.classList.toggle('selected'); updateCount()"><td><input type="checkbox"></td><td>Baseline Security Config (copy)</td><td class="platform-badge">Settings Catalog</td><td>Windows</td><td class="assign-count">—</td><td>5 months ago</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="inspector">
+    <h2>Baseline Security Config</h2>
+    <div class="type">Settings Catalog Policy · Windows</div>
+    <dl>
+      <dt>Created</dt><dd>2025-03-11 by jorgen@contoso.com</dd>
+      <dt>Last modified</dt><dd>2 days ago</dd>
+      <dt>Assigned groups</dt>
+      <dd><div class="chip-row">
+        <span class="chip">All Finance Devices</span>
+        <span class="chip">Pilot Ring</span>
+        <span class="chip">Executives</span>
+      </div></dd>
+    </dl>
+    <button style="width:100%; justify-content:center;">View raw JSON ↗</button>
+  </div>
+</div>
+
+<div class="action-bar card" id="action-bar">
+  <span class="count" id="sel-count">3 selected</span>
+  <button>🎯 Assign group</button>
+  <button>🔗 Remove assignments</button>
+  <button>✏️ Rename</button>
+  <button>📄 Export JSON</button>
+  <div class="spacer"></div>
+  <button class="destructive">🗑 Delete</button>
+</div>
+
+<div class="page-footer-note">
+  <b>Concept 2 of 3 — Workbench.</b> Object-first: select items, then act on them.
+  <a href="index.html">← back to all concepts</a>
+</div>
+
+<script>
+function updateCount() {
+  const n = document.querySelectorAll('tr.row.selected').length;
+  document.getElementById('sel-count').textContent = n + ' selected';
+  document.getElementById('action-bar').style.display = n > 0 ? 'flex' : 'none';
+}
+document.querySelectorAll('.rail .item').forEach(el => el.addEventListener('click', () => {
+  document.querySelectorAll('.rail .item').forEach(x => x.classList.remove('active'));
+  el.classList.add('active');
+}));
+</script>
+</body>
+</html>

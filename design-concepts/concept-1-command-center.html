@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>InToolz 2.0 — Dashboard</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 36px 24px 100px; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  .sub { color: var(--text-muted); margin-bottom: 28px; }
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 36px; }
+  .stat-card { cursor: pointer; display: block; }
+  .stat-card .label { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+  .stat-card .value { font-size: 30px; font-weight: 700; }
+  .stat-card .trend { font-size: 12px; margin-top: 6px; }
+  .trend.up { color: var(--danger); }
+  .trend.down { color: var(--success); }
+  section h3 { font-size: 14px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; margin: 0 0 12px; }
+  .recent-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 36px; }
+  .recent-row {
+    display: flex; align-items: center; gap: 14px; padding: 12px 16px;
+  }
+  .recent-row .icon { width: 32px; height: 32px; border-radius: 8px; background: var(--accent-soft); display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+  .recent-row .meta { flex: 1; }
+  .recent-row .title { font-weight: 600; margin-bottom: 2px; }
+  .recent-row .time { font-size: 12px; color: var(--text-muted); }
+  .browse-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .browse-tile { text-align: center; padding: 18px 10px; cursor: pointer; display: block; }
+  .browse-tile .glyph { font-size: 20px; margin-bottom: 8px; }
+  .browse-tile .name { font-size: 12.5px; color: var(--text-muted); }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="left">
+    <a class="logo" href="concept-1-command-center.html"><span class="dot"></span> InToolz <span class="version-chip">2.0</span></a>
+  </div>
+  <div class="cmdbox">
+    <span>Search actions, items, tenants…</span>
+    <span class="kbd">Ctrl K</span>
+  </div>
+  <div class="right">
+    <a class="tenant-pill" href="cc-settings.html"><span class="swatch" style="background:#4ecdc4"></span>Source: <b>Contoso Prod</b></a>
+    <a class="tenant-pill" href="cc-settings.html"><span class="swatch" style="background:#f5a623"></span>Dest: <b>Fabrikam Sandbox</b></a>
+    <div class="avatar"></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <h1>Good afternoon, Jørgen</h1>
+  <p class="sub">Here's what's happening across your tenants.</p>
+
+  <div class="stat-grid">
+    <a class="card stat-card" href="cc-cleanup.html">
+      <div class="label">Unassigned items</div>
+      <div class="value">23</div>
+      <div class="trend up">▲ 4 since last scan</div>
+    </a>
+    <a class="card stat-card" href="cc-cleanup.html">
+      <div class="label">Stale devices</div>
+      <div class="value">7</div>
+      <div class="trend down">▼ 2 since last scan</div>
+    </a>
+    <a class="card stat-card" href="cc-cleanup.html">
+      <div class="label">Duplicate names</div>
+      <div class="value">4</div>
+      <div class="trend up">▲ 1 since last scan</div>
+    </a>
+    <a class="card stat-card" href="cc-audit-log.html">
+      <div class="label">Changes (7d)</div>
+      <div class="value">156</div>
+      <div class="trend down">▼ 12% vs prior week</div>
+    </a>
+  </div>
+
+  <section>
+    <h3>Jump back in</h3>
+    <div class="recent-list">
+      <div class="card recent-row">
+        <div class="icon">✏️</div>
+        <div class="meta">
+          <div class="title">Renamed 42 Compliance Policies <span class="badge success">Completed</span></div>
+          <div class="time">2 hours ago · Contoso Prod</div>
+        </div>
+        <a href="cc-renaming.html"><button>View</button></a>
+      </div>
+      <div class="card recent-row">
+        <div class="icon">📥</div>
+        <div class="meta">
+          <div class="title">Imported 12 Settings Catalog policies to Fabrikam Sandbox <span class="badge success">Completed</span></div>
+          <div class="time">Yesterday</div>
+        </div>
+        <a href="cc-import.html"><button>View</button></a>
+      </div>
+      <div class="card recent-row">
+        <div class="icon">🧹</div>
+        <div class="meta">
+          <div class="title">Cleanup scan: found 4 duplicates <span class="badge warning">Action needed</span></div>
+          <div class="time">3 days ago · Contoso Prod</div>
+        </div>
+        <a href="cc-cleanup.html"><button class="primary">Resume</button></a>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h3>Browse all actions</h3>
+    <div class="browse-grid">
+      <a class="card browse-tile" href="cc-import.html"><div class="glyph">📥</div><div class="name">Import</div></a>
+      <a class="card browse-tile" href="cc-assignment.html"><div class="glyph">🎯</div><div class="name">Assignment</div></a>
+      <a class="card browse-tile" href="cc-manage-assignments.html"><div class="glyph">🔗</div><div class="name">Manage Assignments</div></a>
+      <a class="card browse-tile" href="cc-cleanup.html"><div class="glyph">🧹</div><div class="name">Cleanup</div></a>
+      <a class="card browse-tile" href="cc-renaming.html"><div class="glyph">✏️</div><div class="name">Renaming</div></a>
+      <a class="card browse-tile" href="cc-json.html"><div class="glyph">📄</div><div class="name">JSON</div></a>
+      <a class="card browse-tile" href="cc-audit-log.html"><div class="glyph">📋</div><div class="name">Audit Log</div></a>
+      <a class="card browse-tile" href="cc-settings.html"><div class="glyph">⚙️</div><div class="name">Settings</div></a>
+    </div>
+  </section>
+</div>
+
+<div class="page-footer-note">
+  <b>Command Center — now built out.</b> Dashboard + 8 pages, all reachable via Ctrl+K.
+  <a href="index.html">← back to all 3 concepts</a>
+</div>
+
+<div class="overlay" id="palette-overlay">
+  <div class="palette">
+    <input type="text" placeholder="Type a command… e.g. 'assign group', 'find duplicates'" autofocus>
+    <div class="results">
+      <a class="result active" href="cc-assignment.html"><span class="glyph">🎯</span><span class="label">Assign group to apps or policies…</span><span class="hint">Assignment</span></a>
+      <a class="result" href="cc-cleanup.html"><span class="glyph">🧹</span><span class="label">Find unassigned items…</span><span class="hint">Cleanup</span></a>
+      <a class="result" href="cc-cleanup.html"><span class="glyph">🧹</span><span class="label">Find duplicate names…</span><span class="hint">Cleanup</span></a>
+      <a class="result" href="cc-cleanup.html"><span class="glyph">🧹</span><span class="label">Find stale devices…</span><span class="hint">Cleanup</span></a>
+      <a class="result" href="cc-renaming.html"><span class="glyph">✏️</span><span class="label">Rename items (prefix / suffix / find &amp; replace)…</span><span class="hint">Renaming</span></a>
+      <a class="result" href="cc-import.html"><span class="glyph">📥</span><span class="label">Import policies to another tenant…</span><span class="hint">Import</span></a>
+      <a class="result" href="cc-manage-assignments.html"><span class="glyph">🔗</span><span class="label">Remove existing assignments…</span><span class="hint">Manage Assignments</span></a>
+      <a class="result" href="cc-json.html"><span class="glyph">📄</span><span class="label">Export selected items to JSON…</span><span class="hint">JSON</span></a>
+      <a class="result" href="cc-audit-log.html"><span class="glyph">📋</span><span class="label">View recent tenant changes…</span><span class="hint">Audit Log</span></a>
+      <a class="result" href="cc-settings.html"><span class="glyph">⚙️</span><span class="label">Switch tenants / sign in…</span><span class="hint">Settings</span></a>
+    </div>
+  </div>
+</div>
+
+<script src="shell.js" defer></script>
+</body>
+</html>

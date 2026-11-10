@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>InToolz 2.0 — UI Concepts</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .wrap { max-width: 920px; margin: 0 auto; padding: 48px 24px 80px; }
+  h1 { font-size: 28px; margin-bottom: 4px; }
+  .lede { color: var(--text-muted); margin-bottom: 36px; max-width: 640px; line-height: 1.6; }
+  .concepts { display: flex; flex-direction: column; gap: 16px; }
+  .concept-card {
+    display: block;
+    padding: 22px 24px;
+    transition: transform .15s ease;
+  }
+  .concept-card:hover { transform: translateX(4px); }
+  .concept-card .tag { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+  .concept-card h2 { margin: 0 0 6px; font-size: 19px; }
+  .concept-card p { margin: 0 0 10px; color: var(--text-muted); line-height: 1.55; }
+  .concept-card .tradeoff { font-size: 12.5px; color: var(--warning); }
+  .current { margin-top: 40px; padding: 16px 20px; font-size: 12.5px; color: var(--text-muted); line-height: 1.6; }
+  .current b { color: var(--text); }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="logo"><span class="dot"></span> InToolz <span class="version-chip">2.0 concepts</span></div>
+</div>
+<div class="wrap">
+  <h1>Three structural directions for 2.0</h1>
+  <p class="lede">These are static, clickable sketches — no real data or logic. Each one rethinks how
+  InToolz is organized at the <em>structural</em> level, not just the color palette. Open any card below.</p>
+
+  <div class="concepts">
+    <a class="concept-card card" href="concept-1-command-center.html">
+      <div class="tag">Direction 1 — Verb-first · ⭐ selected, now fully built out</div>
+      <h2>Command Center</h2>
+      <p>Drops the left nav entirely. A dashboard of live stats (unassigned items, stale devices, duplicates)
+      plus a search-driven command palette (Ctrl+K) replace page-browsing — you type what you want to do
+      instead of hunting for the right nav item. Now mocked up end-to-end: Assignment, Manage Assignments,
+      Cleanup, Renaming, Import, JSON, Audit Log, and Settings all follow this shell.</p>
+      <div class="tradeoff">Tradeoff: new users don't yet know the verbs to search for — needs a visible fallback.</div>
+    </a>
+
+    <a class="concept-card card" href="concept-2-workbench.html">
+      <div class="tag">Direction 2 — Object-first</div>
+      <h2>Workbench</h2>
+      <p>One unified object browser across all content types, filtered by a left rail instead of by operation.
+      Select items first, then a contextual action bar offers whatever bulk actions apply — assign, rename,
+      export, delete — same mental model as File Explorer.</p>
+      <div class="tradeoff">Tradeoff: cross-tenant Import doesn't fit a single-tenant grid as cleanly — needs a dedicated mode.</div>
+    </a>
+
+    <a class="concept-card card" href="concept-3-job-queue.html">
+      <div class="tag">Direction 3 — Job-first</div>
+      <h2>Mission Control</h2>
+      <p>Every bulk action becomes a configurable, queueable job. A persistent job queue panel (like a download
+      manager) tracks running/queued/completed jobs with per-item success/fail, so several operations can run
+      side by side instead of blocking one page.</p>
+      <div class="tradeoff">Tradeoff: biggest rewrite — orchestrators need true async queueing, not page-blocking calls.</div>
+    </a>
+  </div>
+
+  <div class="current card">
+    <b>Today, for reference:</b> a <code>NavigationView</code> sidebar with one page per verb
+    (Home, Assignment, Manage Assignments, Import, Cleanup, Renaming, JSON, Audit Log, Settings), each
+    following the same header → toolbar cards → grid + side-panel layout defined in
+    <code>docs/UI_STANDARD.md</code>. All three directions above assume that per-page layout is replaced,
+    not incrementally restyled.
+  </div>
+</div>
+</body>
+</html>

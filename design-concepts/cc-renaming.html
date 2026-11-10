@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>InToolz 2.0 — Renaming</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .rule-fields { display: none; }
+  .rule-fields.active { display: block; }
+  .preview-name { color: var(--success); font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="left">
+    <a class="logo" href="concept-1-command-center.html"><span class="dot"></span> InToolz <span class="version-chip">2.0</span></a>
+  </div>
+  <div class="cmdbox"><span>Search actions, items, tenants…</span><span class="kbd">Ctrl K</span></div>
+  <div class="right">
+    <a class="tenant-pill" href="cc-settings.html"><span class="swatch" style="background:#4ecdc4"></span>Source: <b>Contoso Prod</b></a>
+    <div class="avatar"></div>
+  </div>
+</div>
+<div class="breadcrumb"><a href="concept-1-command-center.html">Dashboard</a><span class="sep">/</span><span class="current">Renaming</span></div>
+
+<div class="page-wrap">
+  <div class="page-head">
+    <h1>Renaming</h1>
+    <p class="sub">Rename items using prefix, suffix, find &amp; replace, or description update — applied in bulk.</p>
+  </div>
+
+  <div class="toolbar-row">
+    <input type="search" placeholder="Search items…" style="width:280px">
+    <select class="filter-select"><option>All content types</option><option>Settings Catalog</option><option>Compliance Policies</option></select>
+    <button>List all</button>
+  </div>
+
+  <div class="content-split">
+    <table class="data">
+      <thead><tr><th></th><th>Current name</th><th>Type</th><th>Preview</th></tr></thead>
+      <tbody>
+        <tr class="row selected"><td><input type="checkbox" checked></td><td>Security Config</td><td class="muted-cell">Settings Catalog</td><td class="preview-name">CONTOSO-Security Config</td></tr>
+        <tr class="row selected"><td><input type="checkbox" checked></td><td>Compliance - Win11</td><td class="muted-cell">Compliance</td><td class="preview-name">CONTOSO-Compliance - Win11</td></tr>
+        <tr class="row selected"><td><input type="checkbox" checked></td><td>Quality Update Ring 1</td><td class="muted-cell">Windows Update</td><td class="preview-name">CONTOSO-Quality Update Ring 1</td></tr>
+        <tr class="row"><td><input type="checkbox"></td><td>Finance Autopilot</td><td class="muted-cell">Autopilot</td><td class="muted-cell">—</td></tr>
+      </tbody>
+    </table>
+
+    <div class="card side-panel">
+      <h3>Rename rule</h3>
+      <div class="field">
+        <label>Mode</label>
+        <select id="rename-mode" style="width:100%" onchange="document.querySelectorAll('.rule-fields').forEach(f=>f.classList.remove('active')); document.getElementById('mode-'+this.value).classList.add('active')">
+          <option value="prefix">Add prefix</option>
+          <option value="suffix">Add suffix</option>
+          <option value="findreplace">Find &amp; replace</option>
+          <option value="description">Update description</option>
+        </select>
+      </div>
+
+      <div class="rule-fields active" id="mode-prefix">
+        <div class="field"><label>Prefix text</label><input type="text" value="CONTOSO-" style="width:100%"></div>
+      </div>
+      <div class="rule-fields" id="mode-suffix">
+        <div class="field"><label>Suffix text</label><input type="text" placeholder="-ARCHIVED" style="width:100%"></div>
+      </div>
+      <div class="rule-fields" id="mode-findreplace">
+        <div class="field"><label>Find</label><input type="text" placeholder="Old" style="width:100%"></div>
+        <div class="field"><label>Replace with</label><input type="text" placeholder="New" style="width:100%"></div>
+      </div>
+      <div class="rule-fields" id="mode-description">
+        <div class="field"><label>New description</label><input type="text" placeholder="Managed by IT — do not edit" style="width:100%"></div>
+      </div>
+
+      <button class="primary" style="width:100%; justify-content:center;">Apply to 3 items</button>
+    </div>
+  </div>
+</div>
+
+<div class="page-footer-note">
+  <b>Renaming</b> — the preview column updates live as the rule on the right changes.
+  <a href="concept-1-command-center.html">← back to dashboard</a>
+</div>
+
+<div class="overlay" id="palette-overlay">
+  <div class="palette">
+    <input type="text" placeholder="Type a command…" autofocus>
+    <div class="results">
+      <a class="result" href="cc-assignment.html"><span class="glyph">🎯</span><span class="label">Assign group to apps or policies…</span><span class="hint">Assignment</span></a>
+      <a class="result" href="cc-cleanup.html"><span class="glyph">🧹</span><span class="label">Find unassigned items…</span><span class="hint">Cleanup</span></a>
+      <a class="result" href="cc-renaming.html"><span class="glyph">✏️</span><span class="label">Rename items…</span><span class="hint">Renaming</span></a>
+      <a class="result" href="cc-import.html"><span class="glyph">📥</span><span class="label">Import policies to another tenant…</span><span class="hint">Import</span></a>
+      <a class="result" href="cc-manage-assignments.html"><span class="glyph">🔗</span><span class="label">Remove existing assignments…</span><span class="hint">Manage Assignments</span></a>
+      <a class="result" href="cc-json.html"><span class="glyph">📄</span><span class="label">Export selected items to JSON…</span><span class="hint">JSON</span></a>
+      <a class="result" href="cc-audit-log.html"><span class="glyph">📋</span><span class="label">View recent tenant changes…</span><span class="hint">Audit Log</span></a>
+      <a class="result" href="cc-settings.html"><span class="glyph">⚙️</span><span class="label">Switch tenants / sign in…</span><span class="hint">Settings</span></a>
+    </div>
+  </div>
+</div>
+
+<script src="shell.js" defer></script>
+</body>
+</html>

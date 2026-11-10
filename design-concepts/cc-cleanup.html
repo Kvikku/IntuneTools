@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>InToolz 2.0 — Cleanup</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .scan-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+  .scan-card { cursor: pointer; }
+  .scan-card.active { border-color: var(--accent); background: var(--accent-soft); }
+  .scan-card .label { font-size: 12.5px; color: var(--text-muted); margin-bottom: 6px; }
+  .scan-card .value { font-size: 24px; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="left">
+    <a class="logo" href="concept-1-command-center.html"><span class="dot"></span> InToolz <span class="version-chip">2.0</span></a>
+  </div>
+  <div class="cmdbox"><span>Search actions, items, tenants…</span><span class="kbd">Ctrl K</span></div>
+  <div class="right">
+    <a class="tenant-pill" href="cc-settings.html"><span class="swatch" style="background:#4ecdc4"></span>Source: <b>Contoso Prod</b></a>
+    <div class="avatar"></div>
+  </div>
+</div>
+<div class="breadcrumb"><a href="concept-1-command-center.html">Dashboard</a><span class="sep">/</span><span class="current">Cleanup</span></div>
+
+<div class="page-wrap">
+  <div class="page-head">
+    <h1>Cleanup</h1>
+    <p class="sub">Mass-delete policies, apps, and other Intune content. Pick a scan to find candidates.</p>
+  </div>
+
+  <div class="scan-grid">
+    <div class="card scan-card">
+      <div class="label">Find Unassigned</div>
+      <div class="value">23 found</div>
+    </div>
+    <div class="card scan-card active">
+      <div class="label">Find Duplicates</div>
+      <div class="value">4 found</div>
+    </div>
+    <div class="card scan-card">
+      <div class="label">Find Stale Devices (90d+)</div>
+      <div class="value">7 found</div>
+    </div>
+  </div>
+
+  <table class="data">
+    <thead><tr><th></th><th>Name</th><th>Type</th><th>Duplicate group</th><th>Modified</th></tr></thead>
+    <tbody>
+      <tr class="row selected"><td><input type="checkbox" checked></td><td>Baseline Security Config</td><td class="muted-cell">Settings Catalog</td><td><span class="badge warning">Group A</span></td><td class="muted-cell">5 months ago</td></tr>
+      <tr class="row selected"><td><input type="checkbox" checked></td><td>Baseline Security Config (copy)</td><td class="muted-cell">Settings Catalog</td><td><span class="badge warning">Group A</span></td><td class="muted-cell">5 months ago</td></tr>
+      <tr class="row selected"><td><input type="checkbox" checked></td><td>Corporate Compliance - Win11</td><td class="muted-cell">Compliance</td><td><span class="badge warning">Group B</span></td><td class="muted-cell">8 months ago</td></tr>
+      <tr class="row selected"><td><input type="checkbox" checked></td><td>Corporate Compliance - Windows 11</td><td class="muted-cell">Compliance</td><td><span class="badge warning">Group B</span></td><td class="muted-cell">8 months ago</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="action-bar card">
+  <span class="count">4 selected</span>
+  <div class="spacer"></div>
+  <button class="destructive" data-open-modal="confirm-delete-modal">🗑 Delete selected</button>
+</div>
+
+<div class="page-footer-note">
+  <b>Cleanup</b> — scans are launcher cards, not separate nav items; results drop straight into the same table + action bar pattern used everywhere.
+  <a href="concept-1-command-center.html">← back to dashboard</a>
+</div>
+
+<div class="overlay" id="palette-overlay">
+  <div class="palette">
+    <input type="text" placeholder="Type a command…" autofocus>
+    <div class="results">
+      <a class="result" href="cc-assignment.html"><span class="glyph">🎯</span><span class="label">Assign group to apps or policies…</span><span class="hint">Assignment</span></a>
+      <a class="result" href="cc-cleanup.html"><span class="glyph">🧹</span><span class="label">Find unassigned items…</span><span class="hint">Cleanup</span></a>
+      <a class="result" href="cc-cleanup.html"><span class="glyph">🧹</span><span class="label">Find stale devices…</span><span class="hint">Cleanup</span></a>
+      <a class="result" href="cc-renaming.html"><span class="glyph">✏️</span><span class="label">Rename items…</span><span class="hint">Renaming</span></a>
+      <a class="result" href="cc-import.html"><span class="glyph">📥</span><span class="label">Import policies to another tenant…</span><span class="hint">Import</span></a>
+      <a class="result" href="cc-manage-assignments.html"><span class="glyph">🔗</span><span class="label">Remove existing assignments…</span><span class="hint">Manage Assignments</span></a>
+      <a class="result" href="cc-json.html"><span class="glyph">📄</span><span class="label">Export selected items to JSON…</span><span class="hint">JSON</span></a>
+      <a class="result" href="cc-audit-log.html"><span class="glyph">📋</span><span class="label">View recent tenant changes…</span><span class="hint">Audit Log</span></a>
+      <a class="result" href="cc-settings.html"><span class="glyph">⚙️</span><span class="label">Switch tenants / sign in…</span><span class="hint">Settings</span></a>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="confirm-delete-modal">
+  <div class="modal">
+    <h2>🗑 Permanently delete 4 items?</h2>
+    <p>This deletes the following from <b>Contoso Prod</b>. This action cannot be undone.</p>
+    <div class="consequence">
+      Baseline Security Config · Baseline Security Config (copy)<br>
+      Corporate Compliance - Win11 · Corporate Compliance - Windows 11<br><br>
+      <b>2 of these are currently assigned</b> — deleting them removes the policy from every device in their assigned groups.
+    </div>
+    <input type="text" placeholder="Type DELETE to confirm">
+    <div class="modal-actions">
+      <button data-close-modal>Cancel</button>
+      <button class="destructive" data-close-modal>Delete 4 items</button>
+    </div>
+  </div>
+</div>
+
+<script src="shell.js" defer></script>
+</body>
+</html>
