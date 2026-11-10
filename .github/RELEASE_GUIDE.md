@@ -110,7 +110,18 @@ Before the package can be uploaded, the run checks it (`.github/scripts/StorePac
 
 ### ARM64
 
-ARM64 is part of the same Store submission and package family, so ARM64 PCs get the native build as an ordinary update and existing x64 users are unaffected. The pipeline builds it on the x64 runner (a cross-build) and checks the result as described above. What it does not prove is that the ARM64 build *works*: that takes a native ARM64 PC, and the part most worth looking at is interactive sign-in (MSAL), the one native-dependent path. Do that with a build from the release run before submitting, until a native ARM64 CI job covers it.
+ARM64 is part of the same Store submission and package family, so ARM64 PCs get the native build as an ordinary update and existing x64 users are unaffected. The pipeline builds it on the x64 runner (a cross-build) and checks the result as described above. CI also builds the app and runs the whole unit-test suite natively on a `windows-11-arm` runner.
+
+What none of that proves is that the app looks right and signs in on a real ARM64 PC. The sign-in risk is small, because nothing in it is architecture-specific: the app references only the core `Microsoft.Identity.Client` package, with no embedded-browser (WebView2) or Windows-broker support, so MSAL uses the system browser with a loopback (`http://localhost`) listener on every architecture ([MSAL.NET: using web browsers](https://learn.microsoft.com/entra/msal/dotnet/acquiring-tokens/using-web-browsers)). It is still worth one real check before the first ARM64 submission.
+
+#### Checking a build on an ARM64 PC
+
+Take the `InToolz-arm64` artifact of the release run (`InToolz_<version>_arm64.zip`), extract it and run `InToolz.exe`. No certificate is needed. (To check the Store-package path instead, run `Install.ps1` from the `InToolz-sideload` artifact: it installs the ARM64 package on an ARM64 PC.)
+
+1. **It runs natively.** Open the newest folder under `%LOCALAPPDATA%\InToolz` and read `Summary.log`: it should say `Process Architecture: Arm64`. If it says `X64`, the x64 build is running under emulation.
+2. **Demo Mode.** In Settings choose *Enable Demo Mode*, then open every page. The data grids fill, sorting and the right-click menu work, and CSV export works. This exercises the whole UI natively without a tenant.
+3. **One real sign-in.** In Settings sign in to a test tenant as the source. The default browser opens, sign-in completes, and the app shows the tenant name and the permission check.
+4. Note anything odd on issue #112.
 
 The sideload package has the **same identity as the Store app**, so installing it over a Store install means uninstalling the Store version first and losing its local settings.
 
