@@ -136,20 +136,33 @@ The **Find Duplicates** button scans your tenant for content that has duplicate 
 
 1. Click **Find Duplicates**. All toolbar and action buttons are disabled while the scan runs.
 2. The tool fetches all supported content types from Microsoft Graph and groups items by name within each content type.
-3. Any group with more than one item with the same name is considered a set of duplicates. All items in a duplicate group are loaded into the **Duplicates** tab.
-4. Duplicates are **automatically selected** in the grid, with one item per duplicate group left unselected (the one to keep). You can adjust this selection before deleting.
+3. Any group with more than one item with the same name is considered a set of duplicates. All items in a duplicate group are loaded into the **Duplicates** tab, with nothing selected yet.
+4. Use **Select Older** to select every duplicate except the newest item in each group, or **Select Unassigned** to select only the duplicates that have no group assignments (leaving assigned copies unselected). You can adjust the selection manually before deleting.
 
 ### Reviewing Duplicates
 
-The duplicates grid shows items grouped by name. Items that are pre-selected for deletion are highlighted. Before proceeding:
+The duplicates grid shows items grouped by name. Before proceeding:
 
-- **Review the selection.** Deselect any items you want to keep.
+- **Review the selection.** After clicking Select Older or Select Unassigned, deselect any items you want to keep, or select additional ones.
 - **Right-click** to view assignments — if one copy is assigned and the other is not, you likely want to keep the assigned one.
 - **Compare descriptions and platforms** to make sure you are keeping the correct version.
 
 ### Deleting Duplicates
 
 Once you are happy with the selection, click **Delete Selected** in the Duplicates tab. The same confirmation and progress flow applies as for the main Delete All operation.
+
+### Toolbar Reference (Duplicates tab)
+
+| Button | Description |
+|---|---|
+| **Scan** | Scans the selected content types for duplicate display names |
+| **All Types** | Opens a flyout to choose which content types the scan covers |
+| **Select Older** | Selects the older item in each duplicate group, keeping the newest |
+| **Select Unassigned** | Selects unassigned items in groups where another item is assigned, keeping the assigned one |
+| **Clear Selected** | Remove selected items from the results |
+| **Clear Log** | Clear the log console panel |
+| **Export CSV** | Export the duplicates list to a CSV file |
+| **Delete Selected** (red) | Permanently delete the selected duplicates |
 
 ---
 

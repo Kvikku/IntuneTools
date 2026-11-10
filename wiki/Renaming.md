@@ -49,7 +49,7 @@ The data grid and log console are separated by a **draggable splitter** that you
 
 ## Rename Modes
 
-The Renaming page offers six modes, selectable from the **Rename Configuration** dropdown:
+The Renaming page offers seven modes, selectable from the **Rename Configuration** dropdown:
 
 ### Add Prefix
 
@@ -104,6 +104,10 @@ The match is case-sensitive.
 
 Replaces the **description field** of each staged item with the text you provide. This does not affect the display name.
 
+### Remove Description
+
+Clears the **description field** of each staged item. No text input is required. A confirmation dialog asks you to confirm before the descriptions are cleared.
+
 ---
 
 ## Step-by-Step Workflow
@@ -148,6 +152,7 @@ Remove items you don't want to rename:
    - **Remove Suffix**: type the exact suffix to strip.
    - **Find & Replace**: type the text to find and the replacement text.
    - **Description**: type the new description text.
+   - **Remove Description**: no text input needed.
 3. If using **Add Prefix**, click the **Format** button to choose between parentheses, square brackets, or curly brackets.
 
 ### 5. Apply the Rename
@@ -181,7 +186,7 @@ After completion, a summary shows the number of successfully renamed items and a
 | Control | Description |
 |---|---|
 | **Mode dropdown** | Select the rename mode |
-| **Text box(es)** | Enter the prefix/suffix/find/replace/description text |
+| **Text box(es)** | Enter the prefix/suffix/find/replace/description text (not used for Remove Description) |
 | **Format** | Choose the bracket style for prefixes (Add Prefix mode only) |
 | **Update** | Apply the rename operation to all staged items |
 
