@@ -124,6 +124,9 @@ namespace InToolz.Pages
 
             // Restore the last search query so it doesn't need to be retyped after every restart.
             SearchStagingBar.SearchText = PageStatePersistence.LoadLastSearchQuery(SearchStateKey);
+
+            SetActiveMode(0);
+            RefreshScanCardCaptions();
         }
 
         /// <summary>
@@ -546,6 +549,7 @@ namespace InToolz.Pages
                 CleanupDataGrid.ItemsSource = ContentList;
                 AppendToDetailsRichTextBlock($"Found {ContentList.Count} unassigned item(s) out of {totalItems} total.");
                 ShowOperationSuccess($"Found {ContentList.Count} unassigned item(s)");
+                DashboardStatsCache.SaveResult(ScanKeys.Unassigned, ContentList.Count);
             }
             catch (Exception ex)
             {
@@ -619,18 +623,11 @@ namespace InToolz.Pages
                 }
             }
 
-            var dialog = new ContentDialog
-            {
-                Title = "Delete content?",
-                Content = $"Are you sure you want to delete all {numberOfItems} items? This action cannot be undone.",
-                PrimaryButtonText = "Delete",
-                CloseButtonText = "Cancel",
-                DefaultButton = ContentDialogButton.Close,
-                XamlRoot = this.XamlRoot
-            };
+            var confirmed = await ShowDestructiveConfirmationAsync(
+                "Delete content?",
+                $"Are you sure you want to delete all {numberOfItems} items? This action cannot be undone.");
 
-            var result = await dialog.ShowAsync().AsTask();
-            if (result == ContentDialogResult.Primary)
+            if (confirmed)
             {
                 await DeleteContent();
                 ContentList.Clear();
@@ -683,14 +680,47 @@ namespace InToolz.Pages
 
         #region Mode Selector
 
-        private void CleanupModeSegmented_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (DeletePanel is null || DuplicatesPanel is null || StaleDevicesPanel is null) return;
+        private void DeleteModeCard_Click(object sender, RoutedEventArgs e) => SetActiveMode(0);
+        private void DuplicatesModeCard_Click(object sender, RoutedEventArgs e) => SetActiveMode(1);
+        private void StaleDevicesModeCard_Click(object sender, RoutedEventArgs e) => SetActiveMode(2);
 
-            var index = CleanupModeSegmented.SelectedIndex;
+        private void SetActiveMode(int index)
+        {
             DeletePanel.Visibility = index == 0 ? Visibility.Visible : Visibility.Collapsed;
             DuplicatesPanel.Visibility = index == 1 ? Visibility.Visible : Visibility.Collapsed;
             StaleDevicesPanel.Visibility = index == 2 ? Visibility.Visible : Visibility.Collapsed;
+
+            HighlightModeCard(DeleteModeCard, index == 0);
+            HighlightModeCard(DuplicatesModeCard, index == 1);
+            HighlightModeCard(StaleDevicesModeCard, index == 2);
+        }
+
+        private static void HighlightModeCard(Button card, bool isActive)
+        {
+            if (isActive)
+            {
+                var accentColor = (Windows.UI.Color)Microsoft.UI.Xaml.Application.Current.Resources["SystemAccentColor"];
+                card.BorderBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(accentColor);
+                card.BorderThickness = new Thickness(2);
+            }
+            else
+            {
+                card.ClearValue(Control.BorderBrushProperty);
+                card.ClearValue(Control.BorderThicknessProperty);
+            }
+        }
+
+        /// <summary>Refreshes the "Not yet scanned" / "N found, last scanned ..." captions on the duplicate and stale-device launcher cards.</summary>
+        private void RefreshScanCardCaptions()
+        {
+            DuplicatesModeCardCaption.Text = DescribeScanResult(DashboardStatsCache.GetResult(ScanKeys.Duplicates), "duplicate name");
+            StaleDevicesModeCardCaption.Text = DescribeScanResult(DashboardStatsCache.GetResult(ScanKeys.StaleDevices), "stale device");
+        }
+
+        private static string DescribeScanResult(DashboardStat? stat, string noun)
+        {
+            if (stat == null) return "Not yet scanned";
+            return stat.Count == 1 ? $"1 {noun} found" : $"{stat.Count} {noun}s found";
         }
 
         #endregion
@@ -864,6 +894,8 @@ namespace InToolz.Pages
                     DuplicatesInfoBar.Message = "No duplicates found.";
                     ShowOperationSuccess("No duplicates found.");
                     AppLogger.Info("Scan complete — no duplicates found.", appFunction.FindDuplicates);
+                    DashboardStatsCache.SaveResult(ScanKeys.Duplicates, 0);
+                    RefreshScanCardCaptions();
                     return;
                 }
 
@@ -952,6 +984,8 @@ namespace InToolz.Pages
 
                 ShowOperationSuccess($"Found {duplicateGroups.Count} duplicate name(s) — {totalDuplicateItems} items total.");
                 AppLogger.Info($"Scan complete. {duplicateGroups.Count} duplicate group(s) found.", appFunction.FindDuplicates);
+                DashboardStatsCache.SaveResult(ScanKeys.Duplicates, duplicateGroups.Count);
+                RefreshScanCardCaptions();
             }
             catch (Exception ex)
             {
@@ -988,16 +1022,10 @@ namespace InToolz.Pages
                 ? $"{string.Join(" and ", warnings)} — deleting them may impact users or devices. This cannot be undone."
                 : $"Are you sure you want to permanently delete {selected.Count} item(s)? This cannot be undone.";
 
-            var dialog = new ContentDialog
-            {
-                Title = hasWarnings ? "Delete items with active assignments or members?" : "Delete selected duplicates?",
-                Content = dialogContent,
-                PrimaryButtonText = "Delete",
-                CloseButtonText = "Cancel",
-                DefaultButton = ContentDialogButton.Close,
-                XamlRoot = this.XamlRoot
-            };
-            if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+            var confirmed = await ShowDestructiveConfirmationAsync(
+                hasWarnings ? "Delete items with active assignments or members?" : "Delete selected duplicates?",
+                dialogContent);
+            if (!confirmed) return;
 
             var deleteRegistry = GetDeleteTypeRegistry(RequireSourceClient()).ToDictionary(d => d.TypeKey);
             var total = selected.Count;
@@ -1177,6 +1205,8 @@ namespace InToolz.Pages
                     UserInterfaceHelper.RebindDataGrid(EntraStaleDevicesDataGrid, EntraStaleDeviceList);
                     AppLogger.Info($"Found {results.Count} Entra ID device(s) inactive for {staleDays}+ days.", appFunction.FindStaleDevices);
                     ShowOperationSuccess($"Found {results.Count} stale Entra ID device(s).");
+                    DashboardStatsCache.SaveResult(ScanKeys.StaleDevices, IntuneStaleDeviceList.Count + EntraStaleDeviceList.Count);
+                    RefreshScanCardCaptions();
                 }
                 else
                 {
@@ -1186,6 +1216,8 @@ namespace InToolz.Pages
                     UserInterfaceHelper.RebindDataGrid(IntuneStaleDevicesDataGrid, IntuneStaleDeviceList);
                     AppLogger.Info($"Found {results.Count} Intune managed device(s) inactive for {staleDays}+ days.", appFunction.FindStaleDevices);
                     ShowOperationSuccess($"Found {results.Count} stale Intune managed device(s).");
+                    DashboardStatsCache.SaveResult(ScanKeys.StaleDevices, IntuneStaleDeviceList.Count + EntraStaleDeviceList.Count);
+                    RefreshScanCardCaptions();
                 }
             }
             catch (Exception ex)
@@ -1287,18 +1319,11 @@ namespace InToolz.Pages
                   + "This removes the device from Intune management only — it does NOT wipe, retire, or remove the physical device. "
                   + "A device that is still active can silently re-enroll on its own.";
 
-            var dialog = new ContentDialog
-            {
-                Title = isEntra ? "Delete Entra ID device objects?" : "Delete Intune managed devices?",
-                Content = consequenceText,
-                PrimaryButtonText = "Delete",
-                CloseButtonText = "Cancel",
-                DefaultButton = ContentDialogButton.Close,
-                XamlRoot = this.XamlRoot
-            };
+            var confirmed = await ShowDestructiveConfirmationAsync(
+                isEntra ? "Delete Entra ID device objects?" : "Delete Intune managed devices?",
+                consequenceText);
 
-            var result = await dialog.ShowAsync().AsTask();
-            if (result == ContentDialogResult.Primary)
+            if (confirmed)
             {
                 await DeleteStaleDevicesAsync(isEntra);
             }
