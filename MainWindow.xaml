@@ -4,60 +4,111 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:InToolz"
+    xmlns:utilities="using:InToolz.Utilities"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     Title="InToolz">
 
-    <Grid>
-        <!-- Define two rows: one for the custom title bar, one for the NavigationView -->
+    <!--
+        InToolz 2.0 "Command Center" shell. Replaces the old NavigationView sidebar with
+        a persistent top bar (logo, Ctrl+K command box, tenant pills) and a shell-level
+        breadcrumb, so individual pages no longer need their own nav chrome. See
+        design-concepts/concept-1-command-center.html for the visual reference and
+        the implementation plan for the full phase breakdown.
+    -->
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.KeyboardAccelerators>
+            <KeyboardAccelerator Key="K" Modifiers="Control" Invoked="CommandPaletteAccelerator_Invoked"/>
+        </Grid.KeyboardAccelerators>
+
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
+            <RowDefinition Height="32"/>
+            <!-- Slim drag strip / system title bar -->
+            <RowDefinition Height="56"/>
+            <!-- Command Center bar: logo, command box, tenant pills -->
+            <RowDefinition Height="Auto"/>
+            <!-- Breadcrumb -->
+            <RowDefinition Height="*"/>
+            <!-- Page content -->
         </Grid.RowDefinitions>
 
-        <!-- Custom Title Bar -->
-        <Grid x:Name="CustomTitleBar" Background="CornflowerBlue" Height="32" VerticalAlignment="Top" Grid.Row="0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-
-            <!-- Icon: Ensure the Source path points to a valid image in your project -->
-            <Image Source="Assets/Square44x44Logo.png" Width="16" Height="16" Margin="10,0,0,0" VerticalAlignment="Center" Grid.Column="0"/>
-
-            <!-- Title -->
-            <TextBlock Text="InToolz" VerticalAlignment="Center" Margin="10,0,0,0" FontWeight="Bold" Foreground="White" Grid.Column="1"/>
+        <!-- ===== Row 0: drag strip (doubles as the system title bar via SetTitleBar) ===== -->
+        <Grid x:Name="CustomTitleBar" Grid.Row="0" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+            <TextBlock Text="InToolz" VerticalAlignment="Center" Margin="12,0,0,0" FontSize="11" Opacity="0.6"/>
         </Grid>
 
-        <!-- NavigationView -->
-        <muxc:NavigationView x:Name="NavView" ItemInvoked="NavView_ItemInvoked" Grid.Row="1">
-            <muxc:NavigationView.MenuItems>
-                <muxc:NavigationViewItem Content="Home" Tag="Home" Icon="Home"/>
-                <muxc:NavigationViewItem Content="Assignment" Tag="Application" Icon="AllApps"/>
-                <muxc:NavigationViewItem Content="Manage Assignments" Tag="ManageAssignments">
-                    <muxc:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE77B;"/>
-                    </muxc:NavigationViewItem.Icon>
-                </muxc:NavigationViewItem>
-                <muxc:NavigationViewItem Content="Import" Tag="Import" Icon="Import"/>
-                <muxc:NavigationViewItem Content="Cleanup" Tag="Cleanup" Icon="Delete"/>
-                <muxc:NavigationViewItem Content="Renaming" Tag="Renaming" Icon="Rename"/>
-                <muxc:NavigationViewItem Content="JSON" Tag="Json">
-                    <muxc:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE8AB;"/>
-                    </muxc:NavigationViewItem.Icon>
-                </muxc:NavigationViewItem>
-                <muxc:NavigationViewItem Content="Audit Log" Tag="AuditLog">
-                    <muxc:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE7BA;"/>
-                    </muxc:NavigationViewItem.Icon>
-                </muxc:NavigationViewItem>
-            </muxc:NavigationView.MenuItems>
+        <!-- ===== Row 1: Command Center bar ===== -->
+        <Grid Grid.Row="1"
+              Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+              BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+              BorderThickness="0,1,0,1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
 
-            <Frame x:Name="ContentFrame"/>
-        </muxc:NavigationView>
+            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="20,0,0,0" Grid.Column="0">
+                <Image Source="Assets/Square44x44Logo.png" Width="20" Height="20"/>
+                <TextBlock Text="InToolz" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center"/>
+                <Border Background="{ThemeResource CardStrokeColorDefaultBrush}" CornerRadius="999" Padding="8,2,8,2">
+                    <TextBlock Text="2.0" FontSize="11" FontWeight="SemiBold"/>
+                </Border>
+            </StackPanel>
+
+            <Button x:Name="CommandBoxButton"
+                    Grid.Column="1"
+                    HorizontalAlignment="Stretch"
+                    MaxWidth="440"
+                    Margin="24,0,24,0"
+                    HorizontalContentAlignment="Stretch"
+                    Height="34"
+                    CornerRadius="17"
+                    Click="CommandBoxButton_Click">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Search actions, items, tenants…" Opacity="0.65" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                    <Border Grid.Column="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" CornerRadius="4" Padding="6,2,6,2">
+                        <TextBlock Text="Ctrl K" FontSize="11" Opacity="0.7"/>
+                    </Border>
+                </Grid>
+            </Button>
+
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="0,0,20,0">
+                <Border x:Name="SourceTenantPill"
+                        Background="{ThemeResource CardStrokeColorDefaultBrush}"
+                        CornerRadius="999"
+                        Padding="10,5,10,5"
+                        Tapped="TenantPill_Tapped">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Ellipse x:Name="SourceTenantDot" Width="8" Height="8" Fill="#F2495C"/>
+                        <TextBlock x:Name="SourceTenantText" Text="Source: not signed in" FontSize="12"/>
+                    </StackPanel>
+                </Border>
+                <Border x:Name="DestinationTenantPill"
+                        Background="{ThemeResource CardStrokeColorDefaultBrush}"
+                        CornerRadius="999"
+                        Padding="10,5,10,5"
+                        Tapped="TenantPill_Tapped">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Ellipse x:Name="DestinationTenantDot" Width="8" Height="8" Fill="#F2495C"/>
+                        <TextBlock x:Name="DestinationTenantText" Text="Dest: not signed in" FontSize="12"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Grid>
+
+        <!-- ===== Row 2: breadcrumb ===== -->
+        <BreadcrumbBar x:Name="PageBreadcrumb" Grid.Row="2" Margin="24,12,24,0" ItemClicked="PageBreadcrumb_ItemClicked"/>
+
+        <!-- ===== Row 3: page content ===== -->
+        <Frame x:Name="ContentFrame" Grid.Row="3" Navigated="ContentFrame_Navigated"/>
+
+        <!-- ===== Command palette overlay (covers the whole window) ===== -->
+        <utilities:CommandPaletteOverlay x:Name="CommandPalette" Grid.RowSpan="4" ActionInvoked="CommandPalette_ActionInvoked"/>
     </Grid>
 </Window>

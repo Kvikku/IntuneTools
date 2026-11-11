@@ -87,6 +87,12 @@ namespace InToolz.Utilities
         public static string sourceTenantName = string.Empty;
         public static string destinationTenantName = string.Empty;
 
+        // Raised whenever sign-in, sign-out, tenant swap, or Demo Mode changes the tenant
+        // state above, so shell-level UI (the top bar's tenant pills, the dashboard) can
+        // refresh reactively instead of polling.
+        public static event Action? TenantStateChanged;
+        public static void RaiseTenantStateChanged() => TenantStateChanged?.Invoke();
+
 
         // Filter variables for Graph API
         public static bool IsFilterSelected = false;

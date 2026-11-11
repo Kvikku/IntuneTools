@@ -24,6 +24,12 @@ namespace InToolz
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
             m_window = new MainWindow();
+
+            if (m_window.Content is FrameworkElement rootElement)
+            {
+                rootElement.RequestedTheme = ThemeService.LoadSavedTheme();
+            }
+
             WindowHandle = WinRT.Interop.WindowNative.GetWindowHandle(m_window); // Store the window handle
             m_window.Activate();
 

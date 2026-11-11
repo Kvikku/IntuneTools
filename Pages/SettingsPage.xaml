@@ -150,6 +150,18 @@
                     <TextBlock Text="Application"
                                Style="{StaticResource SectionTitleTextBlockStyle}"/>
 
+                    <ctk:SettingsCard Header="Theme"
+                                      Description="Choose how InToolz looks. &quot;Match Windows&quot; follows your system light/dark setting.">
+                        <ctk:SettingsCard.HeaderIcon>
+                            <FontIcon Glyph="&#xE790;"/>
+                        </ctk:SettingsCard.HeaderIcon>
+                        <ComboBox x:Name="ThemeComboBox" MinWidth="160" SelectionChanged="ThemeComboBox_SelectionChanged">
+                            <ComboBoxItem Content="Match Windows" Tag="Default"/>
+                            <ComboBoxItem Content="Light" Tag="Light"/>
+                            <ComboBoxItem Content="Dark" Tag="Dark"/>
+                        </ComboBox>
+                    </ctk:SettingsCard>
+
                     <ctk:SettingsCard Header="Log Files"
                                       Description="Open the folder containing this session's log files.">
                         <Button Content="Open Log File Location"

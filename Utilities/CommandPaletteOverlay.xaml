@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="InToolz.Utilities.CommandPaletteOverlay"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Visibility="Collapsed"
+    HorizontalAlignment="Stretch"
+    VerticalAlignment="Stretch">
+
+    <!--
+        Full-window Ctrl+K command palette. Collapsed until Open() is called (same pattern
+        as Utilities/LoadingOverlay). MainWindow.xaml binds Ctrl+K and the command-box
+        button to Open(); this control fires ActionInvoked and holds no navigation state
+        of its own — the host owns the actual Frame.Navigate call.
+    -->
+    <Grid Background="#80000000" Tapped="Scrim_Tapped">
+        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="10"
+                Width="560"
+                MaxHeight="420"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Top"
+                Margin="0,90,0,0"
+                Tapped="Card_Tapped">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <TextBox x:Name="QueryBox"
+                         Grid.Row="0"
+                         PlaceholderText="Type a command… e.g. 'assign group', 'find duplicates'"
+                         BorderThickness="0,0,0,1"
+                         CornerRadius="10,10,0,0"
+                         FontSize="15"
+                         Padding="16,14,16,14"
+                         TextChanged="QueryBox_TextChanged"
+                         KeyDown="QueryBox_KeyDown"/>
+
+                <ListView x:Name="ResultsList"
+                          Grid.Row="1"
+                          Padding="6"
+                          SelectionMode="Single"
+                          ItemClick="ResultsList_ItemClick"
+                          IsItemClickEnabled="True">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="12" Padding="8">
+                                <FontIcon Glyph="{Binding Glyph}" FontSize="16" Width="20"/>
+                                <TextBlock Text="{Binding Title}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

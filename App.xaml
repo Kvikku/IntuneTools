@@ -7,10 +7,13 @@
     <Application.Resources>  
         <ResourceDictionary>  
             <ResourceDictionary.MergedDictionaries>  
-                <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />  
+                <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
                 <!-- Shared visual standard for all pages. See docs/UI_STANDARD.md -->
                 <ResourceDictionary Source="ms-appx:///Styles/PageStyles.xaml" />
-            </ResourceDictionary.MergedDictionaries>  
+                <!-- 2.0 "Command Center" brand palette. Merged last so it wins over the
+                     defaults above for the same resource keys. -->
+                <ResourceDictionary Source="ms-appx:///Styles/BrandTheme.xaml" />
+            </ResourceDictionary.MergedDictionaries>
             <!-- Other app resources here -->  
 
             <Style x:Key="FlyoutPresenterStyle" TargetType="FlyoutPresenter">  
