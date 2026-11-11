@@ -25,6 +25,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <!-- ===== Header ===== -->
@@ -95,8 +96,6 @@
                         <AppBarButton x:Name="ClearLogButton" Icon="Delete" Label="Clear Log" Click="ClearLogButton_Click" ToolTipService.ToolTip="Clear the log console."/>
                         <AppBarSeparator/>
                         <AppBarButton x:Name="ExportCsvButton" Icon="Save" Label="Export CSV" Click="ExportCsvButton_Click" ToolTipService.ToolTip="Export the current list to a CSV file."/>
-                        <AppBarSeparator/>
-                        <AppBarButton x:Name="AssignButton" Icon="People" Label="Configure &amp; Assign" Click="AssignButton_Click" ToolTipService.ToolTip="Select groups and configure assignment options."/>
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -173,6 +172,21 @@
                           ItemTemplate="{StaticResource LogConsoleItemTemplate}"/>
             </Grid>
         </Grid>
+
+        <!-- ===== Action bar ===== -->
+        <utilities:SelectionActionBar x:Name="AssignmentActionBar" Grid.Row="3">
+            <utilities:SelectionActionBar.ExtraButtons>
+                <Button x:Name="AssignButton"
+                        Click="AssignButton_Click"
+                        ToolTipService.ToolTip="Select groups and configure assignment options."
+                        Style="{StaticResource PrimaryActionButtonStyle}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE716;" FontSize="16"/>
+                        <TextBlock Text="Configure &amp; Assign" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                    </StackPanel>
+                </Button>
+            </utilities:SelectionActionBar.ExtraButtons>
+        </utilities:SelectionActionBar>
 
         <!-- Configure Assignment Dialog -->
         <ContentDialog x:Name="AppDeployment"

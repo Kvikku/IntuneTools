@@ -25,6 +25,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <!-- ===== Header ===== -->
@@ -57,21 +58,6 @@
                                                  ClearAllRequested="ClearAllButton_Click"
                                                  ClearLogRequested="ClearLogButton_Click"
                                                  ExportCsvRequested="ExportCsvButton_Click"/>
-                </StackPanel>
-            </Border>
-
-            <!-- Assignment Actions Card -->
-            <Border Style="{StaticResource CardBorderStyle}">
-                <StackPanel Spacing="8">
-                    <TextBlock Text="Assignment Actions"
-                               Style="{StaticResource CardSectionLabelTextBlockStyle}"/>
-                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                        <AppBarButton x:Name="ViewAssignmentsButton" Label="Manage Assignments" Click="ViewAssignmentsButton_Click" ToolTipService.ToolTip="View, inspect, and remove assignments for selected items.">
-                            <AppBarButton.Icon>
-                                <FontIcon Glyph="&#xE71D;"/>
-                            </AppBarButton.Icon>
-                        </AppBarButton>
-                    </StackPanel>
                 </StackPanel>
             </Border>
         </StackPanel>
@@ -107,7 +93,8 @@
                                    IsReadOnly="True"
                                    CanUserSortColumns="True"
                                    CanUserReorderColumns="False"
-                                   Sorting="AssignmentsDataGrid_Sorting">
+                                   Sorting="AssignmentsDataGrid_Sorting"
+                                   SelectionChanged="AssignmentsDataGrid_SelectionChanged">
                     <controls:DataGrid.Columns>
                         <controls:DataGridTextColumn Header="Name" Binding="{Binding ContentName}" Width="2*"/>
                         <controls:DataGridTextColumn Header="Type" Binding="{Binding ContentType}" Width="*"/>
@@ -146,5 +133,20 @@
                           ItemTemplate="{StaticResource LogConsoleItemTemplate}"/>
             </Grid>
         </Grid>
+
+        <!-- ===== Action bar ===== -->
+        <utilities:SelectionActionBar x:Name="ManageAssignmentsActionBar" Grid.Row="3">
+            <utilities:SelectionActionBar.ExtraButtons>
+                <Button x:Name="ViewAssignmentsButton"
+                        Click="ViewAssignmentsButton_Click"
+                        ToolTipService.ToolTip="View, inspect, and remove assignments for selected items."
+                        Style="{StaticResource PrimaryActionButtonStyle}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE71D;" FontSize="16"/>
+                        <TextBlock Text="Manage Assignments" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                    </StackPanel>
+                </Button>
+            </utilities:SelectionActionBar.ExtraButtons>
+        </utilities:SelectionActionBar>
     </Grid>
 </utilities:BaseDataOperationPage>

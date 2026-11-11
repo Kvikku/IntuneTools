@@ -83,7 +83,14 @@ namespace InToolz.Pages
 
             // Restore the last search query so it doesn't need to be retyped after every restart.
             SearchStagingBar.SearchText = PageStatePersistence.LoadLastSearchQuery(PageStateKey);
+
+            UpdateSelectedCount();
         }
+
+        private void AssignmentsDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e) => UpdateSelectedCount();
+
+        private void UpdateSelectedCount() =>
+            ManageAssignmentsActionBar.CountText = $"{AssignmentsDataGrid.SelectedItems.Count} selected";
 
         // Key used to persist this page's last search query.
         private const string PageStateKey = "ManageAssignments";

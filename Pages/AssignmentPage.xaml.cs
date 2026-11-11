@@ -133,7 +133,12 @@ namespace InToolz.Pages
 
             this.Loaded += AssignmentPage_Loaded;
             RightClickMenu.AttachDataGridContextMenu(AppDataGrid, () => sourceGraphServiceClient);
+
+            AssignmentList.CollectionChanged += (_, _) => UpdateStagedCount();
+            UpdateStagedCount();
         }
+
+        private void UpdateStagedCount() => AssignmentActionBar.CountText = $"{AssignmentList.Count} staged";
 
         protected override appFunction PageLogFunction => appFunction.Assignment;
 
