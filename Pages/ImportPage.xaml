@@ -40,6 +40,40 @@
                      Margin="0,12,0,0"/>
             <!-- Operation Status Bar - shared UserControl -->
             <utilities:OperationStatusBar x:Name="OperationStatusBar" Margin="0,8,0,0"/>
+
+            <!-- ===== Tenant flow: the only page where the cross-tenant relationship
+                 needs to be shown up front, since Import is inherently cross-tenant. ===== -->
+            <Border Style="{StaticResource CardBorderStyle}" Margin="0,12,0,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Spacing="2">
+                        <TextBlock Text="SOURCE" Style="{StaticResource MutedCaptionTextBlockStyle}"/>
+                        <TextBlock x:Name="SourceTenantNameText" Text="Not signed in" FontWeight="SemiBold" FontSize="15"/>
+                    </StackPanel>
+
+                    <TextBlock Grid.Column="1" Text="→" FontSize="20" VerticalAlignment="Center"
+                               Margin="20,0,20,0" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+
+                    <StackPanel Grid.Column="2" Spacing="2">
+                        <TextBlock Text="DESTINATION" Style="{StaticResource MutedCaptionTextBlockStyle}"/>
+                        <TextBlock x:Name="DestinationTenantNameText" Text="Not signed in" FontWeight="SemiBold" FontSize="15"/>
+                    </StackPanel>
+
+                    <Button Grid.Column="3" x:Name="SwapTenantsButton" Click="SwapTenantsButton_Click"
+                            VerticalAlignment="Center" ToolTipService.ToolTip="Swap source and destination tenants.">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <SymbolIcon Symbol="Sync"/>
+                            <TextBlock Text="Swap"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </Border>
         </StackPanel>
 
         <!-- ===== Toolbar Cards Row ===== -->

@@ -93,6 +93,24 @@ namespace InToolz.Utilities
         public static event Action? TenantStateChanged;
         public static void RaiseTenantStateChanged() => TenantStateChanged?.Invoke();
 
+        /// <summary>
+        /// Swaps the source and destination tenant's full auth state (GraphServiceClient,
+        /// token provider, signed-in account) and tenant display names. Shared by
+        /// SettingsPage's "Swap Tenants" button and ImportPage's tenant-flow swap button so
+        /// both call the same logic instead of duplicating it. Page-local state (e.g.
+        /// SettingsPage's permission-warning flags) is swapped separately by the caller.
+        /// </summary>
+        public static void SwapSourceAndDestinationTenants()
+        {
+            SwapAuthInstances();
+
+            (sourceTenantName, destinationTenantName) = (destinationTenantName, sourceTenantName);
+
+            AppLogger.Info($"Swapped tenants. Source is now '{sourceTenantName}', Destination is now '{destinationTenantName}'.", appFunction.Main);
+
+            RaiseTenantStateChanged();
+        }
+
 
         // Filter variables for Graph API
         public static bool IsFilterSelected = false;

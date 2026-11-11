@@ -194,12 +194,7 @@ namespace InToolz.Pages
         /// </summary>
         private void SwapTenants()
         {
-            // Swap the full auth instances (GraphClient, token provider, signed-in account, etc.)
-            DestinationUserAuthentication.SwapAuthInstances();
-
-            // Swap tenant names (via global using static - these ARE Variables.*)
-            (sourceTenantName, destinationTenantName) = 
-                (destinationTenantName, sourceTenantName);
+            Variables.SwapSourceAndDestinationTenants();
 
             // Swap permission-warning state so it stays attached to the tenant it describes
             (_sourceHasPermissionWarning, _destinationHasPermissionWarning) =
@@ -207,10 +202,6 @@ namespace InToolz.Pages
 
             // Update UI to reflect the swap
             RefreshLoginStatusUI();
-
-            AppLogger.Info($"Swapped tenants. Source is now '{sourceTenantName}', Destination is now '{destinationTenantName}'.", appFunction.Main);
-
-            Variables.RaiseTenantStateChanged();
         }
 
         /// <summary>

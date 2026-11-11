@@ -103,6 +103,20 @@ namespace InToolz.Pages
 
             // Restore the last search query so it doesn't need to be retyped after every restart.
             SearchStagingBar.SearchText = PageStatePersistence.LoadLastSearchQuery(PageStateKey);
+
+            Variables.TenantStateChanged += () => DispatcherQueue.TryEnqueue(RefreshTenantFlowCard);
+            RefreshTenantFlowCard();
+        }
+
+        private void RefreshTenantFlowCard()
+        {
+            SourceTenantNameText.Text = string.IsNullOrEmpty(Variables.sourceTenantName) ? "Not signed in" : Variables.sourceTenantName;
+            DestinationTenantNameText.Text = string.IsNullOrEmpty(Variables.destinationTenantName) ? "Not signed in" : Variables.destinationTenantName;
+        }
+
+        private void SwapTenantsButton_Click(object sender, RoutedEventArgs e)
+        {
+            Variables.SwapSourceAndDestinationTenants();
         }
 
         /// <summary>
