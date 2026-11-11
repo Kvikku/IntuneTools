@@ -66,7 +66,12 @@ namespace InToolz.Pages
 
             // Restore the last search query so it doesn't need to be retyped after every restart.
             SearchStagingBar.SearchText = PageStatePersistence.LoadLastSearchQuery(PageStateKey);
+
+            ContentList.CollectionChanged += (_, _) => UpdateStagedCount();
+            UpdateStagedCount();
         }
+
+        private void UpdateStagedCount() => RenameActionBar.CountText = $"{ContentList.Count} staged";
 
         // Key used to persist this page's last search query.
         private const string PageStateKey = "Renaming";
