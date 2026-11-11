@@ -46,7 +46,7 @@ namespace InToolz
             Variables.TenantStateChanged += () => DispatcherQueue.TryEnqueue(RefreshTenantPills);
             RefreshTenantPills();
 
-            ContentFrame.Navigate(typeof(HomePage));
+            ContentFrame.Navigate(typeof(DashboardPage));
         }
 
         /// <summary>
@@ -105,7 +105,7 @@ namespace InToolz
             var match = AppActions.All.FirstOrDefault(a => a.TargetPage == e.SourcePageType);
             var title = match?.Title ?? e.SourcePageType.Name;
 
-            PageBreadcrumb.ItemsSource = e.SourcePageType == typeof(HomePage)
+            PageBreadcrumb.ItemsSource = e.SourcePageType == typeof(DashboardPage)
                 ? new List<string> { title }
                 : new List<string> { "Home", title };
         }
@@ -114,7 +114,7 @@ namespace InToolz
         {
             if (args.Index == 0)
             {
-                ContentFrame.Navigate(typeof(HomePage));
+                ContentFrame.Navigate(typeof(DashboardPage));
             }
         }
     }

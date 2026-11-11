@@ -162,7 +162,7 @@
     <Page Update="Pages\SettingsPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Update="Pages\HomePage.xaml">
+    <Page Update="Pages\DashboardPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
 	<Page Update="Pages\ImportPage.xaml">
