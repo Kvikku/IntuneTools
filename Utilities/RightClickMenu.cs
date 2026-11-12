@@ -188,7 +188,7 @@ namespace InToolz.Utilities
                 var registry = GetAssignmentViewRegistry();
                 if (!registry.TryGetValue(target.ContentType, out var getAssignments))
                 {
-                    if (target.ContentType.StartsWith("App - ", StringComparison.OrdinalIgnoreCase))
+                    if (UserInterfaceHelper.IsApplicationContentType(target.ContentType))
                         getAssignments = ApplicationHelper.GetApplicationAssignmentDetailsAsync;
                     else
                     {
@@ -234,7 +234,7 @@ namespace InToolz.Utilities
             var contentType = GetRowCellTextByHeader(context.DataGrid, context.Row, "Type");
             var contentId   = GetRowCellTextByHeader(context.DataGrid, context.Row, "ID");
 
-            var isApp = contentType?.StartsWith("App - ", StringComparison.OrdinalIgnoreCase) == true;
+            var isApp = UserInterfaceHelper.IsApplicationContentType(contentType);
             var supported = !string.IsNullOrWhiteSpace(contentType)
                          && !string.IsNullOrWhiteSpace(contentId)
                          && (GetAssignmentViewRegistry().ContainsKey(contentType) || isApp);

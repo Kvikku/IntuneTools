@@ -41,19 +41,6 @@ namespace InToolz.Pages
         private int _renameSuccessCount;
         private int _renameErrorCount;
 
-        /// <summary>
-        /// Defines a rename operation for a specific content type.
-        /// </summary>
-        /// <param name="TypeKey">Content type identifier (e.g., ContentTypes.SettingsCatalog).</param>
-        /// <param name="DisplayName">Human-readable name for logging.</param>
-        /// <param name="RenameAsync">Async action that renames a single item by ID.</param>
-        /// <param name="GetDisplayNameAsync">Optional async function to get item's display name for logging.</param>
-        private record RenameTypeDefinition(
-            string TypeKey,
-            string DisplayName,
-            Func<string, string, Task> RenameAsync,
-            Func<string, Task<string?>>? GetDisplayNameAsync = null);
-
         #endregion
 
         #region Constructor & Configuration
@@ -188,7 +175,7 @@ namespace InToolz.Pages
                 InitializeProgressTracking(totalItems);
                 ShowOperationProgress("Preparing to rename items...", 0, _renameTotal);
 
-                foreach (var definition in GetRenameTypeRegistry(client))
+                foreach (var definition in GraphOperationRegistries.GetRenameTypeRegistry(client))
                 {
                     var ids = GetContentIdsByType(definition.TypeKey);
                     if (ids.Count > 0)
@@ -491,85 +478,6 @@ namespace InToolz.Pages
 
             return confirmed ? "__REMOVE_DESCRIPTION__" : null;
         }
-
-        /// <summary>
-        /// Returns the rename registry with all content types and their rename operations.
-        /// </summary>
-        private IEnumerable<RenameTypeDefinition> GetRenameTypeRegistry(GraphServiceClient client) =>
-        [
-            new(ContentTypes.SettingsCatalog, "Settings Catalog",
-                async (id, p) => await RenameSettingsCatalogPolicy(client, id, p),
-                async id => (await client.DeviceManagement.ConfigurationPolicies[id]
-                    .GetAsync(r => r.QueryParameters.Select = new[] { "name" }))?.Name),
-
-            new(ContentTypes.DeviceCompliancePolicy, "Device Compliance Policy",
-                async (id, p) => await RenameDeviceCompliancePolicy(client, id, p),
-                async id => (await client.DeviceManagement.DeviceCompliancePolicies[id]
-                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
-
-            new(ContentTypes.DeviceConfigurationPolicy, "Device Configuration Policy",
-                async (id, p) => await RenameDeviceConfigurationPolicy(client, id, p),
-                async id => (await client.DeviceManagement.DeviceConfigurations[id]
-                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
-
-            new(ContentTypes.AppleBYODEnrollmentProfile, "Apple BYOD Enrollment Profile",
-                async (id, p) => await RenameAppleBYODEnrollmentProfile(client, id, p),
-                async id => (await client.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[id]
-                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
-
-            new(ContentTypes.MacOSShellScript, "macOS Shell Script",
-                async (id, p) => await RenameMacOSShellScript(client, id, p),
-                async id => (await client.DeviceManagement.DeviceShellScripts[id]
-                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
-
-            new(ContentTypes.PowerShellScript, "PowerShell Script",
-                async (id, p) => await RenamePowerShellScript(client, id, p),
-                async id => (await client.DeviceManagement.DeviceManagementScripts[id]
-                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
-
-            new(ContentTypes.ProactiveRemediation, "Proactive Remediation",
-                async (id, p) => await RenameProactiveRemediation(client, id, p),
-                async id => (await client.DeviceManagement.DeviceHealthScripts[id]
-                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
-
-            new(ContentTypes.WindowsAutoPilotProfile, "Windows AutoPilot Profile",
-                async (id, p) => await RenameWindowsAutoPilotProfile(client, id, p),
-                async id => (await client.DeviceManagement.WindowsAutopilotDeploymentProfiles[id]
-                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
-
-            new(ContentTypes.WindowsDriverUpdate, "Windows Driver Update",
-                async (id, p) => await RenameDriverProfile(client, id, p),
-                async id => (await client.DeviceManagement.WindowsDriverUpdateProfiles[id]
-                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
-
-            new(ContentTypes.WindowsFeatureUpdate, "Windows Feature Update",
-                async (id, p) => await RenameWindowsFeatureUpdateProfile(client, id, p),
-                async id => (await client.DeviceManagement.WindowsFeatureUpdateProfiles[id]
-                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
-
-            new(ContentTypes.WindowsQualityUpdatePolicy, "Windows Quality Update Policy",
-                async (id, p) => await RenameWindowsQualityUpdatePolicy(client, id, p),
-                async id => (await client.DeviceManagement.WindowsQualityUpdatePolicies[id]
-                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
-
-            new(ContentTypes.WindowsQualityUpdateProfile, "Windows Quality Update Profile",
-                async (id, p) => await RenameWindowsQualityUpdateProfile(client, id, p),
-                async id => (await client.DeviceManagement.WindowsQualityUpdateProfiles[id]
-                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
-
-            new(ContentTypes.AssignmentFilter, "Assignment Filter",
-                async (id, p) => await RenameAssignmentFilter(client, id, p),
-                async id => (await client.DeviceManagement.AssignmentFilters[id]
-                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
-
-            new(ContentTypes.EntraGroup, "Entra Group",
-                async (id, p) => await RenameGroup(client, id, p),
-                async id => (await client.Groups[id]
-                    .GetAsync(r => r.QueryParameters.Select = new[] { "displayName" }))?.DisplayName),
-
-            new(ContentTypes.Application, "Application",
-                async (id, p) => await RenameApplication(client, id, p)),
-        ];
 
         #endregion
 

@@ -86,32 +86,6 @@ namespace InToolz.Pages
             { ContentTypes.EntraGroup, "entragroup.json" },
         };
 
-        /// <summary>
-        /// Registry of export/import delegates per content type.
-        /// Adding a new content type only requires adding an entry here
-        /// (plus the helper methods and the arrays above).
-        /// </summary>
-        private static readonly Dictionary<string, (
-            Func<GraphServiceClient, string, Task<JsonElement?>> Export,
-            Func<GraphServiceClient, JsonElement, Task<string?>> Import
-        )> JsonContentTypeOperations = new(StringComparer.OrdinalIgnoreCase)
-        {
-            { ContentTypes.SettingsCatalog, (ExportSettingsCatalogPolicyDataAsync, ImportSettingsCatalogFromJsonDataAsync) },
-            { ContentTypes.DeviceCompliancePolicy, (ExportDeviceCompliancePolicyDataAsync, ImportDeviceComplianceFromJsonDataAsync) },
-            { ContentTypes.DeviceConfigurationPolicy, (ExportDeviceConfigurationPolicyDataAsync, ImportDeviceConfigurationFromJsonDataAsync) },
-            { ContentTypes.WindowsDriverUpdate, (ExportWindowsDriverUpdatePolicyDataAsync, ImportWindowsDriverUpdateFromJsonDataAsync) },
-            { ContentTypes.WindowsFeatureUpdate, (ExportWindowsFeatureUpdatePolicyDataAsync, ImportWindowsFeatureUpdateFromJsonDataAsync) },
-            { ContentTypes.WindowsQualityUpdateProfile, (ExportWindowsQualityUpdateProfileDataAsync, ImportWindowsQualityUpdateProfileFromJsonDataAsync) },
-            { ContentTypes.WindowsQualityUpdatePolicy, (ExportWindowsQualityUpdatePolicyDataAsync, ImportWindowsQualityUpdatePolicyFromJsonDataAsync) },
-            { ContentTypes.PowerShellScript, (ExportPowerShellScriptDataAsync, ImportPowerShellScriptFromJsonDataAsync) },
-            { ContentTypes.ProactiveRemediation, (ExportProactiveRemediationDataAsync, ImportProactiveRemediationFromJsonDataAsync) },
-            { ContentTypes.MacOSShellScript, (ExportMacOSShellScriptDataAsync, ImportMacOSShellScriptFromJsonDataAsync) },
-            { ContentTypes.WindowsAutoPilotProfile, (ExportWindowsAutoPilotProfileDataAsync, ImportWindowsAutoPilotProfileFromJsonDataAsync) },
-            { ContentTypes.AppleBYODEnrollmentProfile, (ExportAppleBYODEnrollmentProfileDataAsync, ImportAppleBYODEnrollmentProfileFromJsonDataAsync) },
-            { ContentTypes.AssignmentFilter, (ExportAssignmentFilterDataAsync, ImportAssignmentFilterFromJsonDataAsync) },
-            { ContentTypes.EntraGroup, (ExportEntraGroupDataAsync, ImportEntraGroupFromJsonDataAsync) },
-        };
-
         #endregion
 
         #region Constructor & Configuration
@@ -369,7 +343,7 @@ namespace InToolz.Pages
                         JsonElement? policyData = null;
 
                         if (sourceGraphServiceClient != null && !string.IsNullOrEmpty(c.ContentId)
-                            && JsonContentTypeOperations.TryGetValue(contentType, out var ops))
+                            && GraphOperationRegistries.JsonContentTypeOperations.TryGetValue(contentType, out var ops))
                         {
                             try
                             {
@@ -644,7 +618,7 @@ namespace InToolz.Pages
                 {
                     var policyData = _policyDataCache[item.ContentId!];
 
-                    if (!JsonContentTypeOperations.TryGetValue(item.ContentType ?? "", out var ops))
+                    if (!GraphOperationRegistries.JsonContentTypeOperations.TryGetValue(item.ContentType ?? "", out var ops))
                     {
                         var reason = $"Content type '{item.ContentType}' not yet supported for JSON import.";
                         AppendToDetailsRichTextBlock($"Skipped '{item.ContentName}' — {reason}");

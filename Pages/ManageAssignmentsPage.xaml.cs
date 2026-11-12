@@ -358,7 +358,7 @@ namespace InToolz.Pages
 
                 if (!viewRegistry.TryGetValue(item.ContentType, out var getDetailsFunc))
                 {
-                    if (item.ContentType.StartsWith("App - ", StringComparison.OrdinalIgnoreCase))
+                    if (UserInterfaceHelper.IsApplicationContentType(item.ContentType))
                         getDetailsFunc = ApplicationHelper.GetApplicationAssignmentDetailsAsync;
                     else
                     {

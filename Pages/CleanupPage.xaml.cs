@@ -73,17 +73,6 @@ namespace InToolz.Pages
         private int _deleteErrorCount;
 
         /// <summary>
-        /// Defines a delete operation for a specific content type.
-        /// </summary>
-        /// <param name="TypeKey">Content type identifier (e.g., ContentTypes.SettingsCatalog).</param>
-        /// <param name="DisplayName">Human-readable name for logging.</param>
-        /// <param name="DeleteAsync">Async function that deletes a single item by ID. Returns true if deleted, false if skipped.</param>
-        private record DeleteTypeDefinition(
-            string TypeKey,
-            string DisplayName,
-            Func<string, Task<bool>> DeleteAsync);
-
-        /// <summary>
         /// Content types supported by CleanupPage.
         /// </summary>
         private static readonly string[] SupportedContentTypes = new[]
@@ -234,7 +223,7 @@ namespace InToolz.Pages
             ShowOperationProgress("Preparing to delete items...", 0, _deleteTotal);
 
             var client = RequireSourceClient();
-            foreach (var definition in GetDeleteTypeRegistry(client))
+            foreach (var definition in GraphOperationRegistries.GetDeleteTypeRegistry(client, id => HandleAutoPilotProfileDeletion(client, id)))
             {
                 // Applications have per-app ContentType values (e.g., "App - Windows app (Win32)"),
                 // so use the dedicated helper that matches any application content type.
@@ -389,57 +378,6 @@ namespace InToolz.Pages
                 return true;
             }
         }
-
-        /// <summary>
-        /// Returns the delete registry with all content types and their delete operations.
-        /// </summary>
-        private IEnumerable<DeleteTypeDefinition> GetDeleteTypeRegistry(GraphServiceClient client) =>
-        [
-            new(ContentTypes.SettingsCatalog, "Settings Catalog",
-                async id => { await DeleteSettingsCatalog(client, id); return true; }),
-
-            new(ContentTypes.DeviceCompliancePolicy, "Device Compliance Policy",
-                async id => { await DeleteDeviceCompliancePolicy(client, id); return true; }),
-
-            new(ContentTypes.DeviceConfigurationPolicy, "Device Configuration Policy",
-                async id => { await DeleteDeviceConfigurationPolicy(client, id); return true; }),
-
-            new(ContentTypes.AppleBYODEnrollmentProfile, "Apple BYOD Enrollment Profile",
-                async id => { await DeleteAppleBYODEnrollmentProfile(client, id); return true; }),
-
-            new(ContentTypes.AssignmentFilter, "Assignment Filter",
-                async id => { await DeleteAssignmentFilter(client, id); return true; }),
-
-            new(ContentTypes.EntraGroup, "Entra Group",
-                async id => { await DeleteSecurityGroup(client, id); return true; }),
-
-            new(ContentTypes.PowerShellScript, "PowerShell Script",
-                async id => { await DeletePowerShellScript(client, id); return true; }),
-
-            new(ContentTypes.ProactiveRemediation, "Proactive Remediation",
-                async id => { await DeleteProactiveRemediationScript(client, id); return true; }),
-
-            new(ContentTypes.MacOSShellScript, "macOS Shell Script",
-                async id => { await DeleteMacosShellScript(client, id); return true; }),
-
-            new(ContentTypes.WindowsAutoPilotProfile, "Windows AutoPilot Profile",
-                id => HandleAutoPilotProfileDeletion(client, id)),
-
-            new(ContentTypes.WindowsDriverUpdate, "Windows Driver Update",
-                async id => { await DeleteDriverProfile(client, id); return true; }),
-
-            new(ContentTypes.WindowsFeatureUpdate, "Windows Feature Update",
-                async id => { await DeleteWindowsFeatureUpdateProfile(client, id); return true; }),
-
-            new(ContentTypes.WindowsQualityUpdatePolicy, "Windows Quality Update Policy",
-                async id => { await DeleteWindowsQualityUpdatePolicy(client, id); return true; }),
-
-            new(ContentTypes.WindowsQualityUpdateProfile, "Windows Quality Update Profile",
-                async id => { await DeleteWindowsQualityUpdateProfile(client, id); return true; }),
-
-            new(ContentTypes.Application, "Application",
-                async id => { await DeleteApplication(client, id); return true; }),
-        ];
 
         #endregion
 
@@ -1027,7 +965,9 @@ namespace InToolz.Pages
                 dialogContent);
             if (!confirmed) return;
 
-            var deleteRegistry = GetDeleteTypeRegistry(RequireSourceClient()).ToDictionary(d => d.TypeKey);
+            var deleteClient = RequireSourceClient();
+            var deleteRegistry = GraphOperationRegistries.GetDeleteTypeRegistry(deleteClient, id => HandleAutoPilotProfileDeletion(deleteClient, id))
+                .ToDictionary(d => d.TypeKey, StringComparer.OrdinalIgnoreCase);
             var total = selected.Count;
             var current = 0;
             var success = 0;

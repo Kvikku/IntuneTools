@@ -41,15 +41,6 @@ namespace InToolz.Pages
     {
         #region Fields & Types
 
-        /// <summary>
-        /// Defines an assignment operation for a specific content type.
-        /// </summary>
-        /// <param name="ContentTypeDisplayName">The display name used in ContentType property (e.g., "Device Compliance Policy").</param>
-        /// <param name="AssignAsync">Async function that performs the assignment operation.</param>
-        private record AssignTypeDefinition(
-            string ContentTypeDisplayName,
-            Func<string, string, List<string>, GraphServiceClient, Task> AssignAsync);
-
         public static ObservableCollection<CustomContentInfo> AssignmentList { get; } = new();
         public ObservableCollection<AssignmentGroupInfo> GroupList { get; } = new();
         public ObservableCollection<DeviceAndAppManagementAssignmentFilter> FilterOptions { get; } = new();
@@ -156,69 +147,17 @@ namespace InToolz.Pages
         #region Assignment Logic
 
         /// <summary>
-        /// Gets the registry of all assignment type definitions.
-        /// </summary>
-        private IEnumerable<AssignTypeDefinition> GetAssignTypeRegistry()
-        {
-            yield return new AssignTypeDefinition(
-                "Device Compliance Policy",
-                async (id, name, groups, client) => await AssignGroupsToSingleDeviceCompliance(id, name, groups, client));
-
-            yield return new AssignTypeDefinition(
-                "Settings Catalog",
-                async (id, name, groups, client) => await AssignGroupsToSingleSettingsCatalog(id, name, groups, client));
-
-            yield return new AssignTypeDefinition(
-                "Device Configuration Policy",
-                async (id, name, groups, client) => await AssignGroupsToSingleDeviceConfiguration(id, name, groups, client));
-
-            yield return new AssignTypeDefinition(
-                "MacOS Shell Script",
-                async (id, name, groups, client) => await AssignGroupsToSingleShellScriptmacOS(id, name, groups, client));
-
-            yield return new AssignTypeDefinition(
-                "PowerShell Script",
-                async (id, name, groups, client) => await AssignGroupsToSinglePowerShellScript(id, name, groups, client));
-
-            yield return new AssignTypeDefinition(
-                "Proactive Remediation",
-                async (id, name, groups, client) => await AssignGroupsToSingleProactiveRemediation(id, name, groups, client));
-
-            yield return new AssignTypeDefinition(
-                "Windows AutoPilot Profile",
-                async (id, name, groups, client) => await AssignGroupsToSingleWindowsAutoPilotProfile(id, name, groups, client));
-
-            yield return new AssignTypeDefinition(
-                "Windows Driver Update",
-                async (id, name, groups, client) => await AssignGroupsToSingleDriverProfile(id, name, groups, client));
-
-            yield return new AssignTypeDefinition(
-                "Windows Feature Update",
-                async (id, name, groups, client) => await AssignGroupsToSingleWindowsFeatureUpdateProfile(id, name, groups, client));
-
-            yield return new AssignTypeDefinition(
-                "Windows Quality Update Policy",
-                async (id, name, groups, client) => await AssignGroupsToSingleWindowsQualityUpdatePolicy(id, name, groups, client));
-
-            yield return new AssignTypeDefinition(
-                "Windows Quality Update Profile",
-                async (id, name, groups, client) => await AssignGroupsToSingleWindowsQualityUpdateProfile(id, name, groups, client));
-
-            yield return new AssignTypeDefinition(
-                "Apple BYOD Enrollment Profile",
-                async (id, name, groups, client) => await AssignGroupsToSingleAppleBYODEnrollmentProfile(id, name, groups, client));
-        }
-
-        /// <summary>
-        /// Assigns a single content item to the specified groups using the registry.
+        /// Assigns a single content item to the specified groups using the shared registry.
         /// </summary>
         private async Task<bool> AssignContentItemAsync(
             CustomContentInfo item,
             List<string> groupList,
             GraphServiceClient graphServiceClient)
         {
-            // Handle apps specially (they have "App - " prefix)
-            if (item.ContentType.StartsWith("App - "))
+            // Handle apps specially: they have per-platform ContentType values (e.g.
+            // "App - Windows app (Win32)") rather than one constant, so they can't be a single
+            // dictionary key.
+            if (UserInterfaceHelper.IsApplicationContentType(item.ContentType))
             {
                 await PrepareApplicationForAssignment(
                     new KeyValuePair<string, CustomContentInfo>(item.ContentId, item),
@@ -227,11 +166,10 @@ namespace InToolz.Pages
                 return true;
             }
 
-            // Find matching definition in registry
-            var registry = GetAssignTypeRegistry().ToList();
-            var definition = registry.FirstOrDefault(d => d.ContentTypeDisplayName == item.ContentType);
+            var registry = GraphOperationRegistries.GetAssignTypeRegistry()
+                .ToDictionary(d => d.TypeKey, StringComparer.OrdinalIgnoreCase);
 
-            if (definition != null)
+            if (registry.TryGetValue(item.ContentType, out var definition))
             {
                 await definition.AssignAsync(item.ContentId, item.ContentName, groupList, graphServiceClient);
                 return true;
