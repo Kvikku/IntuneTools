@@ -42,7 +42,7 @@ namespace InToolz.Utilities
             public string? CellText { get; }
         }
 
-        private sealed record AssignmentTarget(string ContentId, string ContentType);
+        private sealed record AssignmentTarget(string ContentId, string ContentType, string ContentName);
 
         /// <summary>
         /// Attaches a right-click context menu to a DataGrid.
@@ -185,7 +185,7 @@ namespace InToolz.Utilities
                     return;
                 }
 
-                var registry = GetAssignmentViewRegistry();
+                var registry = GraphOperationRegistries.GetAssignmentDetailsRegistry();
                 if (!registry.TryGetValue(target.ContentType, out var getAssignments))
                 {
                     if (UserInterfaceHelper.IsApplicationContentType(target.ContentType))
@@ -199,9 +199,9 @@ namespace InToolz.Utilities
 
                 try
                 {
-                    var assignments = await getAssignments(client, target.ContentId) ?? new List<AssignmentInfo>();
+                    var assignments = await getAssignments(client, target.ContentId);
 
-                    var groupIds = assignments
+                    var groupIds = (assignments ?? new List<AssignmentInfo>())
                         .Where(a => !string.IsNullOrEmpty(a.GroupId))
                         .Select(a => a.GroupId!)
                         .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -211,7 +211,15 @@ namespace InToolz.Utilities
                         ? await GroupHelperClass.ResolveGroupNamesAsync(client, groupIds)
                         : new Dictionary<string, string>();
 
-                    await ShowAssignmentsDialogAsync(target.ContentType, assignments, groupNames);
+                    var xamlRoot = (App.MainWindowInstance?.Content as FrameworkElement)?.XamlRoot;
+                    if (xamlRoot == null)
+                        return;
+
+                    var result = new AssignmentResult(
+                        target.ContentName, target.ContentType, target.ContentId,
+                        assignments, assignments == null ? "Failed to retrieve assignments." : null);
+
+                    await AssignmentViewerDialog.ShowAsync(xamlRoot, new List<AssignmentResult> { result }, groupNames);
                 }
                 catch (Exception ex)
                 {
@@ -233,86 +241,15 @@ namespace InToolz.Utilities
 
             var contentType = GetRowCellTextByHeader(context.DataGrid, context.Row, "Type");
             var contentId   = GetRowCellTextByHeader(context.DataGrid, context.Row, "ID");
+            var contentName = GetRowCellTextByHeader(context.DataGrid, context.Row, "Name");
 
             var isApp = UserInterfaceHelper.IsApplicationContentType(contentType);
             var supported = !string.IsNullOrWhiteSpace(contentType)
                          && !string.IsNullOrWhiteSpace(contentId)
-                         && (GetAssignmentViewRegistry().ContainsKey(contentType) || isApp);
+                         && (GraphOperationRegistries.GetAssignmentDetailsRegistry().ContainsKey(contentType) || isApp);
 
-            item.Tag = supported ? new AssignmentTarget(contentId!, contentType!) : null;
+            item.Tag = supported ? new AssignmentTarget(contentId!, contentType!, contentName ?? contentType!) : null;
             item.IsEnabled = supported;
-        }
-
-        private static Dictionary<string, Func<GraphServiceClient, string, Task<List<AssignmentInfo>?>>> GetAssignmentViewRegistry() => new()
-        {
-            [ContentTypes.SettingsCatalog]              = GetSettingsCatalogAssignmentDetailsAsync,
-            [ContentTypes.DeviceCompliancePolicy]       = GetDeviceComplianceAssignmentDetailsAsync,
-            [ContentTypes.DeviceConfigurationPolicy]    = GetDeviceConfigurationAssignmentDetailsAsync,
-            [ContentTypes.AppleBYODEnrollmentProfile]   = GetAppleBYODAssignmentDetailsAsync,
-            [ContentTypes.PowerShellScript]             = GetPowerShellScriptAssignmentDetailsAsync,
-            [ContentTypes.ProactiveRemediation]         = GetProactiveRemediationAssignmentDetailsAsync,
-            [ContentTypes.MacOSShellScript]             = GetMacOSShellScriptAssignmentDetailsAsync,
-            [ContentTypes.WindowsAutoPilotProfile]      = GetWindowsAutoPilotAssignmentDetailsAsync,
-            [ContentTypes.WindowsDriverUpdate]          = GetWindowsDriverUpdateAssignmentDetailsAsync,
-            [ContentTypes.WindowsFeatureUpdate]         = GetWindowsFeatureUpdateAssignmentDetailsAsync,
-            [ContentTypes.WindowsQualityUpdatePolicy]   = GetWindowsQualityUpdatePolicyAssignmentDetailsAsync,
-            [ContentTypes.WindowsQualityUpdateProfile]  = GetWindowsQualityUpdateProfileAssignmentDetailsAsync,
-        };
-
-        private static async Task ShowAssignmentsDialogAsync(
-            string contentType,
-            List<AssignmentInfo> assignments,
-            Dictionary<string, string> groupNames)
-        {
-            var xamlRoot = (App.MainWindowInstance?.Content as FrameworkElement)?.XamlRoot;
-            if (xamlRoot == null)
-                return;
-
-            string body;
-            if (assignments.Count == 0)
-            {
-                body = "No assignments found.";
-            }
-            else
-            {
-                var sb = new StringBuilder();
-                sb.AppendLine($"{assignments.Count} assignment(s) found:\n");
-                foreach (var a in assignments)
-                {
-                    var target = a.TargetType ?? "Unknown";
-                    if (!string.IsNullOrEmpty(a.GroupId))
-                    {
-                        var name = groupNames.TryGetValue(a.GroupId, out var n) ? n : a.GroupId;
-                        target += $" — {name}";
-                    }
-                    if (!string.IsNullOrEmpty(a.FilterId))
-                        target += $"  (Filter: {a.FilterType})";
-
-                    sb.AppendLine($"• {target}");
-                }
-                body = sb.ToString().TrimEnd();
-            }
-
-            var dialog = new ContentDialog
-            {
-                Title = $"Assignments — {contentType}",
-                Content = new ScrollViewer
-                {
-                    MaxHeight = 400,
-                    Content = new TextBlock
-                    {
-                        Text = body,
-                        TextWrapping = TextWrapping.Wrap,
-                        IsTextSelectionEnabled = true,
-                        Margin = new Microsoft.UI.Xaml.Thickness(0, 4, 0, 0)
-                    }
-                },
-                CloseButtonText = "Close",
-                DefaultButton = ContentDialogButton.Close,
-                XamlRoot = xamlRoot
-            };
-
-            await dialog.ShowAsync();
         }
 
         private static async Task ShowErrorDialogAsync(string title, string message)

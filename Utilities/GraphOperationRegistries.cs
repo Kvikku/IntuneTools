@@ -61,6 +61,14 @@ namespace InToolz.Utilities
         Func<List<string>, List<string>, Task> ImportAsync);
 
     /// <summary>
+    /// Defines a bulk "remove all assignments" operation for a specific content type.
+    /// </summary>
+    public record RemoveAssignmentDefinition(
+        string TypeKey,
+        string DisplayName,
+        Func<GraphServiceClient, string, Task> RemoveAsync);
+
+    /// <summary>
     /// Central registries of per-content-type Graph operations (assign/delete/rename/import/JSON
     /// export-import), shared by AssignmentPage, CleanupPage, RenamingPage, ImportPage, and
     /// JsonPage. These were originally five near-identical private methods, one hand-maintained
@@ -369,6 +377,153 @@ namespace InToolz.Utilities
             { ContentTypes.AppleBYODEnrollmentProfile, (ExportAppleBYODEnrollmentProfileDataAsync, ImportAppleBYODEnrollmentProfileFromJsonDataAsync) },
             { ContentTypes.AssignmentFilter, (ExportAssignmentFilterDataAsync, ImportAssignmentFilterFromJsonDataAsync) },
             { ContentTypes.EntraGroup, (ExportEntraGroupDataAsync, ImportEntraGroupFromJsonDataAsync) },
+        };
+
+        /// <summary>
+        /// Registry mapping content types to their assignment detail retrieval functions.
+        /// Shared by RightClickMenu's "View assignments" item and ManageAssignmentsPage's own
+        /// assignment-viewer flow — these two were previously byte-for-byte duplicate private
+        /// dictionaries.
+        /// </summary>
+        public static Dictionary<string, Func<GraphServiceClient, string, Task<List<AssignmentInfo>?>>> GetAssignmentDetailsRegistry() => new(StringComparer.OrdinalIgnoreCase)
+        {
+            [ContentTypes.SettingsCatalog] = GetSettingsCatalogAssignmentDetailsAsync,
+            [ContentTypes.DeviceCompliancePolicy] = GetDeviceComplianceAssignmentDetailsAsync,
+            [ContentTypes.DeviceConfigurationPolicy] = GetDeviceConfigurationAssignmentDetailsAsync,
+            [ContentTypes.AppleBYODEnrollmentProfile] = GetAppleBYODAssignmentDetailsAsync,
+            [ContentTypes.PowerShellScript] = GetPowerShellScriptAssignmentDetailsAsync,
+            [ContentTypes.ProactiveRemediation] = GetProactiveRemediationAssignmentDetailsAsync,
+            [ContentTypes.MacOSShellScript] = GetMacOSShellScriptAssignmentDetailsAsync,
+            [ContentTypes.WindowsAutoPilotProfile] = GetWindowsAutoPilotAssignmentDetailsAsync,
+            [ContentTypes.WindowsDriverUpdate] = GetWindowsDriverUpdateAssignmentDetailsAsync,
+            [ContentTypes.WindowsFeatureUpdate] = GetWindowsFeatureUpdateAssignmentDetailsAsync,
+            [ContentTypes.WindowsQualityUpdatePolicy] = GetWindowsQualityUpdatePolicyAssignmentDetailsAsync,
+            [ContentTypes.WindowsQualityUpdateProfile] = GetWindowsQualityUpdateProfileAssignmentDetailsAsync,
+        };
+
+        /// <summary>
+        /// Registry mapping content types to their bulk "remove all assignments" functions.
+        /// </summary>
+        public static IEnumerable<RemoveAssignmentDefinition> GetRemoveAssignmentRegistry() =>
+        [
+            new(ContentTypes.SettingsCatalog, "Settings Catalog",
+                async (client, id) => await RemoveAllSettingsCatalogAssignmentsAsync(client, id)),
+
+            new(ContentTypes.DeviceCompliancePolicy, "Device Compliance Policy",
+                async (client, id) => await RemoveAllDeviceComplianceAssignmentsAsync(client, id)),
+
+            new(ContentTypes.DeviceConfigurationPolicy, "Device Configuration Policy",
+                async (client, id) => await RemoveAllDeviceConfigurationAssignmentsAsync(client, id)),
+
+            new(ContentTypes.AppleBYODEnrollmentProfile, "Apple BYOD Enrollment Profile",
+                async (client, id) => await RemoveAllAppleBYODAssignmentsAsync(client, id)),
+
+            new(ContentTypes.PowerShellScript, "PowerShell Script",
+                async (client, id) => await RemoveAllPowerShellScriptAssignmentsAsync(client, id)),
+
+            new(ContentTypes.ProactiveRemediation, "Proactive Remediation",
+                async (client, id) => await RemoveAllProactiveRemediationAssignmentsAsync(client, id)),
+
+            new(ContentTypes.MacOSShellScript, "macOS Shell Script",
+                async (client, id) => await RemoveAllMacOSShellScriptAssignmentsAsync(client, id)),
+
+            new(ContentTypes.WindowsAutoPilotProfile, "Windows AutoPilot Profile",
+                async (client, id) => await RemoveAllWindowsAutoPilotAssignmentsAsync(client, id)),
+
+            new(ContentTypes.WindowsDriverUpdate, "Windows Driver Update",
+                async (client, id) => await RemoveAllWindowsDriverUpdateAssignmentsAsync(client, id)),
+
+            new(ContentTypes.WindowsFeatureUpdate, "Windows Feature Update",
+                async (client, id) => await RemoveAllWindowsFeatureUpdateAssignmentsAsync(client, id)),
+
+            new(ContentTypes.WindowsQualityUpdatePolicy, "Windows Quality Update Policy",
+                async (client, id) => await RemoveAllWindowsQualityUpdatePolicyAssignmentsAsync(client, id)),
+
+            new(ContentTypes.WindowsQualityUpdateProfile, "Windows Quality Update Profile",
+                async (client, id) => await RemoveAllWindowsQualityUpdateProfileAssignmentsAsync(client, id)),
+        ];
+
+        /// <summary>
+        /// Registry mapping content types to single-assignment removal functions. Each function
+        /// removes one specific assignment (by ID) from a content item.
+        /// </summary>
+        public static Dictionary<string, Func<GraphServiceClient, string, string, Task>> GetRemoveSingleAssignmentRegistry() => new(StringComparer.OrdinalIgnoreCase)
+        {
+            [ContentTypes.SettingsCatalog] = async (client, id, assignmentId) =>
+            {
+                var all = await client.DeviceManagement.ConfigurationPolicies[id].Assignments.GetAsync();
+                await client.DeviceManagement.ConfigurationPolicies[id].Assign.PostAsAssignPostResponseAsync(
+                    new Microsoft.Graph.Beta.DeviceManagement.ConfigurationPolicies.Item.Assign.AssignPostRequestBody
+                    { Assignments = all?.Value?.Where(a => a.Id != assignmentId).ToList() });
+            },
+            [ContentTypes.DeviceCompliancePolicy] = async (client, id, assignmentId) =>
+            {
+                var all = await client.DeviceManagement.DeviceCompliancePolicies[id].Assignments.GetAsync();
+                await client.DeviceManagement.DeviceCompliancePolicies[id].Assign.PostAsAssignPostResponseAsync(
+                    new Microsoft.Graph.Beta.DeviceManagement.DeviceCompliancePolicies.Item.Assign.AssignPostRequestBody
+                    { Assignments = all?.Value?.Where(a => a.Id != assignmentId).ToList() });
+            },
+            [ContentTypes.DeviceConfigurationPolicy] = async (client, id, assignmentId) =>
+            {
+                var all = await client.DeviceManagement.DeviceConfigurations[id].Assignments.GetAsync();
+                await client.DeviceManagement.DeviceConfigurations[id].Assign.PostAsAssignPostResponseAsync(
+                    new Microsoft.Graph.Beta.DeviceManagement.DeviceConfigurations.Item.Assign.AssignPostRequestBody
+                    { Assignments = all?.Value?.Where(a => a.Id != assignmentId).ToList() });
+            },
+            [ContentTypes.AppleBYODEnrollmentProfile] = async (client, id, assignmentId) =>
+            {
+                await client.DeviceManagement.AppleUserInitiatedEnrollmentProfiles[id].Assignments[assignmentId].DeleteAsync();
+            },
+            [ContentTypes.PowerShellScript] = async (client, id, assignmentId) =>
+            {
+                var all = await client.DeviceManagement.DeviceManagementScripts[id].Assignments.GetAsync();
+                await client.DeviceManagement.DeviceManagementScripts[id].Assign.PostAsync(
+                    new Microsoft.Graph.Beta.DeviceManagement.DeviceManagementScripts.Item.Assign.AssignPostRequestBody
+                    { DeviceManagementScriptAssignments = all?.Value?.Where(a => a.Id != assignmentId).ToList() });
+            },
+            [ContentTypes.ProactiveRemediation] = async (client, id, assignmentId) =>
+            {
+                var all = await client.DeviceManagement.DeviceHealthScripts[id].Assignments.GetAsync();
+                await client.DeviceManagement.DeviceHealthScripts[id].Assign.PostAsync(
+                    new Microsoft.Graph.Beta.DeviceManagement.DeviceHealthScripts.Item.Assign.AssignPostRequestBody
+                    { DeviceHealthScriptAssignments = all?.Value?.Where(a => a.Id != assignmentId).ToList() });
+            },
+            [ContentTypes.MacOSShellScript] = async (client, id, assignmentId) =>
+            {
+                await client.DeviceManagement.DeviceShellScripts[id].Assignments[assignmentId].DeleteAsync();
+            },
+            [ContentTypes.WindowsAutoPilotProfile] = async (client, id, assignmentId) =>
+            {
+                await client.DeviceManagement.WindowsAutopilotDeploymentProfiles[id].Assignments[assignmentId].DeleteAsync();
+            },
+            [ContentTypes.WindowsDriverUpdate] = async (client, id, assignmentId) =>
+            {
+                var all = await client.DeviceManagement.WindowsDriverUpdateProfiles[id].Assignments.GetAsync();
+                await client.DeviceManagement.WindowsDriverUpdateProfiles[id].Assign.PostAsync(
+                    new Microsoft.Graph.Beta.DeviceManagement.WindowsDriverUpdateProfiles.Item.Assign.AssignPostRequestBody
+                    { Assignments = all?.Value?.Where(a => a.Id != assignmentId).ToList() });
+            },
+            [ContentTypes.WindowsFeatureUpdate] = async (client, id, assignmentId) =>
+            {
+                var all = await client.DeviceManagement.WindowsFeatureUpdateProfiles[id].Assignments.GetAsync();
+                await client.DeviceManagement.WindowsFeatureUpdateProfiles[id].Assign.PostAsync(
+                    new Microsoft.Graph.Beta.DeviceManagement.WindowsFeatureUpdateProfiles.Item.Assign.AssignPostRequestBody
+                    { Assignments = all?.Value?.Where(a => a.Id != assignmentId).ToList() });
+            },
+            [ContentTypes.WindowsQualityUpdatePolicy] = async (client, id, assignmentId) =>
+            {
+                var all = await client.DeviceManagement.WindowsQualityUpdatePolicies[id].Assignments.GetAsync();
+                await client.DeviceManagement.WindowsQualityUpdatePolicies[id].Assign.PostAsync(
+                    new Microsoft.Graph.Beta.DeviceManagement.WindowsQualityUpdatePolicies.Item.Assign.AssignPostRequestBody
+                    { Assignments = all?.Value?.Where(a => a.Id != assignmentId).ToList() });
+            },
+            [ContentTypes.WindowsQualityUpdateProfile] = async (client, id, assignmentId) =>
+            {
+                var all = await client.DeviceManagement.WindowsQualityUpdateProfiles[id].Assignments.GetAsync();
+                await client.DeviceManagement.WindowsQualityUpdateProfiles[id].Assign.PostAsync(
+                    new Microsoft.Graph.Beta.DeviceManagement.WindowsQualityUpdateProfiles.Item.Assign.AssignPostRequestBody
+                    { Assignments = all?.Value?.Where(a => a.Id != assignmentId).ToList() });
+            },
         };
     }
 }
