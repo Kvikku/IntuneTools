@@ -16,10 +16,14 @@ namespace InToolz
     public sealed partial class MainWindow : Window
     {
         private readonly AppWindow appWindow;
+        private readonly string? _lastKnownSourceTenantName;
+        private readonly string? _lastKnownDestinationTenantName;
 
         public MainWindow()
         {
             this.InitializeComponent();
+
+            (_lastKnownSourceTenantName, _lastKnownDestinationTenantName) = TenantStatePersistence.LoadLastKnownNames();
 
             // Extend content into the title bar and designate the slim top strip as the
             // draggable region (no interactive controls live there, so this carries zero
@@ -45,6 +49,9 @@ namespace InToolz
 
             Variables.TenantStateChanged += () => DispatcherQueue.TryEnqueue(RefreshTenantPills);
             RefreshTenantPills();
+
+            this.Closed += (_, _) =>
+                WindowStatePersistence.SaveBounds(appWindow.Position.X, appWindow.Position.Y, appWindow.Size.Width, appWindow.Size.Height);
 
             ContentFrame.Navigate(typeof(DashboardPage));
         }
@@ -74,11 +81,19 @@ namespace InToolz
         private void RefreshTenantPills()
         {
             var sourceSignedIn = !string.IsNullOrEmpty(Variables.sourceTenantName);
-            SourceTenantText.Text = sourceSignedIn ? $"Source: {Variables.sourceTenantName}" : "Source: not signed in";
+            SourceTenantText.Text = sourceSignedIn
+                ? $"Source: {Variables.sourceTenantName}"
+                : string.IsNullOrEmpty(_lastKnownSourceTenantName)
+                    ? "Source: not signed in"
+                    : $"Source: not signed in (last: {_lastKnownSourceTenantName})";
             SourceTenantDot.Fill = new SolidColorBrush(sourceSignedIn ? Microsoft.UI.Colors.LimeGreen : Microsoft.UI.Colors.IndianRed);
 
             var destinationSignedIn = !string.IsNullOrEmpty(Variables.destinationTenantName);
-            DestinationTenantText.Text = destinationSignedIn ? $"Dest: {Variables.destinationTenantName}" : "Dest: not signed in";
+            DestinationTenantText.Text = destinationSignedIn
+                ? $"Dest: {Variables.destinationTenantName}"
+                : string.IsNullOrEmpty(_lastKnownDestinationTenantName)
+                    ? "Dest: not signed in"
+                    : $"Dest: not signed in (last: {_lastKnownDestinationTenantName})";
             DestinationTenantDot.Fill = new SolidColorBrush(destinationSignedIn ? Microsoft.UI.Colors.LimeGreen : Microsoft.UI.Colors.IndianRed);
         }
 
