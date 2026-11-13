@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>InToolz 2.0 — Import</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .tenant-flow { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+  .tenant-flow .tenant-box { flex: 1; }
+  .tenant-flow .tenant-box .tag { font-size: 11px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; }
+  .tenant-flow .tenant-box .name { font-weight: 600; font-size: 15px; }
+  .tenant-flow .arrow { font-size: 20px; color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="left">
+    <a class="logo" href="concept-1-command-center.html"><span class="dot"></span> InToolz <span class="version-chip">2.0</span></a>
+  </div>
+  <div class="cmdbox"><span>Search actions, items, tenants…</span><span class="kbd">Ctrl K</span></div>
+  <div class="right">
+    <a class="tenant-pill" href="cc-settings.html"><span class="swatch" style="background:#4ecdc4"></span>Source: <b>Contoso Prod</b></a>
+    <a class="tenant-pill" href="cc-settings.html"><span class="swatch" style="background:#f5a623"></span>Dest: <b>Fabrikam Sandbox</b></a>
+    <div class="avatar"></div>
+  </div>
+</div>
+<div class="breadcrumb"><a href="concept-1-command-center.html">Dashboard</a><span class="sep">/</span><span class="current">Import</span></div>
+
+<div class="page-wrap">
+  <div class="page-head">
+    <h1>Import</h1>
+    <p class="sub">Copy policies and profiles from one tenant to another via Microsoft Graph.</p>
+  </div>
+
+  <div class="card tenant-flow">
+    <div class="tenant-box">
+      <div class="tag">Source</div>
+      <div class="name">🟢 Contoso Prod</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="tenant-box">
+      <div class="tag">Destination</div>
+      <div class="name">🟠 Fabrikam Sandbox</div>
+    </div>
+    <button>⇄ Swap</button>
+  </div>
+
+  <div class="toolbar-row">
+    <input type="search" placeholder="Search items in Contoso Prod…" style="width:280px">
+    <select class="filter-select"><option>All content types</option><option>Settings Catalog</option><option>Compliance Policies</option></select>
+    <button>List all</button>
+  </div>
+
+  <div class="content-split">
+    <table class="data">
+      <thead><tr><th></th><th>Name</th><th>Type</th><th>Exists in destination?</th></tr></thead>
+      <tbody>
+        <tr class="row selected"><td><input type="checkbox" checked></td><td>Baseline Security Config</td><td class="muted-cell">Settings Catalog</td><td><span class="badge neutral">New</span></td></tr>
+        <tr class="row selected"><td><input type="checkbox" checked></td><td>Corporate Compliance - Win11</td><td class="muted-cell">Compliance</td><td><span class="badge warning">Name collision</span></td></tr>
+        <tr class="row selected"><td><input type="checkbox" checked></td><td>Remove Temp Files</td><td class="muted-cell">PowerShell Script</td><td><span class="badge neutral">New</span></td></tr>
+        <tr class="row"><td><input type="checkbox"></td><td>Finance Autopilot</td><td class="muted-cell">Autopilot</td><td><span class="badge neutral">New</span></td></tr>
+      </tbody>
+    </table>
+
+    <div class="card side-panel">
+      <h3>Import options</h3>
+      <div class="field">
+        <label>If a name already exists</label>
+        <select style="width:100%"><option>Skip</option><option>Rename with suffix</option><option>Overwrite</option></select>
+      </div>
+      <div class="field">
+        <label>Assignments</label>
+        <select style="width:100%"><option>Don't carry over</option><option>Re-map matching group names</option></select>
+      </div>
+      <button class="primary" style="width:100%; justify-content:center;">Import 3 items →</button>
+    </div>
+  </div>
+</div>
+
+<div class="page-footer-note">
+  <b>Import</b> — the only page where the two-tenant relationship is shown up front, since it's inherently cross-tenant.
+  <a href="concept-1-command-center.html">← back to dashboard</a>
+</div>
+
+<div class="overlay" id="palette-overlay">
+  <div class="palette">
+    <input type="text" placeholder="Type a command…" autofocus>
+    <div class="results">
+      <a class="result" href="cc-assignment.html"><span class="glyph">🎯</span><span class="label">Assign group to apps or policies…</span><span class="hint">Assignment</span></a>
+      <a class="result" href="cc-cleanup.html"><span class="glyph">🧹</span><span class="label">Find unassigned items…</span><span class="hint">Cleanup</span></a>
+      <a class="result" href="cc-renaming.html"><span class="glyph">✏️</span><span class="label">Rename items…</span><span class="hint">Renaming</span></a>
+      <a class="result" href="cc-import.html"><span class="glyph">📥</span><span class="label">Import policies to another tenant…</span><span class="hint">Import</span></a>
+      <a class="result" href="cc-manage-assignments.html"><span class="glyph">🔗</span><span class="label">Remove existing assignments…</span><span class="hint">Manage Assignments</span></a>
+      <a class="result" href="cc-json.html"><span class="glyph">📄</span><span class="label">Export selected items to JSON…</span><span class="hint">JSON</span></a>
+      <a class="result" href="cc-audit-log.html"><span class="glyph">📋</span><span class="label">View recent tenant changes…</span><span class="hint">Audit Log</span></a>
+      <a class="result" href="cc-settings.html"><span class="glyph">⚙️</span><span class="label">Switch tenants / sign in…</span><span class="hint">Settings</span></a>
+    </div>
+  </div>
+</div>
+
+<script src="shell.js" defer></script>
+</body>
+</html>

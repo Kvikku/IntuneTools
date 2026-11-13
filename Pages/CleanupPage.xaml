@@ -39,29 +39,51 @@
             <utilities:OperationStatusBar x:Name="OperationStatusBar" Margin="0,8,0,0"/>
         </StackPanel>
 
-        <!-- ===== Mode Selector ===== -->
-        <ctk:Segmented Grid.Row="1"
-                       x:Name="CleanupModeSegmented"
-                       SelectionMode="Single"
-                       SelectedIndex="0"
-                       SelectionChanged="CleanupModeSegmented_SelectionChanged"
-                       Margin="0,0,0,16">
-            <ctk:SegmentedItem Content="Delete Content">
-                <ctk:SegmentedItem.Icon>
-                    <FontIcon Glyph="&#xE74D;"/>
-                </ctk:SegmentedItem.Icon>
-            </ctk:SegmentedItem>
-            <ctk:SegmentedItem Content="Find Duplicates">
-                <ctk:SegmentedItem.Icon>
-                    <FontIcon Glyph="&#xE8C8;"/>
-                </ctk:SegmentedItem.Icon>
-            </ctk:SegmentedItem>
-            <ctk:SegmentedItem Content="Stale Devices">
-                <ctk:SegmentedItem.Icon>
-                    <FontIcon Glyph="&#xE975;"/>
-                </ctk:SegmentedItem.Icon>
-            </ctk:SegmentedItem>
-        </ctk:Segmented>
+        <!-- ===== Mode Selector: scan-launcher cards instead of a tab switcher, so the
+             last-known result of each scan is visible before you even pick it. ===== -->
+        <Grid Grid.Row="1" Margin="0,0,0,16" ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Button x:Name="DeleteModeCard" Grid.Column="0" Click="DeleteModeCard_Click"
+                    Style="{StaticResource FeatureCardButtonStyle}" HorizontalAlignment="Stretch">
+                <StackPanel Spacing="4">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE74D;" FontSize="16"/>
+                        <TextBlock Text="Delete Content" FontWeight="SemiBold"/>
+                    </StackPanel>
+                    <TextBlock Text="Search, stage, and bulk-delete anything."
+                               Style="{StaticResource MutedCaptionTextBlockStyle}" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Button>
+
+            <Button x:Name="DuplicatesModeCard" Grid.Column="1" Click="DuplicatesModeCard_Click"
+                    Style="{StaticResource FeatureCardButtonStyle}" HorizontalAlignment="Stretch">
+                <StackPanel Spacing="4">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE8C8;" FontSize="16"/>
+                        <TextBlock Text="Find Duplicates" FontWeight="SemiBold"/>
+                    </StackPanel>
+                    <TextBlock x:Name="DuplicatesModeCardCaption" Text="Not yet scanned"
+                               Style="{StaticResource MutedCaptionTextBlockStyle}" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Button>
+
+            <Button x:Name="StaleDevicesModeCard" Grid.Column="2" Click="StaleDevicesModeCard_Click"
+                    Style="{StaticResource FeatureCardButtonStyle}" HorizontalAlignment="Stretch">
+                <StackPanel Spacing="4">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE975;" FontSize="16"/>
+                        <TextBlock Text="Stale Devices" FontWeight="SemiBold"/>
+                    </StackPanel>
+                    <TextBlock x:Name="StaleDevicesModeCardCaption" Text="Not yet scanned"
+                               Style="{StaticResource MutedCaptionTextBlockStyle}" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Button>
+        </Grid>
 
         <!-- ===== Main Content Row ===== -->
         <Grid Grid.Row="2">

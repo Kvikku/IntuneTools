@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>InToolz 2.0 — Assignment</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .view-btn { background: transparent; border: none; color: var(--text-muted); padding: 4px; }
+  .view-btn:hover { color: var(--accent); background: transparent; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="left">
+    <a class="logo" href="concept-1-command-center.html"><span class="dot"></span> InToolz <span class="version-chip">2.0</span></a>
+  </div>
+  <div class="cmdbox"><span>Search actions, items, tenants…</span><span class="kbd">Ctrl K</span></div>
+  <div class="right">
+    <a class="tenant-pill" href="cc-settings.html"><span class="swatch" style="background:#4ecdc4"></span>Source: <b>Contoso Prod</b></a>
+    <div class="avatar"></div>
+  </div>
+</div>
+<div class="breadcrumb"><a href="concept-1-command-center.html">Dashboard</a><span class="sep">/</span><span class="current">Assignment</span></div>
+
+<div class="page-wrap">
+  <div class="page-head">
+    <h1>Assignment</h1>
+    <p class="sub">Assign Entra groups to policies and apps in bulk, with optional assignment filters.</p>
+  </div>
+
+  <div class="toolbar-row">
+    <input type="search" placeholder="Search policies &amp; apps…" style="width:280px">
+    <select class="filter-select">
+      <option>All content types</option>
+      <option>Settings Catalog</option>
+      <option>Compliance Policies</option>
+      <option>Applications</option>
+      <option>Scripts</option>
+    </select>
+    <button>List all</button>
+  </div>
+
+  <div class="content-split">
+    <table class="data">
+      <thead><tr><th></th><th>Name</th><th>Type</th><th>Current assignments</th><th></th></tr></thead>
+      <tbody>
+        <tr class="row selected"><td><input type="checkbox" checked></td><td>Baseline Security Config</td><td class="muted-cell">Settings Catalog</td><td><span class="chip">3 groups</span></td><td><button class="view-btn" data-open-modal="view-assignments-modal" onclick="event.stopPropagation()">👁</button></td></tr>
+        <tr class="row selected"><td><input type="checkbox" checked></td><td>Corporate Compliance - Win11</td><td class="muted-cell">Compliance</td><td><span class="chip">1 group</span></td><td><button class="view-btn" onclick="event.stopPropagation()">👁</button></td></tr>
+        <tr class="row selected"><td><input type="checkbox" checked></td><td>Adobe Acrobat Reader DC</td><td class="muted-cell">Application</td><td><span class="chip">2 groups</span></td><td><button class="view-btn" onclick="event.stopPropagation()">👁</button></td></tr>
+        <tr class="row"><td><input type="checkbox"></td><td>Finance Device Autopilot</td><td class="muted-cell">Autopilot</td><td><span class="muted-cell">Unassigned</span></td><td><button class="view-btn" onclick="event.stopPropagation()">👁</button></td></tr>
+        <tr class="row"><td><input type="checkbox"></td><td>Remove Temp Files</td><td class="muted-cell">PowerShell Script</td><td><span class="chip">1 group</span></td><td><button class="view-btn" onclick="event.stopPropagation()">👁</button></td></tr>
+        <tr class="row"><td><input type="checkbox"></td><td>Quality Update Ring 1</td><td class="muted-cell">Windows Update</td><td><span class="chip">4 groups</span></td><td><button class="view-btn" onclick="event.stopPropagation()">👁</button></td></tr>
+      </tbody>
+    </table>
+
+    <div class="card side-panel">
+      <h3>Build assignment</h3>
+      <div class="field">
+        <label>Groups to assign</label>
+        <div class="chip-row" style="margin-bottom:8px">
+          <span class="chip removable">Pilot Ring ✕</span>
+          <span class="chip removable">All Finance Devices ✕</span>
+        </div>
+        <input type="text" placeholder="Search Entra groups…">
+      </div>
+      <div class="field">
+        <label>Assignment filter (optional)</label>
+        <select style="width:100%"><option>None</option><option>Corp-owned devices</option><option>Windows 11 only</option></select>
+      </div>
+      <div class="field">
+        <label>Mode</label>
+        <select style="width:100%"><option>Include</option><option>Exclude</option></select>
+      </div>
+      <button class="primary" style="width:100%; justify-content:center;">Assign to 3 items</button>
+    </div>
+  </div>
+</div>
+
+<div class="action-bar card" style="display:none">
+  <span class="count">3 selected</span>
+  <div class="spacer"></div>
+  <span class="muted-cell">Use the panel on the right to build and run the assignment →</span>
+</div>
+
+<div class="page-footer-note">
+  <b>Assignment</b> — object list on the left, assignment builder always visible on the right.
+  <a href="concept-1-command-center.html">← back to dashboard</a>
+</div>
+
+<div class="overlay" id="palette-overlay">
+  <div class="palette">
+    <input type="text" placeholder="Type a command…" autofocus>
+    <div class="results">
+      <a class="result" href="cc-assignment.html"><span class="glyph">🎯</span><span class="label">Assign group to apps or policies…</span><span class="hint">Assignment</span></a>
+      <a class="result" href="cc-cleanup.html"><span class="glyph">🧹</span><span class="label">Find unassigned items…</span><span class="hint">Cleanup</span></a>
+      <a class="result" href="cc-cleanup.html"><span class="glyph">🧹</span><span class="label">Find duplicate names…</span><span class="hint">Cleanup</span></a>
+      <a class="result" href="cc-renaming.html"><span class="glyph">✏️</span><span class="label">Rename items…</span><span class="hint">Renaming</span></a>
+      <a class="result" href="cc-import.html"><span class="glyph">📥</span><span class="label">Import policies to another tenant…</span><span class="hint">Import</span></a>
+      <a class="result" href="cc-manage-assignments.html"><span class="glyph">🔗</span><span class="label">Remove existing assignments…</span><span class="hint">Manage Assignments</span></a>
+      <a class="result" href="cc-json.html"><span class="glyph">📄</span><span class="label">Export selected items to JSON…</span><span class="hint">JSON</span></a>
+      <a class="result" href="cc-audit-log.html"><span class="glyph">📋</span><span class="label">View recent tenant changes…</span><span class="hint">Audit Log</span></a>
+      <a class="result" href="cc-settings.html"><span class="glyph">⚙️</span><span class="label">Switch tenants / sign in…</span><span class="hint">Settings</span></a>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="view-assignments-modal">
+  <div class="modal">
+    <h2>👁 Current assignments</h2>
+    <p><b>Baseline Security Config</b> is currently assigned to:</p>
+    <div class="chip-row" style="margin-bottom:16px">
+      <span class="chip">All Finance Devices</span>
+      <span class="chip">Pilot Ring</span>
+      <span class="chip">Executives</span>
+    </div>
+    <div class="modal-actions"><button data-close-modal>Close</button></div>
+  </div>
+</div>
+
+<script src="shell.js" defer></script>
+</body>
+</html>

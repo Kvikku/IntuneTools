@@ -25,6 +25,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <!-- ===== Header ===== -->
@@ -57,44 +58,6 @@
                                                  ClearAllRequested="ClearAllButton_Click"
                                                  ClearLogRequested="ClearLogButton_Click"
                                                  ExportCsvRequested="ExportCsvButton_Click"/>
-                </StackPanel>
-            </Border>
-
-            <!-- JSON Actions Card -->
-            <Border Style="{StaticResource CardBorderStyle}">
-                <StackPanel Spacing="8">
-                    <TextBlock Text="JSON Actions"
-                               Style="{StaticResource CardSectionLabelTextBlockStyle}"/>
-                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                        <Button x:Name="ExportButton"
-                                Click="ExportButton_Click"
-                                ToolTipService.ToolTip="Export staged items to a folder. Creates one JSON file per content type (e.g. settingscatalog.json, devicecompliance.json)."
-                                Style="{StaticResource PrimaryActionButtonStyle}">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <FontIcon Glyph="&#xEDE1;" FontSize="16"/>
-                                <TextBlock Text="Export to Folder" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                            </StackPanel>
-                        </Button>
-                        <Button x:Name="ImportButton"
-                                Click="ImportButton_Click"
-                                ToolTipService.ToolTip="Import items from a folder containing exported JSON files. Reads all supported content type files from the selected folder."
-                                Style="{StaticResource SecondaryActionButtonStyle}">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <FontIcon Glyph="&#xE8E5;" FontSize="16"/>
-                                <TextBlock Text="Import from Folder" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                            </StackPanel>
-                        </Button>
-                        <AppBarSeparator/>
-                        <Button x:Name="ImportToTenantButton"
-                                Click="ImportToTenantButton_Click"
-                                ToolTipService.ToolTip="Create policies in the destination tenant from the staged JSON data. Requires a destination tenant to be authenticated."
-                                Style="{StaticResource SecondaryActionButtonStyle}">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <FontIcon Glyph="&#xE8B5;" FontSize="16"/>
-                                <TextBlock x:Name="ImportToTenantButtonText" Text="Import to Tenant" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                            </StackPanel>
-                        </Button>
-                    </StackPanel>
                 </StackPanel>
             </Border>
         </StackPanel>
@@ -169,5 +132,40 @@
                           ItemTemplate="{StaticResource LogConsoleItemTemplate}"/>
             </Grid>
         </Grid>
+
+        <!-- ===== Action bar ===== -->
+        <utilities:SelectionActionBar x:Name="JsonActionBar" Grid.Row="3">
+            <utilities:SelectionActionBar.ExtraButtons>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button x:Name="ExportButton"
+                            Click="ExportButton_Click"
+                            ToolTipService.ToolTip="Export staged items to a folder. Creates one JSON file per content type (e.g. settingscatalog.json, devicecompliance.json)."
+                            Style="{StaticResource PrimaryActionButtonStyle}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xEDE1;" FontSize="16"/>
+                            <TextBlock Text="Export to Folder" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="ImportButton"
+                            Click="ImportButton_Click"
+                            ToolTipService.ToolTip="Import items from a folder containing exported JSON files. Reads all supported content type files from the selected folder."
+                            Style="{StaticResource SecondaryActionButtonStyle}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE8E5;" FontSize="16"/>
+                            <TextBlock Text="Import from Folder" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="ImportToTenantButton"
+                            Click="ImportToTenantButton_Click"
+                            ToolTipService.ToolTip="Create policies in the destination tenant from the staged JSON data. Requires a destination tenant to be authenticated."
+                            Style="{StaticResource SecondaryActionButtonStyle}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE8B5;" FontSize="16"/>
+                            <TextBlock x:Name="ImportToTenantButtonText" Text="Import to Tenant" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </utilities:SelectionActionBar.ExtraButtons>
+        </utilities:SelectionActionBar>
     </Grid>
 </utilities:BaseDataOperationPage>

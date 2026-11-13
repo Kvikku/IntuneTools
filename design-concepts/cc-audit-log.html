@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>InToolz 2.0 — Audit Log</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .breakdown-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 12.5px; }
+  .breakdown-row .name { flex: 1; }
+  .breakdown-row .bar-track { flex: 1; height: 6px; border-radius: 3px; background: var(--bg); overflow: hidden; }
+  .breakdown-row .bar-fill { height: 100%; background: var(--accent); }
+  .breakdown-row .n { width: 28px; text-align: right; color: var(--text-muted); }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="left">
+    <a class="logo" href="concept-1-command-center.html"><span class="dot"></span> InToolz <span class="version-chip">2.0</span></a>
+  </div>
+  <div class="cmdbox"><span>Search actions, items, tenants…</span><span class="kbd">Ctrl K</span></div>
+  <div class="right">
+    <a class="tenant-pill" href="cc-settings.html"><span class="swatch" style="background:#4ecdc4"></span>Source: <b>Contoso Prod</b></a>
+    <div class="avatar"></div>
+  </div>
+</div>
+<div class="breadcrumb"><a href="concept-1-command-center.html">Dashboard</a><span class="sep">/</span><span class="current">Audit Log</span></div>
+
+<div class="page-wrap">
+  <div class="page-head">
+    <h1>Audit Log</h1>
+    <p class="sub">Review recent Intune changes — who made them, what was done, and whether they succeeded.</p>
+  </div>
+
+  <div class="stat-mini-row">
+    <div class="card stat-mini"><div class="label">Changes (7d)</div><div class="value">156</div></div>
+    <div class="card stat-mini"><div class="label">Failed</div><div class="value" style="color:var(--danger)">6</div></div>
+    <div class="card stat-mini"><div class="label">Top actor</div><div class="value" style="font-size:16px; padding-top:4px;">jorgen@contoso.com</div></div>
+  </div>
+
+  <div class="toolbar-row">
+    <select class="filter-select"><option>Last 7 days</option><option>Last 1 day</option><option>Last 14 days</option><option>Last 30 days</option></select>
+    <select class="filter-select"><option>All actors</option><option>jorgen@contoso.com</option><option>admin@contoso.com</option></select>
+    <input type="search" placeholder="Search target name…" style="width:220px">
+    <button>Export CSV</button>
+  </div>
+
+  <div class="content-split">
+    <table class="data">
+      <thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Target</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td class="muted-cell">2h ago</td><td>jorgen@contoso.com</td><td>Rename</td><td>42 Compliance Policies</td><td><span class="badge success">Success</span></td></tr>
+        <tr><td class="muted-cell">Yesterday</td><td>jorgen@contoso.com</td><td>Create</td><td>Settings Catalog Policy</td><td><span class="badge success">Success</span></td></tr>
+        <tr><td class="muted-cell">Yesterday</td><td>admin@contoso.com</td><td>Delete</td><td>Old VPN Profile</td><td><span class="badge danger">Failed</span></td></tr>
+        <tr><td class="muted-cell">2 days ago</td><td>jorgen@contoso.com</td><td>Assign</td><td>Adobe Acrobat Reader DC</td><td><span class="badge success">Success</span></td></tr>
+        <tr><td class="muted-cell">3 days ago</td><td>admin@contoso.com</td><td>Update</td><td>Corporate Compliance - Win11</td><td><span class="badge success">Success</span></td></tr>
+      </tbody>
+    </table>
+
+    <div class="card side-panel">
+      <h3>Per-actor breakdown (7d)</h3>
+      <div class="breakdown-row"><span class="name">jorgen@contoso.com</span><div class="bar-track"><div class="bar-fill" style="width:72%"></div></div><span class="n">112</span></div>
+      <div class="breakdown-row"><span class="name">admin@contoso.com</span><div class="bar-track"><div class="bar-fill" style="width:28%"></div></div><span class="n">38</span></div>
+      <div class="breakdown-row"><span class="name">svc-automation@contoso.com</span><div class="bar-track"><div class="bar-fill" style="width:4%"></div></div><span class="n">6</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="page-footer-note">
+  <b>Audit Log</b> — the per-actor breakdown moved from a report export into a persistent side panel.
+  <a href="concept-1-command-center.html">← back to dashboard</a>
+</div>
+
+<div class="overlay" id="palette-overlay">
+  <div class="palette">
+    <input type="text" placeholder="Type a command…" autofocus>
+    <div class="results">
+      <a class="result" href="cc-assignment.html"><span class="glyph">🎯</span><span class="label">Assign group to apps or policies…</span><span class="hint">Assignment</span></a>
+      <a class="result" href="cc-cleanup.html"><span class="glyph">🧹</span><span class="label">Find unassigned items…</span><span class="hint">Cleanup</span></a>
+      <a class="result" href="cc-renaming.html"><span class="glyph">✏️</span><span class="label">Rename items…</span><span class="hint">Renaming</span></a>
+      <a class="result" href="cc-import.html"><span class="glyph">📥</span><span class="label">Import policies to another tenant…</span><span class="hint">Import</span></a>
+      <a class="result" href="cc-manage-assignments.html"><span class="glyph">🔗</span><span class="label">Remove existing assignments…</span><span class="hint">Manage Assignments</span></a>
+      <a class="result" href="cc-json.html"><span class="glyph">📄</span><span class="label">Export selected items to JSON…</span><span class="hint">JSON</span></a>
+      <a class="result" href="cc-audit-log.html"><span class="glyph">📋</span><span class="label">View recent tenant changes…</span><span class="hint">Audit Log</span></a>
+      <a class="result" href="cc-settings.html"><span class="glyph">⚙️</span><span class="label">Switch tenants / sign in…</span><span class="hint">Settings</span></a>
+    </div>
+  </div>
+</div>
+
+<script src="shell.js" defer></script>
+</body>
+</html>

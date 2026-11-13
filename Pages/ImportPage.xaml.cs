@@ -40,17 +40,6 @@ namespace InToolz.Pages
     {
         #region Fields & Types
 
-        /// <summary>
-        /// Defines an import operation for a specific content type.
-        /// </summary>
-        /// <param name="TypeKey">The ContentTypes constant identifying this content type.</param>
-        /// <param name="DisplayName">Human-readable name for logging.</param>
-        /// <param name="ImportAsync">Async function that performs the import operation.</param>
-        private record ImportTypeDefinition(
-            string TypeKey,
-            string DisplayName,
-            Func<List<string>, List<string>, Task> ImportAsync);
-
         public ObservableCollection<GroupInfo> GroupList { get; set; } = new ObservableCollection<GroupInfo>();
         public ObservableCollection<FilterInfo> FilterList { get; set; } = new ObservableCollection<FilterInfo>();
         public ObservableCollection<string> FilterOptions { get; set; } = new ObservableCollection<string>();
@@ -103,6 +92,20 @@ namespace InToolz.Pages
 
             // Restore the last search query so it doesn't need to be retyped after every restart.
             SearchStagingBar.SearchText = PageStatePersistence.LoadLastSearchQuery(PageStateKey);
+
+            Variables.TenantStateChanged += () => DispatcherQueue.TryEnqueue(RefreshTenantFlowCard);
+            RefreshTenantFlowCard();
+        }
+
+        private void RefreshTenantFlowCard()
+        {
+            SourceTenantNameText.Text = string.IsNullOrEmpty(Variables.sourceTenantName) ? "Not signed in" : Variables.sourceTenantName;
+            DestinationTenantNameText.Text = string.IsNullOrEmpty(Variables.destinationTenantName) ? "Not signed in" : Variables.destinationTenantName;
+        }
+
+        private void SwapTenantsButton_Click(object sender, RoutedEventArgs e)
+        {
+            Variables.SwapSourceAndDestinationTenants();
         }
 
         /// <summary>
@@ -370,87 +373,6 @@ namespace InToolz.Pages
         #region Import Logic
 
         /// <summary>
-        /// Gets the registry of all import type definitions.
-        /// </summary>
-        private IEnumerable<ImportTypeDefinition> GetImportTypeRegistry(
-            bool isGroupSelected,
-            bool isFilterSelected,
-            List<string> groupIds,
-            GraphServiceClient sourceClient,
-            GraphServiceClient destinationClient)
-        {
-            yield return new ImportTypeDefinition(
-                ContentTypes.EntraGroup,
-                "Entra Groups",
-                async (ids, _) => await ImportMultipleGroups(sourceClient, destinationClient, ids));
-
-            yield return new ImportTypeDefinition(
-                ContentTypes.SettingsCatalog,
-                "Settings Catalog policies",
-                async (ids, grpIds) => await ImportMultipleSettingsCatalog(sourceClient, destinationClient, ids, isGroupSelected, isFilterSelected, grpIds));
-
-            yield return new ImportTypeDefinition(
-                ContentTypes.DeviceCompliancePolicy,
-                "Device Compliance policies",
-                async (ids, grpIds) => await ImportMultipleDeviceCompliancePolicies(sourceClient, destinationClient, ids, isGroupSelected, isFilterSelected, grpIds));
-
-            yield return new ImportTypeDefinition(
-                ContentTypes.DeviceConfigurationPolicy,
-                "Device Configuration policies",
-                async (ids, grpIds) => await ImportMultipleDeviceConfigurations(sourceClient, destinationClient, ids, isGroupSelected, isFilterSelected, grpIds));
-
-            yield return new ImportTypeDefinition(
-                ContentTypes.AppleBYODEnrollmentProfile,
-                "Apple BYOD Enrollment Profiles",
-                async (ids, grpIds) => await ImportMultipleAppleBYODEnrollmentProfiles(sourceClient, destinationClient, ids, isGroupSelected, isFilterSelected, grpIds));
-
-            yield return new ImportTypeDefinition(
-                ContentTypes.AssignmentFilter,
-                "Assignment Filters",
-                async (ids, _) => await ImportMultipleAssignmentFilters(sourceClient, destinationClient, ids));
-
-            yield return new ImportTypeDefinition(
-                ContentTypes.PowerShellScript,
-                "PowerShell Scripts",
-                async (ids, grpIds) => await ImportMultiplePowerShellScripts(sourceClient, destinationClient, ids, isGroupSelected, isFilterSelected, grpIds));
-
-            yield return new ImportTypeDefinition(
-                ContentTypes.ProactiveRemediation,
-                "Proactive Remediations",
-                async (ids, grpIds) => await ImportMultipleProactiveRemediations(sourceClient, destinationClient, ids, isGroupSelected, isFilterSelected, grpIds));
-
-            yield return new ImportTypeDefinition(
-                ContentTypes.MacOSShellScript,
-                "macOS Shell Scripts",
-                async (ids, grpIds) => await ImportMultiplemacOSShellScripts(sourceClient, destinationClient, ids, isGroupSelected, isFilterSelected, grpIds));
-
-            yield return new ImportTypeDefinition(
-                ContentTypes.WindowsAutoPilotProfile,
-                "Windows AutoPilot Profiles",
-                async (ids, grpIds) => await ImportMultipleWindowsAutoPilotProfiles(sourceClient, destinationClient, ids, isGroupSelected, isFilterSelected, grpIds));
-
-            yield return new ImportTypeDefinition(
-                ContentTypes.WindowsDriverUpdate,
-                "Windows Driver Updates",
-                async (ids, grpIds) => await ImportMultipleDriverProfiles(sourceClient, destinationClient, ids, isGroupSelected, isFilterSelected, grpIds));
-
-            yield return new ImportTypeDefinition(
-                ContentTypes.WindowsFeatureUpdate,
-                "Windows Feature Updates",
-                async (ids, grpIds) => await ImportMultipleWindowsFeatureUpdateProfiles(sourceClient, destinationClient, ids, isGroupSelected, isFilterSelected, grpIds));
-
-            yield return new ImportTypeDefinition(
-                ContentTypes.WindowsQualityUpdatePolicy,
-                "Windows Quality Update Policies",
-                async (ids, grpIds) => await ImportMultipleWindowsQualityUpdatePolicies(sourceClient, destinationClient, ids, isGroupSelected, isFilterSelected, grpIds));
-
-            yield return new ImportTypeDefinition(
-                ContentTypes.WindowsQualityUpdateProfile,
-                "Windows Quality Update Profiles",
-                async (ids, grpIds) => await ImportMultipleWindowsQualityUpdateProfiles(sourceClient, destinationClient, ids, isGroupSelected, isFilterSelected, grpIds));
-        }
-
-        /// <summary>
         /// Main import process
         /// </summary>
 
@@ -568,7 +490,7 @@ namespace InToolz.Pages
                 .ToList();
 
             // Get import registry with current group/filter selection state
-            var importRegistry = GetImportTypeRegistry(
+            var importRegistry = GraphOperationRegistries.GetImportTypeRegistry(
                 IsGroupSelected, IsFilterSelected, groupIds,
                 RequireSourceClient(), RequireDestinationClient()).ToList();
 

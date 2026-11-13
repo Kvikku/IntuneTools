@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>InToolz 2.0 — Settings</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .settings-wrap { max-width: 720px; }
+  .settings-group { margin-bottom: 32px; }
+  .settings-group .group-label { font-size: 13px; text-transform: uppercase; letter-spacing: .03em; color: var(--text-muted); margin-bottom: 10px; }
+  .setting-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 14px 16px; margin-bottom: 8px;
+  }
+  .setting-row .main { display: flex; align-items: center; gap: 12px; }
+  .setting-row .glyph { font-size: 18px; width: 24px; text-align: center; }
+  .setting-row .title { font-weight: 600; font-size: 13.5px; }
+  .setting-row .desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .toggle { width: 40px; height: 22px; border-radius: 999px; background: var(--border); position: relative; cursor: pointer; border: none; padding: 0; }
+  .toggle.on { background: var(--accent); }
+  .toggle .knob { position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left .15s; }
+  .toggle.on .knob { left: 20px; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="left">
+    <a class="logo" href="concept-1-command-center.html"><span class="dot"></span> InToolz <span class="version-chip">2.0</span></a>
+  </div>
+  <div class="cmdbox"><span>Search actions, items, tenants…</span><span class="kbd">Ctrl K</span></div>
+  <div class="right"><div class="avatar"></div></div>
+</div>
+<div class="breadcrumb"><a href="concept-1-command-center.html">Dashboard</a><span class="sep">/</span><span class="current">Settings</span></div>
+
+<div class="page-wrap">
+  <div class="page-head">
+    <h1>Settings</h1>
+    <p class="sub">Manage tenant connections and app preferences.</p>
+  </div>
+
+  <div class="settings-wrap">
+    <div class="settings-group">
+      <div class="group-label">Tenants</div>
+      <div class="card setting-row">
+        <div class="main">
+          <div class="glyph">🟢</div>
+          <div>
+            <div class="title">Source tenant</div>
+            <div class="desc">Signed in as jorgen@contoso.com · Contoso Prod</div>
+          </div>
+        </div>
+        <button>Switch</button>
+      </div>
+      <div class="card setting-row">
+        <div class="main">
+          <div class="glyph">🟠</div>
+          <div>
+            <div class="title">Destination tenant</div>
+            <div class="desc">Signed in as admin@fabrikam.com · Fabrikam Sandbox</div>
+          </div>
+        </div>
+        <button>Switch</button>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <div class="group-label">Application</div>
+      <div class="card setting-row">
+        <div class="main">
+          <div class="glyph">🧪</div>
+          <div>
+            <div class="title">Demo Mode</div>
+            <div class="desc">Try InToolz against fake data — no tenant required.</div>
+          </div>
+        </div>
+        <button class="toggle" onclick="this.classList.toggle('on')"><span class="knob"></span></button>
+      </div>
+      <div class="card setting-row">
+        <div class="main">
+          <div class="glyph">🎨</div>
+          <div>
+            <div class="title">Theme</div>
+            <div class="desc">Match Windows, or force light / dark.</div>
+          </div>
+        </div>
+        <select><option>Match Windows</option><option>Dark</option><option>Light</option></select>
+      </div>
+      <div class="card setting-row">
+        <div class="main">
+          <div class="glyph">ℹ️</div>
+          <div>
+            <div class="title">About InToolz</div>
+            <div class="desc">Version 2.0.0.0 · Check for updates</div>
+          </div>
+        </div>
+        <button>Check for updates</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page-footer-note">
+  <b>Settings</b> — same SettingsCard row pattern as today's app, just restyled for the dark 2.0 shell.
+  <a href="concept-1-command-center.html">← back to dashboard</a>
+</div>
+
+<div class="overlay" id="palette-overlay">
+  <div class="palette">
+    <input type="text" placeholder="Type a command…" autofocus>
+    <div class="results">
+      <a class="result" href="cc-assignment.html"><span class="glyph">🎯</span><span class="label">Assign group to apps or policies…</span><span class="hint">Assignment</span></a>
+      <a class="result" href="cc-cleanup.html"><span class="glyph">🧹</span><span class="label">Find unassigned items…</span><span class="hint">Cleanup</span></a>
+      <a class="result" href="cc-renaming.html"><span class="glyph">✏️</span><span class="label">Rename items…</span><span class="hint">Renaming</span></a>
+      <a class="result" href="cc-import.html"><span class="glyph">📥</span><span class="label">Import policies to another tenant…</span><span class="hint">Import</span></a>
+      <a class="result" href="cc-manage-assignments.html"><span class="glyph">🔗</span><span class="label">Remove existing assignments…</span><span class="hint">Manage Assignments</span></a>
+      <a class="result" href="cc-json.html"><span class="glyph">📄</span><span class="label">Export selected items to JSON…</span><span class="hint">JSON</span></a>
+      <a class="result" href="cc-audit-log.html"><span class="glyph">📋</span><span class="label">View recent tenant changes…</span><span class="hint">Audit Log</span></a>
+      <a class="result active" href="cc-settings.html"><span class="glyph">⚙️</span><span class="label">Switch tenants / sign in…</span><span class="hint">Settings</span></a>
+    </div>
+  </div>
+</div>
+
+<script src="shell.js" defer></script>
+</body>
+</html>

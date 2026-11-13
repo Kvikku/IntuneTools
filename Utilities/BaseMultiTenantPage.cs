@@ -470,6 +470,31 @@ namespace InToolz.Utilities
         }
 
         /// <summary>
+        /// Destructive-action confirmation dialog: same shape as <see cref="ShowConfirmationDialogAsync"/>,
+        /// but styles the primary button as a destructive action (red) so permanent/dangerous
+        /// operations are visually distinct from routine confirmations. Callers should write
+        /// consequence-specific body text — what exactly is lost, is it recoverable, what else
+        /// breaks — rather than a generic "are you sure?" (see CleanupPage's stale-device and
+        /// duplicate-delete flows for the pattern this generalizes).
+        /// </summary>
+        protected async Task<bool> ShowDestructiveConfirmationAsync(string title, string consequenceBody, string confirmText = "Delete")
+        {
+            var dialog = new ContentDialog
+            {
+                Title = title,
+                Content = consequenceBody,
+                PrimaryButtonText = confirmText,
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot,
+                PrimaryButtonStyle = (Style)Microsoft.UI.Xaml.Application.Current.Resources["DestructiveActionButtonStyle"]
+            };
+
+            var result = await dialog.ShowAsync();
+            return result == ContentDialogResult.Primary;
+        }
+
+        /// <summary>
         /// Handler for clear log button - shows confirmation then clears.
         /// </summary>
         protected async void ClearLogButton_Click(object sender, RoutedEventArgs e)

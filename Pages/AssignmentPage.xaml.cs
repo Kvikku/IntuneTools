@@ -41,15 +41,6 @@ namespace InToolz.Pages
     {
         #region Fields & Types
 
-        /// <summary>
-        /// Defines an assignment operation for a specific content type.
-        /// </summary>
-        /// <param name="ContentTypeDisplayName">The display name used in ContentType property (e.g., "Device Compliance Policy").</param>
-        /// <param name="AssignAsync">Async function that performs the assignment operation.</param>
-        private record AssignTypeDefinition(
-            string ContentTypeDisplayName,
-            Func<string, string, List<string>, GraphServiceClient, Task> AssignAsync);
-
         public static ObservableCollection<CustomContentInfo> AssignmentList { get; } = new();
         public ObservableCollection<AssignmentGroupInfo> GroupList { get; } = new();
         public ObservableCollection<DeviceAndAppManagementAssignmentFilter> FilterOptions { get; } = new();
@@ -133,7 +124,17 @@ namespace InToolz.Pages
 
             this.Loaded += AssignmentPage_Loaded;
             RightClickMenu.AttachDataGridContextMenu(AppDataGrid, () => sourceGraphServiceClient);
+
+            AssignmentList.CollectionChanged += (_, _) =>
+            {
+                UpdateStagedCount();
+                RefreshDeploymentOptionsVisibility();
+            };
+            UpdateStagedCount();
+            RefreshDeploymentOptionsVisibility();
         }
+
+        private void UpdateStagedCount() => AssignmentActionBar.CountText = $"{AssignmentList.Count} staged";
 
         protected override appFunction PageLogFunction => appFunction.Assignment;
 
@@ -143,77 +144,36 @@ namespace InToolz.Pages
             "AssignButton", "GroupSearchTextBox", "GroupSearchButton", "GroupListAllButton",
             "AppDataGrid", "GroupDataGrid", "FilterExpander", "FilterSelectionComboBox",
             "FilterModeComboBox", "OptionsAllCheckBox", "ClearLogButton", "ContentTypesButton", "ExportCsvButton",
-            "AllUsersToggle", "AllDevicesToggle"
+            "AllUsersToggle", "AllDevicesToggle", "DeploymentPivot"
         };
+
+        /// <summary>
+        /// The base class enables/disables AssignButton purely from auth state; re-apply the
+        /// group-selection requirement on top of that so a fresh sign-in doesn't leave Assign
+        /// enabled with no group selected yet.
+        /// </summary>
+        protected override void ValidateAuthenticationState()
+        {
+            base.ValidateAuthenticationState();
+            UpdateAssignButtonEnabledState();
+        }
 
         #endregion
 
         #region Assignment Logic
 
         /// <summary>
-        /// Gets the registry of all assignment type definitions.
-        /// </summary>
-        private IEnumerable<AssignTypeDefinition> GetAssignTypeRegistry()
-        {
-            yield return new AssignTypeDefinition(
-                "Device Compliance Policy",
-                async (id, name, groups, client) => await AssignGroupsToSingleDeviceCompliance(id, name, groups, client));
-
-            yield return new AssignTypeDefinition(
-                "Settings Catalog",
-                async (id, name, groups, client) => await AssignGroupsToSingleSettingsCatalog(id, name, groups, client));
-
-            yield return new AssignTypeDefinition(
-                "Device Configuration Policy",
-                async (id, name, groups, client) => await AssignGroupsToSingleDeviceConfiguration(id, name, groups, client));
-
-            yield return new AssignTypeDefinition(
-                "MacOS Shell Script",
-                async (id, name, groups, client) => await AssignGroupsToSingleShellScriptmacOS(id, name, groups, client));
-
-            yield return new AssignTypeDefinition(
-                "PowerShell Script",
-                async (id, name, groups, client) => await AssignGroupsToSinglePowerShellScript(id, name, groups, client));
-
-            yield return new AssignTypeDefinition(
-                "Proactive Remediation",
-                async (id, name, groups, client) => await AssignGroupsToSingleProactiveRemediation(id, name, groups, client));
-
-            yield return new AssignTypeDefinition(
-                "Windows AutoPilot Profile",
-                async (id, name, groups, client) => await AssignGroupsToSingleWindowsAutoPilotProfile(id, name, groups, client));
-
-            yield return new AssignTypeDefinition(
-                "Windows Driver Update",
-                async (id, name, groups, client) => await AssignGroupsToSingleDriverProfile(id, name, groups, client));
-
-            yield return new AssignTypeDefinition(
-                "Windows Feature Update",
-                async (id, name, groups, client) => await AssignGroupsToSingleWindowsFeatureUpdateProfile(id, name, groups, client));
-
-            yield return new AssignTypeDefinition(
-                "Windows Quality Update Policy",
-                async (id, name, groups, client) => await AssignGroupsToSingleWindowsQualityUpdatePolicy(id, name, groups, client));
-
-            yield return new AssignTypeDefinition(
-                "Windows Quality Update Profile",
-                async (id, name, groups, client) => await AssignGroupsToSingleWindowsQualityUpdateProfile(id, name, groups, client));
-
-            yield return new AssignTypeDefinition(
-                "Apple BYOD Enrollment Profile",
-                async (id, name, groups, client) => await AssignGroupsToSingleAppleBYODEnrollmentProfile(id, name, groups, client));
-        }
-
-        /// <summary>
-        /// Assigns a single content item to the specified groups using the registry.
+        /// Assigns a single content item to the specified groups using the shared registry.
         /// </summary>
         private async Task<bool> AssignContentItemAsync(
             CustomContentInfo item,
             List<string> groupList,
             GraphServiceClient graphServiceClient)
         {
-            // Handle apps specially (they have "App - " prefix)
-            if (item.ContentType.StartsWith("App - "))
+            // Handle apps specially: they have per-platform ContentType values (e.g.
+            // "App - Windows app (Win32)") rather than one constant, so they can't be a single
+            // dictionary key.
+            if (UserInterfaceHelper.IsApplicationContentType(item.ContentType))
             {
                 await PrepareApplicationForAssignment(
                     new KeyValuePair<string, CustomContentInfo>(item.ContentId, item),
@@ -222,11 +182,10 @@ namespace InToolz.Pages
                 return true;
             }
 
-            // Find matching definition in registry
-            var registry = GetAssignTypeRegistry().ToList();
-            var definition = registry.FirstOrDefault(d => d.ContentTypeDisplayName == item.ContentType);
+            var registry = GraphOperationRegistries.GetAssignTypeRegistry()
+                .ToDictionary(d => d.TypeKey, StringComparer.OrdinalIgnoreCase);
 
-            if (definition != null)
+            if (registry.TryGetValue(item.ContentType, out var definition))
             {
                 await definition.AssignAsync(item.ContentId, item.ContentName, groupList, graphServiceClient);
                 return true;
@@ -245,16 +204,16 @@ namespace InToolz.Pages
         /// </summary>
         private async Task MainOrchestrator(GraphServiceClient graphServiceClient)
         {
-            // Open the combined dialog (group selection + filter + deployment options).
-            // Group validation is enforced inside the dialog \u2014 it won't close without groups.
-            var deploymentOptions = await ShowAppDeploymentOptionsDialog();
-            if (deploymentOptions == false)
+            // Reads groups/filter/deployment options straight from the always-visible panel \u2014
+            // there's no dialog to confirm first. Returns false (and shows an inline validation
+            // message) if no assignment target is selected.
+            if (!await TryPrepareAssignmentOptionsAsync())
             {
-                AppLogger.UiOnly("Assignment cancelled by user.");
+                AppLogger.UiOnly("Assignment cancelled.");
                 return;
             }
 
-            // Group selection and filter state are captured from dialog controls.
+            // Group selection and filter state are captured from the panel's controls.
             var selectedGroups = GroupDataGrid.SelectedItems?.Cast<AssignmentGroupInfo>().ToList() ?? new();
 
             // Get all content
@@ -675,7 +634,11 @@ namespace InToolz.Pages
         {
             _includeAllUsers  = AllUsersToggle.IsChecked == true;
             _includeAllDevices = AllDevicesToggle.IsChecked == true;
+            UpdateAssignButtonEnabledState();
         }
+
+        private void GroupDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e) =>
+            UpdateAssignButtonEnabledState();
 
         private async Task ShowValidationDialogAsync(string title, string message)
         {
@@ -929,134 +892,132 @@ namespace InToolz.Pages
             // e.Handled = true; // Removed as per workaround
         }
 
-        private async Task<bool> ShowAppDeploymentOptionsDialog()
+        /// <summary>
+        /// Refreshes the panel's app-specific controls (intent combo, platform tabs, info
+        /// message) based on what's currently staged. Called whenever AssignmentList changes
+        /// and once at load, since the panel is always visible now instead of only being built
+        /// right before a dialog opened.
+        /// </summary>
+        private void RefreshDeploymentOptionsVisibility()
+        {
+            bool hasApps     = AssignmentList.Any(x => UserInterfaceHelper.IsApplicationContentType(x.ContentType));
+            bool hasWin      = AssignmentList.Any(x => x.ContentType is "App - Windows app (Win32)" or "App - Windows app (WinGet)");
+            bool hasIos      = AssignmentList.Any(x => x.ContentType == "App - iOS VPP app");
+            bool hasAndroid  = AssignmentList.Any(x => x.ContentType.Contains("Android", StringComparison.OrdinalIgnoreCase) && x.ContentType.StartsWith("App - "));
+            bool hasPolicies = AssignmentList.Any(x => !UserInterfaceHelper.IsApplicationContentType(x.ContentType));
+
+            // Show/hide intent combo — only relevant for apps
+            AssignmentIntentComboBox.Visibility = hasApps ? Visibility.Visible : Visibility.Collapsed;
+            AvailableIntentInfoBar.Visibility   = hasApps ? Visibility.Visible : Visibility.Collapsed;
+
+            // Show/hide platform tabs based on what's staged
+            foreach (var tab in new[] { WindowsPivotItem, iOSPivotItem, AndroidPivotItem })
+                if (DeploymentPivot.Items.Contains(tab))
+                    DeploymentPivot.Items.Remove(tab);
+
+            if (hasWin)     DeploymentPivot.Items.Add(WindowsPivotItem);
+            if (hasIos)     DeploymentPivot.Items.Add(iOSPivotItem);
+            if (hasAndroid) DeploymentPivot.Items.Add(AndroidPivotItem);
+
+            // Only reset to the General tab if nothing's selected yet — don't yank the user back
+            // to it every time a staged item is added/removed while they're mid-configuration.
+            if (DeploymentPivot.SelectedItem == null)
+                DeploymentPivot.SelectedIndex = 0;
+
+            DialogInfoBar.Severity = InfoBarSeverity.Informational;
+            DialogInfoBar.Title = string.Empty;
+            if (hasApps && !hasPolicies)
+                DialogInfoBar.Message = "Configure app intent and platform-specific deployment settings.";
+            else if (!hasApps && hasPolicies)
+                DialogInfoBar.Message = "Configure settings for this assignment.";
+            else
+                DialogInfoBar.Message = "Mixed content staged — app-specific settings apply to apps only.";
+        }
+
+        /// <summary>
+        /// Enables the Assign button only once a valid assignment target is selected (at least
+        /// one group, or a virtual group) and the page is authenticated. Replaces the old
+        /// "won't close without groups" ContentDialog guard, which has no equivalent once the
+        /// panel is always visible instead of living inside a dialog.
+        /// </summary>
+        private void UpdateAssignButtonEnabledState()
+        {
+            var selectedGroups = GroupDataGrid.SelectedItems?.Cast<AssignmentGroupInfo>().ToList() ?? new();
+            var hasTarget = UserInterfaceHelper.HasAssignmentTarget(selectedGroups.Count, _includeAllUsers, _includeAllDevices);
+
+            GroupValidationInfoBar.IsOpen = !hasTarget;
+            AssignButton.IsEnabled = hasTarget && sourceGraphServiceClient != null;
+        }
+
+        /// <summary>
+        /// Validates the panel's current group/filter selection and reads its deployment-option
+        /// controls into the global Variables consumed by AssignContentItemAsync. Returns false
+        /// (showing an inline validation message, or a dialog for the one hard-blocking rule) if
+        /// the assignment can't proceed as configured.
+        /// </summary>
+        private async Task<bool> TryPrepareAssignmentOptionsAsync()
         {
             try
             {
-                // Analyse staged content to show only relevant dialog tabs/controls
-                bool hasApps     = AssignmentList.Any(x => x.ContentType.StartsWith("App - ", StringComparison.OrdinalIgnoreCase));
-                bool hasWin      = AssignmentList.Any(x => x.ContentType is "App - Windows app (Win32)" or "App - Windows app (WinGet)");
-                bool hasIos      = AssignmentList.Any(x => x.ContentType == "App - iOS VPP app");
-                bool hasAndroid  = AssignmentList.Any(x => x.ContentType.Contains("Android", StringComparison.OrdinalIgnoreCase) && x.ContentType.StartsWith("App - "));
-                bool hasPolicies = AssignmentList.Any(x => !x.ContentType.StartsWith("App - ", StringComparison.OrdinalIgnoreCase));
-
-                // Show/hide intent combo — only relevant for apps
-                AssignmentIntentComboBox.Visibility = hasApps ? Visibility.Visible : Visibility.Collapsed;
-                AvailableIntentInfoBar.Visibility   = hasApps ? Visibility.Visible : Visibility.Collapsed;
-
-                // Show/hide platform tabs based on what's staged
-                foreach (var tab in new[] { WindowsPivotItem, iOSPivotItem, AndroidPivotItem })
-                    if (DeploymentPivot.Items.Contains(tab))
-                        DeploymentPivot.Items.Remove(tab);
-
-                if (hasWin)     DeploymentPivot.Items.Add(WindowsPivotItem);
-                if (hasIos)     DeploymentPivot.Items.Add(iOSPivotItem);
-                if (hasAndroid) DeploymentPivot.Items.Add(AndroidPivotItem);
-
-                DeploymentPivot.SelectedIndex = 0;
-
-                // Update dialog info message based on what's staged; reset severity to Informational
-                DialogInfoBar.Severity = InfoBarSeverity.Informational;
-                DialogInfoBar.Title = string.Empty;
-                if (hasApps && !hasPolicies)
+                var selectedGroups = GroupDataGrid.SelectedItems?.Cast<AssignmentGroupInfo>().ToList() ?? new();
+                if (!UserInterfaceHelper.HasAssignmentTarget(selectedGroups.Count, _includeAllUsers, _includeAllDevices))
                 {
-                    AppDeployment.Title = "Configure Assignment";
-                    DialogInfoBar.Message = "Configure app intent and platform-specific deployment settings.";
-                }
-                else if (!hasApps && hasPolicies)
-                {
-                    AppDeployment.Title = "Configure Assignment";
-                    DialogInfoBar.Message = "Configure settings for this assignment.";
-                }
-                else
-                {
-                    AppDeployment.Title = "Configure Assignment";
-                    DialogInfoBar.Message = "Mixed content staged — app-specific settings apply to apps only.";
+                    GroupValidationInfoBar.IsOpen = true;
+                    return false;
                 }
 
-                // Prevent dialog from closing if no groups are selected
-                void ValidateGroupsOnPrimaryClick(ContentDialog _, ContentDialogButtonClickEventArgs args)
+                Variables._selectedIntent = (AssignmentIntentComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? string.Empty;
+                Variables._selectedNotificationSetting = (NotificationSettingsCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? string.Empty;
+                Variables._selectedDeliveryOptimizationPriority = (DeliveryOptimizationCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? string.Empty;
+                Variables._selectedAndroidManagedStoreAutoUpdateMode = (UpdatePriority.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? string.Empty;
+                Variables._licensingType = (UseDeviceLicensingCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? string.Empty;
+                Variables._deviceRemovalAction = (UninstallOnDeviceRemovalCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? string.Empty;
+                Variables._removable = (IsRemovableCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? string.Empty;
+                Variables._preventAutoUpdate = (PreventAutoAppUpdateCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? string.Empty;
+                Variables._preventManagedAppBackup = (PreventManagedAppBackupCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? string.Empty;
+
+                bool isDeviceLicensing = bool.TryParse(Variables._licensingType, out bool deviceLicensing) && deviceLicensing;
+                bool uninstallOnDeviceRemoval = bool.TryParse(Variables._deviceRemovalAction, out bool deviceRemoval) && deviceRemoval;
+                bool isRemovable = bool.TryParse(Variables._removable, out bool removable) && removable;
+                bool preventAutoUpdate = bool.TryParse(Variables._preventAutoUpdate, out bool autoUpdate) && autoUpdate;
+                bool preventManagedAppBackup = bool.TryParse(Variables._preventManagedAppBackup, out bool managedAppBackup) && managedAppBackup;
+
+                GetInstallIntent(_selectedIntent);
+
+                // Validate: Available intent cannot target All Devices
+                if (!UserInterfaceHelper.IsAppAssignmentIntentAllowed(_selectedAppDeploymentIntent, _includeAllDevices))
                 {
-                    var selectedGroups = GroupDataGrid.SelectedItems?.Cast<AssignmentGroupInfo>().ToList() ?? new();
-                    if (!UserInterfaceHelper.HasAssignmentTarget(selectedGroups.Count, _includeAllUsers, _includeAllDevices))
-                    {
-                        DialogInfoBar.Severity = InfoBarSeverity.Error;
-                        DialogInfoBar.Title = "No Groups Selected";
-                        DialogInfoBar.Message = "Select at least one group, or enable 'All Users' / 'All Devices'.";
-                        DialogInfoBar.IsOpen = true;
-                        args.Cancel = true;
-                    }
+                    await ShowValidationDialogAsync("Invalid Assignment",
+                        "The 'Available' intent cannot be used with the 'All Devices' virtual group.\n\n" +
+                        "Please select 'Required' or 'Uninstall', or deselect 'All Devices'.");
+                    return false;
                 }
 
-                AppDeployment.PrimaryButtonClick += ValidateGroupsOnPrimaryClick;
-                ContentDialogResult result = ContentDialogResult.None;
-                try
+                // Warn (non-blocking) if a filter is set and content spans multiple platforms
+                if (IsFilterSelected)
                 {
-                    result = await AppDeployment.ShowAsync();
-                }
-                finally
-                {
-                    AppDeployment.PrimaryButtonClick -= ValidateGroupsOnPrimaryClick;
+                    var platforms = AssignmentList.Select(x => x.ContentPlatform).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                    if (platforms.Count > 1)
+                        AppLogger.UiOnly($"Warning: Assignment filter selected but content spans {platforms.Count} platforms ({string.Join(", ", platforms)}). Filters are platform-specific.");
                 }
 
-                if (result == ContentDialogResult.Primary)
-                {
-                    Variables._selectedIntent = (AssignmentIntentComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? string.Empty;
-                    Variables._selectedNotificationSetting = (NotificationSettingsCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? string.Empty;
-                    Variables._selectedDeliveryOptimizationPriority = (DeliveryOptimizationCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? string.Empty;
-                    Variables._selectedAndroidManagedStoreAutoUpdateMode = (UpdatePriority.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? string.Empty;
-                    Variables._licensingType = (UseDeviceLicensingCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? string.Empty;
-                    Variables._deviceRemovalAction = (UninstallOnDeviceRemovalCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? string.Empty;
-                    Variables._removable = (IsRemovableCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? string.Empty;
-                    Variables._preventAutoUpdate = (PreventAutoAppUpdateCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? string.Empty;
-                    Variables._preventManagedAppBackup = (PreventManagedAppBackupCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? string.Empty;
+                GetDeliveryOptimizationPriority(_selectedDeliveryOptimizationPriority);
+                GetWin32AppNotificationValue(_selectedNotificationSetting);
+                GetAndroidManagedStoreAutoUpdateMode(_selectedAndroidManagedStoreAutoUpdateMode);
 
-                    bool isDeviceLicensing = bool.TryParse(Variables._licensingType, out bool deviceLicensing) && deviceLicensing;
-                    bool uninstallOnDeviceRemoval = bool.TryParse(Variables._deviceRemovalAction, out bool deviceRemoval) && deviceRemoval;
-                    bool isRemovable = bool.TryParse(Variables._removable, out bool removable) && removable;
-                    bool preventAutoUpdate = bool.TryParse(Variables._preventAutoUpdate, out bool autoUpdate) && autoUpdate;
-                    bool preventManagedAppBackup = bool.TryParse(Variables._preventManagedAppBackup, out bool managedAppBackup) && managedAppBackup;
+                var iOSOptions = CreateiOSVppAppAssignmentSettings(isDeviceLicensing, uninstallOnDeviceRemoval, isRemovable, preventManagedAppBackup, preventAutoUpdate);
+                iOSAppDeploymentSettings = iOSOptions;
 
-                    GetInstallIntent(_selectedIntent);
+                AppLogger.UiOnly("Deployment options configured:");
+                AppLogger.UiOnly($" - Intent: {_selectedAppDeploymentIntent}");
+                AppLogger.UiOnly($" - Notifications: {_selectedNotificationSetting}");
+                AppLogger.UiOnly($" - Delivery Opt: {_selectedDeliveryOptimizationPriority}");
 
-                    // Validate: Available intent cannot target All Devices
-                    if (!UserInterfaceHelper.IsAppAssignmentIntentAllowed(_selectedAppDeploymentIntent, _includeAllDevices))
-                    {
-                        AppDeployment.Hide();
-                        await ShowValidationDialogAsync("Invalid Assignment",
-                            "The 'Available' intent cannot be used with the 'All Devices' virtual group.\n\n" +
-                            "Please select 'Required' or 'Uninstall', or deselect 'All Devices'.");
-                        return false;
-                    }
-
-                    // Warn (non-blocking) if a filter is set and content spans multiple platforms
-                    if (IsFilterSelected)
-                    {
-                        var platforms = AssignmentList.Select(x => x.ContentPlatform).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-                        if (platforms.Count > 1)
-                            AppLogger.UiOnly($"Warning: Assignment filter selected but content spans {platforms.Count} platforms ({string.Join(", ", platforms)}). Filters are platform-specific.");
-                    }
-
-                    GetDeliveryOptimizationPriority(_selectedDeliveryOptimizationPriority);
-                    GetWin32AppNotificationValue(_selectedNotificationSetting);
-                    GetAndroidManagedStoreAutoUpdateMode(_selectedAndroidManagedStoreAutoUpdateMode);
-
-                    var iOSOptions = CreateiOSVppAppAssignmentSettings(isDeviceLicensing, uninstallOnDeviceRemoval, isRemovable, preventManagedAppBackup, preventAutoUpdate);
-                    iOSAppDeploymentSettings = iOSOptions;
-
-                    AppLogger.UiOnly("Deployment options configured:");
-                    AppLogger.UiOnly($" - Intent: {_selectedAppDeploymentIntent}");
-                    AppLogger.UiOnly($" - Notifications: {_selectedNotificationSetting}");
-                    AppLogger.UiOnly($" - Delivery Opt: {_selectedDeliveryOptimizationPriority}");
-
-                    return true;
-                }
-
-                return false;
+                return true;
             }
             catch (Exception ex)
             {
-                AppLogger.UiOnly($"Error showing deployment options dialog: {ex.Message}");
+                AppLogger.UiOnly($"Error preparing assignment options: {ex.Message}");
                 return false;
             }
         }

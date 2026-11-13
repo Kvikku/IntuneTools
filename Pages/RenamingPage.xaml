@@ -24,6 +24,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <!-- ===== Header ===== -->
@@ -108,15 +109,6 @@
                                 </Flyout>
                             </AppBarButton.Flyout>
                         </AppBarButton>
-                        <Button x:Name="RenameButton"
-                                Click="RenameButton_Click"
-                                ToolTipService.ToolTip="Update all staged items."
-                                Style="{StaticResource PrimaryActionButtonStyle}">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <FontIcon Glyph="&#xE8AC;" FontSize="16"/>
-                                <TextBlock Text="Update" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                            </StackPanel>
-                        </Button>
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -193,5 +185,20 @@
                           ItemTemplate="{StaticResource LogConsoleItemTemplate}"/>
             </Grid>
         </Grid>
+
+        <!-- ===== Action bar ===== -->
+        <utilities:SelectionActionBar x:Name="RenameActionBar" Grid.Row="3">
+            <utilities:SelectionActionBar.ExtraButtons>
+                <Button x:Name="RenameButton"
+                        Click="RenameButton_Click"
+                        ToolTipService.ToolTip="Update all staged items."
+                        Style="{StaticResource PrimaryActionButtonStyle}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE8AC;" FontSize="16"/>
+                        <TextBlock Text="Update" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                    </StackPanel>
+                </Button>
+            </utilities:SelectionActionBar.ExtraButtons>
+        </utilities:SelectionActionBar>
     </Grid>
 </utilities:BaseDataOperationPage>

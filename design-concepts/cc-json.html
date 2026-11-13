@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>InToolz 2.0 — JSON</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .dropzone {
+    border: 1.5px dashed var(--border); border-radius: var(--radius); padding: 36px 16px;
+    text-align: center; color: var(--text-muted); font-size: 13px; margin-bottom: 14px;
+  }
+  .file-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .file-row:last-child { border-bottom: none; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="left">
+    <a class="logo" href="concept-1-command-center.html"><span class="dot"></span> InToolz <span class="version-chip">2.0</span></a>
+  </div>
+  <div class="cmdbox"><span>Search actions, items, tenants…</span><span class="kbd">Ctrl K</span></div>
+  <div class="right">
+    <a class="tenant-pill" href="cc-settings.html"><span class="swatch" style="background:#4ecdc4"></span>Source: <b>Contoso Prod</b></a>
+    <div class="avatar"></div>
+  </div>
+</div>
+<div class="breadcrumb"><a href="concept-1-command-center.html">Dashboard</a><span class="sep">/</span><span class="current">JSON</span></div>
+
+<div class="page-wrap">
+  <div class="page-head">
+    <h1>JSON export/import</h1>
+    <p class="sub">Export policies and Entra groups to JSON files and reimport them — great for backup and version control.</p>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <h3 style="margin:0 0 14px; font-size:13px; text-transform:uppercase; letter-spacing:.03em; color:var(--text-muted);">Export</h3>
+      <table class="data">
+        <thead><tr><th></th><th>Name</th><th>Type</th></tr></thead>
+        <tbody>
+          <tr class="row selected"><td><input type="checkbox" checked></td><td>Baseline Security Config</td><td class="muted-cell">Settings Catalog</td></tr>
+          <tr class="row selected"><td><input type="checkbox" checked></td><td>Corporate Compliance - Win11</td><td class="muted-cell">Compliance</td></tr>
+          <tr class="row"><td><input type="checkbox"></td><td>Pilot Ring</td><td class="muted-cell">Entra Group</td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top:14px">
+        <button class="primary" style="width:100%; justify-content:center;">Export 2 items to JSON…</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin:0 0 14px; font-size:13px; text-transform:uppercase; letter-spacing:.03em; color:var(--text-muted);">Import</h3>
+      <div class="dropzone">📄 Drop .json files here, or click to browse</div>
+      <div class="file-row"><span>baseline-security-config.json</span><span class="badge success">Ready</span></div>
+      <div class="file-row"><span>compliance-win11.json</span><span class="badge success">Ready</span></div>
+      <div class="file-row"><span>legacy-profile.json</span><span class="badge danger">Schema mismatch</span></div>
+      <div style="margin-top:14px">
+        <button class="primary" style="width:100%; justify-content:center;">Import 2 valid items into Contoso Prod</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page-footer-note">
+  <b>JSON</b> — export and import sit side by side since they're the same mental action (move policies as files) in opposite directions.
+  <a href="concept-1-command-center.html">← back to dashboard</a>
+</div>
+
+<div class="overlay" id="palette-overlay">
+  <div class="palette">
+    <input type="text" placeholder="Type a command…" autofocus>
+    <div class="results">
+      <a class="result" href="cc-assignment.html"><span class="glyph">🎯</span><span class="label">Assign group to apps or policies…</span><span class="hint">Assignment</span></a>
+      <a class="result" href="cc-cleanup.html"><span class="glyph">🧹</span><span class="label">Find unassigned items…</span><span class="hint">Cleanup</span></a>
+      <a class="result" href="cc-renaming.html"><span class="glyph">✏️</span><span class="label">Rename items…</span><span class="hint">Renaming</span></a>
+      <a class="result" href="cc-import.html"><span class="glyph">📥</span><span class="label">Import policies to another tenant…</span><span class="hint">Import</span></a>
+      <a class="result" href="cc-manage-assignments.html"><span class="glyph">🔗</span><span class="label">Remove existing assignments…</span><span class="hint">Manage Assignments</span></a>
+      <a class="result" href="cc-json.html"><span class="glyph">📄</span><span class="label">Export selected items to JSON…</span><span class="hint">JSON</span></a>
+      <a class="result" href="cc-audit-log.html"><span class="glyph">📋</span><span class="label">View recent tenant changes…</span><span class="hint">Audit Log</span></a>
+      <a class="result" href="cc-settings.html"><span class="glyph">⚙️</span><span class="label">Switch tenants / sign in…</span><span class="hint">Settings</span></a>
+    </div>
+  </div>
+</div>
+
+<script src="shell.js" defer></script>
+</body>
+</html>

@@ -26,12 +26,33 @@ namespace InToolz.Pages
         public SettingsPage()
         {
             this.InitializeComponent();
+            InitializeThemeComboBox();
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
             RefreshLoginStatusUI();
+        }
+
+        private void InitializeThemeComboBox()
+        {
+            ThemeComboBox.SelectedIndex = ThemeService.LoadSavedTheme() switch
+            {
+                ElementTheme.Light => 1,
+                ElementTheme.Dark => 2,
+                _ => 0,
+            };
+        }
+
+        private void ThemeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ThemeComboBox.SelectedItem is ComboBoxItem item &&
+                item.Tag is string tagValue &&
+                Enum.TryParse<ElementTheme>(tagValue, out var theme))
+            {
+                ThemeService.ApplyTheme(theme);
+            }
         }
 
         /// <summary>
@@ -123,6 +144,8 @@ namespace InToolz.Pages
 
                 UpdateTenantStatusUI(isSource, isSignedIn: false, tenantName: null);
             }
+
+            Variables.RaiseTenantStateChanged();
         }
 
         /// <summary>
@@ -156,6 +179,7 @@ namespace InToolz.Pages
 
                     UpdateTenantStatusUI(isSource, isSignedIn: false, tenantName: null);
                     AppLogger.Info($"{tenantLabel} token/session cleared.", appFunction.Main);
+                    Variables.RaiseTenantStateChanged();
                 }
             }
             catch (Exception ex)
@@ -170,12 +194,7 @@ namespace InToolz.Pages
         /// </summary>
         private void SwapTenants()
         {
-            // Swap the full auth instances (GraphClient, token provider, signed-in account, etc.)
-            DestinationUserAuthentication.SwapAuthInstances();
-
-            // Swap tenant names (via global using static - these ARE Variables.*)
-            (sourceTenantName, destinationTenantName) = 
-                (destinationTenantName, sourceTenantName);
+            Variables.SwapSourceAndDestinationTenants();
 
             // Swap permission-warning state so it stays attached to the tenant it describes
             (_sourceHasPermissionWarning, _destinationHasPermissionWarning) =
@@ -183,8 +202,6 @@ namespace InToolz.Pages
 
             // Update UI to reflect the swap
             RefreshLoginStatusUI();
-
-            AppLogger.Info($"Swapped tenants. Source is now '{sourceTenantName}', Destination is now '{destinationTenantName}'.", appFunction.Main);
         }
 
         /// <summary>
@@ -213,6 +230,8 @@ namespace InToolz.Pages
             UpdateTenantStatusUI(isSource: false, isSignedIn: true, destinationName);
 
             AppLogger.Info("Demo Mode enabled: Source and Destination are now backed by fictitious sample data (no live Graph connection, no sign-in performed).", appFunction.Main);
+
+            Variables.RaiseTenantStateChanged();
         }
 
         #endregion

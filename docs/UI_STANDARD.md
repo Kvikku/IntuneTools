@@ -11,6 +11,14 @@ The shared styles live in **`Styles/PageStyles.xaml`** and are merged into
 `Pages/RenamingPage.xaml` is the reference implementation - copy its
 structure when migrating other pages.
 
+> **2.0 "Command Center" shell.** The `NavigationView` sidebar described in
+> this document has been replaced by a persistent top bar (logo, Ctrl+K
+> command palette, tenant pills) plus a shell-level breadcrumb — see
+> **§14** below for what changed and what every page can now assume the
+> shell already provides. Sections 1-13 below still describe each page's
+> *internal* layout (header, toolbar cards, grid + side panel), which is
+> unchanged; only the chrome around it moved up into `MainWindow`.
+
 ---
 
 ## 1. Page anatomy
@@ -276,4 +284,132 @@ Rules for using it:
 First tried out on `Pages/CleanupPage.xaml` (page-level "About this page"
 overview, plus one per non-obvious card section) before rolling out to
 other pages.
+
+---
+
+## 14. The 2.0 shell (`MainWindow`)
+
+`MainWindow.xaml`/`.xaml.cs` no longer hosts a `muxc:NavigationView`. The
+shell is now:
+
+- **A slim drag strip** (`CustomTitleBar`, 32px) — unchanged in spirit from
+  v1, just restyled. Still the only element passed to `SetTitleBar`, so it
+  stays free of interactive controls.
+- **The Command Center bar** (56px) — logo, a command-box `Button` that
+  opens the palette, and the source/destination tenant pills. The pills
+  read `Variables.sourceTenantName`/`destinationTenantName` directly and
+  refresh via `Variables.TenantStateChanged` (see §17) rather than polling.
+- **A `BreadcrumbBar`** — shell-level, not per-page. `MainWindow` resolves
+  the current page's title from `Utilities/AppActions.cs` on every
+  `Frame.Navigated` and sets `ItemsSource` to `["Home"]` or
+  `["Home", "<page title>"]`. Pages never render their own breadcrumb.
+- **`ContentFrame`** — same `Frame.Navigate(Type)` mechanism as before;
+  there is still no parameter-passing between pages.
+- **`Utilities/CommandPaletteOverlay`** — a Ctrl+K palette (bound via a
+  `KeyboardAccelerator` on the root `Grid`) listing every `AppAction`,
+  filterable by title/keywords. Fires `ActionInvoked(Type)`; `MainWindow`
+  does the actual `ContentFrame.Navigate`. Holds no state itself, same
+  "fires events" convention as `SearchStagingBar`.
+
+### `Utilities/AppActions.cs`
+
+The single source of truth for every top-level destination — one
+`AppAction(Title, Glyph, Description, Keywords, TargetPage)` record per
+page. Backs the command palette, the breadcrumb's title lookup, and
+`DashboardPage`'s "Browse all actions" grid. **Add a page here and it
+appears in all three automatically** — don't hand-wire a new page into
+the palette or breadcrumb separately.
+
+## 15. Theme (`Styles/BrandTheme.xaml`)
+
+A second resource dictionary, merged into `App.xaml` **after**
+`PageStyles.xaml`, so it wins on duplicate keys. It overrides a handful of
+Fluent token names pages already consume via `{ThemeResource ...}`
+(`CardBackgroundFillColorDefaultBrush`, `CardStrokeColorDefaultBrush`,
+`TextFillColorPrimaryBrush`/`SecondaryBrush`, `SystemFillColorCriticalBrush`,
+`ApplicationPageBackgroundThemeBrush`) inside `ResourceDictionary.
+ThemeDictionaries` (`Light`/`Dark` keys), plus a flat (non-themed)
+`SystemAccentColor` + `Light1-3`/`Dark1-3` ramp for the brand purple accent.
+
+**Deliberately scoped**: deep Fluent system brushes (`TextBox`, `ComboBox`,
+`ContentDialog` chrome, etc.) are not overridden and keep the stock Fluent
+look in both themes. Only add a new override here if a page-visible card,
+text, or accent color is wrong — don't go hunting for more tokens to
+reskin pre-emptively.
+
+`Utilities/ThemeService.cs` applies/persists the user's choice
+(`ElementTheme.Default`/`Light`/`Dark`) via the unpackaged-safe JSON-file
+pattern `PageStatePersistence` already established. Settings → Application
+→ Theme is the only UI surface for it (`ComboBoxItem.Tag` = the enum name).
+
+## 16. `Utilities/SelectionActionBar`
+
+The shared bottom action-bar chrome: a live count label (`CountText`) plus
+a `ExtraButtons` content slot, following `SearchStagingBar`'s "fires
+events/holds no state" convention — except here the host supplies
+finished buttons rather than the control raising click events, since the
+action set genuinely differs per page (Rename's Update, Assign's Configure
+& Assign, JSON's three buttons, ...).
+
+Used on Renaming, Assignment, Manage Assignments, and JSON. **What the
+count means is the host's call, not a fixed rule** — pick whichever matches
+how the page actually works:
+
+- **Staged-items count** (`ContentList`/`AssignmentList`
+  `.CollectionChanged`) for pages where the grid *is* the thing being
+  acted on (Renaming, Assignment, JSON) — bulk action applies to
+  everything currently staged.
+- **Selected-rows count** (`DataGrid.SelectionChanged`) for pages where
+  the action applies only to whatever's highlighted within an already-
+  loaded list (Manage Assignments).
+
+Not every page needs it: Import and Cleanup already had (or gained) a
+persistent, always-visible primary action — don't add `SelectionActionBar`
+just for consistency if a page's existing layout already satisfies "the
+action isn't hidden in a dialog or toolbar flyout."
+
+## 17. Tenant state notifications
+
+`Utilities/Variables.cs` exposes `event Action? TenantStateChanged` and
+`RaiseTenantStateChanged()`. `SettingsPage` raises it after sign-in,
+sign-out, swap, and Demo Mode activation. Anything showing live tenant
+state outside of a page's own `OnNavigatedTo` (the shell's tenant pills,
+`ImportPage`'s tenant-flow card) subscribes in its constructor:
+
+```csharp
+Variables.TenantStateChanged += () => DispatcherQueue.TryEnqueue(RefreshMyTenantUi);
+```
+
+`Variables.SwapSourceAndDestinationTenants()` is the shared core of
+"swap source and destination" (auth instances + tenant names + log +
+raise the event above) — `SettingsPage`'s swap button and `ImportPage`'s
+tenant-flow swap button both call it; page-local state (e.g. Settings'
+permission-warning flags) is swapped separately by the caller.
+
+## 18. Destructive confirmations
+
+`BaseMultiTenantPage.ShowDestructiveConfirmationAsync(title, consequenceBody,
+confirmText = "Delete")` builds on `ShowConfirmationDialogAsync`, styling
+the `ContentDialog`'s primary button with `DestructiveActionButtonStyle`
+(red) so permanent/dangerous actions are visually distinct from routine
+confirmations. Use it — not a hand-rolled `ContentDialog` — for any delete/
+remove-assignments/irreversible flow.
+
+`consequenceBody` must say what's actually lost and whether it's
+recoverable — never a generic "are you sure?". `CleanupPage`'s stale-device
+dialog (Entra 30-day-recoverable vs. Intune record-only-delete framing)
+and duplicate-delete dialog (assignment/member-aware framing) are the
+reference examples.
+
+## 19. `Utilities/DashboardStatsCache`
+
+A small unpackaged-safe JSON cache (`DashboardStatsCache.SaveResult(scanKey,
+count)` / `GetResult(scanKey)`) that lets `DashboardPage`'s stat tiles show
+"last scanned Xh ago — N found" without running a live scan on every
+dashboard load. `CleanupPage` is the only current writer — it calls
+`SaveResult` at the same point each scan already reports success via
+`ShowOperationSuccess`. A tile reads `null` as "not yet scanned," not zero.
+If a future page adds its own scan-and-report flow that the dashboard
+should surface, add a new `ScanKeys` constant and call `SaveResult` at its
+completion point — don't invent a second cache.
 
