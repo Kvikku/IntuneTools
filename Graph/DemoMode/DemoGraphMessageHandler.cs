@@ -100,6 +100,11 @@ internal sealed class DemoGraphMessageHandler : HttpMessageHandler
             var id = Uri.UnescapeDataString(rest[0]);
             if (method == HttpMethod.Get) return HandleListAssignments(config, id, request);
         }
+        else if (rest.Length == 2 && string.Equals(rest[1], "groupAssignments", StringComparison.OrdinalIgnoreCase))
+        {
+            var id = Uri.UnescapeDataString(rest[0]);
+            if (method == HttpMethod.Get) return HandleListGroupAssignments(config, id);
+        }
         else if (rest.Length == 2 && string.Equals(rest[1], "members", StringComparison.OrdinalIgnoreCase))
         {
             if (method == HttpMethod.Get) return JsonResponse(HttpStatusCode.OK, new JsonObject { ["value"] = new JsonArray() });
@@ -250,10 +255,82 @@ internal sealed class DemoGraphMessageHandler : HttpMessageHandler
                     newAssignments.Add(clone);
                 }
             }
+            else if (obj["deviceManagementScriptGroupAssignments"] is JsonArray groupAssignmentsNode)
+            {
+                // deviceManagementScript-family resources (e.g. macOS Shell Script) assign through
+                // the legacy flat groupAssignments shape instead of the standard nested-target one
+                // every other content type uses. Normalize to the standard shape on the way in, so
+                // the stored list stays uniform and "View Assignments"/remove-single/remove-all keep
+                // working the same way for every resource type regardless of which shape it assigns
+                // through.
+                foreach (var entry in groupAssignmentsNode)
+                {
+                    if (entry is JsonObject groupAssignmentObj)
+                    {
+                        newAssignments.Add(FromGroupAssignmentShape(groupAssignmentObj));
+                    }
+                }
+            }
         }
 
         _store.SetAssignments(config.CollectionSegment, id, newAssignments);
         return new HttpResponseMessage(HttpStatusCode.NoContent);
+    }
+
+    private HttpResponseMessage HandleListGroupAssignments(DemoResourceConfig config, string id)
+    {
+        var stored = _store.GetAssignments(config.CollectionSegment, id);
+        var value = new JsonArray(stored.OfType<JsonObject>().Select(ToGroupAssignmentShape).ToArray());
+        return JsonResponse(HttpStatusCode.OK, new JsonObject { ["value"] = value });
+    }
+
+    /// <summary>
+    /// Projects a standard-shape (nested <c>target</c>) stored assignment into the flat
+    /// <c>deviceManagementScriptGroupAssignment</c> shape the groupAssignments endpoint returns,
+    /// encoding "All Users"/"All Devices" as the app's own virtual-group sentinel IDs the same way
+    /// <c>AssignGroupsToSingleShellScriptmacOS</c> does when it builds these objects itself.
+    /// </summary>
+    private static JsonObject ToGroupAssignmentShape(JsonObject stored)
+    {
+        var target = stored["target"] as JsonObject;
+        var targetType = (string?)target?["@odata.type"];
+        var targetGroupId = targetType switch
+        {
+            "#microsoft.graph.allDevicesAssignmentTarget" => allDevicesVirtualGroupID,
+            "#microsoft.graph.allLicensedUsersAssignmentTarget" => allUsersVirtualGroupID,
+            _ => (string?)target?["groupId"]
+        };
+
+        return new JsonObject
+        {
+            ["id"] = (string?)stored["id"],
+            ["@odata.type"] = "#microsoft.graph.deviceManagementScriptGroupAssignment",
+            ["targetGroupId"] = targetGroupId
+        };
+    }
+
+    /// <summary>
+    /// Reverses <see cref="ToGroupAssignmentShape"/>: turns a flat groupAssignments entry (as
+    /// posted by the macOS Shell Script assign path) into the standard nested-target shape used
+    /// for stored assignments everywhere else.
+    /// </summary>
+    private static JsonObject FromGroupAssignmentShape(JsonObject flat)
+    {
+        var targetGroupId = (string?)flat["targetGroupId"];
+        var target = targetGroupId switch
+        {
+            _ when string.Equals(targetGroupId, allDevicesVirtualGroupID, StringComparison.OrdinalIgnoreCase)
+                => new JsonObject { ["@odata.type"] = "#microsoft.graph.allDevicesAssignmentTarget" },
+            _ when string.Equals(targetGroupId, allUsersVirtualGroupID, StringComparison.OrdinalIgnoreCase)
+                => new JsonObject { ["@odata.type"] = "#microsoft.graph.allLicensedUsersAssignmentTarget" },
+            _ => new JsonObject { ["@odata.type"] = "#microsoft.graph.groupAssignmentTarget", ["groupId"] = targetGroupId }
+        };
+
+        return new JsonObject
+        {
+            ["id"] = (string?)flat["id"] ?? Guid.NewGuid().ToString(),
+            ["target"] = target
+        };
     }
 
     private HttpResponseMessage HandleDeleteAssignment(DemoResourceConfig config, string id, string assignmentId)

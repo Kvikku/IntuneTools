@@ -3,6 +3,8 @@ using InToolz.Graph.DemoMode;
 using Microsoft.Graph.Beta;
 using Microsoft.Graph.Beta.Models;
 using Microsoft.Kiota.Abstractions.Authentication;
+using static InToolz.Graph.IntuneHelperClasses.macOSShellScript;
+using static InToolz.Utilities.Variables;
 
 namespace InToolz.Tests;
 
@@ -100,6 +102,64 @@ public class DemoModeTests
         Assert.Equal(120, groups.Count);
         Assert.All(groups, g => Assert.StartsWith("Sales", g.DisplayName));
         Assert.Equal(120, groups.Select(g => g.Id).Distinct().Count());
+    }
+
+    /// <summary>
+    /// Regression test for the deviceManagementScript-family "groupAssignments" endpoint gap:
+    /// AssignGroupsToSingleShellScriptmacOS reads existing assignments via GET .../groupAssignments
+    /// (a legacy flat shape, distinct from the standard .../assignments endpoint every other
+    /// content type uses) before merging in the new ones. Before this endpoint was wired up, that
+    /// GET 404'd and the whole assign call threw, so nothing ever got assigned in Demo Mode.
+    /// </summary>
+    [Fact]
+    public async Task AssignGroupsToMacOSShellScript_PreexistingAssignment_MergesWithNewOne()
+    {
+        var graph = new DemoGraphTestClient();
+        var scriptId = Guid.NewGuid().ToString();
+        graph.Store.Add("deviceShellScripts", new JsonObject
+        {
+            ["id"] = scriptId,
+            ["@odata.type"] = "#microsoft.graph.deviceShellScript",
+            ["displayName"] = "Install Company Portal (macOS)"
+        });
+        var existingGroupId = Guid.NewGuid().ToString();
+        graph.Store.GetAssignments("deviceShellScripts", scriptId).Add(new JsonObject
+        {
+            ["id"] = Guid.NewGuid().ToString(),
+            ["target"] = new JsonObject
+            {
+                ["@odata.type"] = "#microsoft.graph.groupAssignmentTarget",
+                ["groupId"] = existingGroupId
+            }
+        });
+        var newGroupId = Guid.NewGuid().ToString();
+
+        await AssignGroupsToSingleShellScriptmacOS(scriptId, "Install Company Portal (macOS)", new List<string> { newGroupId }, graph.Client);
+
+        var details = await GetMacOSShellScriptAssignmentDetailsAsync(graph.Client, scriptId);
+        Assert.NotNull(details);
+        Assert.Equal(2, details!.Count);
+        Assert.Contains(details, a => a.GroupId == existingGroupId);
+        Assert.Contains(details, a => a.GroupId == newGroupId);
+    }
+
+    [Fact]
+    public async Task AssignGroupsToMacOSShellScript_AllDevicesVirtualGroup_RoundTripsAsAllDevices()
+    {
+        var graph = new DemoGraphTestClient();
+        var scriptId = Guid.NewGuid().ToString();
+        graph.Store.Add("deviceShellScripts", new JsonObject
+        {
+            ["id"] = scriptId,
+            ["@odata.type"] = "#microsoft.graph.deviceShellScript",
+            ["displayName"] = "Install Company Portal (macOS)"
+        });
+
+        await AssignGroupsToSingleShellScriptmacOS(scriptId, "Install Company Portal (macOS)", new List<string> { allDevicesVirtualGroupID }, graph.Client);
+
+        var details = await GetMacOSShellScriptAssignmentDetailsAsync(graph.Client, scriptId);
+        var assignment = Assert.Single(details!);
+        Assert.Equal("All Devices", assignment.TargetType);
     }
 
     private static void AddGroups(DemoGraphTestClient graph, string prefix, int count)
