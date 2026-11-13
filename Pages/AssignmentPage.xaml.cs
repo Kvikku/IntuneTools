@@ -168,7 +168,7 @@ namespace InToolz.Pages
                 async (id, name, groups, client) => await AssignGroupsToSingleDeviceConfiguration(id, name, groups, client));
 
             yield return new AssignTypeDefinition(
-                "MacOS Shell Script",
+                ContentTypes.MacOSShellScript,
                 async (id, name, groups, client) => await AssignGroupsToSingleShellScriptmacOS(id, name, groups, client));
 
             yield return new AssignTypeDefinition(
